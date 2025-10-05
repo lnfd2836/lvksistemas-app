@@ -210,7 +210,7 @@
 <script>
     // Atualiza estatísticas a cada 30 segundos
     setInterval(function() {
-        fetch('{% url "estatisticas_ajax" %}')
+        fetch('{% url "dashboard:api_estatisticas" %}')
             .then(response => response.json())
             .then(data => {
                 // Atualiza os valores na página
