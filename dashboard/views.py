@@ -364,19 +364,19 @@ def criar_usuario_super_admin(request):
         # Validações
         if not username or not email or not password:
             messages.error(request, 'Todos os campos são obrigatórios.')
-            return redirect('criar_usuario_super_admin')
+            return redirect('dashboard:admin_usuarios_criar')
         
         if password != confirm_password:
             messages.error(request, 'As senhas não coincidem.')
-            return redirect('criar_usuario_super_admin')
+            return redirect('dashboard:admin_usuarios_criar')
         
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Nome de usuário já existe.')
-            return redirect('criar_usuario_super_admin')
+            return redirect('dashboard:admin_usuarios_criar')
         
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Email já está em uso.')
-            return redirect('criar_usuario_super_admin')
+            return redirect('dashboard:admin_usuarios_criar')
         
         try:
             # Criar usuário
@@ -396,7 +396,7 @@ def criar_usuario_super_admin(request):
             
         except Exception as e:
             messages.error(request, f'Erro ao criar usuário: {str(e)}')
-            return redirect('criar_usuario_super_admin')
+            return redirect('dashboard:admin_usuarios_criar')
     
     return render(request, 'dashboard/criar_usuario_super_admin.html')
 

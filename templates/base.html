@@ -67,7 +67,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if 'usuarios-super-admin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'listar_usuarios_super_admin' %}">
+                                <a class="nav-link {% if 'usuarios-super-admin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_usuarios_lista' %}">
                                     <i class="bi bi-people me-1"></i> Usuários
                                 </a>
                             </li>

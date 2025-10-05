@@ -11,7 +11,7 @@
                 <i class="bi bi-people-fill me-2"></i>
                 Gerenciar Usuários Super Administradores
             </h4>
-            <a href="{% url 'criar_usuario_super_admin' %}" class="btn btn-primary">
+            <a href="{% url 'dashboard:admin_usuarios_criar' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>
                 Novo Usuário
             </a>
@@ -95,7 +95,7 @@
                     <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
                     <h5 class="text-muted mt-3">Nenhum usuário super administrador encontrado</h5>
                     <p class="text-muted">Clique em "Novo Usuário" para criar o primeiro usuário super administrador.</p>
-                    <a href="{% url 'criar_usuario_super_admin' %}" class="btn btn-primary">
+                    <a href="{% url 'dashboard:admin_usuarios_criar' %}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>
                         Criar Primeiro Usuário
                     </a>
