@@ -392,7 +392,7 @@ def criar_usuario_super_admin(request):
             )
             
             messages.success(request, f'Usuário super administrador "{username}" criado com sucesso!')
-            return redirect('listar_usuarios_super_admin')
+            return redirect('dashboard:admin_usuarios_lista')
             
         except Exception as e:
             messages.error(request, f'Erro ao criar usuário: {str(e)}')
@@ -419,11 +419,11 @@ def editar_usuario_super_admin(request, user_id):
         # Verificar se email já existe em outro usuário
         if User.objects.filter(email=user.email).exclude(id=user.id).exists():
             messages.error(request, 'Email já está em uso por outro usuário.')
-            return redirect('editar_usuario_super_admin', user_id=user_id)
+            return redirect('dashboard:admin_usuarios_editar', user_id=user_id)
         
         user.save()
         messages.success(request, f'Usuário "{user.username}" atualizado com sucesso!')
-        return redirect('listar_usuarios_super_admin')
+        return redirect('dashboard:admin_usuarios_lista')
     
     context = {
         'usuario': user,
@@ -461,7 +461,7 @@ def alterar_senha_usuario_super_admin(request, user_id):
             user.set_password(nova_senha)
             user.save()
             messages.success(request, f'Senha do usuário "{user.username}" alterada com sucesso!')
-            return redirect('listar_usuarios_super_admin')
+            return redirect('dashboard:admin_usuarios_lista')
             
         except Exception as e:
             messages.error(request, f'Erro ao alterar senha: {str(e)}')
@@ -486,13 +486,13 @@ def excluir_usuario_super_admin(request, user_id):
     # Não permitir excluir o próprio usuário
     if user == request.user:
         messages.error(request, 'Você não pode excluir seu próprio usuário.')
-        return redirect('listar_usuarios_super_admin')
+        return redirect('dashboard:admin_usuarios_lista')
     
     if request.method == 'POST':
         username = user.username
         user.delete()
         messages.success(request, f'Usuário "{username}" excluído com sucesso!')
-        return redirect('listar_usuarios_super_admin')
+        return redirect('dashboard:admin_usuarios_lista')
     
     context = {
         'usuario': user,
