@@ -39,10 +39,13 @@ def dashboard_principal(request):
             return dashboard_super_admin(request)
     
     # Se é admin de loja, mostra dashboard da loja
+    print("DEBUG: Usuário não é super usuário, verificando se é admin de loja")
     try:
         loja = request.user.loja_admin
+        print(f"DEBUG: Usuário tem loja associada: {loja}")
         return dashboard_loja(request, loja)
-    except:
+    except Exception as e:
+        print(f"DEBUG: Usuário não tem loja associada: {e}")
         # Se não tem loja associada, mostra mensagem e redireciona para login
         messages.error(request, 'Você não tem uma loja associada.')
         return redirect('login')
