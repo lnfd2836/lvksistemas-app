@@ -75,6 +75,8 @@ def loja_login(request):
                             SessaoAtiva.objects.create(
                                 user=user,
                                 session_key=request.session.session_key or 'no-session-key',
+                                ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
+                                user_agent=request.META.get('HTTP_USER_AGENT', ''),
                                 ativa=True,
                                 is_super_admin=user.is_superuser
                             )

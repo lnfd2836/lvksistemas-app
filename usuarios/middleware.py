@@ -50,6 +50,8 @@ class SessaoUnicaMiddleware:
                         SessaoAtiva.objects.create(
                             user=request.user,
                             session_key=session_key,
+                            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
+                            user_agent=request.META.get('HTTP_USER_AGENT', ''),
                             ativa=True
                         )
                         return self.get_response(request)
