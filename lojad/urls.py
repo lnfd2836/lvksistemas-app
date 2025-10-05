@@ -17,6 +17,7 @@ urlpatterns = [
     path('usuarios/', include('usuarios.urls')),
     path('planos/', include('planos.urls')),
     path('financeiro/', include('controle_financeiro.urls')),
+    path('modulos/', include('modulos.urls')),
     path('login/', simple_login, name='login'),  # URL direta para login
     path('loja/login/', loja_login, name='loja_login_direct'),  # URL direta para login da loja
 ]

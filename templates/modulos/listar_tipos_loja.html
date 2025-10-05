@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Tipos de Loja{% endblock %}
+{% block page_title %}Gerenciar Tipos de Loja{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted">Configure os tipos de loja e suas funcionalidades</p>
+    </div>
+    <a href="{% url 'modulos:criar_tipo_loja' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Tipo de Loja
+    </a>
+</div>
+
+<div class="row">
+    {% for tipo in tipos_loja %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color: {{ tipo.cor_primaria }}; color: white;">
+                <div>
+                    <h6 class="mb-0">
+                        <i class="{{ tipo.icone }}"></i> {{ tipo.get_nome_display }}
+                    </h6>
+                </div>
+                <div>
+                    {% if tipo.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">{{ tipo.descricao }}</p>
+                
+                <!-- Configurações de Produto -->
+                <div class="mb-3">
+                    <h6 class="text-primary">Configurações de Produto</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_categoria_produto %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Categoria
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_marca_produto %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Marca
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_tamanho_produto %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Tamanho
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_cor_produto %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Cor
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_codigo_barras %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Código de Barras
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_estoque_minimo %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Estoque Mínimo
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações de Cliente -->
+                <div class="mb-3">
+                    <h6 class="text-info">Configurações de Cliente</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_data_nascimento_cliente %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Data Nascimento
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_sexo_cliente %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Sexo
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_cpf_cliente %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                CPF
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_cnpj_cliente %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                CNPJ
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações de Venda -->
+                <div class="mb-3">
+                    <h6 class="text-warning">Configurações de Venda</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_desconto_venda %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Desconto
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_taxa_entrega %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Taxa Entrega
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_mesa_venda %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Mesa
+                            </small>
+                            <small class="d-block">
+                                <i class="bi bi-{% if tipo.tem_garcom_venda %}check-circle text-success{% else %}x-circle text-muted{% endif %}"></i>
+                                Garçom
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'modulos:editar_tipo_loja' tipo.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'modulos:excluir_tipo_loja' tipo.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este tipo de loja?')">
+                        <i class="bi bi-trash"></i> Excluir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-shop display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">Nenhum tipo de loja cadastrado</h4>
+            <p class="text-muted">Comece criando o primeiro tipo de loja</p>
+            <a href="{% url 'modulos:criar_tipo_loja' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Criar Primeiro Tipo
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

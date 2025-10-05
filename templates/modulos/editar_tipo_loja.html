@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Tipo de Loja - {{ tipo_loja.get_nome_display }}{% endblock %}
+{% block page_title %}Editar Tipo de Loja{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">{{ tipo_loja.get_nome_display }}</h4>
+        <p class="text-muted mb-0">Configure as funcionalidades deste tipo de loja</p>
+    </div>
+    <a href="{% url 'modulos:listar_tipos_loja' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <!-- Informações Básicas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-info-circle"></i> Informações Básicas
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">Tipo de Loja</label>
+                        {{ form.nome }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.icone.id_for_label }}" class="form-label">Ícone</label>
+                        {{ form.icone }}
+                        <div class="form-text">Ex: fas fa-store, bi bi-shop</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                {{ form.descricao }}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.cor_primaria.id_for_label }}" class="form-label">Cor Primária</label>
+                        {{ form.cor_primaria }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.cor_secundaria.id_for_label }}" class="form-label">Cor Secundária</label>
+                        {{ form.cor_secundaria }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-check">
+                {{ form.ativo }}
+                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                    Tipo de loja ativo
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configurações de Produto -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-box"></i> Configurações de Produto
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check mb-3">
+                        {{ form.tem_categoria_produto }}
+                        <label class="form-check-label" for="{{ form.tem_categoria_produto.id_for_label }}">
+                            Categoria de Produto
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_marca_produto }}
+                        <label class="form-check-label" for="{{ form.tem_marca_produto.id_for_label }}">
+                            Marca de Produto
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_tamanho_produto }}
+                        <label class="form-check-label" for="{{ form.tem_tamanho_produto.id_for_label }}">
+                            Tamanho de Produto
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mb-3">
+                        {{ form.tem_cor_produto }}
+                        <label class="form-check-label" for="{{ form.tem_cor_produto.id_for_label }}">
+                            Cor de Produto
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_peso_produto }}
+                        <label class="form-check-label" for="{{ form.tem_peso_produto.id_for_label }}">
+                            Peso de Produto
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_volume_produto }}
+                        <label class="form-check-label" for="{{ form.tem_volume_produto.id_for_label }}">
+                            Volume de Produto
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mb-3">
+                        {{ form.tem_data_validade }}
+                        <label class="form-check-label" for="{{ form.tem_data_validade.id_for_label }}">
+                            Data de Validade
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_codigo_barras }}
+                        <label class="form-check-label" for="{{ form.tem_codigo_barras.id_for_label }}">
+                            Código de Barras
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_estoque_minimo }}
+                        <label class="form-check-label" for="{{ form.tem_estoque_minimo.id_for_label }}">
+                            Estoque Mínimo
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configurações de Cliente -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-person"></i> Configurações de Cliente
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        {{ form.tem_data_nascimento_cliente }}
+                        <label class="form-check-label" for="{{ form.tem_data_nascimento_cliente.id_for_label }}">
+                            Data de Nascimento
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_sexo_cliente }}
+                        <label class="form-check-label" for="{{ form.tem_sexo_cliente.id_for_label }}">
+                            Sexo
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_cpf_cliente }}
+                        <label class="form-check-label" for="{{ form.tem_cpf_cliente.id_for_label }}">
+                            CPF
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        {{ form.tem_rg_cliente }}
+                        <label class="form-check-label" for="{{ form.tem_rg_cliente.id_for_label }}">
+                            RG
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_cnpj_cliente }}
+                        <label class="form-check-label" for="{{ form.tem_cnpj_cliente.id_for_label }}">
+                            CNPJ
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configurações de Venda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-cart"></i> Configurações de Venda
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        {{ form.tem_desconto_venda }}
+                        <label class="form-check-label" for="{{ form.tem_desconto_venda.id_for_label }}">
+                            Desconto na Venda
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_taxa_entrega }}
+                        <label class="form-check-label" for="{{ form.tem_taxa_entrega.id_for_label }}">
+                            Taxa de Entrega
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        {{ form.tem_mesa_venda }}
+                        <label class="form-check-label" for="{{ form.tem_mesa_venda.id_for_label }}">
+                            Mesa na Venda
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.tem_garcom_venda }}
+                        <label class="form-check-label" for="{{ form.tem_garcom_venda.id_for_label }}">
+                            Garçom na Venda
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'modulos:listar_tipos_loja' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Salvar Alterações
+        </button>
+    </div>
+</form>
+{% endblock %}

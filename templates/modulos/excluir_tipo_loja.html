@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Tipo de Loja{% endblock %}
+{% block page_title %}Excluir Tipo de Loja{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header py-3 bg-danger text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">Atenção!</h5>
+                    <p class="mb-0">Você está prestes a excluir o tipo de loja <strong>"{{ tipo_loja.get_nome_display }}"</strong>.</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Informações do Tipo de Loja:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Nome:</strong> {{ tipo_loja.get_nome_display }}</li>
+                        <li><strong>Descrição:</strong> {{ tipo_loja.descricao }}</li>
+                        <li><strong>Status:</strong> 
+                            {% if tipo_loja.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </li>
+                        <li><strong>Data de Criação:</strong> {{ tipo_loja.data_criacao|date:"d/m/Y H:i" }}</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">Consequências da Exclusão:</h6>
+                    <ul class="mb-0">
+                        <li>Todas as lojas deste tipo serão afetadas</li>
+                        <li>Módulos associados a este tipo serão removidos</li>
+                        <li>Campos personalizados serão excluídos</li>
+                        <li><strong>Esta ação não pode ser desfeita!</strong></li>
+                    </ul>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'modulos:listar_tipos_loja' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Confirmar Exclusão
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
