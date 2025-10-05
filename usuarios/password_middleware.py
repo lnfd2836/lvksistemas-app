@@ -40,7 +40,7 @@ class PasswordChangeMiddleware(MiddlewareMixin):
             
         # Verifica se o usuário tem perfil e precisa trocar a senha
         try:
-            if hasattr(request.user, 'perfil') and request.user.perfil and request.user.perfil.deve_trocar_senha:
+            if hasattr(request.user, 'perfil') and request.user.perfil and hasattr(request.user.perfil, 'deve_trocar_senha') and request.user.perfil.deve_trocar_senha:
                 # Redireciona para a página de troca de senha
                 if current_path != '/alterar-senha/' and not current_path.startswith('/usuarios/alterar-senha'):
                     messages.warning(
