@@ -47,70 +47,7 @@
 </div>
 {% endif %}
 
-<!-- Seção de Boletos -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-barcode"></i> Boletos de Pagamento
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-left-success shadow h-100">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            Boletos Disponíveis
-                                        </div>
-                                        <div class="text-muted small">Visualize e pague seus boletos</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-barcode text-success" style="font-size: 2rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <a href="{% url 'controle_financeiro:boletos_cliente' %}" class="btn btn-success btn-sm">
-                                        <i class="fas fa-eye"></i> Ver Boletos
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-left-info shadow h-100">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                            Outros Pagamentos
-                                        </div>
-                                        <div class="text-muted small">PIX, transferência e outros métodos</div>
-                                        <div class="text-muted small mt-1">
-                                            <i class="fas fa-info-circle"></i> Registre pagamentos alternativos
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-credit-card text-info" style="font-size: 2rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <a href="{% url 'controle_financeiro:pagamento_cliente' %}" class="btn btn-info btn-sm">
-                                        <i class="fas fa-credit-card"></i> Registrar Pagamento
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Estatísticas principais -->
 <div class="row mb-4">
