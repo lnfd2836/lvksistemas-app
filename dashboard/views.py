@@ -26,12 +26,15 @@ def dashboard_principal(request):
     
     # Se é super usuário E não tem loja associada, mostra dashboard geral
     if request.user.is_superuser:
+        print("DEBUG: Usuário é super usuário")
         try:
             # Verifica se o super usuário tem uma loja associada
             loja = request.user.loja_admin
+            print(f"DEBUG: Super usuário tem loja associada: {loja}")
             # Se tem loja associada, redireciona para dashboard da loja
             return dashboard_loja(request, loja)
-        except:
+        except Exception as e:
+            print(f"DEBUG: Super usuário não tem loja associada: {e}")
             # Se não tem loja associada, mostra dashboard super admin
             return dashboard_super_admin(request)
     
