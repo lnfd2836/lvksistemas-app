@@ -19,7 +19,9 @@ def dashboard_principal(request):
     """Dashboard principal do sistema"""
     
     # Debug: verificar se o usuário está autenticado
+    print(f"DEBUG: dashboard_principal - Usuário autenticado: {request.user.is_authenticated}")
     if not request.user.is_authenticated:
+        print("DEBUG: Usuário não autenticado, redirecionando para login")
         return redirect('login')
     
     # Se é super usuário E não tem loja associada, mostra dashboard geral
