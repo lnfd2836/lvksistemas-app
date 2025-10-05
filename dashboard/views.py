@@ -178,6 +178,18 @@ def dashboard_loja(request, loja=None, loja_id=None):
         # Obter contexto do dashboard
         dashboard_context = AuthenticationService.get_dashboard_context(request.user)
         
+        # Buscar controle financeiro da loja
+        controle_financeiro = None
+        try:
+            from controle_financeiro.models import ControleFinanceiro
+            controle_financeiro = ControleFinanceiro.objects.get(loja=target_loja)
+            # Atualiza o status financeiro
+            controle_financeiro.verificar_status()
+        except ControleFinanceiro.DoesNotExist:
+            logger.warning(f"Controle financeiro não encontrado para loja {target_loja.nome}")
+        except Exception as e:
+            logger.error(f"Erro ao buscar controle financeiro para loja {target_loja.nome}: {e}")
+        
         # Calcular estatísticas da loja
         total_clientes = Cliente.objects.filter(loja=target_loja).count()
         total_produtos = Produto.objects.filter(loja=target_loja).count()
@@ -250,6 +262,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
         # Preparar contexto completo
         context = {
             'loja': target_loja,
+            'controle_financeiro': controle_financeiro,
             'total_clientes': total_clientes,
             'total_produtos': total_produtos,
             'vendas_hoje': vendas_hoje,
