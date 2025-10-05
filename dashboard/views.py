@@ -14,7 +14,7 @@ from usuarios.models import LogAcesso, SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 
 
-@login_required
+# @login_required  # Temporariamente removido para debug
 def dashboard_principal(request):
     """Dashboard principal do sistema"""
     
