@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Django application is experiencing critical URL routing errors that prevent users from accessing key pages like the store listing (`/lojas/`) and user management (`/dashboard/admin/usuarios/`) pages. These errors are caused by missing or incorrectly named URL patterns that templates are trying to reference, resulting in `NoReverseMatch` exceptions.
+The Django application is experiencing critical URL routing errors that prevent users from accessing key pages like the store listing (`/lojas/`), user management (`/dashboard/admin/usuarios/`), and dashboard pages. These errors are caused by missing or incorrectly named URL patterns that templates are trying to reference, resulting in `NoReverseMatch` exceptions. A specific issue has been identified where templates reference `criar_loja` without the proper `lojas:` namespace, causing dashboard failures for super admin users.
 
 ## Requirements
 
@@ -38,6 +38,17 @@ The Django application is experiencing critical URL routing errors that prevent 
 4. IF URL patterns are renamed THEN all template references SHALL be updated accordingly
 
 ### Requirement 4
+
+**User Story:** As a super admin user, I want to access the dashboard without encountering URL routing errors for store creation, so that I can manage the system effectively.
+
+#### Acceptance Criteria
+
+1. WHEN a super admin accesses `/dashboard/` THEN the system SHALL render the page successfully without NoReverseMatch errors for `criar_loja`
+2. WHEN templates reference `criar_loja` THEN they SHALL use the proper namespace `lojas:criar_loja`
+3. WHEN the dashboard loads THEN all URL references SHALL resolve correctly with proper namespacing
+4. IF a template uses URL references without namespace THEN the system SHALL update them to use proper namespacing
+
+### Requirement 5
 
 **User Story:** As a system administrator, I want the application to handle URL routing errors gracefully, so that users receive helpful feedback instead of server errors.
 

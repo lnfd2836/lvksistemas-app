@@ -32,6 +32,12 @@ The Django URL routing system follows a hierarchical structure:
    - `alterar_senha_usuario_super_admin` - Template references this but URL pattern is named `admin_usuarios_alterar_senha`
    - `excluir_usuario_super_admin` - Template references this but URL pattern is named `admin_usuarios_excluir`
 
+3. **Namespace issues with `criar_loja` references**:
+   - `templates/dashboard/super_admin.html` uses: `{% url 'criar_loja' %}` (missing namespace)
+   - `templates/planos/listar.html` uses: `{% url 'criar_loja' %}` (missing namespace)
+   - Should be: `{% url 'lojas:criar_loja' %}` (with proper namespace)
+   - This causes `NoReverseMatch` errors when super admin users access the dashboard
+
 ### 2. URL Pattern Mapping
 
 **Dashboard URLs (dashboard/urls.py):**
@@ -124,10 +130,14 @@ No data model changes are required. This is purely a URL routing and template re
 
 ### Store Management URLs
 ```python
-# Current (correct):
-'dashboard:loja_especifica'
+# Current (incorrect in some templates):
+'criar_loja'  # Missing namespace in dashboard/super_admin.html and planos/listar.html
 
-# Verify this resolves properly in templates
+# Correct (with namespace):
+'lojas:criar_loja'
+
+# Already correct:
+'dashboard:loja_especifica'
 ```
 
 ## Security Considerations

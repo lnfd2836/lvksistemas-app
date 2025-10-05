@@ -31,8 +31,14 @@
   - Create fallback mechanisms for missing URL patterns
   - _Requirements: 4.1, 4.2, 4.3_
 
-- [x] 6. Create regression tests for URL routing
+- [x] 6. Fix namespace issues in dashboard and planos templates
+  - Update `templates/dashboard/super_admin.html` to use `lojas:criar_loja` instead of `criar_loja`
+  - Update `templates/planos/listar.html` to use `lojas:criar_loja` instead of `criar_loja`
+  - Test dashboard access for super admin users without NoReverseMatch errors
+  - _Requirements: 4.1, 4.2, 4.3, 4.4_
+
+- [x] 7. Create regression tests for URL routing
   - Write unit tests for all critical URL patterns
   - Test template URL generation in isolation
   - Add integration tests for complete page rendering
-  - _Requirements: 3.1, 3.3, 4.1_
+  - _Requirements: 3.1, 3.3, 5.1_
