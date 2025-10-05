@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro Interno do Servidor - LVK Sistemas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .error-message {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .error-id {
+            font-size: 0.9rem;
+            color: #95a5a6;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .debug-info {
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .debug-section {
+            margin-bottom: 20px;
+        }
+        
+        .debug-section h4 {
+            color: #3498db;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #34495e;
+            padding-bottom: 5px;
+        }
+        
+        .debug-section pre {
+            background: #34495e;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-success { background: #27ae60; }
+        .status-error { background: #e74c3c; }
+        .status-warning { background: #f39c12; }
+        .status-unknown { background: #95a5a6; }
+        
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 30px 20px;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-title">Erro Interno do Servidor</h1>
+        <p class="error-message">
+            Ocorreu um erro interno no sistema. Nossa equipe técnica foi automaticamente notificada 
+            e está trabalhando para resolver o problema.
+        </p>
+        
+        <div class="error-actions">
+            <a href="javascript:history.back()" class="btn btn-secondary">← Voltar</a>
+            <a href="/" class="btn btn-primary">🏠 Página Inicial</a>
+            <a href="javascript:location.reload()" class="btn btn-secondary">🔄 Tentar Novamente</a>
+        </div>
+        
+        <div class="error-details">
+            <h3>O que você pode fazer:</h3>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>Aguarde alguns minutos e tente novamente</li>
+                <li>Verifique sua conexão com a internet</li>
+                <li>Entre em contato com o suporte se o problema persistir</li>
+            </ul>
+        </div>
+        
+        {% if error_id %}
+        <div class="error-id">
+            <strong>ID do Erro:</strong> {{ error_id }}
+            <br>
+            <small>Forneça este ID ao entrar em contato com o suporte técnico</small>
+        </div>
+        {% endif %}
+        
+        {% if error_info and error_info.request_info %}
+        <div class="debug-info">
+            <div class="debug-section">
+                <h4>🔍 Informações de Diagnóstico</h4>
+                <p><strong>Caminho:</strong> {{ error_info.request_info.path }}</p>
+                <p><strong>Método:</strong> {{ error_info.request_info.method }}</p>
+                <p><strong>Usuário:</strong> {{ error_info.request_info.user }}</p>
+                <p><strong>Timestamp:</strong> {{ error_info.timestamp }}</p>
+            </div>
+            
+            {% if error_info.database_info %}
+            <div class="debug-section">
+                <h4>💾 Status do Banco de Dados</h4>
+                <p>
+                    <span class="status-indicator {% if error_info.database_info.connection_status == 'connected' %}status-success{% else %}status-error{% endif %}"></span>
+                    <strong>Conexão:</strong> {{ error_info.database_info.connection_status }}
+                </p>
+                <p><strong>Engine:</strong> {{ error_info.database_info.engine }}</p>
+                <p><strong>Queries:</strong> {{ error_info.database_info.queries_count }}</p>
+                {% if error_info.database_info.connection_errors %}
+                <p><strong>Erros:</strong></p>
+                <pre>{{ error_info.database_info.connection_errors|join:"\n" }}</pre>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if error_info.middleware_info %}
+            <div class="debug-section">
+                <h4>⚙️ Middleware</h4>
+                <p><strong>Total:</strong> {{ error_info.middleware_info.middleware_count }}</p>
+                <details>
+                    <summary>Lista de Middlewares</summary>
+                    <pre>{{ error_info.middleware_info.middleware_list|join:"\n" }}</pre>
+                </details>
+            </div>
+            {% endif %}
+            
+            {% if error_info.error_message %}
+            <div class="debug-section">
+                <h4>❌ Detalhes do Erro</h4>
+                <p><strong>Tipo:</strong> {{ error_info.error_type }}</p>
+                <p><strong>Mensagem:</strong> {{ error_info.error_message }}</p>
+                {% if error_info.stack_trace %}
+                <details>
+                    <summary>Stack Trace</summary>
+                    <pre>{{ error_info.stack_trace }}</pre>
+                </details>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Auto-refresh após 30 segundos se não houver interação
+        let refreshTimer = setTimeout(() => {
+            if (confirm('Deseja tentar recarregar a página automaticamente?')) {
+                location.reload();
+            }
+        }, 30000);
+        
+        // Cancela o timer se o usuário interagir com a página
+        document.addEventListener('click', () => {
+            clearTimeout(refreshTimer);
+        });
+        
+        // Adiciona funcionalidade de copiar ID do erro
+        {% if error_id %}
+        document.querySelector('.error-id').addEventListener('click', function() {
+            navigator.clipboard.writeText('{{ error_id }}').then(() => {
+                this.style.background = '#d4edda';
+                this.style.color = '#155724';
+                this.innerHTML += ' <small>(ID copiado!)</small>';
+                setTimeout(() => {
+                    this.style.background = '';
+                    this.style.color = '';
+                    this.innerHTML = this.innerHTML.replace(' <small>(ID copiado!)</small>', '');
+                }, 2000);
+            });
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

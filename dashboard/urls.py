@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_debug
 from .simple_login import simple_login
 from .loja_login import loja_login, loja_logout
 
@@ -46,4 +47,10 @@ urlpatterns = [
     
     # Redirecionamento inteligente
     path('redirect/', views.redirect_to_appropriate_dashboard, name='redirect_inteligente'),
+    
+    # Debug URLs (apenas em desenvolvimento)
+    path('debug/test-500/', views_debug.test_500_error, name='debug_test_500'),
+    path('debug/test-auth/', views_debug.test_auth_error, name='debug_test_auth'),
+    path('debug/test-middleware/', views_debug.test_middleware_error, name='debug_test_middleware'),
+    path('debug/info/', views_debug.debug_info, name='debug_info'),
 ]

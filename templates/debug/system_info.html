@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informações de Debug do Sistema</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007acc;
+        }
+        
+        .section h2 {
+            color: #569cd6;
+            margin-top: 0;
+            border-bottom: 1px solid #404040;
+            padding-bottom: 10px;
+        }
+        
+        .status-healthy { color: #4ec9b0; }
+        .status-warning { color: #dcdcaa; }
+        .status-error { color: #f44747; }
+        
+        .json-viewer {
+            background: #1e1e1e;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        
+        .test-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .test-link {
+            background: #0e639c;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .test-link:hover {
+            background: #1177bb;
+        }
+        
+        .test-link.danger {
+            background: #a1260d;
+        }
+        
+        .test-link.danger:hover {
+            background: #c42b1c;
+        }
+        
+        .key { color: #9cdcfe; }
+        .string { color: #ce9178; }
+        .number { color: #b5cea8; }
+        .boolean { color: #569cd6; }
+        .null { color: #808080; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Informações de Debug do Sistema</h1>
+        
+        <div class="section">
+            <h2>🧪 Testes de Erro</h2>
+            <p>Use estes links para testar o sistema de captura de erros:</p>
+            <div class="test-links">
+                <a href="{% url 'dashboard:debug_test_500' %}?type=generic" class="test-link danger">Erro Genérico</a>
+                <a href="{% url 'dashboard:debug_test_500' %}?type=database" class="test-link danger">Erro de Banco</a>
+                <a href="{% url 'dashboard:debug_test_500' %}?type=import" class="test-link danger">Erro de Import</a>
+                <a href="{% url 'dashboard:debug_test_500' %}?type=template" class="test-link danger">Erro de Template</a>
+                <a href="{% url 'dashboard:debug_test_500' %}?type=model" class="test-link danger">Erro de Model</a>
+                <a href="{% url 'dashboard:debug_test_auth' %}" class="test-link danger">Erro de Auth</a>
+                <a href="{% url 'dashboard:debug_test_middleware' %}" class="test-link danger">Erro de Middleware</a>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Status do Banco de Dados</h2>
+            <div class="json-viewer">
+                <div class="key">Status Geral:</div> 
+                <span class="status-{% if db_health.overall_status == 'healthy' %}healthy{% elif db_health.overall_status == 'degraded' %}warning{% else %}error{% endif %}">
+                    {{ db_health.overall_status|upper }}
+                </span>
+                
+                <div class="key">Conectividade:</div>
+                <div style="margin-left: 20px;">
+                    <div class="key">Status:</div> <span class="string">{{ db_health.connectivity.status }}</span><br>
+                    <div class="key">Tempo de Conexão:</div> <span class="number">{{ db_health.connectivity.connection_time }}s</span><br>
+                    <div class="key">Migrações Pendentes:</div> <span class="boolean">{{ db_health.connectivity.migrations_pending|yesno:"true,false" }}</span>
+                </div>
+                
+                <div class="key">Testes de Queries:</div>
+                <div style="margin-left: 20px;">
+                    {% for test_name, test_result in db_health.query_tests.items %}
+                    <div class="key">{{ test_name }}:</div> 
+                    <span class="{% if test_result.status == 'success' %}status-healthy{% else %}status-error{% endif %}">
+                        {{ test_result.status }}
+                    </span>
+                    {% if test_result.result is not None %}
+                        <span class="number">({{ test_result.result }})</span>
+                    {% endif %}
+                    <br>
+                    {% endfor %}
+                </div>
+                
+                {% if db_health.recommendations %}
+                <div class="key">Recomendações:</div>
+                <div style="margin-left: 20px;">
+                    {% for rec in db_health.recommendations %}
+                    <div>• {{ rec }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⚙️ Status dos Middlewares</h2>
+            <div class="json-viewer">
+                <div class="key">Total de Middlewares:</div> <span class="number">{{ middleware_info.middleware_count }}</span>
+                
+                <div class="key">Lista de Middlewares:</div>
+                <div style="margin-left: 20px;">
+                    {% for mw in middleware_info.middleware_list %}
+                    <div>
+                        <span class="{% if mw.status == 'available' %}status-healthy{% else %}status-error{% endif %}">
+                            {{ mw.order }}. {{ mw.name }}
+                        </span>
+                        <span class="string">({{ mw.status }})</span>
+                        {% if mw.error %}
+                        <br><span class="status-error">   Erro: {{ mw.error }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if middleware_info.potential_issues %}
+                <div class="key">Problemas Encontrados:</div>
+                <div style="margin-left: 20px;">
+                    {% for issue in middleware_info.potential_issues %}
+                    <div class="status-error">⚠️ {{ issue }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if middleware_info.recommendations %}
+                <div class="key">Recomendações:</div>
+                <div style="margin-left: 20px;">
+                    {% for rec in middleware_info.recommendations %}
+                    <div>• {{ rec }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🌐 Informações da Requisição</h2>
+            <div class="json-viewer">
+                <div class="key">Caminho:</div> <span class="string">{{ request_info.path }}</span><br>
+                <div class="key">Método:</div> <span class="string">{{ request_info.method }}</span><br>
+                <div class="key">Usuário:</div> <span class="string">{{ request_info.user }}</span><br>
+                <div class="key">Chave da Sessão:</div> <span class="string">{{ request_info.session_key|default:"N/A" }}</span><br>
+                
+                {% if request_info.middleware_profile %}
+                <div class="key">Profile do Middleware:</div>
+                <div style="margin-left: 20px;">
+                    <div class="key">Tempo Total:</div> <span class="number">{{ request_info.middleware_profile.total_time }}s</span><br>
+                    <div class="key">Middlewares Executados:</div> <span class="number">{{ request_info.middleware_profile.middleware_execution|length }}</span><br>
+                    <div class="key">Erros:</div> <span class="number">{{ request_info.middleware_profile.errors|length }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📋 JSON Completo</h2>
+            <details>
+                <summary>Clique para ver dados completos</summary>
+                <div class="json-viewer">
+                    <strong>Database Health:</strong>
+                    {{ db_health|pprint }}
+                    
+                    <strong>Middleware Info:</strong>
+                    {{ middleware_info|pprint }}
+                </div>
+            </details>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh a cada 30 segundos
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

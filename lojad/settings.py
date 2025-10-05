@@ -46,6 +46,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'dashboard.middleware.error_capture.ErrorCaptureMiddleware',  # Captura de erros deve ser primeiro
+    'dashboard.middleware.middleware_profiler.MiddlewareProfiler',  # Profiling de middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -179,6 +181,10 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'detailed': {
+            'format': '{levelname} {asctime} {name} {module} {funcName} {lineno} {message}',
+            'style': '{',
+        },
     },
     'handlers': {
         'console': {
@@ -189,6 +195,18 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'logs' / 'authentication.log',
             'formatter': 'verbose',
+        },
+        'error_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'errors.log',
+            'formatter': 'detailed',
+            'level': 'ERROR',
+        },
+        'debug_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'debug.log',
+            'formatter': 'detailed',
+            'level': 'DEBUG',
         },
     },
     'loggers': {
@@ -202,8 +220,42 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'dashboard.middleware.error_capture': {
+            'handlers': ['console', 'error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'dashboard.middleware.middleware_profiler': {
+            'handlers': ['console', 'debug_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'dashboard.utils.database_health': {
+            'handlers': ['console', 'debug_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'debug_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
 }
+
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR / 'logs'
+if not LOGS_DIR.exists():
+    LOGS_DIR.mkdir(exist_ok=True)
 
 # Heroku specific settings
 if 'DYNO' in os.environ:
@@ -218,5 +270,6 @@ if 'DYNO' in os.environ:
             'formatter': 'simple',
         },
     }
-    LOGGING['loggers']['usuarios.services']['handlers'] = ['console']
-    LOGGING['loggers']['usuarios.improved_middleware']['handlers'] = ['console']
+    # Update all loggers to use only console handler
+    for logger_name in LOGGING['loggers']:
+        LOGGING['loggers'][logger_name]['handlers'] = ['console']
