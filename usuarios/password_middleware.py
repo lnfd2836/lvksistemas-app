@@ -39,13 +39,17 @@ class PasswordChangeMiddleware(MiddlewareMixin):
             return None
             
         # Verifica se o usuário tem perfil e precisa trocar a senha
-        if hasattr(request.user, 'perfil') and request.user.perfil.deve_trocar_senha:
-            # Redireciona para a página de troca de senha
-            if current_path != '/alterar-senha/':
-                messages.warning(
-                    request, 
-                    'Você deve alterar sua senha antes de continuar usando o sistema.'
-                )
-                return redirect('alterar_senha_obrigatoria')
+        try:
+            if hasattr(request.user, 'perfil') and request.user.perfil.deve_trocar_senha:
+                # Redireciona para a página de troca de senha
+                if current_path != '/alterar-senha/' and not current_path.startswith('/usuarios/alterar-senha'):
+                    messages.warning(
+                        request, 
+                        'Você deve alterar sua senha antes de continuar usando o sistema.'
+                    )
+                    return redirect('alterar_senha_obrigatoria')
+        except Exception as e:
+            logger.error(f"Erro no middleware de troca de senha: {e}")
+            # Se houver erro, não bloqueia o acesso
                 
         return None

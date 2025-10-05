@@ -263,7 +263,7 @@ def pagamento_cliente(request):
         controle = ControleFinanceiro.objects.get(loja__admin_user=request.user)
     except ControleFinanceiro.DoesNotExist:
         messages.error(request, 'Controle financeiro não encontrado para sua loja.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     if request.method == 'POST':
         valor = request.POST.get('valor')
@@ -500,7 +500,7 @@ def boletos_cliente(request):
         controle = ControleFinanceiro.objects.get(loja__admin_user=request.user)
     except ControleFinanceiro.DoesNotExist:
         messages.error(request, 'Controle financeiro não encontrado para sua loja.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     # Boletos da loja
     boletos = BoletoGerado.objects.filter(controle_financeiro=controle).order_by('-data_criacao')
@@ -530,7 +530,7 @@ def detalhar_boleto(request, boleto_id):
         # Se não for superuser, verifica se é o dono da loja
         if boleto.controle_financeiro.loja.admin_user != request.user:
             messages.error(request, 'Você não tem permissão para visualizar este boleto.')
-            return redirect('dashboard')
+            return redirect('dashboard:principal')
     
     context = {
         'boleto': boleto,

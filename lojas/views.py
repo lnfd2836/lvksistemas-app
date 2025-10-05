@@ -297,7 +297,7 @@ def gerenciar_clientes(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     clientes = Cliente.objects.filter(loja=loja).order_by('-data_cadastro')
@@ -331,7 +331,7 @@ def adicionar_cliente(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     
@@ -357,7 +357,7 @@ def editar_cliente(request, cliente_id):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     cliente = get_object_or_404(Cliente, id=cliente_id, loja=loja)
@@ -381,7 +381,7 @@ def gerenciar_produtos(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     produtos = Produto.objects.filter(loja=loja).order_by('nome')
@@ -420,7 +420,7 @@ def adicionar_produto(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     
@@ -446,7 +446,7 @@ def editar_produto(request, produto_id):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     produto = get_object_or_404(Produto, id=produto_id, loja=loja)
@@ -572,7 +572,7 @@ def gerenciar_vendas(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     vendas = Venda.objects.filter(loja=loja).order_by('-data_venda')
@@ -605,7 +605,7 @@ def nova_venda(request):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     
@@ -673,7 +673,7 @@ def detalhar_venda(request, venda_id):
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     loja = request.loja_atual
     venda = get_object_or_404(Venda, id=venda_id, loja=loja)
