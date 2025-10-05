@@ -85,6 +85,9 @@ class SessaoAtiva(models.Model):
         ).exclude(
             session_key=session_key_atual
         ).update(ativa=False)
+        
+        # Remove qualquer sessão existente com a mesma session_key para evitar duplicatas
+        cls.objects.filter(session_key=session_key_atual).delete()
     
     @classmethod
     def limpar_sessoes_expiradas(cls):
@@ -123,14 +126,16 @@ def log_user_login(sender, request, user, **kwargs):
     # Invalida sessões anteriores do usuário (sessão única)
     SessaoAtiva.invalidar_sessoes_anteriores(user, session_key)
     
-    # Cria nova sessão ativa
-    SessaoAtiva.objects.create(
-        user=user,
+    # Cria nova sessão ativa (usando get_or_create para evitar duplicatas)
+    SessaoAtiva.objects.get_or_create(
         session_key=session_key,
-        ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
-        user_agent=request.META.get('HTTP_USER_AGENT', ''),
-        ativa=True,
-        is_super_admin=user.is_superuser
+        defaults={
+            'user': user,
+            'ip_address': request.META.get('REMOTE_ADDR', '127.0.0.1'),
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            'ativa': True,
+            'is_super_admin': user.is_superuser
+        }
     )
     
     # Atualiza perfil do usuário
