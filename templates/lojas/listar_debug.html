@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Lojas - Debug{% endblock %}
+{% block page_title %}Gerenciar Lojas - Debug{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Debug - Lista de Lojas</h1>
+    
+    <div class="alert alert-info">
+        <h4>Informações de Debug:</h4>
+        <ul>
+            <li>Total de lojas: {{ lojas|length }}</li>
+            <li>Usuário: {{ user.username }}</li>
+            <li>É superuser: {{ user.is_superuser }}</li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5>Lista Simples de Lojas:</h5>
+            {% for loja in lojas %}
+                <div class="border p-2 mb-2">
+                    <strong>{{ loja.nome }}</strong><br>
+                    CNPJ: {{ loja.cnpj }}<br>
+                    Status: {{ loja.status }}<br>
+                    
+                    <!-- Testando URLs uma por uma -->
+                    <div class="mt-2">
+                        <a href="{% url 'lojas:detalhar_loja' loja.id %}" class="btn btn-sm btn-primary">Ver</a>
+                        <a href="{% url 'lojas:editar_loja' loja.id %}" class="btn btn-sm btn-warning">Editar</a>
+                        
+                        <!-- Esta é a URL que pode estar causando problema -->
+                        {% if loja.tipo_loja %}
+                            <a href="{% url 'dashboard:loja_especifica' loja.id %}" class="btn btn-sm btn-info">Dashboard</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>Nenhuma loja encontrada.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

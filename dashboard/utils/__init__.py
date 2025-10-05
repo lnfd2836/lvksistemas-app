@@ -1,1 +1,1 @@
-# Utilities package for dashboard app
+# Utilitários do dashboard

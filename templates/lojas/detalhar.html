@@ -270,7 +270,7 @@
                             {% if user.is_superuser %}
                             <!-- Links para Super Usuário -->
                             <div class="col-md-6 mb-2">
-                                <a href="{% url 'loja_login_direct' %}" class="btn btn-primary w-100" target="_blank">
+                                <a href="{% url 'loja_login' %}" class="btn btn-primary w-100" target="_blank">
                                     <i class="fas fa-sign-in-alt me-1"></i>
                                     Login da Loja (Para Administrador)
                                 </a>
@@ -285,7 +285,7 @@
                             {% else %}
                             <!-- Links para Usuário da Loja -->
                             <div class="col-md-4 mb-2">
-                                <a href="{% url 'dashboard_loja' %}" class="btn btn-primary w-100">
+                                <a href="{% url 'dashboard:loja_especifica' loja.id %}" class="btn btn-primary w-100">
                                     <i class="fas fa-tachometer-alt me-1"></i>
                                     Dashboard da Loja
                                 </a>

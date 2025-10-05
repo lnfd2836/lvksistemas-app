@@ -69,16 +69,16 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{% url 'editar_usuario_super_admin' usuario.id %}" 
+                                        <a href="{% url 'dashboard:admin_usuarios_editar' usuario.id %}" 
                                            class="btn btn-sm btn-outline-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="{% url 'alterar_senha_usuario_super_admin' usuario.id %}" 
+                                        <a href="{% url 'dashboard:admin_usuarios_alterar_senha' usuario.id %}" 
                                            class="btn btn-sm btn-outline-warning" title="Alterar Senha">
                                             <i class="bi bi-key"></i>
                                         </a>
                                         {% if usuario != user %}
-                                        <a href="{% url 'excluir_usuario_super_admin' usuario.id %}" 
+                                        <a href="{% url 'dashboard:admin_usuarios_excluir' usuario.id %}" 
                                            class="btn btn-sm btn-outline-danger" title="Excluir">
                                             <i class="bi bi-trash"></i>
                                         </a>

@@ -1,7 +1,6 @@
 """
 Testes para configuração de URLs e roteamento.
 """
-import pytest
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse, resolve
@@ -97,6 +96,44 @@ class TestURLRouting(TestCase):
                 self.assertEqual(url, expected_path)
             except Exception as e:
                 self.fail(f"Erro ao resolver URL {url_name}: {str(e)}")
+    
+    def test_dashboard_loja_especifica_url_pattern(self):
+        """Testa o padrão de URL específico para dashboard de loja com ID."""
+        # Este é o teste específico para o problema que foi corrigido
+        try:
+            # Testar com UUID da loja de teste
+            url = reverse('dashboard:loja_especifica', kwargs={'loja_id': self.test_store.id})
+            expected_path = f'/dashboard/loja/{self.test_store.id}/'
+            self.assertEqual(url, expected_path)
+        except Exception as e:
+            self.fail(f"Erro ao resolver URL dashboard:loja_especifica: {str(e)}")
+    
+    def test_template_url_references_exist(self):
+        """Testa se todas as URLs referenciadas nos templates existem."""
+        # URLs que devem existir para os templates funcionarem
+        template_urls = [
+            'dashboard:loja_especifica',  # A URL que estava causando o problema
+            'listar_lojas',
+            'criar_loja', 
+            'detalhar_loja',
+            'editar_loja',
+            'excluir_loja',
+        ]
+        
+        for url_name in template_urls:
+            try:
+                if url_name == 'dashboard:loja_especifica':
+                    # Precisa de um parâmetro loja_id
+                    url = reverse(url_name, kwargs={'loja_id': self.test_store.id})
+                elif url_name in ['detalhar_loja', 'editar_loja', 'excluir_loja']:
+                    # Precisam de parâmetro loja_id
+                    url = reverse(url_name, kwargs={'loja_id': self.test_store.id})
+                else:
+                    url = reverse(url_name)
+                
+                self.assertIsNotNone(url)
+            except Exception as e:
+                self.fail(f"Erro ao resolver URL do template {url_name}: {str(e)}")
     
     def test_admin_url_patterns(self):
         """Testa padrões de URL administrativas."""

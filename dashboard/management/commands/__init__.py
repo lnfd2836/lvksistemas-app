@@ -1,1 +1,1 @@
-# Management commands
+# Comandos de gerenciamento

@@ -8,7 +8,7 @@
     <div>
         <p class="text-muted">Gerencie todas as lojas do sistema</p>
     </div>
-    <a href="{% url 'criar_loja' %}" class="btn btn-primary">
+    <a href="{% url 'lojas:criar_loja' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nova Loja
     </a>
 </div>
@@ -113,34 +113,36 @@
         <form method="get" class="row g-3">
             <div class="col-md-4">
                 <label for="search" class="form-label">Buscar</label>
-                <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ search }}" placeholder="Nome, CNPJ ou email">
+                <input type="text" class="form-control" id="search" name="search" value="{{ search }}"
+                    placeholder="Nome, CNPJ ou email">
             </div>
             <div class="col-md-2">
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">Todos</option>
-                    <option value="ativa" {% if status_filter == 'ativa' %}selected{% endif %}>Ativa</option>
-                    <option value="inativa" {% if status_filter == 'inativa' %}selected{% endif %}>Inativa</option>
-                    <option value="suspensa" {% if status_filter == 'suspensa' %}selected{% endif %}>Suspensa</option>
+                    <option value="ativa" {% if status_filter=='ativa' %}selected{% endif %}>Ativa</option>
+                    <option value="inativa" {% if status_filter=='inativa' %}selected{% endif %}>Inativa</option>
+                    <option value="suspensa" {% if status_filter=='suspensa' %}selected{% endif %}>Suspensa</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <label for="tipo_loja" class="form-label">Tipo de Loja</label>
                 <select class="form-select" id="tipo_loja" name="tipo_loja">
                     <option value="">Todos</option>
-                    <option value="conveniencia" {% if tipo_filter == 'conveniencia' %}selected{% endif %}>Conveniência</option>
-                    <option value="roupas" {% if tipo_filter == 'roupas' %}selected{% endif %}>Roupas</option>
-                    <option value="tintas" {% if tipo_filter == 'tintas' %}selected{% endif %}>Tintas</option>
-                    <option value="supermercado" {% if tipo_filter == 'supermercado' %}selected{% endif %}>Supermercado</option>
-                    <option value="lanchonete" {% if tipo_filter == 'lanchonete' %}selected{% endif %}>Lanchonete</option>
+                    <option value="conveniencia" {% if tipo_filter=='conveniencia' %}selected{% endif %}>Conveniência
+                    </option>
+                    <option value="roupas" {% if tipo_filter=='roupas' %}selected{% endif %}>Roupas</option>
+                    <option value="tintas" {% if tipo_filter=='tintas' %}selected{% endif %}>Tintas</option>
+                    <option value="supermercado" {% if tipo_filter=='supermercado' %}selected{% endif %}>Supermercado
+                    </option>
+                    <option value="lanchonete" {% if tipo_filter=='lanchonete' %}selected{% endif %}>Lanchonete</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-outline-primary me-2">
                     <i class="bi bi-search"></i> Filtrar
                 </button>
-                <a href="{% url 'listar_lojas' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'lojas:listar_lojas' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Limpar
                 </a>
             </div>
@@ -173,46 +175,49 @@
                         </td>
                         <td>
                             {% if loja.tipo_loja %}
-                                <div class="d-flex align-items-center">
-                                    <i class="{{ loja.tipo_loja.icone }} me-2" style="color: {{ loja.tipo_loja.cor_primaria }};"></i>
-                                    <div>
-                                        <div class="fw-bold" style="color: {{ loja.tipo_loja.cor_primaria }};">
-                                            {{ loja.tipo_loja.get_nome_display }}
-                                        </div>
-                                        <small class="text-muted">{{ loja.tipo_loja.descricao|truncatechars:30 }}</small>
+                            <div class="d-flex align-items-center">
+                                <i class="{{ loja.tipo_loja.icone }} me-2"
+                                    style="color: {{ loja.tipo_loja.cor_primaria }};"></i>
+                                <div>
+                                    <div class="fw-bold" style="color: {{ loja.tipo_loja.cor_primaria }};">
+                                        {{ loja.tipo_loja.get_nome_display }}
                                     </div>
+                                    <small class="text-muted">{{ loja.tipo_loja.descricao|truncatechars:30 }}</small>
                                 </div>
+                            </div>
                             {% else %}
-                                <span class="text-muted">
-                                    <i class="fas fa-question-circle"></i> Não definido
-                                </span>
+                            <span class="text-muted">
+                                <i class="fas fa-question-circle"></i> Não definido
+                            </span>
                             {% endif %}
                         </td>
                         <td>{{ loja.cnpj }}</td>
                         <td>{{ loja.email }}</td>
                         <td>
-                            <span class="badge bg-{% if loja.status == 'ativa' %}success{% elif loja.status == 'inativa' %}secondary{% else %}warning{% endif %}">
+                            <span
+                                class="badge bg-{% if loja.status == 'ativa' %}success{% elif loja.status == 'inativa' %}secondary{% else %}warning{% endif %}">
                                 {{ loja.get_status_display }}
                             </span>
                         </td>
                         <td>{{ loja.data_criacao|date:"d/m/Y" }}</td>
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{% url 'detalhar_loja' loja.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                <a href="{% url 'lojas:detalhar_loja' loja.id %}" class="btn btn-sm btn-outline-primary"
+                                    title="Ver detalhes">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'editar_loja' loja.id %}" class="btn btn-sm btn-outline-warning" title="Editar loja">
+                                <a href="{% url 'lojas:editar_loja' loja.id %}" class="btn btn-sm btn-outline-warning"
+                                    title="Editar loja">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 {% if loja.tipo_loja %}
-                                <a href="{% url 'dashboard_loja_id' loja.id %}" class="btn btn-sm btn-outline-info" title="Dashboard da loja">
+                                <a href="{% url 'dashboard:loja_especifica' loja.id %}"
+                                    class="btn btn-sm btn-outline-info" title="Dashboard da loja">
                                     <i class="bi bi-speedometer2"></i>
                                 </a>
                                 {% endif %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                        title="Excluir loja" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#modalExcluir{{ loja.id }}">
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir loja"
+                                    data-bs-toggle="modal" data-bs-target="#modalExcluir{{ loja.id }}">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -234,7 +239,8 @@
 
 <!-- Modais de confirmação para exclusão -->
 {% for loja in lojas %}
-<div class="modal fade" id="modalExcluir{{ loja.id }}" tabindex="-1" aria-labelledby="modalExcluir{{ loja.id }}Label" aria-hidden="true">
+<div class="modal fade" id="modalExcluir{{ loja.id }}" tabindex="-1" aria-labelledby="modalExcluir{{ loja.id }}Label"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -281,7 +287,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </button>
-                <form method="post" action="{% url 'excluir_loja' loja.id %}" class="d-inline">
+                <form method="post" action="{% url 'lojas:excluir_loja' loja.id %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Sim, Excluir Loja
@@ -293,4 +299,3 @@
 </div>
 {% endfor %}
 {% endblock %}
-
