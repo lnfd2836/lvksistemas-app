@@ -15,11 +15,6 @@ def is_superuser(user):
     return user.is_superuser
 
 
-def teste_planos(request):
-    """Teste simples para verificar se o app planos está funcionando"""
-    return render(request, 'planos/teste.html')
-
-
 @login_required
 @user_passes_test(is_superuser)
 def listar_planos(request):

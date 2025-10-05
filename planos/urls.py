@@ -4,8 +4,6 @@ from . import views
 app_name = 'planos'
 
 urlpatterns = [
-    # Teste
-    path('teste/', views.teste_planos, name='teste_planos'),
     # Planos comerciais
     path('', views.listar_planos, name='listar_planos'),
     path('novo/', views.criar_plano, name='criar_plano'),
