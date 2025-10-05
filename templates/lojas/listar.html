@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Lojas{% endblock %}
+{% block page_title %}Gerenciar Lojas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted">Gerencie todas as lojas do sistema</p>
+    </div>
+    <a href="{% url 'criar_loja' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nova Loja
+    </a>
+</div>
+
+<!-- Estatísticas dos tipos de loja -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-success shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Conveniência</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats_tipos.conveniencia }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-store text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-danger shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Roupas</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats_tipos.roupas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tshirt text-danger" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-warning shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Tintas</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats_tipos.tintas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-paint-brush text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-info shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Supermercado</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats_tipos.supermercado }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-basket text-info" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-warning shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Lanchonete</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats_tipos.lanchonete }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-utensils text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-secondary shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shop text-secondary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Nome, CNPJ ou email">
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="ativa" {% if status_filter == 'ativa' %}selected{% endif %}>Ativa</option>
+                    <option value="inativa" {% if status_filter == 'inativa' %}selected{% endif %}>Inativa</option>
+                    <option value="suspensa" {% if status_filter == 'suspensa' %}selected{% endif %}>Suspensa</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="tipo_loja" class="form-label">Tipo de Loja</label>
+                <select class="form-select" id="tipo_loja" name="tipo_loja">
+                    <option value="">Todos</option>
+                    <option value="conveniencia" {% if tipo_filter == 'conveniencia' %}selected{% endif %}>Conveniência</option>
+                    <option value="roupas" {% if tipo_filter == 'roupas' %}selected{% endif %}>Roupas</option>
+                    <option value="tintas" {% if tipo_filter == 'tintas' %}selected{% endif %}>Tintas</option>
+                    <option value="supermercado" {% if tipo_filter == 'supermercado' %}selected{% endif %}>Supermercado</option>
+                    <option value="lanchonete" {% if tipo_filter == 'lanchonete' %}selected{% endif %}>Lanchonete</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'listar_lojas' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de lojas -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo de Loja</th>
+                        <th>CNPJ</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Data Criação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loja in lojas %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ loja.nome }}</div>
+                            <small class="text-muted">{{ loja.cidade }}/{{ loja.estado }}</small>
+                        </td>
+                        <td>
+                            {% if loja.tipo_loja %}
+                                <div class="d-flex align-items-center">
+                                    <i class="{{ loja.tipo_loja.icone }} me-2" style="color: {{ loja.tipo_loja.cor_primaria }};"></i>
+                                    <div>
+                                        <div class="fw-bold" style="color: {{ loja.tipo_loja.cor_primaria }};">
+                                            {{ loja.tipo_loja.get_nome_display }}
+                                        </div>
+                                        <small class="text-muted">{{ loja.tipo_loja.descricao|truncatechars:30 }}</small>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-question-circle"></i> Não definido
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ loja.cnpj }}</td>
+                        <td>{{ loja.email }}</td>
+                        <td>
+                            <span class="badge bg-{% if loja.status == 'ativa' %}success{% elif loja.status == 'inativa' %}secondary{% else %}warning{% endif %}">
+                                {{ loja.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ loja.data_criacao|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'detalhar_loja' loja.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'editar_loja' loja.id %}" class="btn btn-sm btn-outline-warning" title="Editar loja">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if loja.tipo_loja %}
+                                <a href="{% url 'dashboard_loja_id' loja.id %}" class="btn btn-sm btn-outline-info" title="Dashboard da loja">
+                                    <i class="bi bi-speedometer2"></i>
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        title="Excluir loja" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalExcluir{{ loja.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="bi bi-shop" style="font-size: 3rem; color: #6c757d;"></i>
+                            <p class="mt-2 text-muted">Nenhuma loja encontrada</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modais de confirmação para exclusão -->
+{% for loja in lojas %}
+<div class="modal fade" id="modalExcluir{{ loja.id }}" tabindex="-1" aria-labelledby="modalExcluir{{ loja.id }}Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalExcluir{{ loja.id }}Label">
+                    <i class="bi bi-exclamation-triangle text-warning"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                <p>Tem certeza que deseja excluir a loja:</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ loja.nome }}</h6>
+                        <p class="card-text">
+                            <strong>CNPJ:</strong> {{ loja.cnpj }}<br>
+                            <strong>Email:</strong> {{ loja.email }}<br>
+                            <strong>Cidade:</strong> {{ loja.cidade }}/{{ loja.estado }}<br>
+                            {% if loja.tipo_loja %}
+                            <strong>Tipo:</strong> {{ loja.tipo_loja.get_nome_display }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="text-danger">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Dados que serão excluídos:</strong>
+                    </p>
+                    <ul class="text-danger">
+                        <li>Informações da loja</li>
+                        <li>Usuário administrador da loja</li>
+                        <li>Todos os clientes da loja</li>
+                        <li>Todos os produtos da loja</li>
+                        <li>Todas as vendas da loja</li>
+                        <li>Histórico de acessos</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="post" action="{% url 'excluir_loja' loja.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Excluir Loja
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+

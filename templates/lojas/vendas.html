@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Vendas{% endblock %}
+{% block page_title %}Vendas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Gerencie as vendas da sua loja</p>
+            </div>
+            <a href="{% url 'nova_venda' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nova Venda
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search }}" placeholder="Número da venda ou cliente">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="pendente" {% if status_filter == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="processando" {% if status_filter == 'processando' %}selected{% endif %}>Processando</option>
+                            <option value="concluida" {% if status_filter == 'concluida' %}selected{% endif %}>Concluída</option>
+                            <option value="cancelada" {% if status_filter == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-outline-primary d-block w-100">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <a href="{% url 'gerenciar_vendas' %}" class="btn btn-outline-secondary d-block w-100">
+                            <i class="fas fa-times"></i> Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Vendas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-shopping-cart"></i> Vendas ({{ vendas.count }})
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if vendas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Valor Total</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ venda.numero_venda }}</strong>
+                                    </td>
+                                    <td>{{ venda.cliente.nome }}</td>
+                                    <td>R$ {{ venda.valor_final|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if venda.status == 'concluida' %}success{% elif venda.status == 'cancelada' %}danger{% elif venda.status == 'processando' %}warning{% else %}secondary{% endif %}">
+                                            {{ venda.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ venda.data_venda|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'detalhar_venda' venda.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma venda encontrada</h5>
+                        <p class="text-muted">Comece criando sua primeira venda</p>
+                        <a href="{% url 'nova_venda' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nova Venda
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

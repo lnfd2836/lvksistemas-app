@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Venda{% endblock %}
+{% block page_title %}Nova Venda{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Crie uma nova venda para sua loja</p>
+            </div>
+            <a href="{% url 'gerenciar_vendas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-plus"></i> Nova Venda
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" id="vendaForm">
+                    {% csrf_token %}
+                    
+                    <!-- Seleção do Cliente -->
+                    <div class="mb-4">
+                        <label for="cliente" class="form-label">
+                            <i class="fas fa-user"></i> Cliente *
+                        </label>
+                        <select class="form-select" id="cliente" name="cliente" required>
+                            <option value="">Selecione um cliente</option>
+                            {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.email }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Produtos -->
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-box"></i> Produtos *
+                        </label>
+                        <div id="produtos-container">
+                            <div class="row produto-item mb-2">
+                                <div class="col-md-6">
+                                    <select class="form-select produto-select" name="produtos" required>
+                                        <option value="">Selecione um produto</option>
+                                        {% for produto in produtos %}
+                                            <option value="{{ produto.id }}" data-preco="{{ produto.preco }}">
+                                                {{ produto.nome }} - R$ {{ produto.preco|floatformat:2 }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control quantidade" name="quantidades" 
+                                           placeholder="Qtd" min="1" value="1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control subtotal" readonly placeholder="Subtotal">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remover-produto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="adicionar-produto">
+                            <i class="fas fa-plus"></i> Adicionar Produto
+                        </button>
+                    </div>
+
+                    <!-- Resumo da Venda -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Resumo da Venda</h6>
+                                    <p class="mb-1">Total de Itens: <span id="total-itens">0</span></p>
+                                    <p class="mb-0">Valor Total: <strong id="valor-total">R$ 0,00</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Criar Venda
+                        </button>
+                        <a href="{% url 'gerenciar_vendas' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('produtos-container');
+    const adicionarBtn = document.getElementById('adicionar-produto');
+    
+    // Adicionar produto
+    adicionarBtn.addEventListener('click', function() {
+        const novoItem = container.querySelector('.produto-item').cloneNode(true);
+        novoItem.querySelector('.produto-select').value = '';
+        novoItem.querySelector('.quantidade').value = '1';
+        novoItem.querySelector('.subtotal').value = '';
+        container.appendChild(novoItem);
+        atualizarResumo();
+    });
+    
+    // Remover produto
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remover-produto')) {
+            if (container.children.length > 1) {
+                e.target.closest('.produto-item').remove();
+                atualizarResumo();
+            }
+        }
+    });
+    
+    // Calcular subtotal
+    container.addEventListener('input', function(e) {
+        if (e.target.classList.contains('produto-select') || e.target.classList.contains('quantidade')) {
+            const item = e.target.closest('.produto-item');
+            const select = item.querySelector('.produto-select');
+            const quantidade = item.querySelector('.quantidade');
+            const subtotal = item.querySelector('.subtotal');
+            
+            if (select.value && quantidade.value) {
+                const preco = parseFloat(select.options[select.selectedIndex].dataset.preco);
+                const qtd = parseInt(quantidade.value);
+                const total = preco * qtd;
+                subtotal.value = 'R$ ' + total.toFixed(2);
+            } else {
+                subtotal.value = '';
+            }
+            
+            atualizarResumo();
+        }
+    });
+    
+    function atualizarResumo() {
+        let totalItens = 0;
+        let valorTotal = 0;
+        
+        container.querySelectorAll('.produto-item').forEach(function(item) {
+            const quantidade = item.querySelector('.quantidade');
+            const subtotal = item.querySelector('.subtotal');
+            
+            if (quantidade.value && subtotal.value) {
+                totalItens += parseInt(quantidade.value);
+                valorTotal += parseFloat(subtotal.value.replace('R$ ', '').replace(',', '.'));
+            }
+        });
+        
+        document.getElementById('total-itens').textContent = totalItens;
+        document.getElementById('valor-total').textContent = 'R$ ' + valorTotal.toFixed(2);
+    }
+});
+</script>
+{% endblock %}

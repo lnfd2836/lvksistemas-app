@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Controles Financeiros{% endblock %}
+{% block page_title %}Controles Financeiros{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Gerencie todos os controles financeiros das lojas</p>
+            </div>
+            <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="ativa" {% if status_filter == 'ativa' %}selected{% endif %}>Ativa</option>
+                            <option value="vencida" {% if status_filter == 'vencida' %}selected{% endif %}>Vencida</option>
+                            <option value="bloqueada" {% if status_filter == 'bloqueada' %}selected{% endif %}>Bloqueada</option>
+                            <option value="suspensa" {% if status_filter == 'suspensa' %}selected{% endif %}>Suspensa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="plano" class="form-label">Plano</label>
+                        <select class="form-select" id="plano" name="plano">
+                            <option value="">Todos</option>
+                            {% for plano in planos %}
+                            <option value="{{ plano.id }}" {% if plano_filter == plano.id|stringformat:"s" %}selected{% endif %}>
+                                {{ plano.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Nome da loja ou CNPJ..." value="{{ search }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Controles -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i> Controles Financeiros
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if controles %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Loja</th>
+                                    <th>Plano</th>
+                                    <th>Status</th>
+                                    <th>Valor Mensal</th>
+                                    <th>Vencimento</th>
+                                    <th>Valor Pago</th>
+                                    <th>Valor Pendente</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for controle in controles %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ controle.loja.nome }}</div>
+                                        <small class="text-muted">{{ controle.loja.cnpj }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ controle.plano.nome }}</div>
+                                        <small class="text-muted">R$ {{ controle.plano.valor_mensal|floatformat:2 }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %}">
+                                            {{ controle.get_status_display }}
+                                        </span>
+                                        {% if controle.bloqueada %}
+                                        <br><small class="text-danger">Bloqueada</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>R$ {{ controle.valor_mensal|floatformat:2 }}</td>
+                                    <td>
+                                        {{ controle.data_vencimento|date:"d/m/Y" }}
+                                        {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
+                                        <br><small class="text-warning">{{ controle.dias_para_vencimento }} dias</small>
+                                        {% elif controle.dias_para_vencimento <= 0 %}
+                                        <br><small class="text-danger">{{ controle.dias_atraso }} dias atraso</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold">R$ {{ controle.valor_pago|floatformat:2 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-danger fw-bold">R$ {{ controle.valor_pendente|floatformat:2 }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" 
+                                               class="btn btn-outline-primary" title="Ver detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if controle.status == 'ativa' %}
+                                            <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" 
+                                               class="btn btn-outline-success" title="Gerar boleto">
+                                                <i class="fas fa-barcode"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if controle.bloqueada %}
+                                            <a href="{% url 'controle_financeiro:desbloquear_loja' controle.id %}" 
+                                               class="btn btn-outline-success" title="Desbloquear"
+                                               onclick="return confirm('Desbloquear esta loja?')">
+                                                <i class="fas fa-unlock"></i>
+                                            </a>
+                                            {% else %}
+                                            <a href="{% url 'controle_financeiro:bloquear_loja' controle.id %}" 
+                                               class="btn btn-outline-danger" title="Bloquear"
+                                               onclick="return confirm('Bloquear esta loja?')">
+                                                <i class="fas fa-ban"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum controle financeiro encontrado</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

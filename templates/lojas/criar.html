@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Nova Loja{% endblock %}
+{% block page_title %}Criar Nova Loja{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shop"></i> Cadastrar Nova Loja
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger">{{ form.nome.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cnpj.id_for_label }}" class="form-label">{{ form.cnpj.label }}</label>
+                            {{ form.cnpj }}
+                            {% if form.cnpj.errors %}
+                                <div class="text-danger">{{ form.cnpj.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.telefone.id_for_label }}" class="form-label">{{ form.telefone.label }}</label>
+                            {{ form.telefone }}
+                            {% if form.telefone.errors %}
+                                <div class="text-danger">{{ form.telefone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.endereco.id_for_label }}" class="form-label">{{ form.endereco.label }}</label>
+                        {{ form.endereco }}
+                        {% if form.endereco.errors %}
+                            <div class="text-danger">{{ form.endereco.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.cidade.id_for_label }}" class="form-label">{{ form.cidade.label }}</label>
+                            {{ form.cidade }}
+                            {% if form.cidade.errors %}
+                                <div class="text-danger">{{ form.cidade.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">{{ form.estado.label }}</label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                                <div class="text-danger">{{ form.estado.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.cep.id_for_label }}" class="form-label">{{ form.cep.label }}</label>
+                            {{ form.cep }}
+                            {% if form.cep.errors %}
+                                <div class="text-danger">{{ form.cep.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo_loja.id_for_label }}" class="form-label">
+                                <i class="fas fa-cogs"></i> {{ form.tipo_loja.label }}
+                            </label>
+                            {{ form.tipo_loja }}
+                            {% if form.tipo_loja.errors %}
+                                <div class="text-danger">{{ form.tipo_loja.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Selecione o tipo de atividade da loja para personalizar os módulos e campos.
+                            </small>
+                            
+                            <!-- Informações sobre tipos de loja -->
+                            <div class="mt-3">
+                                <h6 class="text-primary">Tipos de Loja Disponíveis:</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card border-left-success">
+                                            <div class="card-body p-2">
+                                                <h6 class="text-success mb-1">🏪 Conveniência</h6>
+                                                <small class="text-muted">Produtos diversos, categorias, marcas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card border-left-danger">
+                                            <div class="card-body p-2">
+                                                <h6 class="text-danger mb-1">👕 Roupas</h6>
+                                                <small class="text-muted">Tamanhos, cores, marcas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card border-left-warning">
+                                            <div class="card-body p-2">
+                                                <h6 class="text-warning mb-1">🎨 Tintas</h6>
+                                                <small class="text-muted">Volume, tipo, aplicação</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card border-left-info">
+                                            <div class="card-body p-2">
+                                                <h6 class="text-info mb-1">🛒 Supermercado</h6>
+                                                <small class="text-muted">Peso, validade, categorias</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card border-left-warning">
+                                            <div class="card-body p-2">
+                                                <h6 class="text-warning mb-1">🍔 Lanchonete</h6>
+                                                <small class="text-muted">Cardápio, mesas, pedidos</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Importante:</strong> Após criar a loja, será gerada uma senha provisória que será enviada por email para o administrador da loja.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'listar_lojas' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Criar Loja
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Máscara para CNPJ
+    document.getElementById('{{ form.cnpj.id_for_label }}').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        value = value.replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3/$4');
+        value = value.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, '$1.$2.$3/$4-$5');
+        e.target.value = value;
+    });
+    
+    // Máscara para telefone
+    document.getElementById('{{ form.telefone.id_for_label }}').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 10) {
+            value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        } else {
+            value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    });
+    
+    // Máscara para CEP
+    document.getElementById('{{ form.cep.id_for_label }}').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+        e.target.value = value;
+    });
+</script>
+{% endblock %}

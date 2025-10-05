@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuários Super Administradores{% endblock %}
+{% block page_title %}Usuários Super Administradores{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-people-fill me-2"></i>
+                Gerenciar Usuários Super Administradores
+            </h4>
+            <a href="{% url 'criar_usuario_super_admin' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Novo Usuário
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-list me-2"></i>
+                    Lista de Usuários Super Administradores
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if usuarios %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nome de Usuário</th>
+                                <th>Nome Completo</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Data de Criação</th>
+                                <th>Último Login</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>
+                                    <strong>{{ usuario.username }}</strong>
+                                    {% if usuario == user %}
+                                        <span class="badge bg-info ms-1">Você</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usuario.first_name }} {{ usuario.last_name }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    <span class="badge bg-{% if usuario.is_active %}success{% else %}danger{% endif %}">
+                                        {% if usuario.is_active %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if usuario.last_login %}
+                                        {{ usuario.last_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'editar_usuario_super_admin' usuario.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'alterar_senha_usuario_super_admin' usuario.id %}" 
+                                           class="btn btn-sm btn-outline-warning" title="Alterar Senha">
+                                            <i class="bi bi-key"></i>
+                                        </a>
+                                        {% if usuario != user %}
+                                        <a href="{% url 'excluir_usuario_super_admin' usuario.id %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Excluir">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">Nenhum usuário super administrador encontrado</h5>
+                    <p class="text-muted">Clique em "Novo Usuário" para criar o primeiro usuário super administrador.</p>
+                    <a href="{% url 'criar_usuario_super_admin' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Criar Primeiro Usuário
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Informações Importantes
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Usuários Super Administradores</strong> têm acesso completo ao sistema</li>
+                    <li>Podem <strong>gerenciar lojas</strong>, <strong>planos comerciais</strong> e <strong>outros usuários</strong></li>
+                    <li>Tenha cuidado ao <strong>excluir usuários</strong> - esta ação não pode ser desfeita</li>
+                    <li>Recomenda-se manter pelo menos <strong>2 usuários super administradores</strong> ativos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

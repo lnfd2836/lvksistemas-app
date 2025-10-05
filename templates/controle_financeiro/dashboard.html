@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+
+{% block title %}Controle Financeiro{% endblock %}
+{% block page_title %}Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- Estatísticas Gerais -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Lojas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_lojas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-store fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Lojas Ativas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas_ativas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Lojas Vencidas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas_vencidas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Lojas Bloqueadas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas_bloqueadas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-ban fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Receita -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Receita Mensal
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_mensal|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Receita Pendente
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_pendente|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Lojas Vencendo -->
+    <div class="col-xl-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-exclamation-triangle"></i> Lojas Próximas do Vencimento
+                </h6>
+                <a href="{% url 'controle_financeiro:verificar_vencimentos' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-sync"></i> Verificar
+                </a>
+            </div>
+            <div class="card-body">
+                {% if lojas_vencendo %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Loja</th>
+                                    <th>Vencimento</th>
+                                    <th>Dias</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for controle in lojas_vencendo %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ controle.loja.nome }}</div>
+                                        <small class="text-muted">{{ controle.loja.cnpj }}</small>
+                                    </td>
+                                    <td>{{ controle.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if controle.dias_para_vencimento <= 0 %}danger{% elif controle.dias_para_vencimento <= 3 %}warning{% else %}info{% endif %}">
+                                            {{ controle.dias_para_vencimento }} dias
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="text-muted">Nenhuma loja próxima do vencimento</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Boletos Gerados -->
+    <div class="col-xl-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-barcode"></i> Boletos Gerados
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if boletos_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Loja</th>
+                                    <th>Boleto</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for boleto in boletos_recentes %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ boleto.controle_financeiro.loja.nome }}</div>
+                                        <small class="text-muted">{{ boleto.controle_financeiro.loja.cnpj }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ boleto.numero_boleto }}</div>
+                                        <small class="text-muted">{{ boleto.linha_digitavel|truncatechars:20 }}</small>
+                                    </td>
+                                    <td>R$ {{ boleto.valor|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
+                                            {{ boleto.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if boleto.status == 'pendente' %}
+                                        <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
+                                           class="btn btn-success btn-sm" 
+                                           onclick="return confirm('Marcar boleto como pago?')">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">
+                                            <i class="fas fa-{% if boleto.status == 'pago' %}check{% else %}times{% endif %}"></i>
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum boleto gerado</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Controles Recentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i> Controles Financeiros Recentes
+                </h6>
+                <a href="{% url 'controle_financeiro:listar_controles' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list"></i> Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if controles_recentes %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Loja</th>
+                                    <th>Plano</th>
+                                    <th>Status</th>
+                                    <th>Vencimento</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for controle in controles_recentes %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ controle.loja.nome }}</div>
+                                        <small class="text-muted">{{ controle.loja.cnpj }}</small>
+                                    </td>
+                                    <td>{{ controle.plano.nome }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %}">
+                                            {{ controle.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ controle.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>R$ {{ controle.valor_mensal|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum controle financeiro encontrado</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

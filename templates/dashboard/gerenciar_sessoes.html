@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Sessões Ativas{% endblock %}
+{% block page_title %}Gerenciar Sessões Ativas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-0">Gerencie as sessões ativas dos usuários do sistema</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'dashboard_super_admin' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="GET" class="form-inline">
+                                <div class="form-group mr-3">
+                                    <label for="usuario" class="mr-2">Usuário:</label>
+                                    <input type="text" name="usuario" id="usuario" class="form-control" 
+                                           value="{{ filtro_usuario }}" placeholder="Nome do usuário">
+                                </div>
+                                <div class="form-group mr-3">
+                                    <label for="super_admin" class="mr-2">Tipo:</label>
+                                    <select name="super_admin" id="super_admin" class="form-control">
+                                        <option value="">Todos</option>
+                                        <option value="sim" {% if filtro_super_admin == 'sim' %}selected{% endif %}>Super Admin</option>
+                                        <option value="nao" {% if filtro_super_admin == 'nao' %}selected{% endif %}>Usuário Normal</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <a href="{% url 'gerenciar_sessoes' %}" class="btn btn-secondary ml-2">
+                                    <i class="fas fa-times"></i> Limpar
+                                </a>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-users"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total de Sessões</span>
+                                    <span class="info-box-number">{{ total_sessoes }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-crown"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Super Admins</span>
+                                    <span class="info-box-number">{{ sessoes_super_admin }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Usuários Normais</span>
+                                    <span class="info-box-number">{{ sessoes_usuarios }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Última Atualização</span>
+                                    <span class="info-box-number">Agora</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Sessões -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Tipo</th>
+                                    <th>IP</th>
+                                    <th>Login</th>
+                                    <th>Última Atividade</th>
+                                    <th>User Agent</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sessao in sessoes_ativas %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ sessao.user.username }}</strong>
+                                        {% if sessao.user.first_name or sessao.user.last_name %}
+                                        <br><small class="text-muted">
+                                            {{ sessao.user.first_name }} {{ sessao.user.last_name }}
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sessao.is_super_admin %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-crown"></i> Super Admin
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-user"></i> Usuário
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <code>{{ sessao.ip_address }}</code>
+                                    </td>
+                                    <td>
+                                        {{ sessao.data_login|date:"d/m/Y H:i:s" }}
+                                        <br><small class="text-muted">
+                                            {{ sessao.data_login|timesince }} atrás
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {{ sessao.ultima_atividade|date:"d/m/Y H:i:s" }}
+                                        <br><small class="text-muted">
+                                            {{ sessao.ultima_atividade|timesince }} atrás
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ sessao.user_agent|truncatechars:50 }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger invalidar-sessao" 
+                                                data-sessao-id="{{ sessao.id }}"
+                                                data-usuario="{{ sessao.user.username }}">
+                                            <i class="fas fa-ban"></i> Invalidar
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <i class="fas fa-info-circle"></i> Nenhuma sessão ativa encontrada
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="modalConfirmar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Invalidação</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja invalidar a sessão do usuário <strong id="usuario-sessao"></strong>?</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    O usuário será deslogado imediatamente.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmar-invalidacao">
+                    <i class="fas fa-ban"></i> Invalidar Sessão
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let sessaoId = null;
+    
+    // Abrir modal de confirmação
+    $('.invalidar-sessao').click(function() {
+        sessaoId = $(this).data('sessao-id');
+        const usuario = $(this).data('usuario');
+        $('#usuario-sessao').text(usuario);
+        $('#modalConfirmar').modal('show');
+    });
+    
+    // Confirmar invalidação
+    $('#confirmar-invalidacao').click(function() {
+        if (sessaoId) {
+            $.ajax({
+                url: '/sessoes/' + sessaoId + '/invalidar/',
+                method: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + response.error);
+                    }
+                },
+                error: function(xhr) {
+                    const response = JSON.parse(xhr.responseText);
+                    alert('Erro: ' + response.error);
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Módulos de Loja{% endblock %}
+{% block page_title %}Gerenciar Módulos de Loja{% endblock %}
+
+{% block content %}
+<!-- Tipos de Loja -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-store"></i> Tipos de Loja
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for tipo in tipos_loja %}
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-{{ tipo.cor_primaria|slice:'1:' }} shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            {{ tipo.get_nome_display }}
+                                        </div>
+                                        <div class="text-muted small">{{ tipo.descricao }}</div>
+                                        <div class="mt-2">
+                                            <span class="badge bg-primary">{{ tipo.modulos.count }} módulos</span>
+                                            <span class="badge bg-secondary">{{ tipo.campos_personalizados.count }} campos</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="{{ tipo.icone }} text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="/admin/modulos/tipoloja/{{ tipo.id }}/change/" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="text-muted">Nenhum tipo de loja encontrado.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos por Tipo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Módulos por Tipo de Loja
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for tipo in tipos_loja %}
+                <div class="mb-4">
+                    <h6 class="text-primary">
+                        <i class="{{ tipo.icone }}"></i> {{ tipo.get_nome_display }}
+                    </h6>
+                    <div class="row">
+                        {% for modulo in modulos %}
+                        {% if modulo.tipo_loja == tipo %}
+                        <div class="col-xl-4 col-md-6 mb-3">
+                            <div class="card border-left-info shadow">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                                {{ modulo.nome }}
+                                            </div>
+                                            <div class="text-muted small">{{ modulo.descricao }}</div>
+                                            <div class="mt-1">
+                                                <span class="badge bg-info">Ordem: {{ modulo.ordem }}</span>
+                                                {% if modulo.ativo %}
+                                                <span class="badge bg-success">Ativo</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Inativo</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="{{ modulo.icone }} text-info" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">URL: {{ modulo.url }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Campos Personalizados -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i> Campos Personalizados
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for tipo in tipos_loja %}
+                {% if tipo.campos_personalizados.exists %}
+                <div class="mb-4">
+                    <h6 class="text-primary">
+                        <i class="{{ tipo.icone }}"></i> {{ tipo.get_nome_display }}
+                    </h6>
+                    <div class="row">
+                        {% for campo in campos %}
+                        {% if campo.tipo_loja == tipo %}
+                        <div class="col-xl-4 col-md-6 mb-3">
+                            <div class="card border-left-warning shadow">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                                {{ campo.nome }}
+                                            </div>
+                                            <div class="text-muted small">
+                                                <strong>Tipo:</strong> {{ campo.get_tipo_campo_display }}<br>
+                                                <strong>Slug:</strong> {{ campo.slug }}<br>
+                                                <strong>Ordem:</strong> {{ campo.ordem }}
+                                            </div>
+                                            <div class="mt-1">
+                                                {% if campo.obrigatorio %}
+                                                <span class="badge bg-danger">Obrigatório</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Opcional</span>
+                                                {% endif %}
+                                                {% if campo.ativo %}
+                                                <span class="badge bg-success">Ativo</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Inativo</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-list text-warning" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                    {% if campo.opcoes %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <strong>Opções:</strong><br>
+                                            {{ campo.opcoes|truncatechars:50 }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ações Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/modulos/tipoloja/add/" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus me-1"></i>
+                            Novo Tipo de Loja
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/modulos/moduloloja/add/" class="btn btn-success btn-block">
+                            <i class="fas fa-cog me-1"></i>
+                            Novo Módulo
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/modulos/campopersonalizado/add/" class="btn btn-info btn-block">
+                            <i class="fas fa-list me-1"></i>
+                            Novo Campo
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/" class="btn btn-secondary btn-block">
+                            <i class="fas fa-cogs me-1"></i>
+                            Admin Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

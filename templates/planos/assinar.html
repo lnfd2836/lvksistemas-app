@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assinar Plano - {{ plano.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-crown me-2"></i>
+                        Assinar Plano: {{ plano.nome }}
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Informações da Loja -->
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-store me-2"></i>
+                                Informações da Loja
+                            </h5>
+                            
+                            <div class="card">
+                                <div class="card-body">
+                                    <p><strong>Nome:</strong> {{ loja.nome }}</p>
+                                    <p><strong>CNPJ:</strong> {{ loja.cnpj }}</p>
+                                    <p><strong>Email:</strong> {{ loja.email }}</p>
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-{% if loja.status == 'ativa' %}success{% else %}secondary{% endif %}">
+                                            {{ loja.get_status_display }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações do Plano -->
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-crown me-2"></i>
+                                Plano Selecionado
+                            </h5>
+                            
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">{{ plano.nome }}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <h2 class="text-success">R$ {{ plano.preco_mensal|floatformat:2 }}</h2>
+                                        <small class="text-muted">por mês</small>
+                                    </div>
+                                    
+                                    <h6>Limites do Plano:</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i class="fas fa-users me-1"></i> {{ plano.max_usuarios_simultaneos }} usuário{{ plano.max_usuarios_simultaneos|pluralize }} simultâneo{{ plano.max_usuarios_simultaneos|pluralize }}</li>
+                                        <li><i class="fas fa-cash-register me-1"></i> {{ plano.max_pdvs }} PDV{{ plano.max_pdvs|pluralize }}</li>
+                                        <li><i class="fas fa-box me-1"></i> {{ plano.max_produtos }} produto{{ plano.max_produtos|pluralize }}</li>
+                                        <li><i class="fas fa-users me-1"></i> {{ plano.max_clientes }} cliente{{ plano.max_clientes|pluralize }}</li>
+                                        <li><i class="fas fa-shopping-cart me-1"></i> {{ plano.max_vendas_mes }} venda{{ plano.max_vendas_mes|pluralize }}/mês</li>
+                                    </ul>
+                                    
+                                    {% if plano.get_recursos_incluidos %}
+                                    <h6>Recursos Incluídos:</h6>
+                                    <ul class="list-unstyled small">
+                                        {% for recurso in plano.get_recursos_incluidos %}
+                                        <li><i class="fas fa-check text-success me-1"></i> {{ recurso }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulário de Assinatura -->
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-info mb-3">
+                                    <i class="fas fa-credit-card me-2"></i>
+                                    Configurações da Assinatura
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Pagamento *</label>
+                                    <select name="tipo_pagamento" class="form-control" required>
+                                        {% for value, label in tipos_pagamento %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Informações Importantes
+                                    </h6>
+                                    <ul class="mb-0 small">
+                                        <li>A assinatura será ativada imediatamente</li>
+                                        <li>O vencimento será calculado automaticamente</li>
+                                        <li>Você receberá notificações antes do vencimento</li>
+                                        <li>É possível alterar o plano a qualquer momento</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="text-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Confirmação
+                                </h5>
+                                
+                                <div class="card border-warning">
+                                    <div class="card-body">
+                                        <h6>Resumo da Assinatura:</h6>
+                                        <p><strong>Loja:</strong> {{ loja.nome }}</p>
+                                        <p><strong>Plano:</strong> {{ plano.nome }}</p>
+                                        <p><strong>Valor Mensal:</strong> R$ {{ plano.preco_mensal|floatformat:2 }}</p>
+                                        {% if plano.preco_anual > 0 %}
+                                        <p><strong>Valor Anual:</strong> R$ {{ plano.preco_anual|floatformat:2 }} 
+                                           <span class="badge bg-success">{{ plano.calcular_desconto_anual }}% desconto</span>
+                                        </p>
+                                        {% endif %}
+                                        
+                                        <div class="form-check mt-3">
+                                            <input type="checkbox" class="form-check-input" id="confirmar" required>
+                                            <label class="form-check-label" for="confirmar">
+                                                Confirmo que desejo assinar este plano para a loja <strong>{{ loja.nome }}</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'planos:listar_planos' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>
+                                        Voltar aos Planos
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check me-1"></i>
+                                        Confirmar Assinatura
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

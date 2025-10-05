@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ loja.nome }}{% endblock %}
+{% block page_title %}Dashboard - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+<!-- Módulos específicos do tipo de loja -->
+{% if modulos_loja %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Módulos - {{ loja.tipo_loja.get_nome_display }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for modulo in modulos_loja %}
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            {{ modulo.nome }}
+                                        </div>
+                                        <div class="text-muted small">{{ modulo.descricao }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="{{ modulo.icone }} text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ modulo.url }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Acessar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Seção de Boletos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-barcode"></i> Boletos de Pagamento
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Boletos Disponíveis
+                                        </div>
+                                        <div class="text-muted small">Visualize e pague seus boletos</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-barcode text-success" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'controle_financeiro:boletos_cliente' %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-eye"></i> Ver Boletos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Outros Pagamentos
+                                        </div>
+                                        <div class="text-muted small">PIX, transferência e outros métodos</div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fas fa-info-circle"></i> Registre pagamentos alternativos
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-credit-card text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'controle_financeiro:pagamento_cliente' %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-credit-card"></i> Registrar Pagamento
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas principais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total de Clientes</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_clientes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total de Produtos</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_produtos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-box" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Vendas Hoje</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ vendas_hoje }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-cart" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Receita Hoje</div>
+                        <div class="h5 mb-0 font-weight-bold">R$ {{ receita_hoje|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas secundárias -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Vendas da Semana</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vendas_semana }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-week text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Receita da Semana</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_semana|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Vendas do Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vendas_mes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-month text-info" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Estoque Baixo</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ produtos_estoque_baixo }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Vendas recentes -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Vendas Recentes</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venda in vendas_recentes %}
+                            <tr>
+                                <td>{{ venda.numero_venda }}</td>
+                                <td>{{ venda.cliente.nome }}</td>
+                                <td>R$ {{ venda.valor_final|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge bg-{% if venda.status == 'concluida' %}success{% elif venda.status == 'pendente' %}warning{% elif venda.status == 'processando' %}info{% else %}danger{% endif %}">
+                                        {{ venda.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ venda.data_venda|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">Nenhuma venda encontrada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notificações -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Notificações</h6>
+            </div>
+            <div class="card-body">
+                {% for notificacao in notificacoes %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-{% if notificacao.tipo == 'success' %}check-circle text-success{% elif notificacao.tipo == 'warning' %}exclamation-triangle text-warning{% elif notificacao.tipo == 'error' %}x-circle text-danger{% else %}info-circle text-info{% endif %}"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">{{ notificacao.titulo }}</div>
+                        <div class="text-muted small">{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">Nenhuma notificação</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Clientes recentes -->
+    <div class="col-xl-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Clientes Recentes</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Data Cadastro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente in clientes_recentes %}
+                            <tr>
+                                <td>{{ cliente.nome }}</td>
+                                <td>{{ cliente.email }}</td>
+                                <td>{{ cliente.data_cadastro|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">Nenhum cliente encontrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Produtos mais vendidos -->
+    <div class="col-xl-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Produtos Mais Vendidos</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Total Vendido</th>
+                                <th>Estoque</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produto in produtos_mais_vendidos %}
+                            <tr>
+                                <td>{{ produto.nome }}</td>
+                                <td>{{ produto.total_vendido|default:0 }}</td>
+                                <td>{{ produto.estoque }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">Nenhum produto encontrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

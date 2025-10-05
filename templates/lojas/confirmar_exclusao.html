@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ loja.nome }}{% endblock %}
+{% block page_title %}Confirmar Exclusão{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão da Loja
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                
+                <h6>Tem certeza que deseja excluir a loja:</h6>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ loja.nome }}</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>CNPJ:</strong> {{ loja.cnpj }}</p>
+                                <p><strong>Email:</strong> {{ loja.email }}</p>
+                                <p><strong>Telefone:</strong> {{ loja.telefone }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Cidade:</strong> {{ loja.cidade }}/{{ loja.estado }}</p>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge bg-{% if loja.status == 'ativa' %}success{% elif loja.status == 'inativa' %}secondary{% else %}warning{% endif %}">
+                                        {{ loja.get_status_display }}
+                                    </span>
+                                </p>
+                                {% if loja.tipo_loja %}
+                                <p><strong>Tipo:</strong> {{ loja.tipo_loja.get_nome_display }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-info-circle"></i> Dados que serão excluídos:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Informações da loja</strong> - Todos os dados cadastrais</li>
+                        <li><strong>Usuário administrador</strong> - {{ loja.admin_user.username }}</li>
+                        <li><strong>Clientes</strong> - {{ loja.cliente_set.count }} cliente(s) cadastrado(s)</li>
+                        <li><strong>Produtos</strong> - {{ loja.produto_set.count }} produto(s) cadastrado(s)</li>
+                        <li><strong>Vendas</strong> - {{ loja.venda_set.count }} venda(s) registrada(s)</li>
+                        <li><strong>Histórico de acessos</strong> - Todos os logs de acesso</li>
+                        <li><strong>Backups</strong> - {{ loja.backuploja_set.count }} backup(s) criado(s)</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-lightbulb"></i> Recomendação:</h6>
+                    <p class="mb-0">
+                        Antes de excluir, considere fazer um backup da loja para preservar os dados importantes.
+                        <a href="{% url 'backup_loja' loja.id %}" class="btn btn-sm btn-outline-info ms-2">
+                            <i class="bi bi-download"></i> Fazer Backup
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="bi bi-trash"></i> Sim, Excluir Loja
+                    </button>
+                </form>
+                <a href="{% url 'listar_lojas' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

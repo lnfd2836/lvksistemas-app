@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Super Admin{% endblock %}
+{% block page_title %}Dashboard - Super Administrador{% endblock %}
+
+{% block content %}
+<!-- Header com boas-vindas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1">Bem-vindo, {{ user.first_name|default:user.username }}!</h4>
+                <p class="text-muted mb-0">Painel de controle do sistema de lojas</p>
+            </div>
+            <div class="text-end">
+                <small class="text-muted">{{ "now"|date:"d/m/Y H:i" }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas principais -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Lojas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_lojas }}</div>
+                        <div class="text-xs text-muted">Lojas cadastradas no sistema</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-shop text-primary" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Lojas Ativas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas_ativas }}</div>
+                        <div class="text-xs text-muted">Lojas operacionais</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Lojas Inativas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lojas_inativas }}</div>
+                        <div class="text-xs text-muted">Lojas suspensas</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-pause-circle text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-lightning-charge me-2"></i>
+                    Ações Rápidas
+                </h6>
+                <small class="text-muted">Acesso rápido às principais funcionalidades</small>
+            </div>
+            <div class="card-body">
+                <!-- Gestão de Lojas -->
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3">
+                        <i class="bi bi-shop me-2"></i>
+                        Gestão de Lojas
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'criar_loja' %}" class="btn btn-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-plus-circle mb-2" style="font-size: 2rem;"></i>
+                                <span>Nova Loja</span>
+                                <small class="text-white-50">Cadastrar nova loja</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'listar_lojas' %}" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-list-ul mb-2" style="font-size: 2rem;"></i>
+                                <span>Gerenciar Lojas</span>
+                                <small class="text-muted">Listar e editar lojas</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'gerenciar_modulos' %}" class="btn btn-outline-secondary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-gear mb-2" style="font-size: 2rem;"></i>
+                                <span>Módulos de Loja</span>
+                                <small class="text-muted">Configurar módulos</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'gerenciar_sessoes' %}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-people mb-2" style="font-size: 2rem;"></i>
+                                <span>Gerenciar Sessões</span>
+                                <small class="text-muted">Controle de acesso</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controle Financeiro -->
+                <div class="mb-4">
+                    <h6 class="text-success mb-3">
+                        <i class="bi bi-currency-dollar me-2"></i>
+                        Controle Financeiro
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-graph-up mb-2" style="font-size: 2rem;"></i>
+                                <span>Dashboard Financeiro</span>
+                                <small class="text-white-50">Visão geral financeira</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-receipt mb-2" style="font-size: 2rem;"></i>
+                                <span>Configurar Boletos</span>
+                                <small class="text-muted">Dados bancários</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'planos:listar_planos' %}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-crown mb-2" style="font-size: 2rem;"></i>
+                                <span>Planos Comerciais</span>
+                                <small class="text-muted">Gestão de planos</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    .stat-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .action-card {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        border-color: #007bff;
+    }
+    .welcome-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Atualiza estatísticas a cada 30 segundos
+    setInterval(function() {
+        fetch('{% url "estatisticas_ajax" %}')
+            .then(response => response.json())
+            .then(data => {
+                // Atualiza os valores na página
+                console.log('Estatísticas atualizadas:', data);
+            })
+            .catch(error => console.error('Erro ao atualizar estatísticas:', error));
+    }, 30000);
+</script>
+{% endblock %}

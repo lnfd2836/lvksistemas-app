@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Clientes{% endblock %}
+{% block page_title %}Gerenciar Clientes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Clientes</h2>
+        <p class="text-muted">Gerencie os clientes da sua loja</p>
+    </div>
+    <a href="{% url 'adicionar_cliente' %}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Novo Cliente
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Nome, email ou CPF">
+            </div>
+            <div class="col-md-3">
+                <label for="ativo" class="form-label">Status</label>
+                <select class="form-select" id="ativo" name="ativo">
+                    <option value="">Todos</option>
+                    <option value="true" {% if ativo_filter == 'true' %}selected{% endif %}>Ativos</option>
+                    <option value="false" {% if ativo_filter == 'false' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'gerenciar_clientes' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de clientes -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>CPF</th>
+                        <th>Status</th>
+                        <th>Data Cadastro</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ cliente.nome }}</div>
+                            <small class="text-muted">{{ cliente.cidade }}/{{ cliente.estado }}</small>
+                        </td>
+                        <td>{{ cliente.email }}</td>
+                        <td>{{ cliente.telefone }}</td>
+                        <td>{{ cliente.cpf }}</td>
+                        <td>
+                            <span class="badge bg-{% if cliente.ativo %}success{% else %}secondary{% endif %}">
+                                {% if cliente.ativo %}Ativo{% else %}Inativo{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ cliente.data_cadastro|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="bi bi-people" style="font-size: 3rem; color: #6c757d;"></i>
+                            <p class="mt-2 text-muted">Nenhum cliente encontrado</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

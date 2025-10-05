@@ -1,0 +1,61 @@
+from django.contrib import admin
+from .models import TipoLoja, ModuloLoja, CampoPersonalizado, ValorCampoPersonalizado
+
+
+@admin.register(TipoLoja)
+class TipoLojaAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'descricao', 'ativo', 'data_criacao']
+    list_filter = ['ativo', 'data_criacao']
+    search_fields = ['nome', 'descricao']
+    readonly_fields = ['data_criacao']
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('nome', 'descricao', 'icone', 'cor_primaria', 'cor_secundaria')
+        }),
+        ('Configurações de Produto', {
+            'fields': (
+                'tem_categoria_produto', 'tem_marca_produto', 'tem_tamanho_produto',
+                'tem_cor_produto', 'tem_peso_produto', 'tem_volume_produto',
+                'tem_data_validade', 'tem_codigo_barras', 'tem_estoque_minimo'
+            )
+        }),
+        ('Configurações de Cliente', {
+            'fields': (
+                'tem_data_nascimento_cliente', 'tem_sexo_cliente', 'tem_cpf_cliente',
+                'tem_rg_cliente', 'tem_cnpj_cliente'
+            )
+        }),
+        ('Configurações de Venda', {
+            'fields': (
+                'tem_desconto_venda', 'tem_taxa_entrega', 'tem_mesa_venda', 'tem_garcom_venda'
+            )
+        }),
+        ('Status', {
+            'fields': ('ativo',)
+        })
+    )
+
+
+@admin.register(ModuloLoja)
+class ModuloLojaAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'tipo_loja', 'url', 'ordem', 'ativo']
+    list_filter = ['tipo_loja', 'ativo']
+    search_fields = ['nome', 'descricao']
+    ordering = ['tipo_loja', 'ordem']
+
+
+@admin.register(CampoPersonalizado)
+class CampoPersonalizadoAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'tipo_loja', 'tipo_campo', 'obrigatorio', 'ordem', 'ativo']
+    list_filter = ['tipo_loja', 'tipo_campo', 'obrigatorio', 'ativo']
+    search_fields = ['nome', 'slug']
+    ordering = ['tipo_loja', 'ordem']
+
+
+@admin.register(ValorCampoPersonalizado)
+class ValorCampoPersonalizadoAdmin(admin.ModelAdmin):
+    list_display = ['produto', 'campo', 'valor', 'data_atualizacao']
+    list_filter = ['campo__tipo_loja', 'data_criacao']
+    search_fields = ['produto__nome', 'campo__nome', 'valor']
+    readonly_fields = ['data_criacao', 'data_atualizacao']

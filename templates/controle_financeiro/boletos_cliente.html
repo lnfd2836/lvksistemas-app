@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Boletos - {{ controle.loja.nome }}{% endblock %}
+{% block page_title %}Boletos - {{ controle.loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Status da Conta -->
+    <div class="col-xl-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Status da Conta
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} ms-2">
+                        {{ controle.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Plano:</strong>
+                    <span class="ms-2">{{ controle.plano.nome }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Valor Mensal:</strong>
+                    <span class="ms-2 text-primary fw-bold">R$ {{ controle.valor_mensal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Próximo Vencimento:</strong>
+                    <span class="ms-2">{{ controle.data_vencimento|date:"d/m/Y" }}</span>
+                </div>
+                
+                {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Sua conta vence em {{ controle.dias_para_vencimento }} dias.
+                </div>
+                {% elif controle.dias_para_vencimento <= 0 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-ban"></i>
+                    <strong>Conta Vencida!</strong> Sua conta está vencida há {{ dias_atraso }} dias.
+                </div>
+                {% endif %}
+                
+                {% if controle.bloqueada %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-ban"></i>
+                    <strong>Conta Bloqueada!</strong> {{ controle.motivo_bloqueio }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Boletos Disponíveis -->
+    <div class="col-xl-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-barcode"></i> Boletos Disponíveis
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if boletos %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for boleto in boletos %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ boleto.numero_boleto }}</div>
+                                        <small class="text-muted">{{ boleto.linha_digitavel }}</small>
+                                    </td>
+                                    <td>R$ {{ boleto.valor|floatformat:2 }}</td>
+                                    <td>{{ boleto.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
+                                            {{ boleto.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}" 
+                                               class="btn btn-outline-info btn-sm" title="Ver boleto completo">
+                                                <i class="fas fa-barcode"></i>
+                                            </a>
+                                            {% if boleto.status == 'pendente' %}
+                                            <button class="btn btn-sm btn-primary" onclick="copiarLinhaDigitavel('{{ boleto.linha_digitavel }}')">
+                                                <i class="fas fa-copy"></i> Copiar Linha
+                                            </button>
+                                            {% elif boleto.status == 'pago' %}
+                                            <span class="text-success">
+                                                <i class="fas fa-check"></i> Pago
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted">
+                                                <i class="fas fa-times"></i> Vencido
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum boleto disponível</p>
+                        <p class="text-muted small">Os boletos são gerados automaticamente pelo sistema</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instruções de Pagamento -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Como Pagar
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-left-primary">
+                            <div class="card-body">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-mobile-alt"></i> Internet Banking
+                                </h6>
+                                <p class="small mb-0">Acesse seu banco pela internet e pague usando a linha digitável.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-left-success">
+                            <div class="card-body">
+                                <h6 class="text-success">
+                                    <i class="fas fa-store"></i> Agência Bancária
+                                </h6>
+                                <p class="small mb-0">Vá até uma agência do seu banco e pague o boleto.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-left-info">
+                            <div class="card-body">
+                                <h6 class="text-info">
+                                    <i class="fas fa-credit-card"></i> App do Banco
+                                </h6>
+                                <p class="small mb-0">Use o aplicativo do seu banco para pagar o boleto.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Importante
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Vencimento:</strong> Pague até a data de vencimento para evitar multa e juros.</li>
+                        <li><strong>Confirmação:</strong> O pagamento pode levar até 2 dias úteis para ser confirmado.</li>
+                        <li><strong>Liberação:</strong> Após a confirmação, sua conta será liberada automaticamente.</li>
+                        <li><strong>Dúvidas:</strong> Entre em contato com o suporte em caso de problemas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarLinhaDigitavel(linha) {
+    navigator.clipboard.writeText(linha).then(function() {
+        alert('Linha digitável copiada para a área de transferência!');
+    }, function(err) {
+        console.error('Erro ao copiar: ', err);
+        alert('Erro ao copiar linha digitável');
+    });
+}
+</script>
+{% endblock %}

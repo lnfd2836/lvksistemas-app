@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerar Boleto - {{ controle.loja.nome }}{% endblock %}
+{% block page_title %}Gerar Boleto - {{ controle.loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">{{ controle.loja.nome }} - {{ controle.plano.nome }}</p>
+            </div>
+            <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações da Loja -->
+    <div class="col-xl-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-store"></i> Informações da Loja
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Loja:</strong>
+                    <span class="ms-2">{{ controle.loja.nome }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>CNPJ:</strong>
+                    <span class="ms-2">{{ controle.loja.cnpj }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Email:</strong>
+                    <span class="ms-2">{{ controle.loja.email }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Plano:</strong>
+                    <span class="ms-2">{{ controle.plano.nome }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Valor Mensal:</strong>
+                    <span class="ms-2 text-primary fw-bold">R$ {{ controle.valor_mensal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} ms-2">
+                        {{ controle.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Geração -->
+    <div class="col-xl-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-barcode"></i> Gerar Novo Boleto
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if configuracoes %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="configuracao" class="form-label">Configuração de Boleto</label>
+                            <select class="form-select" id="configuracao" name="configuracao" required>
+                                <option value="">Selecione uma configuração...</option>
+                                {% for config in configuracoes %}
+                                <option value="{{ config.id }}">
+                                    {{ config.nome_banco }} - {{ config.nome_beneficiario }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <strong>Configuração única:</strong> Todos os boletos usam a mesma conta bancária.
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle"></i> Informações do Boleto
+                            </h6>
+                            <ul class="mb-0">
+                                <li><strong>Valor:</strong> R$ {{ controle.valor_mensal|floatformat:2 }}</li>
+                                <li><strong>Vencimento:</strong> 7 dias após a geração</li>
+                                <li><strong>Número:</strong> Gerado automaticamente</li>
+                                <li><strong>Status:</strong> Pendente até pagamento</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-barcode"></i> Gerar Boleto
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5 class="text-warning">Nenhuma Configuração Ativa</h5>
+                        <p class="text-muted">Não há configurações de boleto ativas disponíveis.</p>
+                        <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-primary">
+                            <i class="fas fa-cog"></i> Configurar Boletos
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Boletos Existentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i> Boletos Existentes
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if controle.boletogerado_set.all %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Banco</th>
+                                    <th>Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                    <th>Linha Digitável</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for boleto in controle.boletogerado_set.all %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ boleto.numero_boleto }}</div>
+                                        <small class="text-muted">{{ boleto.data_criacao|date:"d/m/Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ boleto.configuracao.nome_banco }}</div>
+                                        <small class="text-muted">{{ boleto.configuracao.nome_beneficiario }}</small>
+                                    </td>
+                                    <td>R$ {{ boleto.valor|floatformat:2 }}</td>
+                                    <td>{{ boleto.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
+                                            {{ boleto.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <code class="small">{{ boleto.linha_digitavel }}</code>
+                                    </td>
+                                    <td>
+                                        {% if boleto.status == 'pendente' %}
+                                        <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
+                                           class="btn btn-success btn-sm" 
+                                           onclick="return confirm('Marcar boleto como pago?')">
+                                            <i class="fas fa-check"></i> Pago
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">
+                                            <i class="fas fa-{% if boleto.status == 'pago' %}check{% else %}times{% endif %}"></i>
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum boleto gerado para esta loja</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

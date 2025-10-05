@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Venda {{ venda.numero_venda }}{% endblock %}
+{% block page_title %}Venda {{ venda.numero_venda }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Detalhes da venda {{ venda.numero_venda }}</p>
+            </div>
+            <a href="{% url 'gerenciar_vendas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações da Venda -->
+    <div class="col-xl-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Informações da Venda
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Número:</strong> {{ venda.numero_venda }}</p>
+                        <p><strong>Cliente:</strong> {{ venda.cliente.nome }}</p>
+                        <p><strong>Email:</strong> {{ venda.cliente.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{% if venda.status == 'concluida' %}success{% elif venda.status == 'cancelada' %}danger{% elif venda.status == 'processando' %}warning{% else %}secondary{% endif %}">
+                                {{ venda.get_status_display }}
+                            </span>
+                        </p>
+                        <p><strong>Data:</strong> {{ venda.data_venda|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Última Atualização:</strong> {{ venda.data_atualizacao|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens da Venda -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-box"></i> Itens da Venda
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if itens %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço Unitário</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in itens %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.produto.nome }}</strong>
+                                        {% if item.produto.descricao %}
+                                            <br><small class="text-muted">{{ item.produto.descricao }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.quantidade }}</td>
+                                    <td>R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                                    <td>R$ {{ item.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-box fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum item encontrado</h5>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo Financeiro -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calculator"></i> Resumo Financeiro
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Valor Total:</span>
+                        <strong>R$ {{ venda.valor_total|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                
+                {% if venda.desconto > 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Desconto:</span>
+                        <span class="text-success">-R$ {{ venda.desconto|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <hr>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span><strong>Valor Final:</strong></span>
+                        <strong class="text-primary">R$ {{ venda.valor_final|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Status da Venda</h6>
+                    <div class="alert alert-{% if venda.status == 'concluida' %}success{% elif venda.status == 'cancelada' %}danger{% elif venda.status == 'processando' %}warning{% else %}secondary{% endif %}">
+                        <i class="fas fa-{% if venda.status == 'concluida' %}check-circle{% elif venda.status == 'cancelada' %}times-circle{% elif venda.status == 'processando' %}clock{% else %}question-circle{% endif %}"></i>
+                        {{ venda.get_status_display }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

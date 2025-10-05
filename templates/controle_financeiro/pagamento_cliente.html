@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Pagamento - {{ controle.loja.nome }}{% endblock %}
+{% block page_title %}Pagamento - {{ controle.loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Status da Conta -->
+    <div class="col-xl-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Status da Conta
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} ms-2">
+                        {{ controle.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Plano:</strong>
+                    <span class="ms-2">{{ controle.plano.nome }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Valor Mensal:</strong>
+                    <span class="ms-2 text-primary fw-bold">R$ {{ controle.valor_mensal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Próximo Vencimento:</strong>
+                    <span class="ms-2">{{ controle.data_vencimento|date:"d/m/Y" }}</span>
+                </div>
+                
+                {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Sua conta vence em {{ controle.dias_para_vencimento }} dias.
+                </div>
+                {% elif controle.dias_para_vencimento <= 0 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-ban"></i>
+                    <strong>Conta Vencida!</strong> Sua conta está vencida há {{ dias_atraso }} dias.
+                </div>
+                {% endif %}
+                
+                {% if controle.bloqueada %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-ban"></i>
+                    <strong>Conta Bloqueada!</strong> {{ controle.motivo_bloqueio }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Pagamento -->
+    <div class="col-xl-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-credit-card"></i> Registrar Pagamento Alternativo
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle"></i> Como Funciona
+                    </h6>
+                    <p class="mb-0">
+                        <strong>Registre pagamentos alternativos</strong> como PIX, transferência bancária, cartão de crédito ou outros métodos. 
+                        Após o registro, aguarde a aprovação do Super Administrador para que o pagamento seja confirmado e sua conta seja ativada.
+                    </p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="valor" class="form-label">Valor do Pagamento</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="valor" 
+                                       name="valor" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       value="{{ controle.valor_mensal }}"
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="metodo_pagamento" class="form-label">Método de Pagamento</label>
+                            <select class="form-select" id="metodo_pagamento" name="metodo_pagamento" required>
+                                <option value="">Selecione...</option>
+                                <option value="pix">PIX</option>
+                                <option value="transferencia">Transferência Bancária</option>
+                                <option value="boleto">Boleto Bancário</option>
+                                <option value="cartao">Cartão de Crédito</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações (opcional)</label>
+                        <textarea class="form-control" 
+                                  id="observacoes" 
+                                  name="observacoes" 
+                                  rows="3" 
+                                  placeholder="Informações adicionais sobre o pagamento..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-credit-card"></i> Registrar Pagamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Histórico de Pagamentos -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-history"></i> Histórico de Pagamentos
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if pagamentos %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Método</th>
+                                    <th>Status</th>
+                                    <th>Observações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in pagamentos %}
+                                <tr>
+                                    <td>{{ pagamento.data_criacao|date:"d/m/Y H:i" }}</td>
+                                    <td>R$ {{ pagamento.valor|floatformat:2 }}</td>
+                                    <td>{{ pagamento.metodo_pagamento|title }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if pagamento.status == 'aprovado' %}success{% elif pagamento.status == 'rejeitado' %}danger{% else %}warning{% endif %}">
+                                            {{ pagamento.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if pagamento.observacoes %}
+                                            <small class="text-muted">{{ pagamento.observacoes|truncatechars:50 }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum pagamento registrado</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações Importantes -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6 class="alert-heading">
+                <i class="fas fa-info-circle"></i> Informações Importantes
+            </h6>
+            <ul class="mb-0">
+                <li><strong>Período de Tolerância:</strong> Após o vencimento, você tem {{ controle.dias_grace_period }} dias para pagar sem bloqueio.</li>
+                <li><strong>Bloqueio Automático:</strong> Após {{ controle.dias_grace_period }} dias de vencimento, sua conta será bloqueada automaticamente.</li>
+                <li><strong>Liberação:</strong> Após a aprovação do pagamento, sua conta será liberada automaticamente.</li>
+                <li><strong>Contato:</strong> Em caso de dúvidas, entre em contato com o suporte.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

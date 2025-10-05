@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Plano - {{ plano.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-crown me-2"></i>
+                        {{ plano.nome }}
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Informações Básicas
+                            </h5>
+                            
+                            <p><strong>Tipo:</strong> 
+                                <span class="badge bg-{% if plano.tipo == 'basico' %}secondary{% elif plano.tipo == 'intermediario' %}primary{% elif plano.tipo == 'avancado' %}success{% elif plano.tipo == 'premium' %}warning{% else %}danger{% endif %}">
+                                    {{ plano.get_tipo_display }}
+                                </span>
+                            </p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{% if plano.status == 'ativo' %}success{% else %}secondary{% endif %}">
+                                    {{ plano.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Ordem de Exibição:</strong> {{ plano.ordem_exibicao }}</p>
+                            {% if plano.destaque %}
+                            <p><strong>Destaque:</strong> <span class="badge bg-warning">Plano em Destaque</span></p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-dollar-sign me-2"></i>
+                                Preços
+                            </h5>
+                            
+                            <div class="text-center">
+                                <h2 class="text-primary">R$ {{ plano.preco_mensal|floatformat:2 }}</h2>
+                                <small class="text-muted">por mês</small>
+                                
+                                {% if plano.preco_anual > 0 %}
+                                <div class="mt-3">
+                                    <h4 class="text-success">R$ {{ plano.preco_anual|floatformat:2 }}</h4>
+                                    <small class="text-success">por ano</small>
+                                    <br>
+                                    <span class="badge bg-success">{{ plano.calcular_desconto_anual }}% de desconto</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Descrição -->
+                    {% if plano.descricao %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-info mb-3">
+                                <i class="fas fa-align-left me-2"></i>
+                                Descrição
+                            </h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p class="mb-0">{{ plano.descricao }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Limites do Plano -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-warning mb-3">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Limites do Plano
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                    <h6>Usuários Simultâneos</h6>
+                                    <h4 class="text-primary">{{ plano.max_usuarios_simultaneos }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-cash-register fa-2x text-success mb-2"></i>
+                                    <h6>PDVs</h6>
+                                    <h4 class="text-success">{{ plano.max_pdvs }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-box fa-2x text-info mb-2"></i>
+                                    <h6>Produtos</h6>
+                                    <h4 class="text-info">{{ plano.max_produtos }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shopping-cart fa-2x text-warning mb-2"></i>
+                                    <h6>Vendas/Mês</h6>
+                                    <h4 class="text-warning">{{ plano.max_vendas_mes }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recursos Incluídos -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-star me-2"></i>
+                                Recursos Incluídos
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="fas fa-{% if plano.backup_automatico %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                                            Backup Automático
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-{% if plano.relatorios_avancados %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                                            Relatórios Avançados
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-{% if plano.integracao_api %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                                            Integração API
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="fas fa-{% if plano.suporte_prioritario %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                                            Suporte Prioritário
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-{% if plano.customizacao_avancada %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                                            Customização Avançada
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assinaturas Ativas -->
+                    {% if assinaturas %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-info mb-3">
+                                <i class="fas fa-handshake me-2"></i>
+                                Lojas com Este Plano ({{ assinaturas|length }})
+                            </h5>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Loja</th>
+                                            <th>Status</th>
+                                            <th>Tipo Pagamento</th>
+                                            <th>Vencimento</th>
+                                            <th>Usuários Online</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for assinatura in assinaturas %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ assinatura.loja.nome }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ assinatura.loja.cnpj }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if assinatura.status == 'ativa' %}success{% else %}warning{% endif %}">
+                                                    {{ assinatura.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ assinatura.get_tipo_pagamento_display }}</td>
+                                            <td>
+                                                {{ assinatura.data_vencimento|date:"d/m/Y" }}
+                                                {% if assinatura.dias_para_vencimento > 0 %}
+                                                <br>
+                                                <small class="text-success">{{ assinatura.dias_para_vencimento }} dias restantes</small>
+                                                {% else %}
+                                                <br>
+                                                <small class="text-danger">Vencido</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">
+                                                    {{ assinatura.usuarios_online }}/{{ plano.max_usuarios_simultaneos }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Ações -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'planos:listar_planos' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Voltar aos Planos
+                                </a>
+                                <div>
+                                    <a href="{% url 'planos:editar_plano' plano.id %}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-1"></i>
+                                        Editar Plano
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

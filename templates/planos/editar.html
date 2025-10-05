@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Plano - {{ plano.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Plano: {{ plano.nome }}
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Informações Básicas -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Informações Básicas
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nome do Plano *</label>
+                                <input type="text" name="nome" class="form-control" value="{{ plano.nome }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo do Plano *</label>
+                                <select name="tipo" class="form-control" required>
+                                    {% for value, label in tipos_plano %}
+                                    <option value="{{ value }}" {% if plano.tipo == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Descrição</label>
+                                <textarea name="descricao" class="form-control" rows="3" placeholder="Descreva os benefícios e características do plano...">{{ plano.descricao }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-control">
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if plano.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Ordem de Exibição</label>
+                                <input type="number" name="ordem_exibicao" class="form-control" value="{{ plano.ordem_exibicao }}" min="0">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" name="destaque" class="form-check-input" id="destaque" {% if plano.destaque %}checked{% endif %}>
+                                    <label class="form-check-label" for="destaque">
+                                        Plano em Destaque
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Limites do Plano -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Limites do Plano
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Usuários Simultâneos *</label>
+                                <input type="number" name="max_usuarios_simultaneos" class="form-control" value="{{ plano.max_usuarios_simultaneos }}" min="1" required>
+                                <small class="text-muted">Número máximo de usuários online</small>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">PDVs *</label>
+                                <input type="number" name="max_pdvs" class="form-control" value="{{ plano.max_pdvs }}" min="1" required>
+                                <small class="text-muted">Pontos de venda</small>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Produtos *</label>
+                                <input type="number" name="max_produtos" class="form-control" value="{{ plano.max_produtos }}" min="1" required>
+                                <small class="text-muted">Máximo de produtos</small>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Clientes *</label>
+                                <input type="number" name="max_clientes" class="form-control" value="{{ plano.max_clientes }}" min="1" required>
+                                <small class="text-muted">Máximo de clientes</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vendas por Mês *</label>
+                                <input type="number" name="max_vendas_mes" class="form-control" value="{{ plano.max_vendas_mes }}" min="1" required>
+                                <small class="text-muted">Limite mensal de vendas</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Recursos Incluídos -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-star me-2"></i>
+                                    Recursos Incluídos
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="backup_automatico" class="form-check-input" id="backup_automatico" {% if plano.backup_automatico %}checked{% endif %}>
+                                    <label class="form-check-label" for="backup_automatico">
+                                        <i class="fas fa-database me-1"></i>
+                                        Backup Automático
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="relatorios_avancados" class="form-check-input" id="relatorios_avancados" {% if plano.relatorios_avancados %}checked{% endif %}>
+                                    <label class="form-check-label" for="relatorios_avancados">
+                                        <i class="fas fa-chart-bar me-1"></i>
+                                        Relatórios Avançados
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="integracao_api" class="form-check-input" id="integracao_api" {% if plano.integracao_api %}checked{% endif %}>
+                                    <label class="form-check-label" for="integracao_api">
+                                        <i class="fas fa-plug me-1"></i>
+                                        Integração API
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="suporte_prioritario" class="form-check-input" id="suporte_prioritario" {% if plano.suporte_prioritario %}checked{% endif %}>
+                                    <label class="form-check-label" for="suporte_prioritario">
+                                        <i class="fas fa-headset me-1"></i>
+                                        Suporte Prioritário
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="customizacao_avancada" class="form-check-input" id="customizacao_avancada" {% if plano.customizacao_avancada %}checked{% endif %}>
+                                    <label class="form-check-label" for="customizacao_avancada">
+                                        <i class="fas fa-cogs me-1"></i>
+                                        Customização Avançada
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preços -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-dollar-sign me-2"></i>
+                                    Preços
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Preço Mensal (R$) *</label>
+                                <input type="number" name="preco_mensal" class="form-control" step="0.01" min="0" value="{{ plano.preco_mensal }}" required>
+                                <small class="text-muted">Valor cobrado mensalmente</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Preço Anual (R$)</label>
+                                <input type="number" name="preco_anual" class="form-control" step="0.01" min="0" value="{{ plano.preco_anual }}">
+                                <small class="text-muted">Valor com desconto para pagamento anual</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'planos:listar_planos' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>
+                                        Voltar
+                                    </a>
+                                    <div>
+                                        <a href="{% url 'planos:detalhar_plano' plano.id %}" class="btn btn-info me-2">
+                                            <i class="fas fa-eye me-1"></i>
+                                            Ver Detalhes
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>
+                                            Salvar Alterações
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
