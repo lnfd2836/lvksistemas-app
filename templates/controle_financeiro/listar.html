@@ -66,108 +66,113 @@
     </div>
 </div>
 
-<!-- Lista de Controles em Layout Horizontal -->
+<!-- Lista de Controles em Layout Moderno -->
 <div class="row">
     <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-store"></i> Lojas do Sistema
-                </h6>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 py-4">
+                <h5 class="mb-1 text-dark font-weight-bold">
+                    <i class="fas fa-store text-primary me-2"></i>Todas as Lojas
+                </h5>
+                <p class="text-muted mb-0">Lista completa de lojas do sistema</p>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 {% if controles %}
-                    <div class="row">
+                    <div class="row g-4">
                         {% for controle in controles %}
-                        <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                            <div class="card border-left-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} shadow h-100">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-card" style="transition: all 0.3s ease;">
+                                <div class="card-body p-4">
+                                    <!-- Header da Loja -->
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title text-dark font-weight-bold mb-1">
                                                 {{ controle.loja.nome }}
-                                            </div>
-                                            <div class="text-xs text-muted mb-1">
-                                                CNPJ: {{ controle.loja.cnpj }}
-                                            </div>
-                                            <div class="text-xs text-muted mb-2">
-                                                Plano: {{ controle.plano.nome }}
-                                            </div>
-                                            
-                                            <!-- Status -->
-                                            <div class="mb-2">
-                                                <span class="badge bg-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %}">
-                                                    {{ controle.get_status_display }}
-                                                </span>
-                                                {% if controle.bloqueada %}
-                                                <span class="badge bg-danger">Bloqueada</span>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <!-- Informações Financeiras -->
-                                            <div class="row text-xs">
-                                                <div class="col-6">
-                                                    <div class="text-muted">Valor Mensal:</div>
-                                                    <div class="font-weight-bold">R$ {{ controle.valor_mensal|floatformat:2 }}</div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="text-muted">Vencimento:</div>
-                                                    <div class="font-weight-bold">{{ controle.data_vencimento|date:"d/m/Y" }}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Valores -->
-                                            <div class="row text-xs mt-2">
-                                                <div class="col-6">
-                                                    <div class="text-success">Pago: R$ {{ controle.valor_pago|floatformat:2 }}</div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="text-danger">Pendente: R$ {{ controle.valor_pendente|floatformat:2 }}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Dias para vencimento -->
-                                            {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
-                                            <div class="text-warning text-xs mt-1">
-                                                <i class="fas fa-exclamation-triangle"></i> {{ controle.dias_para_vencimento }} dias para vencer
-                                            </div>
-                                            {% elif controle.dias_para_vencimento <= 0 %}
-                                            <div class="text-danger text-xs mt-1">
-                                                <i class="fas fa-exclamation-circle"></i> {{ controle.dias_atraso }} dias em atraso
-                                            </div>
-                                            {% endif %}
+                                            </h6>
+                                            <p class="text-muted small mb-2">{{ controle.loja.cnpj }}</p>
+                                            <span class="badge bg-light text-dark border">{{ controle.plano.nome }}</span>
                                         </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-store fa-2x text-gray-300"></i>
+                                        <div class="text-end">
+                                            <span class="badge badge-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} fs-6 px-3 py-2">
+                                                {{ controle.get_status_display }}
+                                            </span>
+                                            {% if controle.bloqueada %}
+                                            <span class="badge bg-danger fs-6 px-3 py-2 mt-1 d-block">Bloqueada</span>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     
+                                    <!-- Informações Financeiras -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <div class="bg-light rounded p-3 text-center">
+                                                <div class="text-muted small">Valor Mensal</div>
+                                                <div class="h6 text-success font-weight-bold mb-0">R$ {{ controle.valor_mensal|floatformat:2 }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-light rounded p-3 text-center">
+                                                <div class="text-muted small">Vencimento</div>
+                                                <div class="h6 text-dark font-weight-bold mb-0">{{ controle.data_vencimento|date:"d/m/Y" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Valores Pago/Pendente -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <div class="bg-success bg-opacity-10 rounded p-2 text-center">
+                                                <div class="text-success small">Pago</div>
+                                                <div class="text-success font-weight-bold">R$ {{ controle.valor_pago|floatformat:2 }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-danger bg-opacity-10 rounded p-2 text-center">
+                                                <div class="text-danger small">Pendente</div>
+                                                <div class="text-danger font-weight-bold">R$ {{ controle.valor_pendente|floatformat:2 }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Alertas -->
+                                    {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
+                                    <div class="alert alert-warning alert-sm d-flex align-items-center mb-3">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <small>{{ controle.dias_para_vencimento }} dias para vencer</small>
+                                    </div>
+                                    {% elif controle.dias_para_vencimento <= 0 %}
+                                    <div class="alert alert-danger alert-sm d-flex align-items-center mb-3">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <small>{{ controle.dias_atraso }} dias em atraso</small>
+                                    </div>
+                                    {% endif %}
+                                    
                                     <!-- Ações -->
-                                    <div class="mt-3">
-                                        <div class="btn-group w-100" role="group">
+                                    <div class="d-grid gap-2">
+                                        <div class="btn-group" role="group">
                                             <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" 
-                                               class="btn btn-sm btn-outline-primary" title="Ver detalhes">
-                                                <i class="fas fa-eye"></i>
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i> Ver
                                             </a>
                                             
                                             {% if controle.status == 'ativa' %}
                                             <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" 
-                                               class="btn btn-sm btn-outline-success" title="Gerar boleto">
-                                                <i class="fas fa-barcode"></i>
+                                               class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-barcode me-1"></i> Boleto
                                             </a>
                                             {% endif %}
                                             
                                             {% if controle.bloqueada %}
                                             <a href="{% url 'controle_financeiro:desbloquear_loja' controle.id %}" 
-                                               class="btn btn-sm btn-outline-success" title="Desbloquear"
+                                               class="btn btn-success btn-sm"
                                                onclick="return confirm('Desbloquear esta loja?')">
-                                                <i class="fas fa-unlock"></i>
+                                                <i class="fas fa-unlock me-1"></i> Desbloquear
                                             </a>
                                             {% else %}
                                             <a href="{% url 'controle_financeiro:bloquear_loja' controle.id %}" 
-                                               class="btn btn-sm btn-outline-danger" title="Bloquear"
+                                               class="btn btn-outline-danger btn-sm"
                                                onclick="return confirm('Bloquear esta loja?')">
-                                                <i class="fas fa-ban"></i>
+                                                <i class="fas fa-ban me-1"></i> Bloquear
                                             </a>
                                             {% endif %}
                                         </div>
@@ -178,13 +183,41 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Nenhum controle financeiro encontrado</p>
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-store text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-muted">Nenhuma loja encontrada</h5>
+                        <p class="text-muted">Não há lojas cadastradas no sistema ainda.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.badge-success {
+    background-color: #28a745 !important;
+}
+
+.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-danger {
+    background-color: #dc3545 !important;
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>
 {% endblock %}
