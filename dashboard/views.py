@@ -1,41 +1,97 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Sum
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 
 from lojas.models import Loja, Cliente, Produto, Venda, BackupLoja
 from dashboard.models import DashboardStats, Notificacao
 from usuarios.models import LogAcesso, SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
+from dashboard.services.authentication import AuthenticationService
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def redirect_to_appropriate_dashboard(request):
+    """
+    View helper para redirecionar usuários para o dashboard apropriado.
+    Pode ser usada como view padrão para redirecionamentos.
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    try:
+        dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
+        logger.info(f"Redirecionando usuário {request.user.username} para dashboard apropriado: {dashboard_url}")
+        return redirect(dashboard_url)
+    except Exception as e:
+        logger.error(f"Erro ao determinar dashboard para redirecionamento do usuário {request.user.username}: {str(e)}")
+        messages.error(request, 'Erro ao determinar dashboard apropriado.')
+        return redirect('login')
+
+
+def require_store_access(view_func):
+    """
+    Decorator para views que requerem acesso ao dashboard de loja.
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('loja_login')
+        
+        if not AuthenticationService.can_access_store_dashboard(request.user):
+            messages.error(request, 'Você não tem permissão para acessar esta área.')
+            return redirect('login')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 @login_required
 def dashboard_principal(request):
-    """Dashboard principal do sistema"""
+    """Dashboard principal do sistema - refatorado para usar AuthenticationService"""
     
-    # Se é super usuário E não tem loja associada, mostra dashboard geral
-    if request.user.is_superuser:
-        try:
-            # Verifica se o super usuário tem uma loja associada
-            loja = request.user.loja_admin
-            # Se tem loja associada, redireciona para dashboard da loja
-            return dashboard_loja(request, loja)
-        except:
-            # Se não tem loja associada, mostra dashboard super admin
-            return dashboard_super_admin(request)
-    
-    # Se é admin de loja, mostra dashboard da loja
     try:
-        loja = request.user.loja_admin
-        return dashboard_loja(request, loja)
-    except:
-        # Se não tem loja associada, mostra mensagem e redireciona para login
-        messages.error(request, 'Você não tem uma loja associada.')
+        # Verificar se o usuário deve estar neste dashboard
+        expected_url = AuthenticationService.determine_user_dashboard(request.user)
+        
+        # Se a URL esperada não for a atual, redirecionar
+        if expected_url != request.path and expected_url != '/dashboard/':
+            logger.info(f"Redirecionando usuário {request.user.username} de {request.path} para {expected_url}")
+            return redirect(expected_url)
+        
+        # Obter contexto do dashboard
+        context = AuthenticationService.get_dashboard_context(request.user)
+        user_type = context['user_type']
+        
+        # Se é super usuário com loja associada, redirecionar para dashboard da loja
+        if user_type == 'super_admin' and context['store']:
+            logger.info(f"Super usuário {request.user.username} tem loja associada, redirecionando para dashboard da loja")
+            return redirect('dashboard_loja')
+        
+        # Se é store admin, redirecionar para dashboard da loja
+        if user_type == 'store_admin':
+            logger.info(f"Store admin {request.user.username} redirecionando para dashboard da loja")
+            return redirect('dashboard_loja')
+        
+        # Se é super admin sem loja, mostrar dashboard super admin
+        if user_type == 'super_admin':
+            return dashboard_super_admin(request)
+        
+        # Usuário sem permissões adequadas
+        logger.warning(f"Usuário {request.user.username} tentou acessar dashboard principal sem permissões adequadas")
+        messages.error(request, 'Você não tem permissão para acessar o dashboard.')
+        return redirect('login')
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar dashboard principal para usuário {request.user.username}: {str(e)}")
+        messages.error(request, 'Erro interno. Tente novamente.')
         return redirect('login')
 
 
@@ -58,163 +114,207 @@ def dashboard_super_admin(request):
 
 
 def dashboard_loja(request, loja=None, loja_id=None):
-    """Dashboard específico de uma loja"""
+    """Dashboard específico de uma loja - refatorado para usar AuthenticationService"""
     
-    # Verifica se o usuário está autenticado
+    # Verificar se o usuário está autenticado
     if not request.user.is_authenticated:
-        return redirect('loja_login_direct')
+        logger.info("Usuário não autenticado tentando acessar dashboard da loja")
+        return redirect('loja_login')
     
-    # Verifica se o usuário tem permissão para acessar esta loja
-    if request.user.is_superuser:
-        # Super usuário pode acessar qualquer loja
-        pass
-    else:
-        # Usuário comum só pode acessar sua própria loja
-        if loja and hasattr(request.user, 'loja_admin'):
-            if request.user.loja_admin != loja:
+    try:
+        # Verificar se o usuário pode acessar dashboard de loja
+        if not AuthenticationService.can_access_store_dashboard(request.user):
+            logger.warning(f"Usuário {request.user.username} tentou acessar dashboard de loja sem permissão")
+            messages.error(request, 'Você não tem permissão para acessar o dashboard da loja.')
+            return redirect('login')
+        
+        # Determinar qual loja usar
+        target_loja = None
+        
+        # Se foi passado loja_id, busca a loja específica
+        if loja_id:
+            try:
+                target_loja = Loja.objects.get(id=loja_id)
+                # Verificar se o usuário pode acessar esta loja específica
+                if not AuthenticationService.can_access_store_dashboard(request.user, target_loja):
+                    logger.warning(f"Usuário {request.user.username} tentou acessar loja {loja_id} sem permissão")
+                    messages.error(request, 'Você não tem permissão para acessar esta loja.')
+                    return redirect('login')
+            except Loja.DoesNotExist:
+                logger.error(f"Loja {loja_id} não encontrada")
+                messages.error(request, 'Loja não encontrada.')
+                return redirect('simple_login')
+        
+        # Se foi passada uma loja como parâmetro
+        elif loja:
+            if not AuthenticationService.can_access_store_dashboard(request.user, loja):
+                logger.warning(f"Usuário {request.user.username} tentou acessar loja {loja.id} sem permissão")
                 messages.error(request, 'Você não tem permissão para acessar esta loja.')
-                return redirect('loja_login')
-    
-    # Se foi passado loja_id, busca a loja
-    if loja_id:
-        from lojas.models import Loja
-        try:
-            loja = Loja.objects.get(id=loja_id)
-        except Loja.DoesNotExist:
-            messages.error(request, 'Loja não encontrada.')
-            return redirect('loja_login')
-    
-    # Se não foi passada uma loja, tenta obter do middleware
-    if loja is None:
-        if hasattr(request, 'loja_atual'):
-            loja = request.loja_atual
+                return redirect('login')
+            target_loja = loja
+        
+        # Se não foi especificada loja, obter a loja do usuário
         else:
-            # Se é super usuário, redireciona para listar lojas
-            if request.user.is_superuser:
-                messages.info(request, 'Selecione uma loja para acessar seu dashboard.')
-                return redirect('listar_lojas')
-            else:
-                # Usuário comum sem loja associada - busca a loja do usuário
-                try:
-                    loja = request.user.loja_admin
-                except:
-                    messages.error(request, 'Você não tem uma loja associada.')
-                    return redirect('loja_login')
+            target_loja = AuthenticationService.get_user_store(request.user)
+            
+            # Se não encontrou loja associada
+            if not target_loja:
+                if request.user.is_superuser:
+                    logger.info(f"Super usuário {request.user.username} sem loja específica, redirecionando para seleção")
+                    messages.info(request, 'Selecione uma loja para acessar seu dashboard.')
+                    # Aqui você pode redirecionar para uma página de seleção de lojas
+                    return redirect('dashboard_principal')
+                else:
+                    logger.error(f"Usuário {request.user.username} deveria ter loja mas não foi encontrada")
+                    messages.error(request, 'Nenhuma loja associada ao seu usuário.')
+                    return redirect('login')
+        
+        # Verificar se a loja foi encontrada
+        if not target_loja:
+            logger.error(f"Nenhuma loja válida encontrada para usuário {request.user.username}")
+            messages.error(request, 'Erro ao determinar loja para acesso.')
+            return redirect('login')
     
-    # Estatísticas da loja
-    total_clientes = Cliente.objects.filter(loja=loja).count()
-    total_produtos = Produto.objects.filter(loja=loja).count()
-    
-    # Vendas
-    vendas_hoje = Venda.objects.filter(
-        loja=loja,
-        data_venda__date=timezone.now().date()
-    ).count()
-    
-    vendas_semana = Venda.objects.filter(
-        loja=loja,
-        data_venda__gte=timezone.now() - timedelta(days=7)
-    ).count()
-    
-    vendas_mes = Venda.objects.filter(
-        loja=loja,
-        data_venda__month=timezone.now().month,
-        data_venda__year=timezone.now().year
-    ).count()
-    
-    # Receita
-    receita_hoje = Venda.objects.filter(
-        loja=loja,
-        data_venda__date=timezone.now().date(),
-        status='concluida'
-    ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
-    
-    receita_semana = Venda.objects.filter(
-        loja=loja,
-        data_venda__gte=timezone.now() - timedelta(days=7),
-        status='concluida'
-    ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
-    
-    receita_mes = Venda.objects.filter(
-        loja=loja,
-        data_venda__month=timezone.now().month,
-        data_venda__year=timezone.now().year,
-        status='concluida'
-    ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
-    
-    # Produtos com estoque baixo
-    produtos_estoque_baixo = Produto.objects.filter(
-        loja=loja,
-        estoque__lte=5,
-        ativo=True
-    ).count()
-    
-    # Vendas recentes
-    vendas_recentes = Venda.objects.filter(loja=loja).order_by('-data_venda')[:10]
-    
-    # Clientes recentes
-    clientes_recentes = Cliente.objects.filter(loja=loja).order_by('-data_cadastro')[:10]
-    
-    # Produtos mais vendidos
-    produtos_mais_vendidos = Produto.objects.filter(
-        loja=loja
-    ).annotate(
-        total_vendido=Sum('itens_venda__quantidade')
-    ).order_by('-total_vendido')[:5]
-    
-    # Módulos específicos do tipo de loja
-    modulos_loja = []
-    if loja.tipo_loja:
-        modulos_loja = ModuloLoja.objects.filter(
-            tipo_loja=loja.tipo_loja,
+        # Obter contexto do dashboard
+        dashboard_context = AuthenticationService.get_dashboard_context(request.user)
+        
+        # Calcular estatísticas da loja
+        total_clientes = Cliente.objects.filter(loja=target_loja).count()
+        total_produtos = Produto.objects.filter(loja=target_loja).count()
+        
+        # Vendas
+        vendas_hoje = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__date=timezone.now().date()
+        ).count()
+        
+        vendas_semana = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__gte=timezone.now() - timedelta(days=7)
+        ).count()
+        
+        vendas_mes = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__month=timezone.now().month,
+            data_venda__year=timezone.now().year
+        ).count()
+        
+        # Receita
+        receita_hoje = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__date=timezone.now().date(),
+            status='concluida'
+        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+        
+        receita_semana = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__gte=timezone.now() - timedelta(days=7),
+            status='concluida'
+        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+        
+        receita_mes = Venda.objects.filter(
+            loja=target_loja,
+            data_venda__month=timezone.now().month,
+            data_venda__year=timezone.now().year,
+            status='concluida'
+        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+        
+        # Produtos com estoque baixo
+        produtos_estoque_baixo = Produto.objects.filter(
+            loja=target_loja,
+            estoque__lte=5,
             ativo=True
-        ).order_by('ordem')
-    
-    context = {
-        'loja': loja,
-        'total_clientes': total_clientes,
-        'total_produtos': total_produtos,
-        'vendas_hoje': vendas_hoje,
-        'vendas_semana': vendas_semana,
-        'vendas_mes': vendas_mes,
-        'receita_hoje': receita_hoje,
-        'receita_semana': receita_semana,
-        'receita_mes': receita_mes,
-        'produtos_estoque_baixo': produtos_estoque_baixo,
-        'vendas_recentes': vendas_recentes,
-        'clientes_recentes': clientes_recentes,
-        'produtos_mais_vendidos': produtos_mais_vendidos,
-        'modulos_loja': modulos_loja,
-    }
-    
-    return render(request, 'dashboard/loja.html', context)
+        ).count()
+        
+        # Vendas recentes
+        vendas_recentes = Venda.objects.filter(loja=target_loja).order_by('-data_venda')[:10]
+        
+        # Clientes recentes
+        clientes_recentes = Cliente.objects.filter(loja=target_loja).order_by('-data_cadastro')[:10]
+        
+        # Produtos mais vendidos
+        produtos_mais_vendidos = Produto.objects.filter(
+            loja=target_loja
+        ).annotate(
+            total_vendido=Sum('itens_venda__quantidade')
+        ).order_by('-total_vendido')[:5]
+        
+        # Módulos específicos do tipo de loja
+        modulos_loja = []
+        if target_loja.tipo_loja:
+            modulos_loja = ModuloLoja.objects.filter(
+                tipo_loja=target_loja.tipo_loja,
+                ativo=True
+            ).order_by('ordem')
+        
+        # Preparar contexto completo
+        context = {
+            'loja': target_loja,
+            'total_clientes': total_clientes,
+            'total_produtos': total_produtos,
+            'vendas_hoje': vendas_hoje,
+            'vendas_semana': vendas_semana,
+            'vendas_mes': vendas_mes,
+            'receita_hoje': receita_hoje,
+            'receita_semana': receita_semana,
+            'receita_mes': receita_mes,
+            'produtos_estoque_baixo': produtos_estoque_baixo,
+            'vendas_recentes': vendas_recentes,
+            'clientes_recentes': clientes_recentes,
+            'produtos_mais_vendidos': produtos_mais_vendidos,
+            'modulos_loja': modulos_loja,
+            # Adicionar contexto do AuthenticationService
+            'user_type': dashboard_context['user_type'],
+            'can_access_store': dashboard_context['can_access_store'],
+            'page_title': f'Dashboard - {target_loja.nome}',
+        }
+        
+        logger.info(f"Dashboard da loja {target_loja.nome} carregado para usuário {request.user.username}")
+        return render(request, 'dashboard/loja.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")
+        messages.error(request, 'Erro interno ao carregar dashboard da loja. Tente novamente.')
+        return redirect('login')
 
 
 @login_required
 def gerenciar_modulos(request):
-    """Gerenciar módulos de loja"""
+    """Gerenciar módulos de loja - refatorado para usar AuthenticationService"""
     
-    # Verifica se é super usuário
-    if not request.user.is_superuser:
-        messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
-    
-    # Busca todos os tipos de loja
-    tipos_loja = TipoLoja.objects.all().order_by('nome')
-    
-    # Busca todos os módulos
-    modulos = ModuloLoja.objects.all().order_by('tipo_loja', 'ordem')
-    
-    # Busca todos os campos personalizados
-    campos = CampoPersonalizado.objects.all().order_by('tipo_loja', 'ordem')
-    
-    context = {
-        'tipos_loja': tipos_loja,
-        'modulos': modulos,
-        'campos': campos,
-    }
-    
-    return render(request, 'dashboard/gerenciar_modulos.html', context)
+    try:
+        # Verificar se é super usuário usando AuthenticationService
+        user_type = AuthenticationService.get_user_type(request.user)
+        if user_type != 'super_admin':
+            logger.warning(f"Usuário {request.user.username} ({user_type}) tentou acessar gerenciamento de módulos")
+            messages.error(request, 'Você não tem permissão para acessar esta página.')
+            dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
+            return redirect(dashboard_url)
+        
+        # Busca todos os tipos de loja
+        tipos_loja = TipoLoja.objects.all().order_by('nome')
+        
+        # Busca todos os módulos
+        modulos = ModuloLoja.objects.all().order_by('tipo_loja', 'ordem')
+        
+        # Busca todos os campos personalizados
+        campos = CampoPersonalizado.objects.all().order_by('tipo_loja', 'ordem')
+        
+        context = {
+            'tipos_loja': tipos_loja,
+            'modulos': modulos,
+            'campos': campos,
+            'user_type': user_type,
+        }
+        
+        logger.info(f"Gerenciamento de módulos acessado por super usuário {request.user.username}")
+        return render(request, 'dashboard/gerenciar_modulos.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar gerenciamento de módulos para usuário {request.user.username}: {str(e)}")
+        messages.error(request, 'Erro interno. Tente novamente.')
+        dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
+        return redirect(dashboard_url)
 
 
 @login_required
@@ -446,42 +546,7 @@ def logout_view(request):
     return redirect('login')
 
 
-@login_required
-def gerenciar_sessoes(request):
-    """Gerencia sessões ativas (apenas para super usuários)"""
-    if not request.user.is_superuser:
-        messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
-    
-    # Lista todas as sessões ativas
-    sessoes_ativas = SessaoAtiva.objects.filter(ativa=True).order_by('-data_login')
-    
-    # Se foi uma requisição POST, processa a ação
-    if request.method == 'POST':
-        acao = request.POST.get('acao')
-        sessao_id = request.POST.get('sessao_id')
-        
-        if acao == 'invalidar' and sessao_id:
-            try:
-                sessao = SessaoAtiva.objects.get(id=sessao_id)
-                sessao.ativa = False
-                sessao.save()
-                messages.success(request, f'Sessão do usuário {sessao.user.username} foi invalidada.')
-            except SessaoAtiva.DoesNotExist:
-                messages.error(request, 'Sessão não encontrada.')
-        
-        elif acao == 'limpar_todas':
-            SessaoAtiva.objects.filter(ativa=True).update(ativa=False)
-            messages.success(request, 'Todas as sessões foram invalidadas.')
-        
-        return redirect('gerenciar_sessoes')
-    
-    context = {
-        'sessoes_ativas': sessoes_ativas,
-        'total_sessoes': sessoes_ativas.count(),
-    }
-    
-    return render(request, 'dashboard/gerenciar_sessoes.html', context)
+
 
 
 @login_required
@@ -495,43 +560,57 @@ def marcar_notificacao_lida(request, notificacao_id):
 
 @login_required
 def gerenciar_sessoes(request):
-    """Gerencia sessões ativas dos usuários"""
-    if not request.user.is_superuser:
-        messages.error(request, 'Acesso negado. Apenas Super Administradores podem gerenciar sessões.')
-        return redirect('dashboard')
+    """Gerencia sessões ativas dos usuários - refatorado para usar AuthenticationService"""
     
-    # Filtros
-    filtro_usuario = request.GET.get('usuario', '')
-    filtro_super_admin = request.GET.get('super_admin', '')
-    
-    # Busca sessões ativas
-    sessoes_ativas = SessaoAtiva.objects.filter(ativa=True)
-    
-    if filtro_usuario:
-        sessoes_ativas = sessoes_ativas.filter(user__username__icontains=filtro_usuario)
-    
-    if filtro_super_admin == 'sim':
-        sessoes_ativas = sessoes_ativas.filter(is_super_admin=True)
-    elif filtro_super_admin == 'nao':
-        sessoes_ativas = sessoes_ativas.filter(is_super_admin=False)
-    
-    sessoes_ativas = sessoes_ativas.order_by('-data_login')
-    
-    # Estatísticas
-    total_sessoes = sessoes_ativas.count()
-    sessoes_super_admin = sessoes_ativas.filter(is_super_admin=True).count()
-    sessoes_usuarios = total_sessoes - sessoes_super_admin
-    
-    context = {
-        'sessoes_ativas': sessoes_ativas,
-        'total_sessoes': total_sessoes,
-        'sessoes_super_admin': sessoes_super_admin,
-        'sessoes_usuarios': sessoes_usuarios,
-        'filtro_usuario': filtro_usuario,
-        'filtro_super_admin': filtro_super_admin,
-    }
-    
-    return render(request, 'dashboard/gerenciar_sessoes.html', context)
+    try:
+        # Verificar se é super usuário usando AuthenticationService
+        user_type = AuthenticationService.get_user_type(request.user)
+        if user_type != 'super_admin':
+            logger.warning(f"Usuário {request.user.username} ({user_type}) tentou acessar gerenciamento de sessões")
+            messages.error(request, 'Acesso negado. Apenas Super Administradores podem gerenciar sessões.')
+            dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
+            return redirect(dashboard_url)
+        
+        # Filtros
+        filtro_usuario = request.GET.get('usuario', '')
+        filtro_super_admin = request.GET.get('super_admin', '')
+        
+        # Busca sessões ativas
+        sessoes_ativas = SessaoAtiva.objects.filter(ativa=True)
+        
+        if filtro_usuario:
+            sessoes_ativas = sessoes_ativas.filter(user__username__icontains=filtro_usuario)
+        
+        if filtro_super_admin == 'sim':
+            sessoes_ativas = sessoes_ativas.filter(is_super_admin=True)
+        elif filtro_super_admin == 'nao':
+            sessoes_ativas = sessoes_ativas.filter(is_super_admin=False)
+        
+        sessoes_ativas = sessoes_ativas.order_by('-data_login')
+        
+        # Estatísticas
+        total_sessoes = sessoes_ativas.count()
+        sessoes_super_admin = sessoes_ativas.filter(is_super_admin=True).count()
+        sessoes_usuarios = total_sessoes - sessoes_super_admin
+        
+        context = {
+            'sessoes_ativas': sessoes_ativas,
+            'total_sessoes': total_sessoes,
+            'sessoes_super_admin': sessoes_super_admin,
+            'sessoes_usuarios': sessoes_usuarios,
+            'filtro_usuario': filtro_usuario,
+            'filtro_super_admin': filtro_super_admin,
+            'user_type': user_type,
+        }
+        
+        logger.info(f"Gerenciamento de sessões acessado por super usuário {request.user.username}")
+        return render(request, 'dashboard/gerenciar_sessoes.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar gerenciamento de sessões para usuário {request.user.username}: {str(e)}")
+        messages.error(request, 'Erro interno. Tente novamente.')
+        dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
+        return redirect(dashboard_url)
 
 
 @login_required
