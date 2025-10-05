@@ -198,6 +198,12 @@ if 'DYNO' in os.environ:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    # Disable file logging on Heroku
+    # Disable file logging on Heroku - remove file handler completely
+    LOGGING['handlers'] = {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    }
     LOGGING['loggers']['usuarios.services']['handlers'] = ['console']
     LOGGING['loggers']['usuarios.improved_middleware']['handlers'] = ['console']
