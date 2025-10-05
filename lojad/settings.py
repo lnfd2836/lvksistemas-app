@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
+    'usuarios.password_middleware.PasswordChangeMiddleware',
     'lojas.middleware.LojaMiddleware',
     'controle_financeiro.middleware.ControleFinanceiroMiddleware',
 ]
@@ -129,6 +130,10 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 
+# URLs para as views padrão do Django Auth
+# Redireciona para nossa view personalizada
+LOGOUT_URL = '/logout/'
+
 
 # Cache (simplificado para desenvolvimento)
 CACHES = {
@@ -137,8 +142,16 @@ CACHES = {
     }
 }
 
-# Email Configuration (básico)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+EMAIL_USE_SSL = env('EMAIL_USE_SSL', default=False)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@lvksistemas.com.br')
+SERVER_EMAIL = env('SERVER_EMAIL', default='noreply@lvksistemas.com.br')
 
 # Session Configuration
 SESSION_COOKIE_AGE = 3600  # 1 hour

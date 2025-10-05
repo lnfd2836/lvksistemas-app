@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troca de Senha Obrigatória - Sistema LVK</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ffc107;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #ffc107;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .security-box {
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #212529;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .button:hover {
+            background-color: #e0a800;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔐 Sistema LVK</div>
+            <h1 class="title">Troca de Senha Obrigatória</h1>
+        </div>
+
+        <p>Olá <strong>{{ user.first_name }} {{ user.last_name }}</strong>,</p>
+        
+        <div class="warning-box">
+            <h3 style="margin-top: 0; color: #856404;">⚠️ Ação Necessária</h3>
+            <p>Por motivos de segurança, você DEVE alterar sua senha no próximo login.</p>
+            <p>Sua conta está temporariamente restrita até que a senha seja alterada.</p>
+        </div>
+
+        <div class="security-box">
+            <h3 style="margin-top: 0; color: #495057;">🔒 Por que isso é necessário?</h3>
+            <ul>
+                <li>Proteção da sua conta contra acesso não autorizado</li>
+                <li>Garantia de que apenas você tenha acesso aos dados</li>
+                <li>Conformidade com as políticas de segurança do sistema</li>
+                <li>Prevenção de possíveis vulnerabilidades</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h4 style="margin-top: 0; color: #0c5460;">📋 Como alterar sua senha:</h4>
+            <ol>
+                <li>Acesse o sistema usando suas credenciais atuais</li>
+                <li>Você será redirecionado automaticamente para a página de troca de senha</li>
+                <li>Digite sua senha atual</li>
+                <li>Digite sua nova senha (mínimo 8 caracteres)</li>
+                <li>Confirme a nova senha</li>
+                <li>Clique em "Alterar Senha"</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ login_url }}" class="button">🔐 Alterar Senha Agora</a>
+        </div>
+
+        <div class="footer">
+            <p><strong>Sistema LVK - Gestão de Lojas</strong></p>
+            <p>Este é um email automático de segurança, não responda a esta mensagem.</p>
+            <p>Se você não solicitou esta ação, entre em contato conosco imediatamente.</p>
+        </div>
+    </div>
+</body>
+</html>

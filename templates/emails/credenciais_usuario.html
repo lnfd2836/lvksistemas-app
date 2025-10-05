@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credenciais de Acesso - Sistema LVK</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #28a745;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .credentials-box {
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .credential-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .value {
+            color: #007bff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .warning-icon {
+            color: #f39c12;
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏢 Sistema LVK</div>
+            <h1 class="title">🎉 Bem-vindo ao Sistema!</h1>
+        </div>
+
+        <p>Olá <strong>{{ user.first_name }} {{ user.last_name }}</strong>,</p>
+        
+        <p>Sua conta de <strong>{{ tipo_usuario }}</strong> foi criada com sucesso no Sistema LVK!</p>
+
+        <div class="credentials-box">
+            <h3 style="margin-top: 0; color: #007bff;">🔑 Suas Credenciais de Acesso</h3>
+            
+            <div class="credential-item">
+                <div class="label">👤 Nome de Usuário:</div>
+                <div class="value">{{ user.username }}</div>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">📧 Email:</div>
+                <div class="value">{{ user.email }}</div>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">🔐 Senha Provisória:</div>
+                <div class="value">{{ senha_provisoria }}</div>
+            </div>
+        </div>
+
+        <div class="warning">
+            <span class="warning-icon">⚠️</span>
+            <strong>IMPORTANTE:</strong> Esta é uma senha provisória. Você DEVE alterá-la no primeiro login por motivos de segurança.
+        </div>
+
+        <div class="info-box">
+            <h4 style="margin-top: 0; color: #1976d2;">📋 Próximos Passos:</h4>
+            <ol>
+                <li>Acesse o sistema usando as credenciais acima</li>
+                <li>Altere sua senha no primeiro login</li>
+                <li>Configure seu perfil completo</li>
+                <li>Explore as funcionalidades do sistema</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ login_url }}" class="button">🚀 Acessar Sistema</a>
+        </div>
+
+        <div class="footer">
+            <p><strong>Sistema LVK - Gestão de Lojas</strong></p>
+            <p>Este é um email automático, não responda a esta mensagem.</p>
+            <p>Se você não solicitou esta conta, entre em contato conosco imediatamente.</p>
+        </div>
+    </div>
+</body>
+</html>

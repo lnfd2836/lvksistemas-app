@@ -1,0 +1,36 @@
+===============================================
+    SISTEMA LVK - TROCA DE SENHA OBRIGATÓRIA
+===============================================
+
+Olá {{ user.first_name }} {{ user.last_name }},
+
+⚠️  AÇÃO NECESSÁRIA
+-------------------
+Por motivos de segurança, você DEVE alterar sua senha no próximo login.
+Sua conta está temporariamente restrita até que a senha seja alterada.
+
+🔒 POR QUE ISSO É NECESSÁRIO?
+----------------------------
+• Proteção da sua conta contra acesso não autorizado
+• Garantia de que apenas você tenha acesso aos dados
+• Conformidade com as políticas de segurança do sistema
+• Prevenção de possíveis vulnerabilidades
+
+📋 COMO ALTERAR SUA SENHA:
+---------------------------
+1. Acesse o sistema usando suas credenciais atuais
+2. Você será redirecionado automaticamente para a página de troca de senha
+3. Digite sua senha atual
+4. Digite sua nova senha (mínimo 8 caracteres)
+5. Confirme a nova senha
+6. Clique em "Alterar Senha"
+
+🌐 ACESSO AO SISTEMA:
+---------------------
+URL: {{ login_url }}
+
+===============================================
+Sistema LVK - Gestão de Lojas
+Este é um email automático de segurança, não responda a esta mensagem.
+Se você não solicitou esta ação, entre em contato conosco imediatamente.
+===============================================

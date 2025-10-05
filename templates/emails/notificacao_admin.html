@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificação do Sistema - LVK</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dc3545;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #dc3545;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .notification-box {
+            background-color: #f8f9fa;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .value {
+            color: #dc3545;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔔 Sistema LVK</div>
+            <h1 class="title">Notificação do Sistema</h1>
+        </div>
+
+        <p>Olá <strong>{{ admin_user.first_name }}</strong>,</p>
+        
+        <p>Uma nova ação foi realizada no sistema que requer sua atenção:</p>
+
+        <div class="notification-box">
+            <h3 style="margin-top: 0; color: #dc3545;">📋 Detalhes da Ação</h3>
+            
+            <div class="info-item">
+                <div class="label">🔔 Tipo de Ação:</div>
+                <div class="value">{{ detalhes.tipo_acao }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="label">👤 Usuário Responsável:</div>
+                <div class="value">{{ detalhes.usuario_responsavel }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="label">📅 Data/Hora:</div>
+                <div class="value">{{ detalhes.data_hora }}</div>
+            </div>
+            
+            {% if detalhes.detalhes_adicionais %}
+            <div class="info-item">
+                <div class="label">📝 Detalhes Adicionais:</div>
+                <div class="value">{{ detalhes.detalhes_adicionais }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ site_url }}/dashboard/" class="button" style="display: inline-block; background-color: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold;">🔍 Verificar Sistema</a>
+        </div>
+
+        <div class="footer">
+            <p><strong>Sistema LVK - Gestão de Lojas</strong></p>
+            <p>Este é um email automático de notificação do sistema.</p>
+        </div>
+    </div>
+</body>
+</html>

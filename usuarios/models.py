@@ -23,6 +23,10 @@ class PerfilUsuario(models.Model):
     ultimo_acesso = models.DateTimeField(blank=True, null=True, verbose_name="Último Acesso")
     ip_ultimo_acesso = models.GenericIPAddressField(blank=True, null=True, verbose_name="IP do Último Acesso")
     
+    # Controle de senha
+    deve_trocar_senha = models.BooleanField(default=True, verbose_name="Deve Trocar Senha")
+    senha_alterada_em = models.DateTimeField(blank=True, null=True, verbose_name="Senha Alterada em")
+    
     class Meta:
         verbose_name = "Perfil do Usuário"
         verbose_name_plural = "Perfis dos Usuários"

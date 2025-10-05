@@ -1,0 +1,26 @@
+===============================================
+    SISTEMA LVK - NOTIFICAÇÃO DO SISTEMA
+===============================================
+
+Olá {{ admin_user.first_name }},
+
+Uma nova ação foi realizada no sistema que requer sua atenção:
+
+📋 DETALHES DA AÇÃO:
+--------------------
+🔔 Tipo de Ação: {{ detalhes.tipo_acao }}
+👤 Usuário Responsável: {{ detalhes.usuario_responsavel }}
+📅 Data/Hora: {{ detalhes.data_hora }}
+
+{% if detalhes.detalhes_adicionais %}
+📝 Detalhes Adicionais: {{ detalhes.detalhes_adicionais }}
+{% endif %}
+
+🌐 ACESSO AO SISTEMA:
+---------------------
+URL: {{ site_url }}/dashboard/
+
+===============================================
+Sistema LVK - Gestão de Lojas
+Este é um email automático de notificação do sistema.
+===============================================

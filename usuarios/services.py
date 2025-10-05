@@ -200,7 +200,7 @@ class AuthenticationService:
             return redirect(redirect_url)
         except Exception as e:
             logger.error(f"Erro ao manipular erro de autenticação: {e}")
-            return redirect('login')
+            return redirect('simple_login')
 
 
 class SessionService:
@@ -632,11 +632,11 @@ class RedirectLoopPreventionService:
                 )
             
             # Redireciona para login com parâmetro especial
-            return redirect('login')
+            return redirect('simple_login')
             
         except Exception as e:
             logger.error(f"Erro ao manipular loop de redirecionamento: {e}")
-            return redirect('login')
+            return redirect('simple_login')
     
     @staticmethod
     def is_safe_redirect(request, target_url: str) -> bool:

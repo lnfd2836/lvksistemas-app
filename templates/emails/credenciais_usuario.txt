@@ -1,0 +1,33 @@
+===============================================
+    SISTEMA LVK - CREDENCIAIS DE ACESSO
+===============================================
+
+Olá {{ user.first_name }} {{ user.last_name }},
+
+Sua conta de {{ tipo_usuario }} foi criada com sucesso no Sistema LVK!
+
+🔑 SUAS CREDENCIAIS DE ACESSO:
+--------------------------------
+👤 Nome de Usuário: {{ user.username }}
+📧 Email: {{ user.email }}
+🔐 Senha Provisória: {{ senha_provisoria }}
+
+⚠️  IMPORTANTE: Esta é uma senha provisória. 
+   Você DEVE alterá-la no primeiro login por motivos de segurança.
+
+📋 PRÓXIMOS PASSOS:
+-------------------
+1. Acesse o sistema usando as credenciais acima
+2. Altere sua senha no primeiro login
+3. Configure seu perfil completo
+4. Explore as funcionalidades do sistema
+
+🌐 ACESSO AO SISTEMA:
+---------------------
+URL: {{ login_url }}
+
+===============================================
+Sistema LVK - Gestão de Lojas
+Este é um email automático, não responda a esta mensagem.
+Se você não solicitou esta conta, entre em contato conosco imediatamente.
+===============================================

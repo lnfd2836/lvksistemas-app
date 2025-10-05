@@ -1,5 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from . import password_views
 
 urlpatterns = [
     # URLs de autenticação padrão do Django
@@ -9,5 +10,9 @@ urlpatterns = [
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    
+    # URLs para troca de senha
+    path('alterar-senha/', password_views.alterar_senha_obrigatoria, name='alterar_senha_obrigatoria'),
+    path('alterar-senha-normal/', password_views.alterar_senha_normal, name='alterar_senha_normal'),
 ]
 
