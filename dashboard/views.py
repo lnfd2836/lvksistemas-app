@@ -18,6 +18,10 @@ from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 def dashboard_principal(request):
     """Dashboard principal do sistema"""
     
+    # Debug: verificar se o usuário está autenticado
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
     # Se é super usuário E não tem loja associada, mostra dashboard geral
     if request.user.is_superuser:
         try:
