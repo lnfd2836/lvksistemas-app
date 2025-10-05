@@ -175,10 +175,14 @@
                                     </td>
                                     <td>
                                         <div class="text-muted small">{{ boleto.data_vencimento|date:"d/m/Y" }}</div>
-                                        {% if boleto.dias_para_vencimento <= 0 %}
-                                        <small class="text-danger">{{ boleto.dias_para_vencimento|abs }} dias atraso</small>
-                                        {% elif boleto.dias_para_vencimento <= 5 %}
-                                        <small class="text-warning">{{ boleto.dias_para_vencimento }} dias</small>
+                                        {% if boleto.data_vencimento %}
+                                            {% with dias=boleto.dias_para_vencimento %}
+                                                {% if dias <= 0 %}
+                                                <small class="text-danger">{{ dias|abs }} dias atraso</small>
+                                                {% elif dias <= 5 %}
+                                                <small class="text-warning">{{ dias }} dias</small>
+                                                {% endif %}
+                                            {% endwith %}
                                         {% endif %}
                                     </td>
                                     <td>
