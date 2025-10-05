@@ -6,7 +6,7 @@ from django.contrib import messages
 def simple_login(request):
     """View de login simples"""
     if request.user.is_authenticated:
-        return redirect('/dashboard/')
+        return redirect('dashboard')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -16,7 +16,7 @@ def simple_login(request):
         
         if user is not None:
             login(request, user)
-            return redirect('/dashboard/')
+            return redirect('dashboard')
         else:
             messages.error(request, 'Usuário ou senha incorretos.')
     

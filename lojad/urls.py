@@ -11,7 +11,7 @@ from dashboard.simple_login import simple_login
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', lambda request: redirect('/dashboard/')),
+    path('', lambda request: redirect('/login/')),
     path('dashboard/', include('dashboard.urls')),
     path('lojas/', include('lojas.urls')),
     path('usuarios/', include('usuarios.urls')),
