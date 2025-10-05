@@ -14,41 +14,23 @@ from usuarios.models import LogAcesso, SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 
 
-# @login_required  # Temporariamente removido para debug
 def dashboard_principal(request):
-    """Dashboard principal do sistema"""
+    """Dashboard principal do sistema - versão simplificada para debug"""
     
-    # Debug: verificar se o usuário está autenticado
-    print(f"DEBUG: dashboard_principal - Usuário autenticado: {request.user.is_authenticated}")
-    if not request.user.is_authenticated:
-        print("DEBUG: Usuário não autenticado, redirecionando para login")
-        return redirect('login')
-    
-    # Se é super usuário E não tem loja associada, mostra dashboard geral
-    if request.user.is_superuser:
-        print("DEBUG: Usuário é super usuário")
-        try:
-            # Verifica se o super usuário tem uma loja associada
-            loja = request.user.loja_admin
-            print(f"DEBUG: Super usuário tem loja associada: {loja}")
-            # Se tem loja associada, redireciona para dashboard da loja
-            return dashboard_loja(request, loja)
-        except Exception as e:
-            print(f"DEBUG: Super usuário não tem loja associada: {e}")
-            # Se não tem loja associada, mostra dashboard super admin
-            return dashboard_super_admin(request)
-    
-    # Se é admin de loja, mostra dashboard da loja
-    print("DEBUG: Usuário não é super usuário, verificando se é admin de loja")
-    try:
-        loja = request.user.loja_admin
-        print(f"DEBUG: Usuário tem loja associada: {loja}")
-        return dashboard_loja(request, loja)
-    except Exception as e:
-        print(f"DEBUG: Usuário não tem loja associada: {e}")
-        # Se não tem loja associada, mostra mensagem e redireciona para login
-        messages.error(request, 'Você não tem uma loja associada.')
-        return redirect('login')
+    # Retorna uma resposta simples para testar
+    from django.http import HttpResponse
+    return HttpResponse("""
+    <html>
+    <head><title>Dashboard Teste</title></head>
+    <body>
+        <h1>Dashboard Teste</h1>
+        <p>Se você está vendo esta página, o loop foi resolvido!</p>
+        <p>Usuário autenticado: """ + str(request.user.is_authenticated) + """</p>
+        <p>Usuário: """ + str(request.user) + """</p>
+        <p><a href="/login/">Ir para Login</a></p>
+    </body>
+    </html>
+    """)
 
 
 @login_required
