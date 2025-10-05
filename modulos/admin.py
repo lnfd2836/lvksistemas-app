@@ -9,41 +9,16 @@ class TipoLojaAdmin(admin.ModelAdmin):
     search_fields = ['nome', 'descricao']
     readonly_fields = ['data_criacao']
     
-    fieldsets = (
-        ('Informações Básicas', {
-            'fields': ('nome', 'descricao', 'icone', 'cor_primaria', 'cor_secundaria'),
-            'classes': ('wide',)
-        }),
-        ('Configurações de Produto', {
-            'fields': (
-                ('tem_categoria_produto', 'tem_marca_produto', 'tem_tamanho_produto'),
-                ('tem_cor_produto', 'tem_peso_produto', 'tem_volume_produto'),
-                ('tem_data_validade', 'tem_codigo_barras', 'tem_estoque_minimo')
-            ),
-            'classes': ('wide', 'collapse'),
-            'description': 'Configure quais campos de produto estarão disponíveis para este tipo de loja'
-        }),
-        ('Configurações de Cliente', {
-            'fields': (
-                ('tem_data_nascimento_cliente', 'tem_sexo_cliente', 'tem_cpf_cliente'),
-                ('tem_rg_cliente', 'tem_cnpj_cliente')
-            ),
-            'classes': ('wide', 'collapse'),
-            'description': 'Configure quais campos de cliente estarão disponíveis para este tipo de loja'
-        }),
-        ('Configurações de Venda', {
-            'fields': (
-                ('tem_desconto_venda', 'tem_taxa_entrega'),
-                ('tem_mesa_venda', 'tem_garcom_venda')
-            ),
-            'classes': ('wide', 'collapse'),
-            'description': 'Configure quais funcionalidades de venda estarão disponíveis para este tipo de loja'
-        }),
-        ('Status', {
-            'fields': ('ativo',),
-            'classes': ('wide',)
-        })
-    )
+    # Usar fields simples primeiro para testar
+    fields = [
+        'nome', 'descricao', 'icone', 'cor_primaria', 'cor_secundaria', 'ativo',
+        'tem_categoria_produto', 'tem_marca_produto', 'tem_tamanho_produto',
+        'tem_cor_produto', 'tem_peso_produto', 'tem_volume_produto',
+        'tem_data_validade', 'tem_codigo_barras', 'tem_estoque_minimo',
+        'tem_data_nascimento_cliente', 'tem_sexo_cliente', 'tem_cpf_cliente',
+        'tem_rg_cliente', 'tem_cnpj_cliente',
+        'tem_desconto_venda', 'tem_taxa_entrega', 'tem_mesa_venda', 'tem_garcom_venda'
+    ]
 
 
 @admin.register(ModuloLoja)
