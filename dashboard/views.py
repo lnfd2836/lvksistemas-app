@@ -15,6 +15,7 @@ from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 
 
 @login_required
+@login_required
 def dashboard_principal(request):
     """Dashboard principal do sistema"""
     
