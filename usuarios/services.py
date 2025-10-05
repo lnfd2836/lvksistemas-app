@@ -45,7 +45,7 @@ class AuthenticationService:
                 
                 # Super admin sem loja associada
                 logger.info(f"Super admin {user.username} sem loja associada, redirecionando para dashboard super admin")
-                return 'dashboard_super_admin'
+                return 'dashboard:super_admin'
             
             # Usuário comum - verifica se tem loja associada
             if hasattr(user, 'loja_admin'):

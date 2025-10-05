@@ -72,7 +72,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if 'sessoes' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'gerenciar_sessoes' %}">
+                                <a class="nav-link {% if 'sessoes' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_sessoes' %}">
                                     <i class="bi bi-person-check me-1"></i> Sessões
                                 </a>
                             </li>
