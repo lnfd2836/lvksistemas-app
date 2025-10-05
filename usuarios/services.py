@@ -233,25 +233,63 @@ class SessionService:
             
             # Importa aqui para evitar circular import
             from usuarios.models import SessaoAtiva
+            from django.db import IntegrityError
             
             # Invalida sessões anteriores do usuário (sessão única)
             SessionService.invalidate_user_sessions(user, session_key)
             
-            # Cria nova sessão ativa
-            SessaoAtiva.objects.create(
-                user=user,
-                session_key=session_key,
-                ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                ativa=True,
-                is_super_admin=user.is_superuser
-            )
+            # Verifica se já existe uma sessão ativa com esta session_key
+            existing_session = SessaoAtiva.objects.filter(session_key=session_key).first()
+            if existing_session:
+                if existing_session.user == user:
+                    # Sessão já existe para o mesmo usuário, apenas reativa
+                    existing_session.ativa = True
+                    existing_session.is_super_admin = user.is_superuser
+                    existing_session.save()
+                    logger.info(f"Sessão existente reativada para usuário {user.username}")
+                    return True
+                else:
+                    # Sessão existe para outro usuário, invalida e cria nova
+                    existing_session.ativa = False
+                    existing_session.save()
+                    logger.warning(f"Sessão {session_key} estava associada a outro usuário, invalidando")
             
-            logger.info(f"Sessão criada com sucesso para usuário {user.username}")
-            return True
+            try:
+                # Cria nova sessão ativa
+                SessaoAtiva.objects.create(
+                    user=user,
+                    session_key=session_key,
+                    ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    ativa=True,
+                    is_super_admin=user.is_superuser
+                )
+                
+                logger.info(f"Sessão criada com sucesso para usuário {user.username}")
+                return True
+                
+            except IntegrityError as e:
+                # Se ainda houver erro de integridade, tenta atualizar a sessão existente
+                logger.warning(f"Erro de integridade ao criar sessão para {user.username}, tentando atualizar existente: {e}")
+                
+                try:
+                    existing_session = SessaoAtiva.objects.get(session_key=session_key)
+                    existing_session.user = user
+                    existing_session.ativa = True
+                    existing_session.is_super_admin = user.is_superuser
+                    existing_session.ip_address = request.META.get('REMOTE_ADDR', '127.0.0.1')
+                    existing_session.user_agent = request.META.get('HTTP_USER_AGENT', '')
+                    existing_session.save()
+                    
+                    logger.info(f"Sessão existente atualizada para usuário {user.username}")
+                    return True
+                    
+                except Exception as update_error:
+                    logger.error(f"Erro ao atualizar sessão existente para {user.username}: {update_error}")
+                    return False
             
         except Exception as e:
-            logger.error(f"Erro ao criar sessão para usuário {user.username}: {e}")
+            logger.error(f"Erro geral ao criar sessão para usuário {user.username}: {e}")
             return False
     
     @staticmethod
@@ -272,6 +310,10 @@ class SessionService:
             session_key = request.session.session_key
             if not session_key:
                 logger.warning(f"Session key não encontrada para usuário {request.user.username}")
+                # Tenta criar uma nova sessão se não existir
+                if SessionService.create_user_session(request, request.user):
+                    logger.info(f"Nova sessão criada durante validação para usuário {request.user.username}")
+                    return True
                 return False
             
             # Importa aqui para evitar circular import
@@ -287,10 +329,15 @@ class SessionService:
                 
                 # Atualiza a última atividade
                 sessao_ativa.save()  # Isso atualiza o campo ultima_atividade
+                logger.debug(f"Sessão validada com sucesso para usuário {request.user.username}")
                 return True
                 
             except SessaoAtiva.DoesNotExist:
                 logger.warning(f"Sessão ativa não encontrada para usuário {request.user.username}")
+                # Tenta criar uma nova sessão
+                if SessionService.create_user_session(request, request.user):
+                    logger.info(f"Nova sessão criada após validação falhar para usuário {request.user.username}")
+                    return True
                 return False
                 
         except Exception as e:
@@ -315,10 +362,15 @@ class SessionService:
             if exclude_current:
                 query = query.exclude(session_key=exclude_current)
             
+            # Pega as sessões antes de invalidar para logging
+            sessions_to_invalidate = list(query.values_list('session_key', flat=True))
+            
             invalidated_count = query.update(ativa=False)
             
             if invalidated_count > 0:
-                logger.info(f"Invalidadas {invalidated_count} sessões para usuário {user.username}")
+                logger.info(f"Invalidadas {invalidated_count} sessões para usuário {user.username}: {sessions_to_invalidate}")
+            else:
+                logger.debug(f"Nenhuma sessão ativa encontrada para invalidar para usuário {user.username}")
             
         except Exception as e:
             logger.error(f"Erro ao invalidar sessões do usuário {user.username}: {e}")
