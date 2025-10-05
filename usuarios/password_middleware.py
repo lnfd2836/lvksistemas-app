@@ -28,6 +28,8 @@ class PasswordChangeMiddleware(MiddlewareMixin):
             '/static/',
             '/media/',
             '/alterar-senha/',
+            '/usuarios/alterar-senha/',
+            '/usuarios/alterar-senha-normal/',
             '/api/',
         ]
         

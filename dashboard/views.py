@@ -335,7 +335,7 @@ def listar_usuarios_super_admin(request):
     """Lista todos os usuários super administradores"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     usuarios = User.objects.filter(is_superuser=True).order_by('-date_joined')
     
@@ -351,7 +351,7 @@ def criar_usuario_super_admin(request):
     """Cria um novo usuário super administrador"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -406,7 +406,7 @@ def editar_usuario_super_admin(request, user_id):
     """Edita um usuário super administrador"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     user = get_object_or_404(User, id=user_id, is_superuser=True)
     
@@ -437,7 +437,7 @@ def alterar_senha_usuario_super_admin(request, user_id):
     """Altera a senha de um usuário super administrador"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     user = get_object_or_404(User, id=user_id, is_superuser=True)
     
@@ -479,7 +479,7 @@ def excluir_usuario_super_admin(request, user_id):
     """Exclui um usuário super administrador"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     user = get_object_or_404(User, id=user_id, is_superuser=True)
     
@@ -504,7 +504,7 @@ def excluir_usuario_super_admin(request, user_id):
 def login_view(request):
     """View de login"""
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -536,7 +536,7 @@ def login_view(request):
             except:
                 pass  # Ignora erro se não conseguir criar log
             
-            return redirect('dashboard')
+            return redirect('dashboard:principal')
         else:
             messages.error(request, 'Usuário ou senha incorretos.')
     

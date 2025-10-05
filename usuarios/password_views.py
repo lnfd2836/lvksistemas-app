@@ -20,7 +20,7 @@ def alterar_senha_obrigatoria(request):
     """
     # Verifica se o usuário realmente precisa trocar a senha
     if not hasattr(request.user, 'perfil') or not request.user.perfil.deve_trocar_senha:
-        return redirect('dashboard')
+        return redirect('dashboard:principal')
     
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
@@ -42,7 +42,7 @@ def alterar_senha_obrigatoria(request):
             
             logger.info(f"Usuário {request.user.username} alterou a senha com sucesso")
             
-            return redirect('dashboard')
+            return redirect('dashboard:principal')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
@@ -79,7 +79,7 @@ def alterar_senha_normal(request):
             
             logger.info(f"Usuário {request.user.username} alterou a senha voluntariamente")
             
-            return redirect('dashboard')
+            return redirect('dashboard:principal')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
