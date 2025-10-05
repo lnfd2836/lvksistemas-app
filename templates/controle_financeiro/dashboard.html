@@ -175,15 +175,6 @@
                                     </td>
                                     <td>
                                         <div class="text-muted small">{{ boleto.data_vencimento|date:"d/m/Y" }}</div>
-                                        {% if boleto.data_vencimento %}
-                                            {% with dias=boleto.dias_para_vencimento %}
-                                                {% if dias <= 0 %}
-                                                <small class="text-danger">{{ dias|abs }} dias atraso</small>
-                                                {% elif dias <= 5 %}
-                                                <small class="text-warning">{{ dias }} dias</small>
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
