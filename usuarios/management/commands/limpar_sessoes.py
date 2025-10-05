@@ -1,26 +1,20 @@
 from django.core.management.base import BaseCommand
+from django.contrib.sessions.models import Session
 from usuarios.models import SessaoAtiva
 
 
 class Command(BaseCommand):
-    help = 'Limpa sessões expiradas e inválidas'
+    help = 'Limpa todas as sessões ativas e resolve problemas de redirect loop'
 
     def handle(self, *args, **options):
-        """Executa a limpeza de sessões"""
-        try:
-            # Limpa sessões expiradas
-            SessaoAtiva.limpar_sessoes_expiradas()
-            
-            # Conta quantas sessões foram limpas
-            sessoes_limpas = SessaoAtiva.objects.filter(ativa=False).count()
-            
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Limpeza concluída! {sessoes_limpas} sessões foram marcadas como inativas.'
-                )
+        # Remove todas as sessões ativas
+        sessoes_removidas = SessaoAtiva.objects.all().delete()[0]
+        
+        # Remove todas as sessões do Django
+        sessions_removidas = Session.objects.all().delete()[0]
+        
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Limpeza concluída: {sessoes_removidas} sessões ativas e {sessions_removidas} sessões Django removidas'
             )
-            
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'Erro ao limpar sessões: {str(e)}')
-            )
+        )

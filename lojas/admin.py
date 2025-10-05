@@ -179,3 +179,4 @@ admin.site.site_title = "Sistema de Lojas"
 admin.site.index_title = "Painel de Controle"
 
 
+

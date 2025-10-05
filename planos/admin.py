@@ -72,3 +72,4 @@ class HistoricoUsoAdmin(admin.ModelAdmin):
     ordering = ['-data_evento']
 
 
+

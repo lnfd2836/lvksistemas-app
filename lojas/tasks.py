@@ -169,3 +169,4 @@ def enviar_email_notificacao(notificacao_id):
         return f"Erro ao enviar email: {str(e)}"
 
 
+

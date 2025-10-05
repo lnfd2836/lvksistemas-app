@@ -43,16 +43,37 @@ class SessaoUnicaMiddleware:
                 sessao_ativa.save()  # Isso atualiza o campo ultima_atividade
                 
             except SessaoAtiva.DoesNotExist:
-                # Sessão não é mais válida - faz logout para TODOS os usuários
-                messages.warning(
-                    request, 
-                    'Sua sessão foi invalidada porque você fez login em outro local. '
-                    'Por favor, faça login novamente.'
-                )
-                logout(request)
-                return redirect('login')
+                # Verifica se existe alguma sessão ativa para o usuário
+                try:
+                    # Se não há sessão ativa registrada, cria uma nova
+                    if not SessaoAtiva.objects.filter(user=request.user, ativa=True).exists():
+                        SessaoAtiva.objects.create(
+                            user=request.user,
+                            session_key=session_key,
+                            ativa=True
+                        )
+                        return self.get_response(request)
+                    else:
+                        # Sessão não é mais válida - faz logout
+                        messages.warning(
+                            request, 
+                            'Sua sessão foi invalidada porque você fez login em outro local. '
+                            'Por favor, faça login novamente.'
+                        )
+                        logout(request)
+                        return redirect('login')
+                except Exception as e:
+                    # Em caso de erro, permite continuar para evitar loops
+                    return self.get_response(request)
+        else:
+            # Se não há session_key, tenta criar um
+            if hasattr(request, 'session'):
+                request.session.create()
         
         # Limpa sessões expiradas periodicamente
-        SessaoAtiva.limpar_sessoes_expiradas()
+        try:
+            SessaoAtiva.limpar_sessoes_expiradas()
+        except:
+            pass
         
         return self.get_response(request)

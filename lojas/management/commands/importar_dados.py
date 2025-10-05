@@ -117,3 +117,4 @@ class Command(BaseCommand):
                 self.stdout.write(f'Erro ao importar produto {row["nome"]}: {e}')
 
 
+

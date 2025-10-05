@@ -16,6 +16,23 @@ def simple_login(request):
         
         if user is not None:
             login(request, user)
+            
+            # Cria ou atualiza a sessão ativa
+            try:
+                from usuarios.models import SessaoAtiva
+                # Remove sessões antigas do usuário
+                SessaoAtiva.objects.filter(user=user).update(ativa=False)
+                
+                # Cria nova sessão ativa
+                SessaoAtiva.objects.create(
+                    user=user,
+                    session_key=request.session.session_key,
+                    ativa=True
+                )
+            except Exception as e:
+                # Se houver erro na criação da sessão, continua normalmente
+                pass
+            
             return redirect('dashboard')
         else:
             messages.error(request, 'Usuário ou senha incorretos.')

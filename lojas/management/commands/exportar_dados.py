@@ -139,3 +139,4 @@ class Command(BaseCommand):
         self.stdout.write(f'Vendas exportadas para {arquivo}')
 
 
+

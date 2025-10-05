@@ -235,3 +235,4 @@ class HistoricoUso(models.Model):
         return f"{self.assinatura.loja.nome} - {self.get_tipo_evento_display()} - {self.data_evento.strftime('%d/%m/%Y %H:%M')}"
 
 
+
