@@ -5,9 +5,7 @@ from django.contrib import messages
 
 def simple_login(request):
     """View de login simples"""
-    # Debug: verificar se o usuário está autenticado
     if request.user.is_authenticated:
-        print(f"DEBUG: Usuário autenticado: {request.user.username}")
         return redirect('dashboard')
     
     if request.method == 'POST':

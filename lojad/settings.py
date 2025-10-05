@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'usuarios.middleware.SessaoUnicaMiddleware',  # Temporariamente desabilitado
+    'usuarios.middleware.SessaoUnicaMiddleware',
     'lojas.middleware.LojaMiddleware',
     'controle_financeiro.middleware.ControleFinanceiroMiddleware',
 ]

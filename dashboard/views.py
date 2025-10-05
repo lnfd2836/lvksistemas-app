@@ -14,23 +14,29 @@ from usuarios.models import LogAcesso, SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 
 
+@login_required
 def dashboard_principal(request):
-    """Dashboard principal do sistema - versão simplificada para debug"""
+    """Dashboard principal do sistema"""
     
-    # Retorna uma resposta simples para testar
-    from django.http import HttpResponse
-    return HttpResponse("""
-    <html>
-    <head><title>Dashboard Teste</title></head>
-    <body>
-        <h1>Dashboard Teste</h1>
-        <p>Se você está vendo esta página, o loop foi resolvido!</p>
-        <p>Usuário autenticado: """ + str(request.user.is_authenticated) + """</p>
-        <p>Usuário: """ + str(request.user) + """</p>
-        <p><a href="/login/">Ir para Login</a></p>
-    </body>
-    </html>
-    """)
+    # Se é super usuário E não tem loja associada, mostra dashboard geral
+    if request.user.is_superuser:
+        try:
+            # Verifica se o super usuário tem uma loja associada
+            loja = request.user.loja_admin
+            # Se tem loja associada, redireciona para dashboard da loja
+            return dashboard_loja(request, loja)
+        except:
+            # Se não tem loja associada, mostra dashboard super admin
+            return dashboard_super_admin(request)
+    
+    # Se é admin de loja, mostra dashboard da loja
+    try:
+        loja = request.user.loja_admin
+        return dashboard_loja(request, loja)
+    except:
+        # Se não tem loja associada, mostra mensagem e redireciona para login
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('login')
 
 
 @login_required
