@@ -110,11 +110,11 @@
                 <hr>
                 
                 <div class="d-grid gap-2">
-                    <a href="{% url 'editar_usuario_super_admin' usuario.id %}" class="btn btn-outline-primary btn-sm">
+                    <a href="{% url 'dashboard:admin_usuarios_editar' usuario.id %}" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-pencil me-1"></i>
                         Editar Usuário
                     </a>
-                    <a href="{% url 'alterar_senha_usuario_super_admin' usuario.id %}" class="btn btn-outline-warning btn-sm">
+                    <a href="{% url 'dashboard:admin_usuarios_alterar_senha' usuario.id %}" class="btn btn-outline-warning btn-sm">
                         <i class="bi bi-key me-1"></i>
                         Alterar Senha
                     </a>

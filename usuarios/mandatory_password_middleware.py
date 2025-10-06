@@ -57,39 +57,45 @@ class MandatoryPasswordChangeMiddleware:
         """
         Processa a request e verifica se o usuário precisa trocar a senha
         """
-        # Skip para usuários não autenticados
-        if not request.user.is_authenticated:
-            return None
-        
-        # Skip para URLs isentas
-        if self.is_exempt_url(request.path):
-            return None
-        
-        # Skip para superusuários acessando admin (opcional)
-        if request.path.startswith('/admin/') and request.user.is_superuser:
-            return None
-        
-        # Verifica se o usuário precisa trocar a senha
-        if self.user_needs_password_change(request.user):
-            # Log da ação
-            logger.info(f'Redirecionando usuário {request.user.username} para troca obrigatória de senha')
+        try:
+            # Skip para usuários não autenticados
+            if not request.user.is_authenticated:
+                return None
             
-            # Adiciona mensagem informativa (apenas uma vez por sessão)
-            if not request.session.get('password_change_message_shown', False):
-                messages.warning(
-                    request, 
-                    'Por segurança, você deve alterar sua senha provisória antes de continuar.'
-                )
-                request.session['password_change_message_shown'] = True
+            # Skip para URLs isentas
+            if self.is_exempt_url(request.path):
+                return None
             
-            # Redireciona para página de troca de senha
-            return redirect('usuarios:change_mandatory_password')
-        
-        # Remove a flag da mensagem se o usuário não precisa mais trocar senha
-        if request.session.get('password_change_message_shown', False):
-            del request.session['password_change_message_shown']
-        
-        return None
+            # Skip para superusuários acessando admin (opcional)
+            if request.path.startswith('/admin/') and request.user.is_superuser:
+                return None
+            
+            # Verifica se o usuário precisa trocar a senha
+            if self.user_needs_password_change(request.user):
+                # Log da ação
+                logger.info(f'Redirecionando usuário {request.user.username} para troca obrigatória de senha')
+                
+                # Adiciona mensagem informativa (apenas uma vez por sessão)
+                if not request.session.get('password_change_message_shown', False):
+                    messages.warning(
+                        request, 
+                        'Por segurança, você deve alterar sua senha provisória antes de continuar.'
+                    )
+                    request.session['password_change_message_shown'] = True
+                
+                # Redireciona para página de troca de senha
+                return redirect('usuarios:change_mandatory_password')
+            
+            # Remove a flag da mensagem se o usuário não precisa mais trocar senha
+            if request.session.get('password_change_message_shown', False):
+                del request.session['password_change_message_shown']
+            
+            return None
+            
+        except Exception as e:
+            # Log do erro mas não bloqueia o processamento
+            logger.error(f'Erro no middleware de troca de senha para {request.path}: {e}')
+            return None
     
     def is_exempt_url(self, path):
         """
@@ -115,17 +121,22 @@ class MandatoryPasswordChangeMiddleware:
             if not hasattr(user, 'perfil'):
                 return False
             
-            perfil = user.perfil
-            
-            # Verifica se está marcado para troca obrigatória
-            if perfil.requires_password_change:
-                return True
-            
-            # Verifica campo legado também (compatibilidade)
-            if hasattr(perfil, 'deve_trocar_senha') and perfil.deve_trocar_senha:
-                return True
-            
-            return False
+            try:
+                perfil = user.perfil
+                
+                # Verifica se está marcado para troca obrigatória
+                if perfil.requires_password_change:
+                    return True
+                
+                # Verifica campo legado também (compatibilidade)
+                if hasattr(perfil, 'deve_trocar_senha') and perfil.deve_trocar_senha:
+                    return True
+                
+                return False
+                
+            except user.perfil.RelatedObjectDoesNotExist:
+                # Usuário não tem perfil - não precisa trocar senha
+                return False
             
         except Exception as e:
             # Log do erro mas não bloqueia o usuário
@@ -136,8 +147,9 @@ class MandatoryPasswordChangeMiddleware:
         """
         Processa exceções que podem ocorrer durante a verificação
         """
-        # Log da exceção
+        # Log da exceção com mais detalhes
         logger.error(f'Exceção no middleware de troca de senha: {exception}')
+        logger.error(f'Path: {request.path}, User: {request.user if hasattr(request, "user") else "N/A"}')
         
         # Não bloqueia o processamento normal
         return None

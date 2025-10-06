@@ -29,6 +29,11 @@ class ErrorCaptureMiddleware:
             response = self.get_response(request)
             return response
         except Exception as e:
+            # Não intercepta exceções 404 - deixa o Django tratar normalmente
+            from django.http import Http404
+            if isinstance(e, Http404):
+                raise e
+            
             # Captura informações detalhadas do erro
             error_info = self.capture_error_details(request, e)
             
