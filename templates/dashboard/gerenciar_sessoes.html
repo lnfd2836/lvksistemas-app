@@ -24,14 +24,8 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="bi bi-activity me-2"></i>
-                        Sessões Ativas do Sistema
-                    </h6>
-                    <p class="text-muted mb-0 mt-2">Gerencie as sessões ativas dos usuários do sistema</p>
-                </div>
-                
+
+
                 <div class="card-body">
                     <!-- Filtros -->
                     <div class="row mb-3">
@@ -39,15 +33,17 @@
                             <form method="GET" class="form-inline">
                                 <div class="form-group mr-3">
                                     <label for="usuario" class="mr-2">Usuário:</label>
-                                    <input type="text" name="usuario" id="usuario" class="form-control" 
-                                           value="{{ filtro_usuario }}" placeholder="Nome do usuário">
+                                    <input type="text" name="usuario" id="usuario" class="form-control"
+                                        value="{{ filtro_usuario }}" placeholder="Nome do usuário">
                                 </div>
                                 <div class="form-group mr-3">
                                     <label for="super_admin" class="mr-2">Tipo:</label>
                                     <select name="super_admin" id="super_admin" class="form-control">
                                         <option value="">Todos</option>
-                                        <option value="sim" {% if filtro_super_admin == 'sim' %}selected{% endif %}>Super Admin</option>
-                                        <option value="nao" {% if filtro_super_admin == 'nao' %}selected{% endif %}>Usuário Normal</option>
+                                        <option value="sim" {% if filtro_super_admin=='sim' %}selected{% endif %}>Super
+                                            Admin</option>
+                                        <option value="nao" {% if filtro_super_admin=='nao' %}selected{% endif %}>
+                                            Usuário Normal</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-primary">
@@ -165,9 +161,8 @@
                                         </small>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-danger invalidar-sessao" 
-                                                data-sessao-id="{{ sessao.id }}"
-                                                data-usuario="{{ sessao.user.username }}">
+                                        <button class="btn btn-sm btn-danger invalidar-sessao"
+                                            data-sessao-id="{{ sessao.id }}" data-usuario="{{ sessao.user.username }}">
                                             <i class="fas fa-ban"></i> Invalidar
                                         </button>
                                     </td>
@@ -201,7 +196,7 @@
             <div class="modal-body">
                 <p>Tem certeza que deseja invalidar a sessão do usuário <strong id="usuario-sessao"></strong>?</p>
                 <p class="text-warning">
-                    <i class="fas fa-exclamation-triangle"></i> 
+                    <i class="fas fa-exclamation-triangle"></i>
                     O usuário será deslogado imediatamente.
                 </p>
             </div>
@@ -218,40 +213,40 @@
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    let sessaoId = null;
-    
-    // Abrir modal de confirmação
-    $('.invalidar-sessao').click(function() {
-        sessaoId = $(this).data('sessao-id');
-        const usuario = $(this).data('usuario');
-        $('#usuario-sessao').text(usuario);
-        $('#modalConfirmar').modal('show');
-    });
-    
-    // Confirmar invalidação
-    $('#confirmar-invalidacao').click(function() {
-        if (sessaoId) {
-            $.ajax({
-                url: '/sessoes/' + sessaoId + '/invalidar/',
-                method: 'POST',
-                data: {
-                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        location.reload();
-                    } else {
+    $(document).ready(function () {
+        let sessaoId = null;
+
+        // Abrir modal de confirmação
+        $('.invalidar-sessao').click(function () {
+            sessaoId = $(this).data('sessao-id');
+            const usuario = $(this).data('usuario');
+            $('#usuario-sessao').text(usuario);
+            $('#modalConfirmar').modal('show');
+        });
+
+        // Confirmar invalidação
+        $('#confirmar-invalidacao').click(function () {
+            if (sessaoId) {
+                $.ajax({
+                    url: '/sessoes/' + sessaoId + '/invalidar/',
+                    method: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Erro: ' + response.error);
+                        }
+                    },
+                    error: function (xhr) {
+                        const response = JSON.parse(xhr.responseText);
                         alert('Erro: ' + response.error);
                     }
-                },
-                error: function(xhr) {
-                    const response = JSON.parse(xhr.responseText);
-                    alert('Erro: ' + response.error);
-                }
-            });
-        }
+                });
+            }
+        });
     });
-});
 </script>
 {% endblock %}
