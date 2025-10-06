@@ -546,9 +546,9 @@
                     <div class="mb-3">
                         <label for="status" class="form-label">Novo Status</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="ativa" {% if loja.status=='ativa' %}selected{% endif %}>Ativa</option>
-                            <option value="inativa" {% if loja.status=='inativa' %}selected{% endif %}>Inativa</option>
-                            <option value="suspensa" {% if loja.status=='suspensa' %}selected{% endif %}>Suspensa
+                            <option value="ativa" {% if loja.status == 'ativa' %}selected{% endif %}>Ativa</option>
+                            <option value="inativa" {% if loja.status == 'inativa' %}selected{% endif %}>Inativa</option>
+                            <option value="suspensa" {% if loja.status == 'suspensa' %}selected{% endif %}>Suspensa
                             </option>
                         </select>
                     </div>
