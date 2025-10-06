@@ -29,18 +29,38 @@
                 </h6>
             </div>
             <div class="card-body">
+                <!-- Opção 1: Gerar Senha Automática -->
+                <div class="alert alert-info mb-4">
+                    <h6><i class="bi bi-magic me-2"></i>Opção Recomendada: Gerar Senha Automática</h6>
+                    <p class="mb-3">O sistema gerará uma senha segura automaticamente e enviará por email para o usuário.</p>
+                    
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" name="gerar_automatica" class="btn btn-success" 
+                                onclick="return confirm('Confirma a geração de nova senha automática para {{ usuario.username }}? A senha atual será invalidada e o usuário receberá as novas credenciais por email.')">
+                            <i class="bi bi-key-fill me-1"></i>
+                            Gerar Senha Automática e Enviar por Email
+                        </button>
+                    </form>
+                </div>
+                
+                <hr>
+                
+                <!-- Opção 2: Definir Senha Manual -->
+                <h6 class="mb-3"><i class="bi bi-pencil me-2"></i>Ou Definir Senha Manualmente:</h6>
+                
                 <form method="post">
                     {% csrf_token %}
                     
                     <div class="mb-3">
                         <label for="nova_senha" class="form-label">Nova Senha *</label>
-                        <input type="password" class="form-control" id="nova_senha" name="nova_senha" required>
+                        <input type="password" class="form-control" id="nova_senha" name="nova_senha">
                         <div class="form-text">Mínimo de 6 caracteres</div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="confirmar_senha" class="form-label">Confirmar Nova Senha *</label>
-                        <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                        <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha">
                         <div class="form-text">Digite a mesma senha novamente</div>
                     </div>
                     
@@ -51,7 +71,7 @@
                         </a>
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-check-circle me-1"></i>
-                            Alterar Senha
+                            Definir Senha Manual
                         </button>
                     </div>
                 </form>
@@ -68,26 +88,34 @@
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Recomendações para Senhas Seguras:</h6>
+                <h6>Como Funciona a Geração Automática:</h6>
                 <ul class="list-unstyled">
-                    <li><i class="bi bi-check-circle text-success me-2"></i>Mínimo de 6 caracteres</li>
-                    <li><i class="bi bi-check-circle text-success me-2"></i>Use letras maiúsculas e minúsculas</li>
-                    <li><i class="bi bi-check-circle text-success me-2"></i>Inclua números</li>
-                    <li><i class="bi bi-check-circle text-success me-2"></i>Use símbolos especiais</li>
-                    <li><i class="bi bi-check-circle text-success me-2"></i>Evite informações pessoais</li>
+                    <li><i class="bi bi-key text-success me-2"></i>Senha de 12 caracteres gerada automaticamente</li>
+                    <li><i class="bi bi-envelope text-success me-2"></i>Credenciais enviadas por email</li>
+                    <li><i class="bi bi-shield-lock text-success me-2"></i>Usuário obrigado a trocar no primeiro login</li>
+                    <li><i class="bi bi-clock text-success me-2"></i>Senha anterior invalidada imediatamente</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Para Senhas Manuais:</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-primary me-2"></i>Mínimo de 6 caracteres</li>
+                    <li><i class="bi bi-check-circle text-primary me-2"></i>Use letras maiúsculas e minúsculas</li>
+                    <li><i class="bi bi-check-circle text-primary me-2"></i>Inclua números e símbolos</li>
                 </ul>
                 
                 <hr>
                 
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>Lembre-se:</strong> A senha será alterada imediatamente e o usuário precisará usar a nova senha no próximo login.
+                    <strong>Usuário:</strong> {{ usuario.username }} ({{ usuario.email }})
                 </div>
                 
                 {% if usuario == user %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Atenção:</strong> Você está alterando sua própria senha. Após salvar, você será deslogado e precisará fazer login novamente.
+                    <strong>Atenção:</strong> Você está alterando sua própria senha!
                 </div>
                 {% endif %}
             </div>

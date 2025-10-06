@@ -524,36 +524,152 @@ def alterar_senha_usuario_super_admin(request, user_id):
     user = get_object_or_404(User, id=user_id, is_superuser=True)
     
     if request.method == 'POST':
+        # Verificar se é geração automática de senha
+        if 'gerar_automatica' in request.POST:
+            return gerar_senha_automatica_usuario(request, user)
+        
+        # Alteração manual de senha
         nova_senha = request.POST.get('nova_senha')
         confirmar_senha = request.POST.get('confirmar_senha')
         
         if not nova_senha or not confirmar_senha:
             messages.error(request, 'Todos os campos são obrigatórios.')
-            return redirect('alterar_senha_usuario_super_admin', user_id=user_id)
+            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
         
         if nova_senha != confirmar_senha:
             messages.error(request, 'As senhas não coincidem.')
-            return redirect('alterar_senha_usuario_super_admin', user_id=user_id)
+            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
         
         if len(nova_senha) < 6:
             messages.error(request, 'A senha deve ter pelo menos 6 caracteres.')
-            return redirect('alterar_senha_usuario_super_admin', user_id=user_id)
+            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
         
         try:
             user.set_password(nova_senha)
             user.save()
+            
+            # Atualizar perfil se existir
+            try:
+                profile = user.perfil
+                profile.requires_password_change = False
+                profile.password_changed_at = timezone.now()
+                profile.save()
+            except:
+                pass
+            
             messages.success(request, f'Senha do usuário "{user.username}" alterada com sucesso!')
             return redirect('dashboard:admin_usuarios_lista')
             
         except Exception as e:
             messages.error(request, f'Erro ao alterar senha: {str(e)}')
-            return redirect('alterar_senha_usuario_super_admin', user_id=user_id)
+            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
     
     context = {
         'usuario': user,
     }
     
-    return render(request, 'dashboard/alterar_senha_usuario_super_admin.html')
+    return render(request, 'dashboard/alterar_senha_usuario_super_admin.html', context)
+
+
+def gerar_senha_automatica_usuario(request, user):
+    """Gera senha automática e envia por email"""
+    try:
+        from django.db import transaction
+        from django.utils import timezone
+        import secrets
+        import string
+        
+        with transaction.atomic():
+            # Gerar nova senha provisória
+            password_chars = string.ascii_letters + string.digits + "!@#$%&*"
+            nova_senha_provisoria = ''.join(secrets.choice(password_chars) for _ in range(12))
+            
+            # Alterar senha do usuário
+            user.set_password(nova_senha_provisoria)
+            user.save()
+            
+            # Atualizar perfil para marcar troca obrigatória
+            from usuarios.models import PerfilUsuario
+            profile, created = PerfilUsuario.objects.get_or_create(
+                user=user,
+                defaults={
+                    'is_super_admin': True,
+                    'requires_password_change': True,
+                    'provisional_password_created': timezone.now(),
+                    'password_change_reminders_sent': 0
+                }
+            )
+            
+            if not created:
+                profile.requires_password_change = True
+                profile.provisional_password_created = timezone.now()
+                profile.password_change_reminders_sent = 0
+                profile.save()
+            
+            # Enviar email com nova senha
+            email_sent = False
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                subject = 'Nova Senha Provisória - LVK Sistemas'
+                message = f"""Olá {user.first_name or user.username},
+
+Uma nova senha provisória foi gerada para sua conta no sistema LVK Sistemas.
+
+DADOS DE ACESSO:
+URL: https://www.lvksistemas.com.br/login/
+Usuário: {user.username}
+Nova Senha Provisória: {nova_senha_provisoria}
+
+IMPORTANTE:
+- Esta é uma senha provisória que deve ser alterada no primeiro acesso
+- Por segurança, você será obrigado a trocar a senha no primeiro login
+- Sua senha anterior não funciona mais
+
+Motivo: Solicitação de nova senha pelo administrador do sistema.
+
+Atenciosamente,
+Equipe LVK Sistemas"""
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                email_sent = True
+                
+            except Exception as email_error:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Erro ao enviar email para {user.email}: {str(email_error)}')
+            
+            # Log da alteração
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f'Nova senha provisória gerada para usuário "{user.username}" por {request.user.username}')
+        
+        # Mensagem de sucesso
+        if email_sent:
+            messages.success(request, 
+                f'Nova senha provisória gerada para "{user.username}"! '
+                f'As credenciais foram enviadas para o email {user.email}.')
+        else:
+            messages.success(request, 
+                f'Nova senha provisória gerada para "{user.username}"! '
+                f'ATENÇÃO: Não foi possível enviar o email. '
+                f'Nova senha: {nova_senha_provisoria}')
+        
+        return redirect('dashboard:admin_usuarios_lista')
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Erro ao gerar senha automática para "{user.username}": {str(e)}')
+        messages.error(request, f'Erro ao gerar nova senha: {str(e)}')
+        return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user.id)
 
 
 @login_required
