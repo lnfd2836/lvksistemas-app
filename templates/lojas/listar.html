@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 
 {% block title %}Gerenciar Lojas{% endblock %}
-{% block page_title %}Gerenciar Lojas{% endblock %}
+{% block page_title %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <p class="text-muted">Gerencie todas as lojas do sistema</p>
+        <h4 class="mb-1">
+            <i class="bi bi-shop me-2"></i>
+            Gerenciar Lojas
+        </h4>
+        <p class="text-muted mb-0">Gerencie todas as lojas do sistema</p>
     </div>
     <a href="{% url 'lojas:criar_loja' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nova Loja

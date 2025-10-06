@@ -64,8 +64,7 @@ def listar_lojas(request):
         'stats_tipos': stats_tipos,
     }
     
-    # Debug: usar template simplificado temporariamente
-    return render(request, 'lojas/listar_debug.html', context)
+    return render(request, 'lojas/listar.html', context)
 
 
 @login_required
