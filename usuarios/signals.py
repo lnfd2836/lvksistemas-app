@@ -66,6 +66,7 @@ def enviar_email_criacao_usuario(sender, instance, created, **kwargs):
                 
                 # Tenta enviar email com credenciais (não falha se der erro)
                 try:
+                    logger.info(f"Tentando enviar email de credenciais para usuário {instance.username} ({instance.email})")
                     sucesso = enviar_email_credenciais_usuario(
                         user=instance,
                         senha_provisoria=senha_provisoria,
@@ -73,11 +74,13 @@ def enviar_email_criacao_usuario(sender, instance, created, **kwargs):
                     )
                     
                     if sucesso:
-                        logger.info(f"Email de credenciais enviado para {instance.email}")
+                        logger.info(f"✅ Email de credenciais enviado com sucesso para {instance.email}")
                     else:
-                        logger.error(f"Falha ao enviar email de credenciais para {instance.email}")
+                        logger.warning(f"⚠️  Falha ao enviar email de credenciais para {instance.email} - usuário criado normalmente")
+                        
                 except Exception as email_error:
-                    logger.error(f"Erro ao enviar email de credenciais para {instance.email}: {email_error}")
+                    logger.error(f"❌ Erro ao enviar email de credenciais para {instance.email}: {email_error}")
+                    logger.info(f"ℹ️  Usuário {instance.username} foi criado com sucesso, mas o email não foi enviado")
                     # Não re-raise a exceção para não impedir a criação do usuário
             else:
                 logger.info(f"Usuário {instance.username} criado com senha já definida - não enviando email de credenciais")
@@ -105,19 +108,26 @@ def enviar_email_criacao_perfil(sender, instance, created, **kwargs):
             instance.user.save()
             
             # Envia email com credenciais
-            sucesso = enviar_email_credenciais_usuario(
-                user=instance.user,
-                senha_provisoria=senha_provisoria,
-                tipo_usuario="Super Administrador"
-            )
-            
-            if sucesso:
-                logger.info(f"Email de credenciais de super admin enviado para {instance.user.email}")
-            else:
-                logger.error(f"Falha ao enviar email de credenciais de super admin para {instance.user.email}")
+            try:
+                logger.info(f"Tentando enviar email de credenciais para super admin {instance.user.username}")
+                sucesso = enviar_email_credenciais_usuario(
+                    user=instance.user,
+                    senha_provisoria=senha_provisoria,
+                    tipo_usuario="Super Administrador"
+                )
+                
+                if sucesso:
+                    logger.info(f"✅ Email de credenciais de super admin enviado para {instance.user.email}")
+                else:
+                    logger.warning(f"⚠️  Falha ao enviar email de credenciais de super admin para {instance.user.email}")
+                    
+            except Exception as email_error:
+                logger.error(f"❌ Erro ao enviar email para super admin {instance.user.email}: {email_error}")
+                logger.info(f"ℹ️  Super admin {instance.user.username} foi criado com sucesso, mas o email não foi enviado")
                 
         except Exception as e:
-            logger.error(f"Erro ao processar criação de perfil de super admin {instance.user.username}: {e}")
+            logger.error(f"❌ Erro ao processar criação de perfil de super admin {instance.user.username}: {e}")
+            logger.info(f"ℹ️  Perfil criado, mas pode haver problemas na configuração de email")
 
 
 @receiver(user_logged_in)
@@ -134,11 +144,21 @@ def verificar_troca_senha_obrigatoria(sender, request, user, **kwargs):
                 logger.info(f"Primeiro login detectado para {user.username} - troca de senha obrigatória")
                 
                 # Envia email lembrando da troca de senha
-                enviar_email_troca_senha_obrigatoria(user)
+                try:
+                    logger.info(f"Enviando lembrete de troca de senha para {user.username}")
+                    sucesso = enviar_email_troca_senha_obrigatoria(user)
+                    
+                    if sucesso:
+                        logger.info(f"✅ Email de troca de senha enviado para {user.email}")
+                    else:
+                        logger.warning(f"⚠️  Falha ao enviar email de troca de senha para {user.email}")
+                        
+                except Exception as email_error:
+                    logger.error(f"❌ Erro ao enviar email de troca de senha para {user.email}: {email_error}")
                 
                 # Marca que precisa trocar senha (implementar lógica específica)
                 # Por enquanto, apenas loga a informação
-                logger.info(f"Usuário {user.username} deve trocar a senha no primeiro login")
+                logger.info(f"ℹ️  Usuário {user.username} deve trocar a senha no primeiro login")
                 
     except Exception as e:
         logger.error(f"Erro ao verificar troca de senha obrigatória para {user.username}: {e}")
