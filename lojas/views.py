@@ -7,12 +7,15 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+import logging
 
-from .models import Loja, Cliente, Produto, Venda, BackupLoja
+from .models import Loja, Cliente, Produto, Venda, BackupLoja, ItemVenda
 from .forms import LojaForm, ClienteForm, ProdutoForm
 from dashboard.models import Notificacao
 from controle_financeiro.models import ControleFinanceiro, PlanoFinanceiro, ConfiguracaoBoleto, BoletoGerado
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
 
 
 def is_superuser(user):
@@ -226,17 +229,21 @@ def detalhar_loja(request, loja_id):
     backups = BackupLoja.objects.filter(loja=loja).order_by('-data_backup')[:5]
     
     # Informações do plano comercial
+    assinatura = None
+    plano = None
+    dias_vencimento = 0
+    limites_atingidos = {}
+    
     try:
         from planos.models import AssinaturaLoja
-        assinatura = AssinaturaLoja.objects.get(loja=loja, status='ativa')
-        plano = assinatura.plano
-        dias_vencimento = assinatura.dias_para_vencimento()
-        limites_atingidos = assinatura.verificar_limites()
-    except:
-        assinatura = None
-        plano = None
-        dias_vencimento = 0
-        limites_atingidos = {}
+        assinatura = AssinaturaLoja.objects.filter(loja=loja, status='ativa').first()
+        if assinatura:
+            plano = assinatura.plano
+            dias_vencimento = assinatura.dias_para_vencimento()
+            limites_atingidos = assinatura.verificar_limites()
+    except Exception as e:
+        logger.warning(f"Erro ao buscar informações do plano para loja {loja.nome}: {str(e)}")
+        # Valores padrão já definidos acima
     
     context = {
         'loja': loja,
