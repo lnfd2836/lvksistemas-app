@@ -27,9 +27,13 @@ def enviar_email_criacao_loja(sender, instance, created, **kwargs):
             )
             
             if sucesso:
-                logger.info(f"Email de credenciais da loja enviado para {instance.email}")
+                logger.info(f"✅ Email de credenciais da loja enviado para {instance.email}")
             else:
-                logger.error(f"Falha ao enviar email de credenciais da loja para {instance.email}")
+                logger.error(f"❌ Falha ao enviar email de credenciais da loja para {instance.email}")
+                logger.error(f"📧 Credenciais da loja {instance.nome}: Email: {instance.email}, Senha: {instance.senha_provisoria}")
+        except Exception as e:
+            logger.error(f"❌ Erro no signal de criação de loja para {instance.nome}: {e}")
+            logger.error(f"📧 Credenciais da loja {instance.nome}: Email: {instance.email}, Senha: {instance.senha_provisoria}")
             
             # Envia notificação para super administradores
             try:

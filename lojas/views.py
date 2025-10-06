@@ -170,27 +170,15 @@ def criar_loja(request):
                 except:
                     pass  # Ignora erro se não conseguir criar notificação
                 
-                # Envia email com senha provisória
-                try:
-                    send_mail(
-                        f'Conta criada para {loja.nome}',
-                        f'''
-                        Sua conta foi criada com sucesso!
-                        
-                        Loja: {loja.nome}
-                        Email: {loja.email}
-                        Senha Provisória: {loja.senha_provisoria}
-                        
-                        IMPORTANTE: Altere sua senha no primeiro acesso.
-                        ''',
-                        settings.EMAIL_HOST_USER,
-                        [loja.email],
-                        fail_silently=False,
-                    )
-                    
-                    messages.success(request, f'Loja {loja.nome} criada com sucesso! Email enviado com senha provisória.')
-                except Exception as e:
-                    messages.success(request, f'Loja {loja.nome} criada com sucesso! Senha provisória: {loja.senha_provisoria}')
+                # O email será enviado pelo signal automaticamente
+                # Aqui apenas informamos o sucesso da criação
+                messages.success(
+                    request, 
+                    f'Loja "{loja.nome}" criada com sucesso! '
+                    f'Credenciais de acesso: Email: {loja.email} | '
+                    f'Senha provisória: {loja.senha_provisoria} | '
+                    f'IMPORTANTE: O usuário deve alterar a senha no primeiro acesso.'
+                )
                 
                 return redirect('lojas:listar_lojas')
     else:
