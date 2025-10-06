@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
 from usuarios.email_utils import enviar_email_credenciais_usuario, enviar_email_credenciais_loja
 from lojas.models import Loja
 import logging
@@ -67,7 +68,6 @@ Sistema LVK
         # Teste 2: Email de credenciais de usuário
         self.stdout.write("\n🔍 Teste 2: Email de credenciais de usuário...")
         try:
-            from django.utils import timezone
             user_test = User(
                 username='teste_usuario',
                 email=email_destino,
