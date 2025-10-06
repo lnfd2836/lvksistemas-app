@@ -40,6 +40,23 @@ def enviar_email_criacao_usuario(sender, instance, created, **kwargs):
                 instance.set_password(senha_provisoria)
                 instance.save()
                 
+                # Cria ou atualiza o perfil do usuário para marcar troca de senha obrigatória
+                from .models import PerfilUsuario
+                perfil, created_perfil = PerfilUsuario.objects.get_or_create(
+                    user=instance,
+                    defaults={
+                        'requires_password_change': True,
+                        'provisional_password_created': timezone.now(),
+                        'is_super_admin': instance.is_superuser,
+                    }
+                )
+                
+                if not created_perfil:
+                    # Se o perfil já existia, atualiza os campos necessários
+                    perfil.requires_password_change = True
+                    perfil.provisional_password_created = timezone.now()
+                    perfil.save()
+                
                 # Determina o tipo de usuário
                 tipo_usuario = "Usuário"
                 if instance.is_superuser:

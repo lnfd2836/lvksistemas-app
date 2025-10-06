@@ -27,6 +27,12 @@ class PerfilUsuario(models.Model):
     deve_trocar_senha = models.BooleanField(default=True, verbose_name="Deve Trocar Senha")
     senha_alterada_em = models.DateTimeField(blank=True, null=True, verbose_name="Senha Alterada em")
     
+    # Campos adicionais para controle de senha provisória
+    requires_password_change = models.BooleanField(default=False, verbose_name="Requer Troca de Senha")
+    provisional_password_created = models.DateTimeField(blank=True, null=True, verbose_name="Senha Provisória Criada em")
+    password_changed_at = models.DateTimeField(blank=True, null=True, verbose_name="Senha Alterada em")
+    password_change_reminders_sent = models.IntegerField(default=0, verbose_name="Lembretes de Troca Enviados")
+    
     class Meta:
         verbose_name = "Perfil do Usuário"
         verbose_name_plural = "Perfis dos Usuários"

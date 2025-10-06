@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',

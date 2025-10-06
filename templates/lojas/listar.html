@@ -124,22 +124,22 @@
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">Todos</option>
-                    <option value="ativa" {% if status_filter == 'ativa' %}selected{% endif %}>Ativa</option>
-                    <option value="inativa" {% if status_filter == 'inativa' %}selected{% endif %}>Inativa</option>
-                    <option value="suspensa" {% if status_filter == 'suspensa' %}selected{% endif %}>Suspensa</option>
+                    <option value="ativa" {% if status_filter=='ativa' %}selected{% endif %}>Ativa</option>
+                    <option value="inativa" {% if status_filter=='inativa' %}selected{% endif %}>Inativa</option>
+                    <option value="suspensa" {% if status_filter=='suspensa' %}selected{% endif %}>Suspensa</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <label for="tipo_loja" class="form-label">Tipo de Loja</label>
                 <select class="form-select" id="tipo_loja" name="tipo_loja">
                     <option value="">Todos</option>
-                    <option value="conveniencia" {% if tipo_filter == 'conveniencia' %}selected{% endif %}>Conveniência
+                    <option value="conveniencia" {% if tipo_filter=='conveniencia' %}selected{% endif %}>Conveniência
                     </option>
-                    <option value="roupas" {% if tipo_filter == 'roupas' %}selected{% endif %}>Roupas</option>
-                    <option value="tintas" {% if tipo_filter == 'tintas' %}selected{% endif %}>Tintas</option>
-                    <option value="supermercado" {% if tipo_filter == 'supermercado' %}selected{% endif %}>Supermercado
+                    <option value="roupas" {% if tipo_filter=='roupas' %}selected{% endif %}>Roupas</option>
+                    <option value="tintas" {% if tipo_filter=='tintas' %}selected{% endif %}>Tintas</option>
+                    <option value="supermercado" {% if tipo_filter=='supermercado' %}selected{% endif %}>Supermercado
                     </option>
-                    <option value="lanchonete" {% if tipo_filter == 'lanchonete' %}selected{% endif %}>Lanchonete</option>
+                    <option value="lanchonete" {% if tipo_filter=='lanchonete' %}selected{% endif %}>Lanchonete</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
