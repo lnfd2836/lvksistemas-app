@@ -24,7 +24,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-this-in-productio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver', 'lvksistemas.herokuapp.com', 'lvksistemas-app-4f6fa281e217.herokuapp.com', 'lvksistemas.com.br', 'www.lvksistemas.com.br']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver', 'lvksistemas.herokuapp.com', 'lvksistemas-app-4f6fa281e217.herokuapp.com', 'lvksistemas.com.br', 'www.lvksistemas.com.br', 'crmvendas.net.br', 'www.crmvendas.net.br', 'loja-conveniencia-pdv-7fed430df60a.herokuapp.com']
 
 # Application definition
 INSTALLED_APPS = [
