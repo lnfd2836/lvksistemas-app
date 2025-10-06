@@ -343,8 +343,7 @@ def listar_usuarios_super_admin(request):
         'usuarios': usuarios,
     }
     
-    # Debug: usar template simplificado temporariamente
-    return render(request, 'dashboard/usuarios_super_admin_debug.html', context)
+    return render(request, 'dashboard/usuarios_super_admin.html', context)
 
 
 @login_required
