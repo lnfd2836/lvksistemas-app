@@ -74,3 +74,4 @@ class HistoricoUsoAdmin(admin.ModelAdmin):
 
 
 
+

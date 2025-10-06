@@ -61,7 +61,7 @@
                     <h6><i class="bi bi-lightbulb"></i> Recomendação:</h6>
                     <p class="mb-0">
                         Antes de excluir, considere fazer um backup da loja para preservar os dados importantes.
-                        <a href="{% url 'backup_loja' loja.id %}" class="btn btn-sm btn-outline-info ms-2">
+                        <a href="{% url 'lojas:backup_loja' loja.id %}" class="btn btn-sm btn-outline-info ms-2">
                             <i class="bi bi-download"></i> Fazer Backup
                         </a>
                     </p>
@@ -74,7 +74,7 @@
                         <i class="bi bi-trash"></i> Sim, Excluir Loja
                     </button>
                 </form>
-                <a href="{% url 'listar_lojas' %}" class="btn btn-secondary">
+                <a href="{% url 'lojas:listar_lojas' %}" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </a>
             </div>

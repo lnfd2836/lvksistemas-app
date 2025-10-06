@@ -277,7 +277,7 @@
                             </div>
                             
                             <div class="col-md-6 mb-2">
-                                <a href="{% url 'listar_lojas' %}" class="btn btn-secondary w-100">
+                                <a href="{% url 'lojas:listar_lojas' %}" class="btn btn-secondary w-100">
                                     <i class="fas fa-arrow-left me-1"></i>
                                     Voltar às Lojas
                                 </a>
@@ -432,7 +432,7 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{% url 'editar_loja' loja.id %}" class="btn btn-warning">
+                    <a href="{% url 'lojas:editar_loja' loja.id %}" class="btn btn-warning">
                         <i class="bi bi-pencil"></i> Editar Loja
                     </a>
                     
@@ -440,7 +440,7 @@
                         <i class="bi bi-arrow-repeat"></i> Alterar Status
                     </button>
                     
-                    <a href="{% url 'backup_loja' loja.id %}" class="btn btn-success">
+                    <a href="{% url 'lojas:backup_loja' loja.id %}" class="btn btn-success">
                         <i class="bi bi-download"></i> Criar Backup
                     </a>
                 </div>
@@ -481,7 +481,7 @@
                 <h5 class="modal-title">Alterar Status da Loja</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'alterar_status_loja' loja.id %}">
+            <form method="post" action="{% url 'lojas:alterar_status_loja' loja.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
