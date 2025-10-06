@@ -34,6 +34,27 @@
                                             {{ loja.get_status_display }}
                                         </span>
                                     </p>
+                                    
+                                    {% if assinatura_atual %}
+                                    <hr>
+                                    <h6 class="text-info">
+                                        <i class="fas fa-crown me-1"></i>
+                                        Assinatura Atual
+                                    </h6>
+                                    <p><strong>Plano:</strong> {{ assinatura_atual.plano.nome }}</p>
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-{% if assinatura_atual.status == 'ativa' %}success{% elif assinatura_atual.status == 'suspensa' %}warning{% else %}secondary{% endif %}">
+                                            {{ assinatura_atual.get_status_display }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Vencimento:</strong> {{ assinatura_atual.data_vencimento|date:"d/m/Y" }}</p>
+                                    {% else %}
+                                    <hr>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Esta loja não possui assinatura ativa.
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -79,6 +100,27 @@
                     
                     <!-- Formulário de Assinatura -->
                     <hr>
+                    
+                    {% if mesmo_plano %}
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Plano Já Ativo
+                        </h6>
+                        <p class="mb-0">Esta loja já possui uma assinatura ativa do plano <strong>{{ plano.nome }}</strong>. 
+                        Ao confirmar, você estará renovando/atualizando a assinatura existente.</p>
+                    </div>
+                    {% elif assinatura_atual %}
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Mudança de Plano
+                        </h6>
+                        <p class="mb-0">Esta loja possui uma assinatura ativa do plano <strong>{{ assinatura_atual.plano.nome }}</strong>. 
+                        Ao confirmar, a assinatura será atualizada para o plano <strong>{{ plano.nome }}</strong>.</p>
+                    </div>
+                    {% endif %}
+                    
                     <form method="post">
                         {% csrf_token %}
                         
@@ -133,7 +175,13 @@
                                         <div class="form-check mt-3">
                                             <input type="checkbox" class="form-check-input" id="confirmar" required>
                                             <label class="form-check-label" for="confirmar">
-                                                Confirmo que desejo assinar este plano para a loja <strong>{{ loja.nome }}</strong>
+                                                {% if mesmo_plano %}
+                                                    Confirmo que desejo renovar/atualizar a assinatura do plano <strong>{{ plano.nome }}</strong> para a loja <strong>{{ loja.nome }}</strong>
+                                                {% elif assinatura_atual %}
+                                                    Confirmo que desejo alterar a assinatura da loja <strong>{{ loja.nome }}</strong> para o plano <strong>{{ plano.nome }}</strong>
+                                                {% else %}
+                                                    Confirmo que desejo assinar o plano <strong>{{ plano.nome }}</strong> para a loja <strong>{{ loja.nome }}</strong>
+                                                {% endif %}
                                             </label>
                                         </div>
                                     </div>

@@ -176,30 +176,41 @@ def assinar_plano(request, loja_id, plano_id):
     loja = get_object_or_404(Loja, id=loja_id)
     plano = get_object_or_404(PlanoComercial, id=plano_id)
     
+    # Verifica se já existe assinatura ativa
+    assinatura_atual = None
+    try:
+        assinatura_atual = AssinaturaLoja.objects.get(loja=loja)
+    except AssinaturaLoja.DoesNotExist:
+        pass
+    
     if request.method == 'POST':
         tipo_pagamento = request.POST.get('tipo_pagamento', 'mensal')
         
         try:
             with transaction.atomic():
-                # Cancela assinatura anterior se existir
-                assinatura_anterior = AssinaturaLoja.objects.filter(loja=loja).first()
-                if assinatura_anterior:
-                    assinatura_anterior.status = 'cancelada'
-                    assinatura_anterior.data_cancelamento = timezone.now()
-                    assinatura_anterior.save()
-                
                 # Calcula data de vencimento
                 if tipo_pagamento == 'anual':
                     data_vencimento = timezone.now() + timedelta(days=365)
                 else:
                     data_vencimento = timezone.now() + timedelta(days=30)
                 
-                # Cria nova assinatura
-                assinatura = AssinaturaLoja.objects.create(
+                # Atualiza ou cria assinatura (resolve o problema de constraint)
+                assinatura, created = AssinaturaLoja.objects.update_or_create(
                     loja=loja,
-                    plano=plano,
-                    tipo_pagamento=tipo_pagamento,
-                    data_vencimento=data_vencimento
+                    defaults={
+                        'plano': plano,
+                        'tipo_pagamento': tipo_pagamento,
+                        'data_vencimento': data_vencimento,
+                        'status': 'ativa',
+                        'data_cancelamento': None,  # Reset cancellation date
+                        # Reset usage limits
+                        'usuarios_online': 0,
+                        'pdvs_ativos': 0,
+                        'vendas_mes_atual': 0,
+                        'limite_usuarios_atingido': False,
+                        'limite_pdvs_atingido': False,
+                        'limite_vendas_atingido': False,
+                    }
                 )
                 
                 # Registra no histórico
@@ -212,15 +223,32 @@ def assinar_plano(request, loja_id, plano_id):
                     vendas_mes=0
                 )
                 
-                messages.success(request, f'Loja "{loja.nome}" assinada ao plano "{plano.nome}" com sucesso!')
+                if created:
+                    messages.success(request, f'Loja "{loja.nome}" assinada ao plano "{plano.nome}" com sucesso!')
+                else:
+                    messages.success(request, f'Assinatura da loja "{loja.nome}" atualizada para o plano "{plano.nome}" com sucesso!')
                 return redirect('planos:detalhar_plano', plano_id=plano.id)
                 
         except Exception as e:
-            messages.error(request, f'Erro ao assinar plano: {str(e)}')
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Erro ao processar assinatura - Loja: {loja.nome}, Plano: {plano.nome}, Erro: {str(e)}')
+            
+            # Provide user-friendly error message
+            if 'duplicate key' in str(e).lower():
+                messages.error(request, 'Erro de duplicação na assinatura. Tente novamente.')
+            else:
+                messages.error(request, f'Erro ao processar assinatura: {str(e)}')
+    
+    # Verifica se está tentando assinar o mesmo plano
+    mesmo_plano = assinatura_atual and assinatura_atual.plano.id == plano.id
     
     context = {
         'loja': loja,
         'plano': plano,
+        'assinatura_atual': assinatura_atual,
+        'mesmo_plano': mesmo_plano,
         'titulo': f'Assinar Plano: {plano.nome}',
         'tipos_pagamento': AssinaturaLoja.TIPO_PAGAMENTO_CHOICES,
     }
