@@ -380,22 +380,37 @@ def criar_usuario_super_admin(request):
             return redirect('dashboard:admin_usuarios_criar')
         
         try:
-            # Criar usuário
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                is_superuser=True,
-                is_staff=True,
-                is_active=True
-            )
+            # Usar transação para garantir consistência
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # Criar usuário
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    is_superuser=True,
+                    is_staff=True,
+                    is_active=True
+                )
+                
+                # Marca que a senha foi definida manualmente para evitar o signal alterar
+                user._password_set_manually = True
+                
+                # Log da criação
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f'Usuário super administrador "{username}" criado com sucesso por {request.user.username}')
             
             messages.success(request, f'Usuário super administrador "{username}" criado com sucesso!')
             return redirect('dashboard:admin_usuarios_lista')
             
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Erro ao criar usuário super admin "{username}": {str(e)}')
             messages.error(request, f'Erro ao criar usuário: {str(e)}')
             return redirect('dashboard:admin_usuarios_criar')
     

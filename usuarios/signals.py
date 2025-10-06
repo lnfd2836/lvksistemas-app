@@ -22,37 +22,52 @@ def enviar_email_criacao_usuario(sender, instance, created, **kwargs):
     """
     if created:
         try:
-            # Gera senha provisória
-            import secrets
-            import string
-            alphabet = string.ascii_letters + string.digits
-            senha_provisoria = ''.join(secrets.choice(alphabet) for _ in range(12))
-            
-            # Define a senha provisória
-            instance.set_password(senha_provisoria)
-            instance.save()
-            
-            # Determina o tipo de usuário
-            tipo_usuario = "Usuário"
-            if instance.is_superuser:
-                tipo_usuario = "Super Administrador"
-            elif hasattr(instance, 'perfil') and instance.perfil.is_loja_admin:
-                tipo_usuario = "Administrador de Loja"
-            
-            # Envia email com credenciais
-            sucesso = enviar_email_credenciais_usuario(
-                user=instance,
-                senha_provisoria=senha_provisoria,
-                tipo_usuario=tipo_usuario
-            )
-            
-            if sucesso:
-                logger.info(f"Email de credenciais enviado para {instance.email}")
+            # Verifica se deve processar este usuário (evita loops infinitos)
+            if hasattr(instance, '_skip_signal') or hasattr(instance, '_password_set_manually'):
+                return
+                
+            # Só gera senha provisória se o usuário não tem senha definida
+            # (usuários criados via admin/view já têm senha)
+            if not instance.password or instance.password == '':
+                # Gera senha provisória
+                import secrets
+                import string
+                alphabet = string.ascii_letters + string.digits
+                senha_provisoria = ''.join(secrets.choice(alphabet) for _ in range(12))
+                
+                # Define a senha provisória sem triggerar o signal novamente
+                instance._skip_signal = True
+                instance.set_password(senha_provisoria)
+                instance.save()
+                
+                # Determina o tipo de usuário
+                tipo_usuario = "Usuário"
+                if instance.is_superuser:
+                    tipo_usuario = "Super Administrador"
+                elif hasattr(instance, 'perfil') and instance.perfil.is_loja_admin:
+                    tipo_usuario = "Administrador de Loja"
+                
+                # Tenta enviar email com credenciais (não falha se der erro)
+                try:
+                    sucesso = enviar_email_credenciais_usuario(
+                        user=instance,
+                        senha_provisoria=senha_provisoria,
+                        tipo_usuario=tipo_usuario
+                    )
+                    
+                    if sucesso:
+                        logger.info(f"Email de credenciais enviado para {instance.email}")
+                    else:
+                        logger.error(f"Falha ao enviar email de credenciais para {instance.email}")
+                except Exception as email_error:
+                    logger.error(f"Erro ao enviar email de credenciais para {instance.email}: {email_error}")
+                    # Não re-raise a exceção para não impedir a criação do usuário
             else:
-                logger.error(f"Falha ao enviar email de credenciais para {instance.email}")
+                logger.info(f"Usuário {instance.username} criado com senha já definida - não enviando email de credenciais")
                 
         except Exception as e:
             logger.error(f"Erro ao processar criação de usuário {instance.username}: {e}")
+            # Não re-raise a exceção para não impedir a criação do usuário
 
 
 @receiver(post_save, sender=PerfilUsuario)
