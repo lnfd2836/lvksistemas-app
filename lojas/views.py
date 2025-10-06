@@ -87,6 +87,9 @@ def criar_loja(request):
                     is_staff=True,
                 )
                 
+                # Marca que a senha será definida manualmente para evitar interferência do signal
+                admin_user._password_set_manually = True
+                
                 # Cria a loja
                 loja = form.save(commit=False)
                 loja.admin_user = admin_user
@@ -190,7 +193,7 @@ def criar_loja(request):
                 except Exception as e:
                     messages.success(request, f'Loja {loja.nome} criada com sucesso! Senha provisória: {loja.senha_provisoria}')
                 
-                return redirect('listar_lojas')
+                return redirect('lojas:listar_lojas')
     else:
         form = LojaForm()
     
@@ -210,7 +213,7 @@ def editar_loja(request, loja_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'Loja {loja.nome} atualizada com sucesso!')
-            return redirect('listar_lojas')
+            return redirect('lojas:listar_lojas')
     else:
         form = LojaForm(instance=loja)
     
@@ -554,11 +557,11 @@ def excluir_loja(request, loja_id):
                     pass  # Ignora erro se não conseguir criar notificação
                 
                 messages.success(request, f'Loja {nome_loja} excluída com sucesso!')
-                return redirect('listar_lojas')
+                return redirect('lojas:listar_lojas')
                 
         except Exception as e:
             messages.error(request, f'Erro ao excluir loja: {str(e)}')
-            return redirect('listar_lojas')
+            return redirect('lojas:listar_lojas')
     
     # Se não for POST, mostra página de confirmação
     context = {
