@@ -348,7 +348,7 @@ def listar_usuarios_super_admin(request):
 
 @login_required
 def criar_usuario_super_admin(request):
-    """Cria um novo usuário super administrador"""
+    """Cria um novo usuário super administrador com senha gerada automaticamente"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
         return redirect('dashboard:principal')
@@ -358,16 +358,10 @@ def criar_usuario_super_admin(request):
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
         
-        # Validações
-        if not username or not email or not password:
-            messages.error(request, 'Todos os campos são obrigatórios.')
-            return redirect('dashboard:admin_usuarios_criar')
-        
-        if password != confirm_password:
-            messages.error(request, 'As senhas não coincidem.')
+        # Validações básicas
+        if not username or not email:
+            messages.error(request, 'Nome de usuário e email são obrigatórios.')
             return redirect('dashboard:admin_usuarios_criar')
         
         if User.objects.filter(username=username).exists():
@@ -381,13 +375,20 @@ def criar_usuario_super_admin(request):
         try:
             # Usar transação para garantir consistência
             from django.db import transaction
+            from django.utils import timezone
+            import secrets
+            import string
             
             with transaction.atomic():
+                # Gerar senha provisória automaticamente
+                password_chars = string.ascii_letters + string.digits + "!@#$%&*"
+                provisional_password = ''.join(secrets.choice(password_chars) for _ in range(12))
+                
                 # Criar usuário
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=password,
+                    password=provisional_password,
                     first_name=first_name,
                     last_name=last_name,
                     is_superuser=True,
@@ -395,15 +396,81 @@ def criar_usuario_super_admin(request):
                     is_active=True
                 )
                 
-                # Marca que a senha foi definida manualmente para evitar o signal alterar
-                user._password_set_manually = True
+                # Criar ou atualizar perfil com requisito de troca de senha
+                from usuarios.models import PerfilUsuario
+                profile, created = PerfilUsuario.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'is_super_admin': True,
+                        'requires_password_change': True,
+                        'provisional_password_created': timezone.now(),
+                        'password_change_reminders_sent': 0
+                    }
+                )
+                
+                if not created:
+                    profile.is_super_admin = True
+                    profile.requires_password_change = True
+                    profile.provisional_password_created = timezone.now()
+                    profile.password_change_reminders_sent = 0
+                    profile.save()
+                
+                # Enviar email com credenciais
+                email_sent = False
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = 'Credenciais de Acesso - LVK Sistemas'
+                    message = f"""
+Olá {first_name or username},
+
+Sua conta de Super Administrador foi criada no sistema LVK Sistemas.
+
+Dados de acesso:
+- URL: https://www.lvksistemas.com.br/login/
+- Usuário: {username}
+- Senha provisória: {provisional_password}
+
+IMPORTANTE:
+- Esta é uma senha provisória que deve ser alterada no primeiro acesso
+- Por segurança, você será obrigado a trocar a senha no primeiro login
+- Mantenha suas credenciais em local seguro
+
+Atenciosamente,
+Equipe LVK Sistemas
+                    """
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    email_sent = True
+                    
+                except Exception as email_error:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f'Erro ao enviar email para {email}: {str(email_error)}')
                 
                 # Log da criação
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.info(f'Usuário super administrador "{username}" criado com sucesso por {request.user.username}')
             
-            messages.success(request, f'Usuário super administrador "{username}" criado com sucesso!')
+            # Mensagem de sucesso
+            if email_sent:
+                messages.success(request, 
+                    f'Usuário super administrador "{username}" criado com sucesso! '
+                    f'As credenciais foram enviadas para o email {email}.')
+            else:
+                messages.success(request, 
+                    f'Usuário super administrador "{username}" criado com sucesso! '
+                    f'ATENÇÃO: Não foi possível enviar o email. '
+                    f'Senha provisória: {provisional_password}')
+            
             return redirect('dashboard:admin_usuarios_lista')
             
         except Exception as e:

@@ -58,18 +58,10 @@
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Senha *</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <div class="form-text">Mínimo de 6 caracteres</div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="confirm_password" class="form-label">Confirmar Senha *</label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                            <div class="form-text">Digite a mesma senha novamente</div>
-                        </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Senha Automática:</strong> Uma senha provisória será gerada automaticamente e enviada por email. 
+                        O usuário será obrigado a trocar a senha no primeiro acesso.
                     </div>
                     
                     <div class="d-flex justify-content-between">
@@ -107,11 +99,20 @@
                 
                 <hr>
                 
+                <h6>Como Funciona:</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-key text-success me-2"></i>Senha gerada automaticamente</li>
+                    <li><i class="bi bi-envelope text-success me-2"></i>Credenciais enviadas por email</li>
+                    <li><i class="bi bi-shield-lock text-success me-2"></i>Troca obrigatória no primeiro login</li>
+                </ul>
+                
+                <hr>
+                
                 <h6>Recomendações:</h6>
                 <ul class="list-unstyled">
-                    <li><i class="bi bi-shield-check text-primary me-2"></i>Use senhas seguras</li>
-                    <li><i class="bi bi-envelope text-primary me-2"></i>Email válido para recuperação</li>
+                    <li><i class="bi bi-envelope-check text-primary me-2"></i>Email válido é obrigatório</li>
                     <li><i class="bi bi-people text-primary me-2"></i>Mantenha pelo menos 2 super admins</li>
+                    <li><i class="bi bi-shield-check text-primary me-2"></i>Monitore acessos regularmente</li>
                 </ul>
             </div>
         </div>
@@ -121,22 +122,23 @@
 
 {% block extra_js %}
 <script>
-    // Validação de senha em tempo real
-    document.getElementById('confirm_password').addEventListener('input', function() {
-        const password = document.getElementById('password').value;
-        const confirmPassword = this.value;
-        
-        if (password !== confirmPassword) {
-            this.setCustomValidity('As senhas não coincidem');
+    // Validação de email em tempo real
+    document.getElementById('email').addEventListener('input', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.value && !emailRegex.test(this.value)) {
+            this.setCustomValidity('Por favor, insira um email válido');
         } else {
             this.setCustomValidity('');
         }
     });
     
-    // Validação de tamanho mínimo da senha
-    document.getElementById('password').addEventListener('input', function() {
-        if (this.value.length > 0 && this.value.length < 6) {
-            this.setCustomValidity('A senha deve ter pelo menos 6 caracteres');
+    // Validação de username
+    document.getElementById('username').addEventListener('input', function() {
+        const username = this.value;
+        if (username.length > 0 && username.length < 3) {
+            this.setCustomValidity('O nome de usuário deve ter pelo menos 3 caracteres');
+        } else if (username.includes(' ')) {
+            this.setCustomValidity('O nome de usuário não pode conter espaços');
         } else {
             this.setCustomValidity('');
         }
