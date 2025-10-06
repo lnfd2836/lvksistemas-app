@@ -748,7 +748,7 @@ Telefone: {loja.telefone}
 
 🔑 CREDENCIAIS DE ACESSO:
 URL de Login: https://www.lvksistemas.com.br/loja/login/
-Usuário: {admin_user.username}
+Usuário: {admin_user.username} (use o email da loja)
 Nova Senha Provisória: {nova_senha_provisoria}
 
 ⚠️ IMPORTANTE:
@@ -756,12 +756,14 @@ Nova Senha Provisória: {nova_senha_provisoria}
 - Por segurança, você será obrigado a trocar a senha no primeiro login
 - Sua senha anterior não funciona mais
 - Mantenha suas credenciais em local seguro
+- Use o EMAIL DA LOJA como nome de usuário
 
 📧 MOTIVO: Solicitação de recuperação de acesso pelo administrador do sistema.
 
-🔗 LINKS DE ACESSO:
+🔗 LINKS DE ACESSO CORRETOS:
 - Login Principal: https://www.lvksistemas.com.br/loja/login/
 - Login Alternativo: https://www.crmvendas.net.br/loja/login/
+- Login Heroku: https://loja-conveniencia-pdv-7fed430df60a.herokuapp.com/loja/login/
 
 Atenciosamente,
 Equipe LVK Sistemas

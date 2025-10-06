@@ -24,7 +24,7 @@ class AuthenticationService:
     # URLs dos dashboards
     DASHBOARD_URLS = {
         DASHBOARD_SUPER_ADMIN: '/dashboard/',
-        DASHBOARD_STORE_ADMIN: '/dashboard/loja/dashboard/',
+        DASHBOARD_STORE_ADMIN: '/dashboard/loja/',
         DASHBOARD_UNAUTHORIZED: '/login/'
     }
     
