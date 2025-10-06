@@ -240,6 +240,147 @@ class TestTemplateRendering(TestCase):
         self.assertContains(response, 'value="Teste"')
         self.assertContains(response, 'selected')
     
+    def test_status_filter_selection_active(self):
+        """Testa se o filtro de status 'ativa' é selecionado corretamente."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'), {'status': 'ativa'})
+        
+        self.assertEqual(response.status_code, 200)
+        # Deve marcar a opção 'ativa' como selecionada
+        self.assertContains(response, '<option value="ativa" selected>Ativa</option>')
+        # Não deve marcar outras opções como selecionadas
+        self.assertNotContains(response, '<option value="inativa" selected>')
+        self.assertNotContains(response, '<option value="suspensa" selected>')
+    
+    def test_status_filter_selection_inactive(self):
+        """Testa se o filtro de status 'inativa' é selecionado corretamente."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'), {'status': 'inativa'})
+        
+        self.assertEqual(response.status_code, 200)
+        # Deve marcar a opção 'inativa' como selecionada
+        self.assertContains(response, '<option value="inativa" selected>Inativa</option>')
+        # Não deve marcar outras opções como selecionadas
+        self.assertNotContains(response, '<option value="ativa" selected>')
+        self.assertNotContains(response, '<option value="suspensa" selected>')
+    
+    def test_status_filter_selection_suspended(self):
+        """Testa se o filtro de status 'suspensa' é selecionado corretamente."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'), {'status': 'suspensa'})
+        
+        self.assertEqual(response.status_code, 200)
+        # Deve marcar a opção 'suspensa' como selecionada
+        self.assertContains(response, '<option value="suspensa" selected>Suspensa</option>')
+        # Não deve marcar outras opções como selecionadas
+        self.assertNotContains(response, '<option value="ativa" selected>')
+        self.assertNotContains(response, '<option value="inativa" selected>')
+    
+    def test_tipo_filter_selection_conveniencia(self):
+        """Testa se o filtro de tipo 'conveniencia' é selecionado corretamente."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'), {'tipo_loja': 'conveniencia'})
+        
+        self.assertEqual(response.status_code, 200)
+        # Deve marcar a opção 'conveniencia' como selecionada
+        self.assertContains(response, '<option value="conveniencia" selected>Conveniência')
+        # Não deve marcar outras opções como selecionadas
+        self.assertNotContains(response, '<option value="roupas" selected>')
+        self.assertNotContains(response, '<option value="tintas" selected>')
+    
+    def test_tipo_filter_selection_roupas(self):
+        """Testa se o filtro de tipo 'roupas' é selecionado corretamente."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'), {'tipo_loja': 'roupas'})
+        
+        self.assertEqual(response.status_code, 200)
+        # Deve marcar a opção 'roupas' como selecionada
+        self.assertContains(response, '<option value="roupas" selected>Roupas</option>')
+        # Não deve marcar outras opções como selecionadas
+        self.assertNotContains(response, '<option value="conveniencia" selected>')
+        self.assertNotContains(response, '<option value="tintas" selected>')
+    
+    def test_no_status_filter_no_selection(self):
+        """Testa que nenhuma opção é selecionada quando não há filtro de status."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'))
+        
+        self.assertEqual(response.status_code, 200)
+        # Nenhuma opção de status deve estar selecionada
+        self.assertNotContains(response, '<option value="ativa" selected>')
+        self.assertNotContains(response, '<option value="inativa" selected>')
+        self.assertNotContains(response, '<option value="suspensa" selected>')
+    
+    def test_no_tipo_filter_no_selection(self):
+        """Testa que nenhuma opção é selecionada quando não há filtro de tipo."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        response = self.client.get(reverse('listar_lojas'))
+        
+        self.assertEqual(response.status_code, 200)
+        # Nenhuma opção de tipo deve estar selecionada
+        self.assertNotContains(response, '<option value="conveniencia" selected>')
+        self.assertNotContains(response, '<option value="roupas" selected>')
+        self.assertNotContains(response, '<option value="tintas" selected>')
+        self.assertNotContains(response, '<option value="supermercado" selected>')
+        self.assertNotContains(response, '<option value="lanchonete" selected>')
+    
+    def test_template_syntax_error_prevention(self):
+        """Testa que o template não contém erros de sintaxe que causariam TemplateSyntaxError."""
+        self.client.login(username='superadmin', password='testpass123')
+        
+        # Testar com diferentes combinações de filtros para garantir que a sintaxe está correta
+        test_cases = [
+            {'status': 'ativa'},
+            {'status': 'inativa'},
+            {'status': 'suspensa'},
+            {'tipo_loja': 'conveniencia'},
+            {'tipo_loja': 'roupas'},
+            {'tipo_loja': 'tintas'},
+            {'tipo_loja': 'supermercado'},
+            {'tipo_loja': 'lanchonete'},
+            {'status': 'ativa', 'tipo_loja': 'conveniencia'},
+            {'status': 'inativa', 'tipo_loja': 'roupas'},
+        ]
+        
+        for params in test_cases:
+            with self.subTest(params=params):
+                response = self.client.get(reverse('listar_lojas'), params)
+                # Se houver erro de sintaxe, o status seria 500
+                self.assertEqual(response.status_code, 200, 
+                    f"TemplateSyntaxError com parâmetros: {params}")
+    
+    def test_template_renders_with_context_variables(self):
+        """Testa que o template renderiza corretamente com todas as variáveis de contexto."""
+        context = {
+            'lojas': [self.test_store],
+            'status_filter': 'ativa',
+            'tipo_filter': 'conveniencia',
+            'search': 'teste',
+            'stats_tipos': {
+                'conveniencia': 1,
+                'roupas': 0,
+                'tintas': 0,
+                'supermercado': 0,
+                'lanchonete': 0,
+            },
+        }
+        
+        try:
+            rendered = render_to_string('lojas/listar.html', context)
+            self.assertIsNotNone(rendered)
+            # Deve conter os valores dos filtros
+            self.assertIn('selected', rendered)
+            self.assertIn('value="teste"', rendered)
+        except Exception as e:
+            self.fail(f"Erro ao renderizar template com contexto: {str(e)}")
+    
     def test_template_empty_state(self):
         """Testa se o estado vazio é exibido corretamente quando não há lojas."""
         # Remover todas as lojas
