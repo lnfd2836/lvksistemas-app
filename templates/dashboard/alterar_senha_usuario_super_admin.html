@@ -19,45 +19,56 @@
     </div>
 </div>
 
-<div class="row justify-content-center">
+<div class="row">
     <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h6 class="m-0 font-weight-bold">
+        <!-- Card Principal com Botão de Geração -->
+        <div class="card shadow border-success card-senha-automatica">
+            <div class="card-header bg-success text-white">
+                <h5 class="m-0 font-weight-bold">
                     <i class="bi bi-shield-lock me-2"></i>
                     Geração Automática de Senha
-                </h6>
+                </h5>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info mb-4">
-                    <h5><i class="bi bi-magic me-2"></i>Gerar Nova Senha Automática</h5>
-                    <p class="mb-3">O sistema gerará uma senha segura automaticamente e enviará por email para o usuário.</p>
-                    
-                    <div class="mb-3">
-                        <strong>Como funciona:</strong>
-                        <ul class="mt-2">
-                            <li>Senha de 12 caracteres gerada automaticamente</li>
-                            <li>Credenciais enviadas por email para: <strong>{{ usuario.email }}</strong></li>
-                            <li>Usuário será obrigado a trocar a senha no primeiro login</li>
-                            <li>Senha atual será invalidada imediatamente</li>
-                        </ul>
-                    </div>
-                    
-                    <form method="post" class="text-center">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-key-fill text-success" style="font-size: 3rem;"></i>
+                </div>
+                
+                <h4 class="text-success mb-3">Gerar Nova Senha Automática</h4>
+                <p class="mb-4 text-muted">O sistema gerará uma senha segura automaticamente e enviará por email para o usuário.</p>
+                
+                <!-- BOTÃO PRINCIPAL - SEMPRE VISÍVEL -->
+                <div class="mb-4 p-3 bg-light rounded">
+                    <form method="post" style="display: inline-block;">
                         {% csrf_token %}
-                        <button type="submit" name="gerar_automatica" class="btn btn-success btn-lg" 
+                        <button type="submit" 
+                                name="gerar_automatica" 
+                                class="btn btn-success btn-lg px-5 py-3 btn-gerar-senha destaque-botao"
+                                style="font-size: 1.2rem; min-width: 350px; position: relative !important; display: inline-block !important; visibility: visible !important;"
                                 onclick="return confirm('Confirma a geração de nova senha automática para {{ usuario.username }}?\n\nA senha atual será invalidada e o usuário receberá as novas credenciais por email em: {{ usuario.email }}')">
                             <i class="bi bi-key-fill me-2"></i>
-                            Gerar Senha Automática e Enviar por Email
+                            <strong>GERAR SENHA AUTOMÁTICA</strong>
+                            <br>
+                            <small>e Enviar por Email</small>
                         </button>
                     </form>
-                    
-                    <div class="text-center mt-3">
-                        <a href="{% url 'dashboard:admin_usuarios_lista' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle me-1"></i>
-                            Cancelar
-                        </a>
-                    </div>
+                </div>
+                
+                <div class="alert alert-info text-start">
+                    <h6><i class="bi bi-info-circle me-2"></i>Como funciona:</h6>
+                    <ul class="mb-0">
+                        <li>Senha de 12 caracteres gerada automaticamente</li>
+                        <li>Credenciais enviadas por email para: <strong>{{ usuario.email }}</strong></li>
+                        <li>Usuário será obrigado a trocar a senha no primeiro login</li>
+                        <li>Senha atual será invalidada imediatamente</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'dashboard:admin_usuarios_lista' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Voltar para Lista de Usuários
+                    </a>
                 </div>
             </div>
         </div>
@@ -121,6 +132,39 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Garantir que o botão seja sempre visível */
+    .btn-gerar-senha {
+        position: relative !important;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 1000 !important;
+    }
+    
+    /* Animação de hover para destacar o botão */
+    .btn-gerar-senha:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+        transition: all 0.3s ease;
+    }
+    
+    /* Garantir que o card seja sempre visível */
+    .card-senha-automatica {
+        min-height: 400px;
+        position: relative;
+    }
+    
+    /* Destaque visual para o botão */
+    .destaque-botao {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: 3px solid #ffffff;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+</style>
 {% endblock %}
 
 
