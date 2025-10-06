@@ -41,9 +41,9 @@
                                     <label for="super_admin" class="mr-2">Tipo:</label>
                                     <select name="super_admin" id="super_admin" class="form-control">
                                         <option value="">Todos</option>
-                                        <option value="sim" {% if filtro_super_admin=='sim' %}selected{% endif %}>Super
+                                        <option value="sim" {% if filtro_super_admin == 'sim' %}selected{% endif %}>Super
                                             Admin</option>
-                                        <option value="nao" {% if filtro_super_admin=='nao' %}selected{% endif %}>
+                                        <option value="nao" {% if filtro_super_admin == 'nao' %}selected{% endif %}>
                                             Usuário Normal</option>
                                     </select>
                                 </div>
