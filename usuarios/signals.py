@@ -24,6 +24,7 @@ def enviar_email_criacao_usuario(sender, instance, created, **kwargs):
         try:
             # Verifica se deve processar este usuário (evita loops infinitos)
             if hasattr(instance, '_skip_signal') or hasattr(instance, '_password_set_manually'):
+                logger.info(f"Usuário {instance.username} criado com senha já definida - não enviando email de credenciais")
                 return
                 
             # Só gera senha provisória se o usuário não tem senha definida

@@ -384,17 +384,19 @@ def criar_usuario_super_admin(request):
                 password_chars = string.ascii_letters + string.digits + "!@#$%&*"
                 provisional_password = ''.join(secrets.choice(password_chars) for _ in range(12))
                 
-                # Criar usuário
-                user = User.objects.create_user(
+                # Criar usuário (marcando para evitar signal de email)
+                user = User(
                     username=username,
                     email=email,
-                    password=provisional_password,
                     first_name=first_name,
                     last_name=last_name,
                     is_superuser=True,
                     is_staff=True,
                     is_active=True
                 )
+                user.set_password(provisional_password)
+                user._password_set_manually = True  # Marca antes de salvar
+                user.save()
                 
                 # Criar ou atualizar perfil com requisito de troca de senha
                 from usuarios.models import PerfilUsuario
@@ -422,15 +424,14 @@ def criar_usuario_super_admin(request):
                     from django.conf import settings
                     
                     subject = 'Credenciais de Acesso - LVK Sistemas'
-                    message = f"""
-Olá {first_name or username},
+                    message = f"""Olá {first_name or username},
 
 Sua conta de Super Administrador foi criada no sistema LVK Sistemas.
 
-Dados de acesso:
-- URL: https://www.lvksistemas.com.br/login/
-- Usuário: {username}
-- Senha provisória: {provisional_password}
+DADOS DE ACESSO:
+URL: https://www.lvksistemas.com.br/login/
+Usuário: {username}
+Senha provisória: {provisional_password}
 
 IMPORTANTE:
 - Esta é uma senha provisória que deve ser alterada no primeiro acesso
@@ -438,8 +439,7 @@ IMPORTANTE:
 - Mantenha suas credenciais em local seguro
 
 Atenciosamente,
-Equipe LVK Sistemas
-                    """
+Equipe LVK Sistemas"""
                     
                     send_mail(
                         subject,
