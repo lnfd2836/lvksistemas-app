@@ -678,3 +678,143 @@ def detalhar_venda(request, venda_id):
     
     return render(request, 'lojas/detalhar_venda.html', context)
 
+
+@login_required
+@user_passes_test(is_superuser)
+def enviar_credenciais_provisorias(request, loja_id):
+    """Envia novas credenciais provisórias para o administrador da loja"""
+    
+    loja = get_object_or_404(Loja, id=loja_id)
+    
+    if request.method == 'POST':
+        try:
+            from django.db import transaction
+            from django.utils import timezone
+            from django.core.mail import send_mail
+            from django.conf import settings
+            import secrets
+            import string
+            
+            with transaction.atomic():
+                # Gerar nova senha provisória
+                password_chars = string.ascii_letters + string.digits + "!@#$%&*"
+                nova_senha_provisoria = ''.join(secrets.choice(password_chars) for _ in range(12))
+                
+                # Atualizar senha do usuário administrador da loja
+                admin_user = loja.admin_user
+                admin_user.set_password(nova_senha_provisoria)
+                admin_user.save()
+                
+                # Atualizar senha provisória na loja
+                loja.senha_provisoria = nova_senha_provisoria
+                loja.save()
+                
+                # Atualizar perfil do usuário para marcar troca obrigatória
+                try:
+                    from usuarios.models import PerfilUsuario
+                    profile, created = PerfilUsuario.objects.get_or_create(
+                        user=admin_user,
+                        defaults={
+                            'is_super_admin': False,
+                            'requires_password_change': True,
+                            'provisional_password_created': timezone.now(),
+                            'password_change_reminders_sent': 0
+                        }
+                    )
+                    
+                    if not created:
+                        profile.requires_password_change = True
+                        profile.provisional_password_created = timezone.now()
+                        profile.password_change_reminders_sent = 0
+                        profile.save()
+                        
+                except Exception as profile_error:
+                    # Continua mesmo se houver erro no perfil
+                    logger.warning(f'Erro ao atualizar perfil do usuário {admin_user.username}: {str(profile_error)}')
+                
+                # Enviar email com novas credenciais
+                email_sent = False
+                try:
+                    subject = f'Novas Credenciais de Acesso - {loja.nome}'
+                    message = f"""Olá {admin_user.first_name or admin_user.username},
+
+Novas credenciais de acesso foram geradas para sua loja: {loja.nome}
+
+🏪 DADOS DA LOJA:
+Nome: {loja.nome}
+CNPJ: {loja.cnpj}
+Email: {loja.email}
+Telefone: {loja.telefone}
+
+🔑 CREDENCIAIS DE ACESSO:
+URL de Login: https://www.lvksistemas.com.br/loja/login/
+Usuário: {admin_user.username}
+Nova Senha Provisória: {nova_senha_provisoria}
+
+⚠️ IMPORTANTE:
+- Esta é uma senha provisória que DEVE ser alterada no primeiro acesso
+- Por segurança, você será obrigado a trocar a senha no primeiro login
+- Sua senha anterior não funciona mais
+- Mantenha suas credenciais em local seguro
+
+📧 MOTIVO: Solicitação de recuperação de acesso pelo administrador do sistema.
+
+🔗 LINKS DE ACESSO:
+- Login Principal: https://www.lvksistemas.com.br/loja/login/
+- Login Alternativo: https://www.crmvendas.net.br/loja/login/
+
+Atenciosamente,
+Equipe LVK Sistemas
+Suporte: suporte@lvksistemas.com.br"""
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [loja.email],
+                        fail_silently=False,
+                    )
+                    email_sent = True
+                    
+                except Exception as email_error:
+                    logger.error(f'Erro ao enviar email para {loja.email}: {str(email_error)}')
+                
+                # Log da operação
+                logger.info(f'Novas credenciais provisórias geradas para loja "{loja.nome}" por {request.user.username}')
+                
+                # Criar notificação
+                try:
+                    from dashboard.models import Notificacao
+                    Notificacao.objects.create(
+                        titulo=f"Credenciais enviadas - {loja.nome}",
+                        mensagem=f"Novas credenciais provisórias foram geradas e enviadas para {loja.email}",
+                        tipo='success',
+                        prioridade='alta',
+                        usuario=request.user,
+                        loja=loja
+                    )
+                except:
+                    pass  # Ignora erro se não conseguir criar notificação
+            
+            # Mensagem de sucesso
+            if email_sent:
+                messages.success(request, 
+                    f'✅ Novas credenciais provisórias geradas com sucesso!\n'
+                    f'📧 Email enviado para: {loja.email}\n'
+                    f'🔑 Nova senha: {nova_senha_provisoria}\n'
+                    f'⚠️ O administrador deve trocar a senha no primeiro acesso.')
+            else:
+                messages.warning(request, 
+                    f'⚠️ Novas credenciais geradas, mas houve problema no envio do email.\n'
+                    f'🔑 Nova senha provisória: {nova_senha_provisoria}\n'
+                    f'📧 Informe manualmente ao administrador: {loja.email}')
+            
+            return redirect('lojas:detalhar_loja', loja_id=loja.id)
+            
+        except Exception as e:
+            logger.error(f'Erro ao gerar credenciais provisórias para loja "{loja.nome}": {str(e)}')
+            messages.error(request, f'❌ Erro ao gerar novas credenciais: {str(e)}')
+            return redirect('lojas:detalhar_loja', loja_id=loja.id)
+    
+    # Se não for POST, redireciona para detalhes da loja
+    return redirect('lojas:detalhar_loja', loja_id=loja.id)

@@ -12,6 +12,7 @@ urlpatterns = [
     path('<uuid:loja_id>/alterar-status/', views.alterar_status_loja, name='alterar_status_loja'),
     path('<uuid:loja_id>/backup/', views.backup_loja, name='backup_loja'),
     path('<uuid:loja_id>/excluir/', views.excluir_loja, name='excluir_loja'),
+    path('<uuid:loja_id>/enviar-credenciais/', views.enviar_credenciais_provisorias, name='enviar_credenciais_provisorias'),
     
     # Gerenciamento de clientes
     path('clientes/', views.gerenciar_clientes, name='gerenciar_clientes'),
