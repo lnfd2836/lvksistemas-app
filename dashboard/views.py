@@ -516,7 +516,7 @@ def editar_usuario_super_admin(request, user_id):
 
 @login_required
 def alterar_senha_usuario_super_admin(request, user_id):
-    """Altera a senha de um usuário super administrador"""
+    """Gera nova senha automática para um usuário super administrador"""
     if not request.user.is_superuser:
         messages.error(request, 'Você não tem permissão para acessar esta página.')
         return redirect('dashboard:principal')
@@ -524,44 +524,11 @@ def alterar_senha_usuario_super_admin(request, user_id):
     user = get_object_or_404(User, id=user_id, is_superuser=True)
     
     if request.method == 'POST':
-        # Verificar se é geração automática de senha
+        # Apenas geração automática de senha é permitida
         if 'gerar_automatica' in request.POST:
             return gerar_senha_automatica_usuario(request, user)
-        
-        # Alteração manual de senha
-        nova_senha = request.POST.get('nova_senha')
-        confirmar_senha = request.POST.get('confirmar_senha')
-        
-        if not nova_senha or not confirmar_senha:
-            messages.error(request, 'Todos os campos são obrigatórios.')
-            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
-        
-        if nova_senha != confirmar_senha:
-            messages.error(request, 'As senhas não coincidem.')
-            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
-        
-        if len(nova_senha) < 6:
-            messages.error(request, 'A senha deve ter pelo menos 6 caracteres.')
-            return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
-        
-        try:
-            user.set_password(nova_senha)
-            user.save()
-            
-            # Atualizar perfil se existir
-            try:
-                profile = user.perfil
-                profile.requires_password_change = False
-                profile.password_changed_at = timezone.now()
-                profile.save()
-            except:
-                pass
-            
-            messages.success(request, f'Senha do usuário "{user.username}" alterada com sucesso!')
-            return redirect('dashboard:admin_usuarios_lista')
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao alterar senha: {str(e)}')
+        else:
+            messages.error(request, 'Ação não permitida.')
             return redirect('dashboard:admin_usuarios_alterar_senha', user_id=user_id)
     
     context = {

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
-{% block title %}Alterar Senha - {{ usuario.username }}{% endblock %}
-{% block page_title %}Alterar Senha - {{ usuario.username }}{% endblock %}
+{% block title %}Gerar Nova Senha - {{ usuario.username }}{% endblock %}
+{% block page_title %}Gerar Nova Senha - {{ usuario.username }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -9,7 +9,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="mb-0">
                 <i class="bi bi-key me-2"></i>
-                Alterar Senha: {{ usuario.username }}
+                Gerar Nova Senha: {{ usuario.username }}
             </h4>
             <a href="{% url 'dashboard:admin_usuarios_lista' %}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left me-1"></i>
@@ -19,97 +19,85 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
+<div class="row justify-content-center">
+    <div class="col-md-8">
         <div class="card shadow">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">
                     <i class="bi bi-shield-lock me-2"></i>
-                    Nova Senha
+                    Geração Automática de Senha
                 </h6>
             </div>
             <div class="card-body">
-                <!-- Opção 1: Gerar Senha Automática -->
                 <div class="alert alert-info mb-4">
-                    <h6><i class="bi bi-magic me-2"></i>Opção Recomendada: Gerar Senha Automática</h6>
+                    <h5><i class="bi bi-magic me-2"></i>Gerar Nova Senha Automática</h5>
                     <p class="mb-3">O sistema gerará uma senha segura automaticamente e enviará por email para o usuário.</p>
                     
-                    <form method="post" style="display: inline;">
+                    <div class="mb-3">
+                        <strong>Como funciona:</strong>
+                        <ul class="mt-2">
+                            <li>Senha de 12 caracteres gerada automaticamente</li>
+                            <li>Credenciais enviadas por email para: <strong>{{ usuario.email }}</strong></li>
+                            <li>Usuário será obrigado a trocar a senha no primeiro login</li>
+                            <li>Senha atual será invalidada imediatamente</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="text-center">
                         {% csrf_token %}
-                        <button type="submit" name="gerar_automatica" class="btn btn-success" 
-                                onclick="return confirm('Confirma a geração de nova senha automática para {{ usuario.username }}? A senha atual será invalidada e o usuário receberá as novas credenciais por email.')">
-                            <i class="bi bi-key-fill me-1"></i>
+                        <button type="submit" name="gerar_automatica" class="btn btn-success btn-lg" 
+                                onclick="return confirm('Confirma a geração de nova senha automática para {{ usuario.username }}?\n\nA senha atual será invalidada e o usuário receberá as novas credenciais por email em: {{ usuario.email }}')">
+                            <i class="bi bi-key-fill me-2"></i>
                             Gerar Senha Automática e Enviar por Email
                         </button>
                     </form>
-                </div>
-                
-                <hr>
-                
-                <!-- Opção 2: Definir Senha Manual -->
-                <h6 class="mb-3"><i class="bi bi-pencil me-2"></i>Ou Definir Senha Manualmente:</h6>
-                
-                <form method="post">
-                    {% csrf_token %}
                     
-                    <div class="mb-3">
-                        <label for="nova_senha" class="form-label">Nova Senha *</label>
-                        <input type="password" class="form-control" id="nova_senha" name="nova_senha">
-                        <div class="form-text">Mínimo de 6 caracteres</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="confirmar_senha" class="form-label">Confirmar Nova Senha *</label>
-                        <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha">
-                        <div class="form-text">Digite a mesma senha novamente</div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
+                    <div class="text-center mt-3">
                         <a href="{% url 'dashboard:admin_usuarios_lista' %}" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-1"></i>
                             Cancelar
                         </a>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-check-circle me-1"></i>
-                            Definir Senha Manual
-                        </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Informações Importantes
+                    <i class="bi bi-info-circle me-2"></i>
+                    Informações do Usuário
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Como Funciona a Geração Automática:</h6>
-                <ul class="list-unstyled">
-                    <li><i class="bi bi-key text-success me-2"></i>Senha de 12 caracteres gerada automaticamente</li>
-                    <li><i class="bi bi-envelope text-success me-2"></i>Credenciais enviadas por email</li>
-                    <li><i class="bi bi-shield-lock text-success me-2"></i>Usuário obrigado a trocar no primeiro login</li>
-                    <li><i class="bi bi-clock text-success me-2"></i>Senha anterior invalidada imediatamente</li>
-                </ul>
+                <div class="mb-3">
+                    <strong>Usuário:</strong><br>
+                    <span class="text-primary">{{ usuario.username }}</span>
+                </div>
                 
-                <hr>
+                <div class="mb-3">
+                    <strong>Email:</strong><br>
+                    <span class="text-primary">{{ usuario.email }}</span>
+                </div>
                 
-                <h6>Para Senhas Manuais:</h6>
-                <ul class="list-unstyled">
-                    <li><i class="bi bi-check-circle text-primary me-2"></i>Mínimo de 6 caracteres</li>
-                    <li><i class="bi bi-check-circle text-primary me-2"></i>Use letras maiúsculas e minúsculas</li>
-                    <li><i class="bi bi-check-circle text-primary me-2"></i>Inclua números e símbolos</li>
-                </ul>
+                <div class="mb-3">
+                    <strong>Nome:</strong><br>
+                    <span class="text-muted">{{ usuario.first_name }} {{ usuario.last_name }}</span>
+                </div>
                 
-                <hr>
-                
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>Usuário:</strong> {{ usuario.username }} ({{ usuario.email }})
+                <div class="mb-3">
+                    <strong>Status:</strong><br>
+                    {% if usuario.is_active %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                    {% endif %}
+                    
+                    {% if usuario.is_superuser %}
+                        <span class="badge bg-warning text-dark">Super Admin</span>
+                    {% endif %}
                 </div>
                 
                 {% if usuario == user %}
@@ -118,35 +106,21 @@
                     <strong>Atenção:</strong> Você está alterando sua própria senha!
                 </div>
                 {% endif %}
+                
+                <hr>
+                
+                <div class="alert alert-light">
+                    <h6><i class="bi bi-shield-check me-2"></i>Segurança:</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="bi bi-check text-success me-2"></i>Senha forte gerada automaticamente</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Envio seguro por email</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Troca obrigatória no primeiro acesso</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Validação de senha em tempo real
-    document.getElementById('confirmar_senha').addEventListener('input', function() {
-        const novaSenha = document.getElementById('nova_senha').value;
-        const confirmarSenha = this.value;
-        
-        if (novaSenha !== confirmarSenha) {
-            this.setCustomValidity('As senhas não coincidem');
-        } else {
-            this.setCustomValidity('');
-        }
-    });
-    
-    // Validação de tamanho mínimo da senha
-    document.getElementById('nova_senha').addEventListener('input', function() {
-        if (this.value.length > 0 && this.value.length < 6) {
-            this.setCustomValidity('A senha deve ter pelo menos 6 caracteres');
-        } else {
-            this.setCustomValidity('');
-        }
-    });
-</script>
 {% endblock %}
 
 
