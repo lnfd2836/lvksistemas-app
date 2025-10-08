@@ -112,27 +112,31 @@
                                         <code class="small">{{ boleto.linha_digitavel }}</code>
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
+                                        <div class="btn-group" role="group">
                                             <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}" 
-                                               class="btn btn-outline-info" title="Ver boleto">
-                                                <i class="fas fa-barcode"></i>
+                                               class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                                <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="{% url 'controle_financeiro:detalhar_controle' boleto.controle_financeiro.id %}" 
-                                               class="btn btn-outline-primary" title="Ver controle">
-                                                <i class="fas fa-eye"></i>
+                                            <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}" 
+                                               class="btn btn-sm btn-outline-secondary" title="Imprimir PDF" target="_blank">
+                                                <i class="bi bi-printer"></i>
                                             </a>
                                             {% if boleto.status == 'pendente' %}
                                             <form method="post" action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" style="display: inline;">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{% url 'controle_financeiro:listar_boletos' %}">
-                                                <button type="submit" class="btn btn-success btn-sm" title="Marcar como pago"
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como pago"
                                                         onclick="return confirm('Confirma que este boleto foi pago?')">
-                                                    <i class="fas fa-check"></i>
+                                                    <i class="bi bi-check-circle"></i>
                                                 </button>
                                             </form>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir boleto"
+                                                    data-bs-toggle="modal" data-bs-target="#modalExcluir{{ boleto.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                             {% else %}
                                             <span class="text-muted">
-                                                <i class="fas fa-{% if boleto.status == 'pago' %}check{% else %}times{% endif %}"></i>
+                                                <i class="bi bi-{% if boleto.status == 'pago' %}check-circle{% else %}x-circle{% endif %}"></i>
                                             </span>
                                             {% endif %}
                                         </div>
@@ -205,4 +209,52 @@
         </div>
     </div>
 </div>
+
+<!-- Modais de confirmação para exclusão -->
+{% for boleto in boletos %}
+{% if boleto.status == 'pendente' %}
+<div class="modal fade" id="modalExcluir{{ boleto.id }}" tabindex="-1" aria-labelledby="modalExcluir{{ boleto.id }}Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalExcluir{{ boleto.id }}Label">
+                    <i class="bi bi-exclamation-triangle text-warning"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                <p>Tem certeza que deseja excluir o boleto:</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Boleto {{ boleto.numero_boleto }}</h6>
+                        <p class="card-text">
+                            <strong>Loja:</strong> {{ boleto.controle_financeiro.loja.nome }}<br>
+                            <strong>CNPJ:</strong> {{ boleto.controle_financeiro.loja.cnpj }}<br>
+                            <strong>Valor:</strong> R$ {{ boleto.valor|floatformat:2 }}<br>
+                            <strong>Vencimento:</strong> {{ boleto.data_vencimento|date:"d/m/Y" }}<br>
+                            <strong>Status:</strong> {{ boleto.get_status_display }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="post" action="{% url 'controle_financeiro:excluir_boleto' boleto.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Excluir Boleto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
 {% endblock %}
