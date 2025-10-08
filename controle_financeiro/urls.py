@@ -46,5 +46,4 @@ urlpatterns = [
         
         # PDF e pagamento
         path('boletos/<int:boleto_id>/pdf/', views.imprimir_boleto_pdf, name='imprimir_boleto_pdf'),
-        path('pagamento-codigo-barras/', views.processar_pagamento_codigo_barras, name='processar_pagamento_codigo_barras'),
     ]

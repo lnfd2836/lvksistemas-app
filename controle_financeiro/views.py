@@ -554,9 +554,18 @@ def marcar_boleto_pago(request, boleto_id):
         
         try:
             boleto.marcar_como_pago()
-            messages.success(request, f'Boleto {boleto.numero_boleto} marcado como pago!')
+            messages.success(
+                request, 
+                f'✅ Boleto {boleto.numero_boleto} da loja {boleto.controle_financeiro.loja.nome} '
+                f'foi marcado como pago! Valor: R$ {boleto.valor}'
+            )
         except Exception as e:
-            messages.error(request, f'Erro ao marcar boleto como pago: {str(e)}')
+            messages.error(request, f'❌ Erro ao marcar boleto como pago: {str(e)}')
+        
+        # Redireciona de volta para a página de origem se especificada
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
         
         return redirect('controle_financeiro:listar_boletos')
     
@@ -799,46 +808,4 @@ def imprimir_boleto_pdf(request, boleto_id):
         return redirect('controle_financeiro:detalhar_boleto', boleto_id=boleto_id)
 
 
-@login_required
-@user_passes_test(is_superuser)
-def processar_pagamento_codigo_barras(request):
-    """Processa pagamento via código de barras"""
-    
-    if request.method == 'POST':
-        codigo_barras = request.POST.get('codigo_barras', '').strip()
-        
-        if not codigo_barras:
-            messages.error(request, 'Código de barras é obrigatório!')
-            return redirect('controle_financeiro:dashboard_financeiro')
-        
-        try:
-            # Busca boleto pelo código de barras
-            boleto = BoletoGerado.objects.filter(
-                codigo_barras__icontains=codigo_barras[:20]  # Busca pelos primeiros 20 dígitos
-            ).first()
-            
-            if not boleto:
-                messages.error(request, 'Boleto não encontrado com este código de barras!')
-                return redirect('controle_financeiro:dashboard_financeiro')
-            
-            if boleto.status == 'pago':
-                messages.warning(request, f'Boleto {boleto.numero_boleto} já foi pago anteriormente!')
-                return redirect('controle_financeiro:detalhar_boleto', boleto_id=boleto.id)
-            
-            # Marcar como pago
-            boleto.marcar_como_pago()
-            
-            messages.success(
-                request,
-                f'Pagamento processado com sucesso! '
-                f'Boleto {boleto.numero_boleto} da loja {boleto.controle_financeiro.loja.nome} '
-                f'no valor de R$ {boleto.valor} foi marcado como pago.'
-            )
-            
-            return redirect('controle_financeiro:detalhar_boleto', boleto_id=boleto.id)
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao processar pagamento: {str(e)}')
-            return redirect('controle_financeiro:dashboard_financeiro')
-    
-    return redirect('controle_financeiro:dashboard_financeiro')
+

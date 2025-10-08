@@ -203,9 +203,6 @@
                     <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#criarBoletoModal">
                         <i class="fas fa-plus"></i> Criar Boleto
                     </button>
-                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#pagarCodigoBarrasModal">
-                        <i class="fas fa-barcode"></i> Pagar com Código
-                    </button>
                     <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-list"></i> Ver Todos
                     </a>
@@ -254,11 +251,14 @@
                                             </a>
                                             
                                             {% if boleto.status == 'pendente' %}
-                                            <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
-                                               class="btn btn-success btn-sm" title="Marcar como Pago"
-                                               onclick="return confirm('Marcar boleto como pago?')">
-                                                <i class="fas fa-check"></i>
-                                            </a>
+                                            <form method="post" action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{% url 'controle_financeiro:dashboard_financeiro' %}">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Marcar como Pago"
+                                                        onclick="return confirm('Confirma que este boleto foi pago?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
                                             {% endif %}
                                             
                                             {% if boleto.status != 'pago' %}
@@ -520,60 +520,6 @@ document.getElementById('loja_select').addEventListener('change', function() {
 });
 </script>
 
-<!-- Modal para Pagamento por Código de Barras -->
-<div class="modal fade" id="pagarCodigoBarrasModal" tabindex="-1" aria-labelledby="pagarCodigoBarrasModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="pagarCodigoBarrasModalLabel">
-                    <i class="fas fa-barcode"></i> Pagar com Código de Barras
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" action="{% url 'controle_financeiro:processar_pagamento_codigo_barras' %}">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    
-                    <div class="alert alert-info">
-                        <h6 class="alert-heading">
-                            <i class="fas fa-info-circle"></i> Como usar
-                        </h6>
-                        <p class="mb-0">
-                            Digite ou cole o código de barras do boleto para processar o pagamento automaticamente.
-                        </p>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="codigo_barras" class="form-label">Código de Barras</label>
-                        <textarea class="form-control" id="codigo_barras" name="codigo_barras" rows="3" 
-                                  placeholder="Cole aqui o código de barras do boleto..." required></textarea>
-                        <div class="form-text">
-                            O código de barras geralmente tem 44 dígitos numéricos.
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-warning">
-                        <h6 class="alert-heading">
-                            <i class="fas fa-exclamation-triangle"></i> Atenção
-                        </h6>
-                        <ul class="mb-0">
-                            <li>Certifique-se de que o código está correto</li>
-                            <li>O boleto será marcado como pago imediatamente</li>
-                            <li>Esta ação não pode ser desfeita facilmente</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check"></i> Processar Pagamento
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 
 {% endblock %}
