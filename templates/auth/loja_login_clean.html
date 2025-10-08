@@ -85,27 +85,52 @@
                             
                             <div class="mb-3">
                                 <label for="username" class="form-label">
-                                    <i class="bi bi-person"></i> Usuário ou Email
+                                    <i class="bi bi-envelope"></i> Email da Loja
                                 </label>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <input type="email" class="form-control" id="username" name="username" 
+                                       placeholder="exemplo@loja.com" required>
+                                <small class="form-text text-muted">
+                                    Use o email cadastrado da sua loja
+                                </small>
                             </div>
                             
                             <div class="mb-4">
                                 <label for="password" class="form-label">
-                                    <i class="bi bi-lock"></i> Senha
+                                    <i class="bi bi-key"></i> Senha Provisória
                                 </label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Digite sua senha provisória" required>
+                                <small class="form-text text-muted">
+                                    Use a senha provisória enviada por email
+                                </small>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary btn-login w-100">
+                            <button type="submit" class="btn btn-primary btn-login w-100 mb-3">
                                 <i class="bi bi-box-arrow-in-right"></i> Entrar no Dashboard
                             </button>
+                            
+                            <div class="text-center">
+                                <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left"></i> Voltar ao Login Principal
+                                </a>
+                            </div>
                         </form>
                         
-                        <div class="text-center mt-4">
-                            <small class="text-muted">
-                                Dashboard Administrativo da Loja
-                            </small>
+                        <div class="mt-4">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle"></i> Como fazer login:</h6>
+                                <ol class="mb-0 small">
+                                    <li>Use o <strong>email da sua loja</strong> como usuário</li>
+                                    <li>Digite a <strong>senha provisória</strong> enviada por email</li>
+                                    <li>Você será obrigado a alterar a senha no primeiro acesso</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    Problemas? Entre em contato: <strong>suporte@lvksistemas.com.br</strong>
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,48 @@
+BOLETO DE COBRANÇA - {{ beneficiario }}
+
+Olá, {{ loja.nome }}!
+
+Seu boleto de cobrança está disponível para pagamento.
+
+{% if dias_para_vencimento <= 5 %}
+⚠️ ATENÇÃO: {% if dias_para_vencimento <= 0 %}Este boleto está vencido há {{ dias_para_vencimento|add:"-1"|default:"0" }} dias.{% elif dias_para_vencimento == 1 %}Este boleto vence amanhã!{% else %}Este boleto vence em {{ dias_para_vencimento }} dias.{% endif %}
+{% endif %}
+
+INFORMAÇÕES DO BOLETO:
+- Número: {{ boleto.numero_boleto }}
+- Valor: {{ valor_formatado }}
+- Vencimento: {{ vencimento_formatado }}
+- Beneficiário: {{ beneficiario }}
+
+COMO PAGAR:
+
+1. LINHA DIGITÁVEL (use em qualquer banco/app):
+{{ boleto.linha_digitavel }}
+
+2. CÓDIGO DE BARRAS:
+{{ boleto.codigo_barras }}
+
+3. ACESSE SEU DASHBOARD:
+Entre no sistema e baixe o boleto em PDF para imprimir.
+
+FORMAS DE PAGAMENTO:
+- Internet Banking (cole a linha digitável)
+- Aplicativos bancários (escaneie o código de barras)
+- PIX (use o código de barras)
+- Casas lotéricas (leve o boleto impresso)
+- Bancos (caixa eletrônico ou guichê)
+
+{% if boleto.configuracao.instrucoes %}
+INSTRUÇÕES IMPORTANTES:
+{{ boleto.configuracao.instrucoes }}
+{% endif %}
+
+DÚVIDAS?
+- Email: {{ beneficiario|lower|slugify }}@sistema.com
+- Telefone: (11) 99999-9999
+- WhatsApp: (11) 99999-9999
+
+---
+Este é um email automático. Por favor, não responda.
+{{ beneficiario }} - Sistema de Cobrança
+Gerado em {{ boleto.data_criacao|date:"d/m/Y H:i" }}

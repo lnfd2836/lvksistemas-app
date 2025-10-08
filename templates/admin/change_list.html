@@ -1,0 +1,120 @@
+{% extends "admin/base.html" %}
+{% load static admin_urls admin_list %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'admin:app_list' app_label=cl.opts.app_label %}">{{ app_label|capfirst|escape }}</a></li>
+    <li class="breadcrumb-item active">{{ cl.opts.verbose_name_plural|capfirst }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-list me-2"></i>
+        {{ cl.opts.verbose_name_plural|capfirst }}
+    </h2>
+    
+    {% if has_add_permission %}
+        <a href="{% url cl.opts|admin_urlname:'add' %}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>
+            Adicionar {{ cl.opts.verbose_name }}
+        </a>
+    {% endif %}
+</div>
+
+{% if cl.formset and cl.formset.errors %}
+    <div class="alert alert-danger">
+        <h4>Por favor, corrija os erros abaixo.</h4>
+        {{ cl.formset.non_form_errors }}
+    </div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Lista de {{ cl.opts.verbose_name_plural|capfirst }}
+                </h5>
+            </div>
+            <div class="col-md-6 text-end">
+                {% if search_var %}
+                    <form method="get" class="d-inline-block">
+                        <div class="input-group">
+                            <input type="text" name="{{ search_var }}" value="{{ cl.query }}" class="form-control" placeholder="Buscar...">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        {% for k, v in cl.params.items %}
+                            {% if k != search_var %}
+                                <input type="hidden" name="{{ k }}" value="{{ v }}">
+                            {% endif %}
+                        {% endfor %}
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        {% if action_form and actions_on_top and cl.show_admin_actions %}
+            <div class="p-3 border-bottom bg-light">
+                {% admin_actions %}
+            </div>
+        {% endif %}
+        
+        <div class="table-responsive">
+            {% result_list cl %}
+        </div>
+        
+        {% if action_form and actions_on_bottom and cl.show_admin_actions %}
+            <div class="p-3 border-top bg-light">
+                {% admin_actions %}
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if cl.result_count %}
+        <div class="card-footer">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        {% if cl.result_count == 1 %}
+                            1 {{ cl.opts.verbose_name }}
+                        {% else %}
+                            {{ cl.result_count }} {{ cl.opts.verbose_name_plural }}
+                        {% endif %}
+                        {% if cl.full_result_count != cl.result_count %}
+                            ({{ cl.full_result_count }} total)
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    {% pagination cl %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if cl.formset %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adicionar funcionalidade de seleção em massa
+            const selectAll = document.querySelector('#action-toggle');
+            const checkboxes = document.querySelectorAll('input[name="_selected_action"]');
+            
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                });
+            }
+        });
+    </script>
+{% endif %}
+{% endblock %}

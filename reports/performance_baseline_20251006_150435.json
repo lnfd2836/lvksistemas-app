@@ -1,0 +1,137 @@
+{
+  "timestamp": "2025-10-06T15:04:35.763664",
+  "file_sizes": {
+    "templates_total_kb": 548.5361328125,
+    "static_files": 1,
+    "static_size_kb": 0.0,
+    "staticfiles_files": 506,
+    "staticfiles_size_kb": 3306.3251953125,
+    "python_files": 173,
+    "python_size_kb": 801.9931640625
+  },
+  "template_count": {
+    "total": 62,
+    "by_app": {
+      "templates": {
+        "count": 1,
+        "size": 8187
+      },
+      "debug": {
+        "count": 1,
+        "size": 9162
+      },
+      "dashboard": {
+        "count": 9,
+        "size": 87158
+      },
+      "controle_financeiro": {
+        "count": 10,
+        "size": 121841
+      },
+      "usuarios": {
+        "count": 3,
+        "size": 25186
+      },
+      "auth": {
+        "count": 3,
+        "size": 16738
+      },
+      "registration": {
+        "count": 1,
+        "size": 5779
+      },
+      "admin": {
+        "count": 4,
+        "size": 34355
+      },
+      "modulos": {
+        "count": 4,
+        "size": 31128
+      },
+      "errors": {
+        "count": 2,
+        "size": 10580
+      },
+      "emails": {
+        "count": 4,
+        "size": 19547
+      },
+      "planos": {
+        "count": 6,
+        "size": 72125
+      },
+      "lojas": {
+        "count": 14,
+        "size": 119915
+      }
+    }
+  },
+  "static_resources": {
+    "cdn_resources": [
+      "Bootstrap",
+      "Chart.js"
+    ],
+    "cdn_count": 2,
+    "base_template_size": 8187
+  },
+  "page_load_times": {
+    "login.html": {
+      "file_size": 4586,
+      "external_resources": 3,
+      "lines": 117
+    },
+    "loja_login.html": {
+      "file_size": 7325,
+      "external_resources": 0,
+      "lines": 155
+    },
+    "loja_login_clean.html": {
+      "file_size": 4827,
+      "external_resources": 4,
+      "lines": 119
+    },
+    "base.html": {
+      "file_size": 8187,
+      "external_resources": 4,
+      "lines": 191
+    }
+  },
+  "database_queries": {},
+  "middleware_count": 11,
+  "total_files": 173,
+  "template_analysis": {
+    "login_templates_count": 3,
+    "login_templates": [
+      "login.html",
+      "loja_login.html",
+      "loja_login_clean.html"
+    ],
+    "login.html_size": 4586,
+    "loja_login.html_size": 7325,
+    "loja_login_clean.html_size": 4827
+  },
+  "middlewares": [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "usuarios.improved_middleware.ImprovedAuthenticationMiddleware",
+    "usuarios.password_middleware.PasswordChangeMiddleware",
+    "lojas.middleware.LojaMiddleware",
+    "controle_financeiro.middleware.ControleFinanceiroMiddleware"
+  ],
+  "custom_middleware_count": 4,
+  "custom_middlewares": [
+    "usuarios.improved_middleware.ImprovedAuthenticationMiddleware",
+    "usuarios.password_middleware.PasswordChangeMiddleware",
+    "lojas.middleware.LojaMiddleware",
+    "controle_financeiro.middleware.ControleFinanceiroMiddleware"
+  ],
+  "database_config": {
+    "type": "SQLite",
+    "has_connection_pooling": false
+  }
+}

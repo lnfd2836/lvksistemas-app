@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão de Boleto{% endblock %}
+{% block page_title %}Confirmar Exclusão de Boleto{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão de Boleto
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-warning"></i> Atenção!
+                    </h6>
+                    <p class="mb-0">
+                        Você está prestes a excluir permanentemente este boleto. 
+                        Esta ação não pode ser desfeita.
+                    </p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Dados do Boleto:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Número:</strong> {{ boleto.numero_boleto }}</li>
+                            <li><strong>Loja:</strong> {{ boleto.controle_financeiro.loja.nome }}</li>
+                            <li><strong>CNPJ:</strong> {{ boleto.controle_financeiro.loja.cnpj }}</li>
+                            <li><strong>Valor:</strong> R$ {{ boleto.valor|floatformat:2 }}</li>
+                            <li><strong>Status:</strong> 
+                                <span class="badge bg-{% if boleto.status == 'pendente' %}warning{% elif boleto.status == 'vencido' %}danger{% else %}secondary{% endif %}">
+                                    {{ boleto.get_status_display }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Datas:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Criado em:</strong> {{ boleto.data_criacao|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Vencimento:</strong> {{ boleto.data_vencimento|date:"d/m/Y" }}</li>
+                            {% if boleto.dias_para_vencimento > 0 %}
+                            <li><strong>Dias para vencer:</strong> {{ boleto.dias_para_vencimento }}</li>
+                            {% else %}
+                            <li><strong>Dias em atraso:</strong> {{ boleto.dias_para_vencimento|add:"-1"|default:"0" }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if boleto.observacoes %}
+                <div class="mt-3">
+                    <h6>Observações:</h6>
+                    <p class="text-muted">{{ boleto.observacoes }}</p>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                    
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmar Exclusão
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Adiciona confirmação extra via JavaScript
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirm('Tem CERTEZA ABSOLUTA que deseja excluir este boleto? Esta ação é irreversível!')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

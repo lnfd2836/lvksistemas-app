@@ -60,10 +60,14 @@ def simple_login(request):
                     # Remove sessões antigas do usuário
                     SessaoAtiva.objects.filter(user=user).update(ativa=False)
                     
+                    # Remove sessões com a mesma session_key para evitar duplicatas
+                    session_key = request.session.session_key or f'no-session-{user.id}'
+                    SessaoAtiva.objects.filter(session_key=session_key).delete()
+                    
                     # Cria nova sessão ativa
                     SessaoAtiva.objects.create(
                         user=user,
-                        session_key=request.session.session_key or 'no-session-key',
+                        session_key=session_key,
                         ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
                         user_agent=request.META.get('HTTP_USER_AGENT', ''),
                         ativa=True,

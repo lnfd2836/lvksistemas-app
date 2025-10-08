@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Mesas{% endblock %}
+{% block page_title %}Gerenciar Mesas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-chair"></i> Mesas</h2>
+        <p class="text-muted">Gerencie as mesas da sua lanchonete</p>
+    </div>
+    <a href="{% url 'lojas:adicionar_mesa' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nova Mesa
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos os status</option>
+                    <option value="livre" {% if status_filter == 'livre' %}selected{% endif %}>Livre</option>
+                    <option value="ocupada" {% if status_filter == 'ocupada' %}selected{% endif %}>Ocupada</option>
+                    <option value="reservada" {% if status_filter == 'reservada' %}selected{% endif %}>Reservada</option>
+                    <option value="manutencao" {% if status_filter == 'manutencao' %}selected{% endif %}>Manutenção</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <a href="{% url 'lojas:gerenciar_mesas' %}" class="btn btn-outline-secondary d-block w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Grid de Mesas -->
+<div class="row">
+    {% for mesa in mesas %}
+    <div class="col-xl-3 col-md-4 col-sm-6 mb-4">
+        <div class="card h-100 {% if mesa.status == 'livre' %}border-success{% elif mesa.status == 'ocupada' %}border-danger{% elif mesa.status == 'reservada' %}border-warning{% else %}border-secondary{% endif %}">
+            <div class="card-header text-center {% if mesa.status == 'livre' %}bg-success text-white{% elif mesa.status == 'ocupada' %}bg-danger text-white{% elif mesa.status == 'reservada' %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
+                <h5 class="mb-0">
+                    <i class="fas fa-chair"></i> Mesa {{ mesa.numero }}
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="card-text">
+                    <strong>Capacidade:</strong> {{ mesa.capacidade }} pessoas<br>
+                    {% if mesa.localizacao %}
+                        <strong>Local:</strong> {{ mesa.localizacao }}<br>
+                    {% endif %}
+                    <strong>Status:</strong> 
+                    <span class="badge {% if mesa.status == 'livre' %}bg-success{% elif mesa.status == 'ocupada' %}bg-danger{% elif mesa.status == 'reservada' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ mesa.get_status_display }}
+                    </span>
+                </p>
+                
+                {% if mesa.observacoes %}
+                    <small class="text-muted">{{ mesa.observacoes|truncatechars:50 }}</small>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'lojas:editar_mesa' mesa.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    
+                    <!-- Botões de status -->
+                    {% if mesa.status != 'livre' %}
+                        <form method="post" action="{% url 'lojas:alterar_status_mesa' mesa.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="livre">
+                            <button type="submit" class="btn btn-sm btn-success" title="Liberar mesa">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if mesa.status == 'livre' %}
+                        <form method="post" action="{% url 'lojas:alterar_status_mesa' mesa.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="ocupada">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Ocupar mesa">
+                                <i class="fas fa-user"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-chair fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhuma mesa cadastrada</h5>
+            <p class="text-muted">Comece adicionando a primeira mesa da sua lanchonete</p>
+            <a href="{% url 'lojas:adicionar_mesa' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Adicionar Primeira Mesa
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Resumo de Status -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Resumo das Mesas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 bg-success text-white">
+                            <h4>{{ mesas|length }}</h4>
+                            <small>Total de Mesas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 bg-success text-white">
+                            <h4>{{ mesas|length }}</h4>
+                            <small>Livres</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 bg-danger text-white">
+                            <h4>0</h4>
+                            <small>Ocupadas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 bg-warning text-dark">
+                            <h4>0</h4>
+                            <small>Reservadas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

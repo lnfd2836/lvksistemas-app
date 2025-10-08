@@ -3,6 +3,30 @@
 {% block title %}Editar {{ loja.nome }}{% endblock %}
 {% block page_title %}Editar {{ loja.nome }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Garantir que o campo tipo_loja seja sempre visível */
+    .tipo-loja-field {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    #id_tipo_loja {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+    }
+    
+    /* Estilo adicional para destacar o campo */
+    .tipo-loja-field select {
+        border: 2px solid #007bff !important;
+        background-color: #f8f9fa !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
@@ -52,6 +76,35 @@
                         </div>
                     </div>
                     
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <!-- Campo Tipo de Loja - Atualizado -->
+                            <label for="{{ form.tipo_loja.id_for_label }}" class="form-label">
+                                <i class="fas fa-cogs"></i> {{ form.tipo_loja.label }}
+                            </label>
+                            <div class="tipo-loja-field" style="display: block !important; visibility: visible !important;">
+                                {{ form.tipo_loja }}
+                            </div>
+                            {% if form.tipo_loja.errors %}
+                                <div class="text-danger">{{ form.tipo_loja.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Selecione o tipo de atividade da loja para personalizar os módulos e campos.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="{{ form.endereco.id_for_label }}" class="form-label">{{ form.endereco.label }}</label>
                         {{ form.endereco }}
@@ -86,13 +139,7 @@
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
-                        {{ form.status }}
-                        {% if form.status.errors %}
-                            <div class="text-danger">{{ form.status.errors.0 }}</div>
-                        {% endif %}
-                    </div>
+
                     
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'lojas:listar_lojas' %}" class="btn btn-secondary">
@@ -107,4 +154,39 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Garantir que o campo tipo_loja seja sempre visível
+    const tipoLojaField = document.getElementById('id_tipo_loja');
+    const tipoLojaContainer = document.querySelector('.tipo-loja-field');
+    
+    if (tipoLojaField) {
+        // Forçar visibilidade
+        tipoLojaField.style.display = 'block';
+        tipoLojaField.style.visibility = 'visible';
+        tipoLojaField.style.opacity = '1';
+        tipoLojaField.style.width = '100%';
+        
+        console.log('Campo tipo_loja encontrado e configurado:', tipoLojaField);
+    }
+    
+    if (tipoLojaContainer) {
+        tipoLojaContainer.style.display = 'block';
+        tipoLojaContainer.style.visibility = 'visible';
+        tipoLojaContainer.style.opacity = '1';
+        
+        console.log('Container tipo_loja configurado:', tipoLojaContainer);
+    }
+    
+    // Verificar se o campo está visível
+    setTimeout(function() {
+        if (tipoLojaField) {
+            const rect = tipoLojaField.getBoundingClientRect();
+            console.log('Campo tipo_loja - Posição:', rect);
+            console.log('Campo tipo_loja - Visível:', rect.width > 0 && rect.height > 0);
+        }
+    }, 100);
+});
+</script>
 {% endblock %}

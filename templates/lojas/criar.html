@@ -156,6 +156,77 @@
                         </div>
                     </div>
                     
+                    <!-- Seção de Seleção de Plano Comercial -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-crown"></i> Plano Comercial
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.plano_comercial.id_for_label }}" class="form-label">
+                                <i class="fas fa-star"></i> {{ form.plano_comercial.label }} *
+                            </label>
+                            {{ form.plano_comercial }}
+                            {% if form.plano_comercial.errors %}
+                                <div class="text-danger">{{ form.plano_comercial.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.plano_comercial.help_text }}</small>
+                        </div>
+                        
+                        <!-- Detalhes do Plano Selecionado -->
+                        <div id="plan-details" class="mt-3" style="display: none;">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-info-circle"></i> Detalhes do Plano: <span id="plan-name"></span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Descrição:</strong></p>
+                                            <p id="plan-description" class="text-muted"></p>
+                                            
+                                            <p><strong>Valor Mensal:</strong></p>
+                                            <p class="h5 text-success">R$ <span id="plan-price"></span>/mês</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Limites Incluídos:</strong></p>
+                                            <ul id="plan-limits" class="list-unstyled">
+                                                <!-- Limites serão preenchidos via JavaScript -->
+                                            </ul>
+                                            
+                                            <p><strong>Recursos Incluídos:</strong></p>
+                                            <ul id="plan-features" class="list-unstyled">
+                                                <!-- Recursos serão preenchidos via JavaScript -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Comparação de Planos -->
+                        <div class="mt-3">
+                            <h6 class="text-info mb-2">Planos Disponíveis:</h6>
+                            <div class="row">
+                                {% for plano in planos_disponiveis %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="card border-left-{% if plano.tipo == 'basico' %}secondary{% elif plano.tipo == 'intermediario' %}primary{% elif plano.tipo == 'avancado' %}success{% elif plano.tipo == 'premium' %}warning{% else %}danger{% endif %}">
+                                        <div class="card-body p-2">
+                                            <h6 class="text-{% if plano.tipo == 'basico' %}secondary{% elif plano.tipo == 'intermediario' %}primary{% elif plano.tipo == 'avancado' %}success{% elif plano.tipo == 'premium' %}warning{% else %}danger{% endif %} mb-1">
+                                                {% if plano.destaque %}<i class="fas fa-star"></i> {% endif %}{{ plano.nome }}
+                                            </h6>
+                                            <p class="mb-1"><strong>R$ {{ plano.preco_mensal|floatformat:2 }}/mês</strong></p>
+                                            <small class="text-muted">{{ plano.descricao|truncatechars:50 }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
                         <strong>Importante:</strong> Após criar a loja, será gerada uma senha provisória que será enviada por email para o administrador da loja.
@@ -178,6 +249,71 @@
 
 {% block extra_js %}
 <script>
+    // Dados dos planos para JavaScript
+    const planosData = {
+        {% for plano in planos_disponiveis %}
+        {{ plano.id }}: {
+            nome: "{{ plano.nome }}",
+            descricao: "{{ plano.descricao|escapejs }}",
+            preco_mensal: "{{ plano.preco_mensal|floatformat:2 }}",
+            max_usuarios_simultaneos: {{ plano.max_usuarios_simultaneos }},
+            max_pdvs: {{ plano.max_pdvs }},
+            max_produtos: {{ plano.max_produtos }},
+            max_clientes: {{ plano.max_clientes }},
+            max_vendas_mes: {{ plano.max_vendas_mes }},
+            backup_automatico: {{ plano.backup_automatico|yesno:"true,false" }},
+            relatorios_avancados: {{ plano.relatorios_avancados|yesno:"true,false" }},
+            integracao_api: {{ plano.integracao_api|yesno:"true,false" }},
+            suporte_prioritario: {{ plano.suporte_prioritario|yesno:"true,false" }},
+            customizacao_avancada: {{ plano.customizacao_avancada|yesno:"true,false" }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // Função para mostrar detalhes do plano
+    function showPlanDetails(planoId) {
+        const planDetails = document.getElementById('plan-details');
+        
+        if (!planoId || !planosData[planoId]) {
+            planDetails.style.display = 'none';
+            return;
+        }
+        
+        const plano = planosData[planoId];
+        
+        // Atualizar informações básicas
+        document.getElementById('plan-name').textContent = plano.nome;
+        document.getElementById('plan-description').textContent = plano.descricao;
+        document.getElementById('plan-price').textContent = plano.preco_mensal;
+        
+        // Atualizar limites
+        const limitsHtml = `
+            <li><i class="fas fa-users text-primary"></i> <strong>${plano.max_usuarios_simultaneos}</strong> usuários simultâneos</li>
+            <li><i class="fas fa-cash-register text-success"></i> <strong>${plano.max_pdvs}</strong> PDVs</li>
+            <li><i class="fas fa-box text-info"></i> <strong>${plano.max_produtos}</strong> produtos</li>
+            <li><i class="fas fa-user-friends text-warning"></i> <strong>${plano.max_clientes}</strong> clientes</li>
+            <li><i class="fas fa-chart-line text-danger"></i> <strong>${plano.max_vendas_mes}</strong> vendas/mês</li>
+        `;
+        document.getElementById('plan-limits').innerHTML = limitsHtml;
+        
+        // Atualizar recursos
+        let featuresHtml = '';
+        if (plano.backup_automatico) featuresHtml += '<li><i class="fas fa-check text-success"></i> Backup Automático</li>';
+        if (plano.relatorios_avancados) featuresHtml += '<li><i class="fas fa-check text-success"></i> Relatórios Avançados</li>';
+        if (plano.integracao_api) featuresHtml += '<li><i class="fas fa-check text-success"></i> Integração API</li>';
+        if (plano.suporte_prioritario) featuresHtml += '<li><i class="fas fa-check text-success"></i> Suporte Prioritário</li>';
+        if (plano.customizacao_avancada) featuresHtml += '<li><i class="fas fa-check text-success"></i> Customização Avançada</li>';
+        
+        if (featuresHtml === '') {
+            featuresHtml = '<li><i class="fas fa-info-circle text-muted"></i> Recursos básicos incluídos</li>';
+        }
+        
+        document.getElementById('plan-features').innerHTML = featuresHtml;
+        
+        // Mostrar detalhes
+        planDetails.style.display = 'block';
+    }
+    
     // Máscara para CNPJ
     document.getElementById('{{ form.cnpj.id_for_label }}').addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');

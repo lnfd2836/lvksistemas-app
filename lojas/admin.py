@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from .models import Loja, Cliente, Produto, Venda, ItemVenda, BackupLoja
-from usuarios.models import PerfilUsuario, LogAcesso
+from usuarios.models import PerfilUsuario, LogAcesso, SessaoAtiva
 from dashboard.models import DashboardStats, Notificacao
 
 
@@ -146,6 +146,28 @@ class LogAcessoAdmin(admin.ModelAdmin):
     readonly_fields = ('data_acesso',)
 
 
+@admin.register(SessaoAtiva)
+class SessaoAtivaAdmin(admin.ModelAdmin):
+    list_display = ('user', 'session_key', 'ip_address', 'ativa', 'data_login')
+    list_filter = ('ativa', 'is_super_admin', 'data_login')
+    search_fields = ('user__username', 'ip_address', 'session_key')
+    readonly_fields = ('data_login', 'ultima_atividade')
+    fieldsets = (
+        ('Usuário', {
+            'fields': ('user', 'is_super_admin')
+        }),
+        ('Sessão', {
+            'fields': ('session_key', 'ativa')
+        }),
+        ('Localização', {
+            'fields': ('ip_address', 'user_agent')
+        }),
+        ('Controle', {
+            'fields': ('data_login', 'ultima_atividade')
+        })
+    )
+
+
 @admin.register(DashboardStats)
 class DashboardStatsAdmin(admin.ModelAdmin):
     list_display = ('loja', 'total_vendas', 'receita_total', 'data_criacao')
@@ -177,6 +199,7 @@ class NotificacaoAdmin(admin.ModelAdmin):
 admin.site.site_header = "Sistema de Lojas - Administração"
 admin.site.site_title = "Sistema de Lojas"
 admin.site.index_title = "Painel de Controle"
+
 
 
 

@@ -1,0 +1,237 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard Admin - LVK Sistemas{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-3"></i>
+                    Dashboard Administrativo
+                </h1>
+                <p class="mb-0 mt-2">Painel de controle do sistema LVK Sistemas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-store fa-2x mb-3"></i>
+                <h3>{{ total_lojas|default:0 }}</h3>
+                <p class="mb-0">Lojas Cadastradas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-3"></i>
+                <h3>{{ total_usuarios|default:0 }}</h3>
+                <p class="mb-0">Usuários Ativos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-shopping-cart fa-2x mb-3"></i>
+                <h3>{{ total_vendas|default:0 }}</h3>
+                <p class="mb-0">Vendas Hoje</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-crown fa-2x mb-3"></i>
+                <h3>{{ total_assinaturas|default:0 }}</h3>
+                <p class="mb-0">Assinaturas Ativas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:lojas_loja_add' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>
+                            Nova Loja
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:auth_user_add' %}" class="btn btn-success w-100">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Novo Usuário
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:planos_planocomercial_add' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-crown me-2"></i>
+                            Novo Plano
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'dashboard:principal' %}" class="btn btn-info w-100">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            Dashboard Sistema
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aplicações Disponíveis -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-store me-2"></i>
+                    Gerenciamento de Lojas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'admin:lojas_loja_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-store me-2"></i>Lojas</span>
+                        <span class="badge bg-primary rounded-pill">{{ total_lojas|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:lojas_cliente_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-friends me-2"></i>Clientes</span>
+                        <span class="badge bg-success rounded-pill">{{ total_clientes|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:lojas_produto_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-box me-2"></i>Produtos</span>
+                        <span class="badge bg-info rounded-pill">{{ total_produtos|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:lojas_venda_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-shopping-cart me-2"></i>Vendas</span>
+                        <span class="badge bg-warning rounded-pill">{{ total_vendas_total|default:0 }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users-cog me-2"></i>
+                    Administração do Sistema
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'admin:auth_user_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-users me-2"></i>Usuários</span>
+                        <span class="badge bg-primary rounded-pill">{{ total_usuarios|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:auth_group_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-users-cog me-2"></i>Grupos</span>
+                        <span class="badge bg-secondary rounded-pill">{{ total_grupos|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:planos_planocomercial_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-crown me-2"></i>Planos</span>
+                        <span class="badge bg-warning rounded-pill">{{ total_planos|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:usuarios_sessaoativa_changelist' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-check me-2"></i>Sessões Ativas</span>
+                        <span class="badge bg-success rounded-pill">{{ total_sessoes|default:0 }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Atividade Recente -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Atividade Recente
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_actions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Usuário</th>
+                                    <th>Ação</th>
+                                    <th>Objeto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in recent_actions %}
+                                <tr>
+                                    <td>{{ action.action_time|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ action.user.get_full_name|default:action.user.username }}
+                                    </td>
+                                    <td>
+                                        {% if action.is_addition %}
+                                            <span class="badge bg-success">Adicionado</span>
+                                        {% elif action.is_change %}
+                                            <span class="badge bg-warning">Modificado</span>
+                                        {% elif action.is_deletion %}
+                                            <span class="badge bg-danger">Excluído</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ action.object_repr|truncatechars:50 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>Nenhuma atividade recente encontrada.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Atualizar estatísticas a cada 30 segundos
+    setInterval(function() {
+        // Aqui você pode adicionar AJAX para atualizar as estatísticas
+        console.log('Atualizando estatísticas...');
+    }, 30000);
+</script>
+{% endblock %}

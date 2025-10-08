@@ -39,24 +39,62 @@ def loja_login(request):
             return render(request, 'auth/loja_login_clean.html')
         
         try:
+            logger.info(f"Tentativa de login da loja - Username/Email: {username}")
+            
             # Tenta autenticar com username primeiro
             user = authenticate(request, username=username, password=password)
+            logger.debug(f"Autenticação com username '{username}': {'Sucesso' if user else 'Falhou'}")
             
             # Se falhar, tenta com email
             if user is None and '@' in username:
                 try:
                     user_obj = User.objects.get(email=username)
+                    logger.debug(f"Usuário encontrado por email {username}: {user_obj.username}")
                     user = authenticate(request, username=user_obj.username, password=password)
-                    logger.debug(f"Tentativa de login da loja com email {username} para usuário {user_obj.username}")
+                    logger.debug(f"Autenticação com email {username} (username: {user_obj.username}): {'Sucesso' if user else 'Falhou'}")
+                    
+                    # Verificar se é administrador de loja
+                    try:
+                        loja = Loja.objects.get(admin_user=user_obj)
+                        logger.info(f"Usuário {user_obj.username} é administrador da loja: {loja.nome}")
+                    except Loja.DoesNotExist:
+                        logger.warning(f"Usuário {user_obj.username} não é administrador de nenhuma loja")
+                        
                 except User.DoesNotExist:
-                    logger.debug(f"Email {username} não encontrado no sistema")
+                    logger.warning(f"Email {username} não encontrado no sistema")
+                    pass
+                except Exception as e:
+                    logger.error(f"Erro ao buscar usuário por email {username}: {str(e)}")
                     pass
             
             if user is not None:
+                logger.info(f"Autenticação bem-sucedida para usuário: {user.username}")
+                
                 if not user.is_active:
                     logger.warning(f"Tentativa de login da loja com usuário inativo: {user.username}")
-                    messages.error(request, 'Esta conta está desativada.')
+                    messages.error(request, 'Esta conta está desativada. Entre em contato com o suporte.')
                     return render(request, 'auth/loja_login_clean.html')
+                
+                # Verificar se é uma senha provisória
+                try:
+                    loja = Loja.objects.get(admin_user=user)
+                    if loja.senha_provisoria and password == loja.senha_provisoria:
+                        logger.info(f"Login com senha provisória detectado para loja: {loja.nome}")
+                        # Marcar que precisa trocar a senha
+                        from usuarios.models import PerfilUsuario
+                        profile, created = PerfilUsuario.objects.get_or_create(
+                            user=user,
+                            defaults={'requires_password_change': True}
+                        )
+                        if not created:
+                            profile.requires_password_change = True
+                            profile.save()
+                except Loja.DoesNotExist:
+                    logger.debug(f"Usuário {user.username} não é administrador de loja")
+                    pass
+                except Exception as e:
+                    logger.error(f"Erro ao verificar senha provisória: {str(e)}")
+                    pass
                 
                 login(request, user)
                 logger.info(f"Login da loja bem-sucedido para usuário {user.username}")
@@ -71,10 +109,14 @@ def loja_login(request):
                             # Remove sessões antigas do usuário
                             SessaoAtiva.objects.filter(user=user).update(ativa=False)
                             
+                            # Remove sessões com a mesma session_key para evitar duplicatas
+                            session_key = request.session.session_key or f'no-session-{user.id}'
+                            SessaoAtiva.objects.filter(session_key=session_key).delete()
+                            
                             # Cria nova sessão ativa
                             SessaoAtiva.objects.create(
                                 user=user,
-                                session_key=request.session.session_key or 'no-session-key',
+                                session_key=session_key,
                                 ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
                                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                                 ativa=True,
@@ -127,7 +169,18 @@ def loja_login(request):
                     
             else:
                 logger.warning(f"Tentativa de login da loja falhada para username/email: {username}")
-                messages.error(request, 'Usuário ou senha incorretos.')
+                
+                # Verificar se o email existe no sistema
+                if '@' in username:
+                    try:
+                        user_obj = User.objects.get(email=username)
+                        logger.info(f"Email {username} existe no sistema (usuário: {user_obj.username}), mas senha incorreta")
+                        messages.error(request, 'Senha incorreta. Verifique sua senha provisória ou entre em contato com o suporte.')
+                    except User.DoesNotExist:
+                        logger.info(f"Email {username} não encontrado no sistema")
+                        messages.error(request, 'Email não encontrado no sistema. Verifique se o email está correto.')
+                else:
+                    messages.error(request, 'Usuário ou senha incorretos. Use o email da loja como usuário.')
                 
         except Exception as e:
             logger.error(f"Erro durante processo de login da loja: {str(e)}")

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Cardápio{% endblock %}
+{% block page_title %}Gerenciar Cardápio{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-utensils"></i> Cardápio</h2>
+        <p class="text-muted">Gerencie o cardápio da sua lanchonete</p>
+    </div>
+    <a href="{% url 'lojas:adicionar_item_cardapio' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Item
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Nome ou descrição do item">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="categoria" class="form-label">Categoria</label>
+                <select class="form-select" id="categoria" name="categoria">
+                    <option value="">Todas as categorias</option>
+                    {% for value, label in categorias_cardapio %}
+                        <option value="{{ value }}" {% if categoria_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="ativo" class="form-label">Status</label>
+                <select class="form-select" id="ativo" name="ativo">
+                    <option value="">Todos</option>
+                    <option value="true" {% if ativo_filter == 'true' %}selected{% endif %}>Ativo</option>
+                    <option value="false" {% if ativo_filter == 'false' %}selected{% endif %}>Inativo</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'lojas:gerenciar_cardapio' %}" class="btn btn-outline-secondary d-block w-100 mt-1">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista do Cardápio -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-list"></i> Itens do Cardápio
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if cardapio %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Imagem</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cardapio %}
+                        <tr>
+                            <td>
+                                {% if item.imagem %}
+                                    <img src="{{ item.imagem.url }}" alt="{{ item.nome }}" 
+                                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                                         style="width: 60px; height: 60px; border-radius: 8px;">
+                                        <i class="fas fa-utensils text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ item.nome }}</strong>
+                                {% if item.descricao %}
+                                    <br><small class="text-muted">{{ item.descricao|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ item.get_categoria_display }}</span>
+                            </td>
+                            <td>
+                                <strong class="text-success">R$ {{ item.preco }}</strong>
+                            </td>
+                            <td>
+                                {% if item.ativo %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'lojas:editar_item_cardapio' item.id %}" 
+                                       class="btn btn-sm btn-outline-warning" title="Editar item">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-utensils fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum item no cardápio</h5>
+                <p class="text-muted">Comece adicionando o primeiro item ao seu cardápio</p>
+                <a href="{% url 'lojas:adicionar_item_cardapio' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Adicionar Primeiro Item
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informações sobre categorias -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Categorias do Cardápio
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for value, label in categorias_cardapio %}
+                    <div class="col-md-2 mb-2">
+                        <div class="text-center p-2 border rounded">
+                            <strong>{{ label }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ cardapio|length|default:0 }} itens
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

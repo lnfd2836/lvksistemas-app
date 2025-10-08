@@ -2,139 +2,104 @@
 
 ## Overview
 
-The application is experiencing a Django TemplateSyntaxError when rendering the lojas listing page (`/lojas/`). The error occurs in the `templates/lojas/listar.html` template at line 127, where the template syntax `{% if status_filter=='ativa' %}selected{% endif %}` is malformed according to Django's template parser.
-
-The issue is that Django template language doesn't support the `==` operator for string comparisons in the same way as Python. Instead, Django templates require proper spacing and use different comparison syntax.
-
-## Root Cause Analysis
-
-1. **Template Syntax Error**: The line `{% if status_filter=='ativa' %}selected{% endif %}` uses incorrect syntax
-2. **Django Template Language**: Django templates require proper spacing around operators and use different comparison methods
-3. **Multiple Occurrences**: The same pattern appears on lines 127, 129, and 130 for different status values
-4. **Production Impact**: This error prevents users from accessing the lojas listing page, which is critical functionality
+This design addresses the Django template syntax error caused by using Python comparison operators (`==`) instead of proper Django template syntax. The error occurs in the store detail template (`templates/lojas/detalhar.html`) where conditional logic is used to pre-select the current status in a dropdown.
 
 ## Architecture
 
-The fix involves correcting the Django template syntax in the `templates/lojas/listar.html` file. The solution will:
+The fix involves updating the template syntax to use Django's proper conditional template tags. Django templates use different syntax for comparisons than Python code.
 
-1. **Template Syntax Correction**: Replace `==` comparisons with proper Django template syntax
-2. **Consistent Pattern**: Apply the same fix to all similar comparisons in the template
-3. **Validation**: Ensure the template renders correctly with various filter values
-4. **Testing**: Verify the fix works in both development and production environments
+### Current Problem
+- Template uses `{% if loja.status=="ativa" %}` which is invalid Django template syntax
+- Django template parser cannot handle the `==` operator in this context
+- This causes a TemplateSyntaxError that prevents the page from loading
+
+### Solution Approach
+- Replace `==` comparisons with Django's `ifequal` tag or proper `if` tag syntax
+- Use Django template filters for string comparison
+- Maintain the same functionality while using correct syntax
 
 ## Components and Interfaces
 
-### Affected Components
+### Template Layer
+- **File**: `templates/lojas/detalhar.html`
+- **Lines affected**: 561-563
+- **Current syntax**: `{% if loja.status=="ativa" %}`
+- **Correct syntax options**:
+  1. `{% if loja.status == "ativa" %}` (with spaces around ==)
+  2. `{% ifequal loja.status "ativa" %}`
+  3. Using custom template filter if needed
 
-1. **Template File**: `templates/lojas/listar.html`
-   - Lines 127, 129, 130 contain the malformed syntax
-   - Status filter dropdown options need correction
-
-2. **View Function**: `lojas.views.listar_lojas`
-   - Passes `status_filter` context variable to template
-   - No changes needed to view logic
-
-3. **URL Pattern**: `lojas/urls.py`
-   - No changes needed to URL configuration
-
-### Template Syntax Solutions
-
-Django templates support several approaches for string comparison:
-
-#### Option 1: Using the `|default` filter with string comparison
-```django
-<option value="ativa" {% if status_filter == "ativa" %}selected{% endif %}>Ativa</option>
-```
-
-#### Option 2: Using proper spacing (recommended)
-```django
-<option value="ativa" {% if status_filter == "ativa" %}selected{% endif %}>Ativa</option>
-```
-
-#### Option 3: Using the `|yesno` filter
-```django
-<option value="ativa" {{ status_filter|yesno:"selected," }}>Ativa</option>
-```
-
-The recommended approach is Option 2, which uses proper spacing around the `==` operator.
+### Django Template Engine
+- The Django template engine expects specific syntax for conditionals
+- String comparisons in templates require proper spacing or specific tags
+- The `ifequal` tag is designed specifically for equality comparisons
 
 ## Data Models
 
-No changes to data models are required. The issue is purely a template syntax problem.
+### Store Model
+- **Field**: `status` (CharField with choices)
+- **Values**: "ativa", "inativa", "suspensa"
+- **Usage**: Compared in template to determine selected option
 
 ## Error Handling
 
-### Current Error
-- **Error Type**: `django.template.exceptions.TemplateSyntaxError`
-- **Error Message**: `Could not parse the remainder: '=='ativa'' from 'status_filter=='ativa''`
-- **Location**: `templates/lojas/listar.html:127`
+### Template Syntax Validation
+- Ensure all template syntax follows Django conventions
+- Test template rendering with different status values
+- Verify no other templates have similar syntax issues
 
-### Prevention Measures
-1. **Template Validation**: Implement template syntax validation in development
-2. **Testing**: Add template rendering tests to catch syntax errors
-3. **Code Review**: Establish template syntax guidelines for the team
+### Fallback Behavior
+- If status is None or empty, no option should be pre-selected
+- Template should handle edge cases gracefully
+- Form should still be functional even if comparison fails
 
 ## Testing Strategy
 
-### Unit Tests
-1. **Template Rendering Test**: Verify the template renders without errors
-2. **Filter Functionality Test**: Test status filtering with different values
-3. **Context Variable Test**: Ensure `status_filter` is properly passed to template
+### Template Rendering Tests
+- Test template renders without syntax errors
+- Verify correct option is selected for each status value
+- Test with edge cases (None, empty string, invalid status)
 
 ### Integration Tests
-1. **View Response Test**: Test the complete `/lojas/` endpoint
-2. **Filter Parameter Test**: Test URL parameters for status filtering
-3. **User Permission Test**: Verify superuser access requirements
+- Test the complete status change workflow
+- Verify form submission works correctly
+- Test modal functionality remains intact
 
 ### Manual Testing
-1. **Development Environment**: Test template rendering locally
-2. **Production Deployment**: Verify fix works on Heroku
-3. **Browser Testing**: Test dropdown functionality across browsers
+- Load store detail page for stores with different statuses
+- Verify modal opens and displays correct selected option
+- Test status change functionality end-to-end
 
-### Test Cases
+## Implementation Details
 
-```python
-def test_listar_lojas_template_renders_without_error(self):
-    """Test that the lojas listing template renders without syntax errors"""
-    
-def test_status_filter_selection_active(self):
-    """Test that 'ativa' status filter shows as selected"""
-    
-def test_status_filter_selection_inactive(self):
-    """Test that 'inativa' status filter shows as selected"""
-    
-def test_status_filter_selection_suspended(self):
-    """Test that 'suspensa' status filter shows as selected"""
-    
-def test_no_status_filter_no_selection(self):
-    """Test that no option is selected when no filter is applied"""
+### Syntax Fix Options
+
+**Option 1: Proper if tag syntax**
+```django
+{% if loja.status == "ativa" %}selected{% endif %}
 ```
 
-## Implementation Plan
+**Option 2: ifequal tag**
+```django
+{% ifequal loja.status "ativa" %}selected{% endif %}
+```
 
-### Phase 1: Template Syntax Fix
-1. Correct the malformed template syntax in `templates/lojas/listar.html`
-2. Apply consistent formatting to all status filter options
-3. Verify template syntax is valid
+**Option 3: Using template filter**
+```django
+{% if loja.status|default:"" == "ativa" %}selected{% endif %}
+```
 
-### Phase 2: Testing
-1. Create template rendering tests
-2. Test filter functionality
-3. Verify fix in development environment
-
-### Phase 3: Deployment
-1. Deploy fix to production
-2. Monitor for any remaining template errors
-3. Verify functionality works correctly
+### Recommended Approach
+Use Option 1 (proper if tag syntax) as it's the most modern and readable approach in current Django versions. The `ifequal` tag is deprecated in newer Django versions.
 
 ## Security Considerations
 
-No security implications for this fix. The change is purely cosmetic template syntax correction.
+- No security implications as this is a template syntax fix
+- Existing CSRF protection remains in place
+- No changes to data validation or processing logic
 
-## Performance Considerations
+## Performance Impact
 
-No performance impact. The fix corrects syntax without changing functionality or adding computational overhead.
-
-## Backward Compatibility
-
-The fix maintains full backward compatibility. The corrected template syntax produces the same HTML output as intended by the original code.
+- Minimal performance impact
+- Template rendering will be slightly more efficient without syntax errors
+- No additional database queries or processing overhead

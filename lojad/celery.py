@@ -43,11 +43,35 @@ app.conf.beat_schedule = {
         'task': 'lojas.tasks.limpar_logs_antigos',
         'schedule': 2592000.0,  # 30 dias
     },
+    # Tarefas financeiras
+    'rotinas-financeiras-diarias': {
+        'task': 'controle_financeiro.tasks.executar_rotinas_financeiras_diarias',
+        'schedule': 86400.0,  # 24 horas - executa diariamente
+        'options': {
+            'expires': 3600,  # Expira em 1 hora se não executar
+        }
+    },
+    'gerar-boletos-automaticos': {
+        'task': 'controle_financeiro.tasks.gerar_boletos_automaticos_task',
+        'schedule': 43200.0,  # 12 horas - executa 2x por dia
+        'args': (10,),  # 10 dias de antecedência
+        'options': {
+            'expires': 1800,  # Expira em 30 minutos se não executar
+        }
+    },
+    'verificar-boletos-vencidos': {
+        'task': 'controle_financeiro.tasks.verificar_boletos_vencidos_task',
+        'schedule': 21600.0,  # 6 horas - executa 4x por dia
+        'options': {
+            'expires': 900,  # Expira em 15 minutos se não executar
+        }
+    },
 }
 
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
 
 
 

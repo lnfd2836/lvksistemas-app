@@ -75,11 +75,18 @@ def listar_lojas(request):
 def criar_loja(request):
     """Cria uma nova loja"""
     
+    # Carregar planos disponíveis para o contexto
+    from lojas.utils.plan_mapping import get_available_commercial_plans
+    planos_disponiveis = get_available_commercial_plans()
+    
     if request.method == 'POST':
         form = LojaForm(request.POST)
         
         if form.is_valid():
             with transaction.atomic():
+                # Obter o plano selecionado
+                plano_comercial = form.cleaned_data['plano_comercial']
+                
                 # Cria o usuário administrador da loja
                 admin_user = User.objects.create_user(
                     username=form.cleaned_data['email'],
@@ -92,7 +99,7 @@ def criar_loja(request):
                 # Marca que a senha será definida manualmente para evitar interferência do signal
                 admin_user._password_set_manually = True
                 
-                # Cria a loja
+                # Cria a loja (remove plano_comercial dos dados salvos)
                 loja = form.save(commit=False)
                 loja.admin_user = admin_user
                 loja.save()
@@ -101,29 +108,10 @@ def criar_loja(request):
                 admin_user.set_password(loja.senha_provisoria)
                 admin_user.save()
                 
-                # Cria controle financeiro automaticamente
+                # Cria ambos os registros financeiros usando o plano selecionado
                 try:
-                    # Busca o plano básico (primeiro plano ativo)
-                    plano_basico = PlanoFinanceiro.objects.filter(ativo=True).first()
-                    if not plano_basico:
-                        # Cria um plano básico se não existir
-                        plano_basico = PlanoFinanceiro.objects.create(
-                            nome="Básico",
-                            descricao="Plano básico para novas lojas",
-                            valor_mensal=29.90,
-                            dias_trial=30,
-                            ativo=True
-                        )
-                    
-                    # Cria o controle financeiro
-                    controle_financeiro = ControleFinanceiro.objects.create(
-                        loja=loja,
-                        plano=plano_basico,
-                        status='ativa',
-                        valor_mensal=plano_basico.valor_mensal,
-                        data_inicio=timezone.now(),
-                        data_vencimento=timezone.now() + timedelta(days=plano_basico.dias_trial)
-                    )
+                    from lojas.utils.plan_mapping import create_both_financial_records
+                    controle_financeiro, assinatura_loja = create_both_financial_records(loja, plano_comercial)
                     
                     # Gera boleto automaticamente usando a configuração padrão
                     configuracao_boleto = ConfiguracaoBoleto.objects.filter(ativo=True).first()
@@ -140,7 +128,7 @@ def criar_loja(request):
                             numero_boleto=numero_boleto,
                             linha_digitavel=linha_digitavel,
                             codigo_barras=codigo_barras,
-                            valor=plano_basico.valor_mensal,
+                            valor=plano_comercial.preco_mensal,
                             data_vencimento=timezone.now() + timedelta(days=7),
                             status='pendente'
                         )
@@ -149,7 +137,7 @@ def criar_loja(request):
                         try:
                             Notificacao.objects.create(
                                 titulo=f"Boleto gerado para {loja.nome}",
-                                mensagem=f"Boleto {numero_boleto} gerado automaticamente. Valor: R$ {plano_basico.valor_mensal}",
+                                mensagem=f"Boleto {numero_boleto} gerado automaticamente. Valor: R$ {plano_comercial.preco_mensal}",
                                 tipo='info',
                                 prioridade='media',
                                 usuario=request.user
@@ -158,14 +146,19 @@ def criar_loja(request):
                             pass
                     
                 except Exception as e:
-                    # Log do erro mas não impede a criação da loja
-                    print(f"Erro ao criar controle financeiro: {str(e)}")
+                    # Log do erro e reverte a transação
+                    logger.error(f"Erro ao criar registros financeiros para loja {loja.nome}: {str(e)}")
+                    messages.error(request, f"Erro ao criar registros financeiros: {str(e)}")
+                    return render(request, 'lojas/criar.html', {
+                        'form': form,
+                        'planos_disponiveis': planos_disponiveis
+                    })
                 
                 # Cria notificação de sucesso
                 try:
                     Notificacao.objects.create(
                         titulo=f"Loja {loja.nome} criada com sucesso",
-                        mensagem=f"A loja {loja.nome} foi criada com sucesso. Controle financeiro e boleto gerados automaticamente.",
+                        mensagem=f"A loja {loja.nome} foi criada com sucesso com o plano {plano_comercial.nome}. Controle financeiro e assinatura gerados automaticamente.",
                         tipo='success',
                         prioridade='media',
                         usuario=request.user
@@ -177,7 +170,7 @@ def criar_loja(request):
                 # Aqui apenas informamos o sucesso da criação
                 messages.success(
                     request, 
-                    f'Loja "{loja.nome}" criada com sucesso! '
+                    f'Loja "{loja.nome}" criada com sucesso com o plano {plano_comercial.nome}! '
                     f'Credenciais de acesso: Email: {loja.email} | '
                     f'Senha provisória: {loja.senha_provisoria} | '
                     f'IMPORTANTE: O usuário deve alterar a senha no primeiro acesso.'
@@ -187,7 +180,12 @@ def criar_loja(request):
     else:
         form = LojaForm()
     
-    return render(request, 'lojas/criar.html', {'form': form})
+    context = {
+        'form': form,
+        'planos_disponiveis': planos_disponiveis
+    }
+    
+    return render(request, 'lojas/criar.html', context)
 
 
 @login_required
@@ -687,6 +685,468 @@ def detalhar_venda(request, venda_id):
 
 
 @login_required
+def gerenciar_cardapio(request):
+    """Gerencia o cardápio da lanchonete"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    # Buscar itens do cardápio (produtos da loja)
+    cardapio = Produto.objects.filter(loja=loja).order_by('categoria', 'nome')
+    
+    # Filtros
+    search = request.GET.get('search')
+    if search:
+        cardapio = cardapio.filter(
+            Q(nome__icontains=search) |
+            Q(descricao__icontains=search)
+        )
+    
+    categoria_filter = request.GET.get('categoria')
+    if categoria_filter:
+        cardapio = cardapio.filter(categoria=categoria_filter)
+    
+    ativo_filter = request.GET.get('ativo')
+    if ativo_filter is not None:
+        cardapio = cardapio.filter(ativo=ativo_filter == 'true')
+    
+    # Categorias para lanchonetes
+    categorias_cardapio = [
+        ('lanches', 'Lanches'),
+        ('bebidas', 'Bebidas'),
+        ('sobremesas', 'Sobremesas'),
+        ('porcoes', 'Porções'),
+        ('combos', 'Combos'),
+        ('outros', 'Outros'),
+    ]
+    
+    context = {
+        'cardapio': cardapio,
+        'loja': loja,
+        'search': search,
+        'categoria_filter': categoria_filter,
+        'ativo_filter': ativo_filter,
+        'categorias_cardapio': categorias_cardapio,
+    }
+    
+    return render(request, 'lojas/cardapio.html', context)
+
+
+@login_required
+def adicionar_item_cardapio(request):
+    """Adiciona um novo item ao cardápio"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    if request.method == 'POST':
+        form = ProdutoForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            produto = form.save(commit=False)
+            produto.loja = loja
+            produto.save()
+            
+            messages.success(request, f'Item "{produto.nome}" adicionado ao cardápio com sucesso!')
+            return redirect('lojas:gerenciar_cardapio')
+    else:
+        form = ProdutoForm()
+    
+    # Categorias específicas para lanchonetes
+    categorias_cardapio = [
+        ('lanches', 'Lanches'),
+        ('bebidas', 'Bebidas'),
+        ('sobremesas', 'Sobremesas'),
+        ('porcoes', 'Porções'),
+        ('combos', 'Combos'),
+        ('outros', 'Outros'),
+    ]
+    
+    context = {
+        'form': form,
+        'loja': loja,
+        'categorias_cardapio': categorias_cardapio,
+    }
+    
+    return render(request, 'lojas/adicionar_item_cardapio.html', context)
+
+
+@login_required
+def editar_item_cardapio(request, produto_id):
+    """Edita um item do cardápio"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    produto = get_object_or_404(Produto, id=produto_id, loja=loja)
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    if request.method == 'POST':
+        form = ProdutoForm(request.POST, request.FILES, instance=produto)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Item "{produto.nome}" atualizado com sucesso!')
+            return redirect('lojas:gerenciar_cardapio')
+    else:
+        form = ProdutoForm(instance=produto)
+    
+    # Categorias específicas para lanchonetes
+    categorias_cardapio = [
+        ('lanches', 'Lanches'),
+        ('bebidas', 'Bebidas'),
+        ('sobremesas', 'Sobremesas'),
+        ('porcoes', 'Porções'),
+        ('combos', 'Combos'),
+        ('outros', 'Outros'),
+    ]
+    
+    context = {
+        'form': form,
+        'produto': produto,
+        'loja': loja,
+        'categorias_cardapio': categorias_cardapio,
+    }
+    
+    return render(request, 'lojas/editar_item_cardapio.html', context)
+
+
+@login_required
+def gerenciar_mesas(request):
+    """Gerencia as mesas da lanchonete"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    from .models import Mesa
+    mesas = Mesa.objects.filter(loja=loja).order_by('numero')
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        mesas = mesas.filter(status=status_filter)
+    
+    context = {
+        'mesas': mesas,
+        'loja': loja,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'lojas/mesas.html', context)
+
+
+@login_required
+def adicionar_mesa(request):
+    """Adiciona uma nova mesa"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    if request.method == 'POST':
+        from .models import Mesa
+        
+        numero = request.POST.get('numero')
+        capacidade = request.POST.get('capacidade')
+        localizacao = request.POST.get('localizacao', '')
+        observacoes = request.POST.get('observacoes', '')
+        
+        try:
+            mesa = Mesa.objects.create(
+                loja=loja,
+                numero=int(numero),
+                capacidade=int(capacidade),
+                localizacao=localizacao,
+                observacoes=observacoes
+            )
+            
+            messages.success(request, f'Mesa {mesa.numero} adicionada com sucesso!')
+            return redirect('lojas:gerenciar_mesas')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao adicionar mesa: {str(e)}')
+    
+    context = {
+        'loja': loja,
+    }
+    
+    return render(request, 'lojas/adicionar_mesa.html', context)
+
+
+@login_required
+def editar_mesa(request, mesa_id):
+    """Edita uma mesa"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    from .models import Mesa
+    mesa = get_object_or_404(Mesa, id=mesa_id, loja=loja)
+    
+    if request.method == 'POST':
+        mesa.numero = int(request.POST.get('numero'))
+        mesa.capacidade = int(request.POST.get('capacidade'))
+        mesa.localizacao = request.POST.get('localizacao', '')
+        mesa.observacoes = request.POST.get('observacoes', '')
+        mesa.ativa = request.POST.get('ativa') == 'on'
+        
+        try:
+            mesa.save()
+            messages.success(request, f'Mesa {mesa.numero} atualizada com sucesso!')
+            return redirect('lojas:gerenciar_mesas')
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar mesa: {str(e)}')
+    
+    context = {
+        'mesa': mesa,
+        'loja': loja,
+    }
+    
+    return render(request, 'lojas/editar_mesa.html', context)
+
+
+@login_required
+def alterar_status_mesa(request, mesa_id):
+    """Altera o status de uma mesa"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    from .models import Mesa
+    mesa = get_object_or_404(Mesa, id=mesa_id, loja=loja)
+    
+    if request.method == 'POST':
+        novo_status = request.POST.get('status')
+        if novo_status in ['livre', 'ocupada', 'reservada', 'manutencao']:
+            mesa.status = novo_status
+            mesa.save()
+            
+            messages.success(request, f'Status da Mesa {mesa.numero} alterado para {mesa.get_status_display()}.')
+    
+    return redirect('lojas:gerenciar_mesas')
+
+
+@login_required
+def gerenciar_pedidos(request):
+    """Gerencia os pedidos da lanchonete"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    from .models import Pedido
+    pedidos = Pedido.objects.filter(loja=loja).order_by('-data_pedido')
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        pedidos = pedidos.filter(status=status_filter)
+    
+    tipo_filter = request.GET.get('tipo')
+    if tipo_filter:
+        pedidos = pedidos.filter(tipo=tipo_filter)
+    
+    context = {
+        'pedidos': pedidos,
+        'loja': loja,
+        'status_filter': status_filter,
+        'tipo_filter': tipo_filter,
+    }
+    
+    return render(request, 'lojas/pedidos.html', context)
+
+
+@login_required
+def novo_pedido(request):
+    """Cria um novo pedido"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    # Verificar se é uma lanchonete
+    if not loja.tipo_loja or loja.tipo_loja.nome != 'lanchonete':
+        messages.error(request, 'Esta funcionalidade é apenas para lanchonetes.')
+        return redirect('dashboard:loja')
+    
+    from .models import Mesa, Pedido, ItemPedido
+    
+    # Buscar mesas livres e produtos do cardápio
+    mesas_livres = Mesa.objects.filter(loja=loja, status='livre', ativa=True)
+    cardapio = Produto.objects.filter(loja=loja, ativo=True)
+    clientes = Cliente.objects.filter(loja=loja, ativo=True)
+    
+    if request.method == 'POST':
+        try:
+            # Dados do pedido
+            tipo = request.POST.get('tipo')
+            mesa_id = request.POST.get('mesa') if tipo == 'mesa' else None
+            cliente_id = request.POST.get('cliente')
+            observacoes = request.POST.get('observacoes', '')
+            
+            # Criar pedido
+            pedido = Pedido.objects.create(
+                loja=loja,
+                tipo=tipo,
+                mesa_id=mesa_id if mesa_id else None,
+                cliente_id=cliente_id if cliente_id else None,
+                observacoes=observacoes,
+                valor_total=0
+            )
+            
+            # Adicionar itens
+            produtos_ids = request.POST.getlist('produtos')
+            quantidades = request.POST.getlist('quantidades')
+            
+            valor_total = 0
+            for produto_id, quantidade in zip(produtos_ids, quantidades):
+                if produto_id and quantidade:
+                    produto = Produto.objects.get(id=produto_id, loja=loja)
+                    quantidade = int(quantidade)
+                    
+                    ItemPedido.objects.create(
+                        pedido=pedido,
+                        produto=produto,
+                        quantidade=quantidade,
+                        preco_unitario=produto.preco
+                    )
+                    
+                    valor_total += produto.preco * quantidade
+            
+            # Atualizar valor do pedido
+            pedido.valor_total = valor_total
+            pedido.valor_final = valor_total
+            pedido.save()
+            
+            # Se for mesa, ocupar a mesa
+            if mesa_id:
+                mesa = Mesa.objects.get(id=mesa_id)
+                mesa.status = 'ocupada'
+                mesa.save()
+            
+            messages.success(request, f'Pedido {pedido.numero_pedido} criado com sucesso!')
+            return redirect('lojas:detalhar_pedido', pedido_id=pedido.id)
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar pedido: {str(e)}')
+    
+    context = {
+        'loja': loja,
+        'mesas_livres': mesas_livres,
+        'cardapio': cardapio,
+        'clientes': clientes,
+    }
+    
+    return render(request, 'lojas/novo_pedido.html', context)
+
+
+@login_required
+def detalhar_pedido(request, pedido_id):
+    """Detalha um pedido específico"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    from .models import Pedido, ItemPedido
+    pedido = get_object_or_404(Pedido, id=pedido_id, loja=loja)
+    itens = ItemPedido.objects.filter(pedido=pedido)
+    
+    context = {
+        'pedido': pedido,
+        'itens': itens,
+        'loja': loja,
+    }
+    
+    return render(request, 'lojas/detalhar_pedido.html', context)
+
+
+@login_required
+def alterar_status_pedido(request, pedido_id):
+    """Altera o status de um pedido"""
+    
+    if not hasattr(request, 'loja_atual'):
+        messages.error(request, 'Você não tem uma loja associada.')
+        return redirect('dashboard:principal')
+    
+    loja = request.loja_atual
+    
+    from .models import Pedido
+    pedido = get_object_or_404(Pedido, id=pedido_id, loja=loja)
+    
+    if request.method == 'POST':
+        novo_status = request.POST.get('status')
+        if novo_status in ['pendente', 'preparando', 'pronto', 'entregue', 'cancelado']:
+            pedido.status = novo_status
+            
+            # Se entregue, liberar mesa
+            if novo_status == 'entregue' and pedido.mesa:
+                pedido.mesa.status = 'livre'
+                pedido.mesa.save()
+                pedido.data_entrega = timezone.now()
+            
+            pedido.save()
+            
+            messages.success(request, f'Status do Pedido {pedido.numero_pedido} alterado para {pedido.get_status_display()}.')
+    
+    return redirect('lojas:detalhar_pedido', pedido_id=pedido.id)
+
+
+@login_required
 @user_passes_test(is_superuser)
 def enviar_credenciais_provisorias(request, loja_id):
     """Envia novas credenciais provisórias para o administrador da loja"""
@@ -694,6 +1154,20 @@ def enviar_credenciais_provisorias(request, loja_id):
     loja = get_object_or_404(Loja, id=loja_id)
     
     if request.method == 'POST':
+        # Verificar se não foi enviado recentemente (proteção contra duplo clique)
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Verificar se há um envio recente (últimos 30 segundos)
+        cache_key = f"credenciais_enviadas_{loja.id}_{request.user.id}"
+        from django.core.cache import cache
+        
+        if cache.get(cache_key):
+            messages.warning(request, 'Credenciais já foram enviadas recentemente. Aguarde alguns segundos antes de tentar novamente.')
+            return redirect('lojas:detalhar_loja', loja_id=loja.id)
+        
+        # Marcar como enviado por 30 segundos
+        cache.set(cache_key, True, 30)
         try:
             from django.db import transaction
             from django.utils import timezone
@@ -743,9 +1217,9 @@ def enviar_credenciais_provisorias(request, loja_id):
                 email_sent = False
                 try:
                     subject = f'Novas Credenciais de Acesso - {loja.nome}'
-                    message = f"""Olá {admin_user.first_name or admin_user.username},
+                    message = f"""Olá {admin_user.first_name or loja.nome},
 
-Novas credenciais de acesso foram geradas para sua loja: {loja.nome}
+Suas credenciais de acesso foram atualizadas para a loja: {loja.nome}
 
 🏪 DADOS DA LOJA:
 Nome: {loja.nome}
@@ -755,26 +1229,23 @@ Telefone: {loja.telefone}
 
 🔑 CREDENCIAIS DE ACESSO:
 URL de Login: https://www.lvksistemas.com.br/loja/login/
-Usuário: {admin_user.username} (use o email da loja)
+Usuário: {loja.email}
 Nova Senha Provisória: {nova_senha_provisoria}
 
-⚠️ IMPORTANTE:
-- Esta é uma senha provisória que DEVE ser alterada no primeiro acesso
-- Por segurança, você será obrigado a trocar a senha no primeiro login
-- Sua senha anterior não funciona mais
-- Mantenha suas credenciais em local seguro
-- Use o EMAIL DA LOJA como nome de usuário
+⚠️ INSTRUÇÕES IMPORTANTES:
+1. Acesse o link: https://www.lvksistemas.com.br/loja/login/
+2. Use o EMAIL DA LOJA como usuário: {loja.email}
+3. Use a senha provisória fornecida acima
+4. Você será obrigado a alterar a senha no primeiro acesso
+5. Mantenha suas credenciais em local seguro
 
-📧 MOTIVO: Solicitação de recuperação de acesso pelo administrador do sistema.
+📧 Esta senha provisória foi gerada por solicitação do administrador do sistema.
 
-🔗 LINKS DE ACESSO CORRETOS:
-- Login Principal: https://www.lvksistemas.com.br/loja/login/
-- Login Alternativo: https://www.crmvendas.net.br/loja/login/
-- Login Heroku: https://loja-conveniencia-pdv-7fed430df60a.herokuapp.com/loja/login/
+Em caso de dúvidas, entre em contato conosco:
+📞 Suporte: suporte@lvksistemas.com.br
 
 Atenciosamente,
-Equipe LVK Sistemas
-Suporte: suporte@lvksistemas.com.br"""
+Equipe LVK Sistemas"""
                     
                     send_mail(
                         subject,
@@ -790,6 +1261,7 @@ Suporte: suporte@lvksistemas.com.br"""
                 
                 # Log da operação
                 logger.info(f'Novas credenciais provisórias geradas para loja "{loja.nome}" por {request.user.username}')
+                logger.info(f'Email enviado para: {loja.email} | Senha: {nova_senha_provisoria}')
                 
                 # Criar notificação
                 try:

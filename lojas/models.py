@@ -250,3 +250,112 @@ class BackupLoja(models.Model):
     
     def __str__(self):
         return f"Backup {self.loja.nome} - {self.data_backup.strftime('%d/%m/%Y %H:%M')}"
+
+
+class Mesa(models.Model):
+    """Modelo para mesas de lanchonetes"""
+    
+    STATUS_CHOICES = [
+        ('livre', 'Livre'),
+        ('ocupada', 'Ocupada'),
+        ('reservada', 'Reservada'),
+        ('manutencao', 'Manutenção'),
+    ]
+    
+    loja = models.ForeignKey(Loja, on_delete=models.CASCADE, related_name='mesas')
+    numero = models.IntegerField(verbose_name="Número da Mesa")
+    capacidade = models.IntegerField(verbose_name="Capacidade (pessoas)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='livre')
+    localizacao = models.CharField(max_length=100, blank=True, verbose_name="Localização")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    
+    # Controle
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    ativa = models.BooleanField(default=True, verbose_name="Mesa Ativa")
+    
+    class Meta:
+        verbose_name = "Mesa"
+        verbose_name_plural = "Mesas"
+        unique_together = ['loja', 'numero']
+        ordering = ['numero']
+    
+    def __str__(self):
+        return f"Mesa {self.numero} - {self.loja.nome}"
+
+
+class Pedido(models.Model):
+    """Modelo para pedidos de lanchonetes"""
+    
+    STATUS_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('preparando', 'Preparando'),
+        ('pronto', 'Pronto'),
+        ('entregue', 'Entregue'),
+        ('cancelado', 'Cancelado'),
+    ]
+    
+    TIPO_CHOICES = [
+        ('balcao', 'Balcão'),
+        ('mesa', 'Mesa'),
+        ('delivery', 'Delivery'),
+    ]
+    
+    loja = models.ForeignKey(Loja, on_delete=models.CASCADE, related_name='pedidos')
+    numero_pedido = models.CharField(max_length=20, unique=True, verbose_name="Número do Pedido")
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='pedidos', null=True, blank=True)
+    mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, blank=True, related_name='pedidos')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='balcao')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
+    
+    # Valores
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Total")
+    desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Desconto")
+    valor_final = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Final")
+    
+    # Observações
+    observacoes = models.TextField(blank=True, verbose_name="Observações do Pedido")
+    
+    # Controle
+    data_pedido = models.DateTimeField(auto_now_add=True, verbose_name="Data do Pedido")
+    data_entrega = models.DateTimeField(null=True, blank=True, verbose_name="Data de Entrega")
+    
+    class Meta:
+        verbose_name = "Pedido"
+        verbose_name_plural = "Pedidos"
+        ordering = ['-data_pedido']
+    
+    def __str__(self):
+        return f"Pedido {self.numero_pedido} - {self.loja.nome}"
+    
+    def save(self, *args, **kwargs):
+        if not self.numero_pedido:
+            # Gera número único para o pedido
+            self.numero_pedido = f"PED{self.loja.id.hex[:4].upper()}{timezone.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # Calcula valor final
+        self.valor_final = self.valor_total - self.desconto
+        
+        super().save(*args, **kwargs)
+
+
+class ItemPedido(models.Model):
+    """Modelo para itens de um pedido"""
+    
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='itens')
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name='itens_pedido')
+    quantidade = models.IntegerField(verbose_name="Quantidade")
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Preço Unitário")
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Subtotal")
+    observacoes = models.TextField(blank=True, verbose_name="Observações do Item")
+    
+    class Meta:
+        verbose_name = "Item do Pedido"
+        verbose_name_plural = "Itens do Pedido"
+    
+    def __str__(self):
+        return f"{self.produto.nome} - {self.pedido.numero_pedido}"
+    
+    def save(self, *args, **kwargs):
+        # Calcula subtotal
+        self.subtotal = self.quantidade * self.preco_unitario
+        super().save(*args, **kwargs)

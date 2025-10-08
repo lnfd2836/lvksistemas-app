@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Adicionar Mesa{% endblock %}
+{% block page_title %}Adicionar Mesa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus-circle"></i> Nova Mesa
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="numero" class="form-label">Número da Mesa</label>
+                            <input type="number" class="form-control" id="numero" name="numero" required min="1">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="capacidade" class="form-label">Capacidade (pessoas)</label>
+                            <input type="number" class="form-control" id="capacidade" name="capacidade" required min="1" max="20">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="localizacao" class="form-label">Localização</label>
+                        <input type="text" class="form-control" id="localizacao" name="localizacao" 
+                               placeholder="Ex: Área externa, Próximo à janela, Salão principal">
+                        <small class="form-text text-muted">Opcional - ajuda a identificar a mesa</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3" 
+                                  placeholder="Observações sobre a mesa (opcional)"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Dica:</strong> A mesa será criada com status "Livre" e poderá ser alterada posteriormente.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'lojas:gerenciar_mesas' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Adicionar Mesa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

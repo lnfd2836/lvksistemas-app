@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Adicionar Item ao Cardápio{% endblock %}
+{% block page_title %}Adicionar Item ao Cardápio{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus-circle"></i> Novo Item do Cardápio
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger">{{ form.nome.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.preco.id_for_label }}" class="form-label">{{ form.preco.label }}</label>
+                            {{ form.preco }}
+                            {% if form.preco.errors %}
+                                <div class="text-danger">{{ form.preco.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}</label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}
+                            <div class="text-danger">{{ form.descricao.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Descreva os ingredientes e características do item</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.categoria.id_for_label }}" class="form-label">{{ form.categoria.label }}</label>
+                            <select class="form-control" id="{{ form.categoria.id_for_label }}" name="categoria">
+                                <option value="">Selecione uma categoria</option>
+                                {% for value, label in categorias_cardapio %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.categoria.errors %}
+                                <div class="text-danger">{{ form.categoria.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.codigo_barras.id_for_label }}" class="form-label">{{ form.codigo_barras.label }}</label>
+                            {{ form.codigo_barras }}
+                            {% if form.codigo_barras.errors %}
+                                <div class="text-danger">{{ form.codigo_barras.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Opcional - para controle interno</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.imagem.id_for_label }}" class="form-label">{{ form.imagem.label }}</label>
+                            {{ form.imagem }}
+                            {% if form.imagem.errors %}
+                                <div class="text-danger">{{ form.imagem.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Foto do item para o cardápio</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <div class="form-check">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                    Item ativo no cardápio
+                                </label>
+                            </div>
+                            {% if form.ativo.errors %}
+                                <div class="text-danger">{{ form.ativo.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Dica:</strong> Para lanchonetes, recomendamos usar categorias como Lanches, Bebidas, Sobremesas, etc.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'lojas:gerenciar_cardapio' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Adicionar ao Cardápio
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

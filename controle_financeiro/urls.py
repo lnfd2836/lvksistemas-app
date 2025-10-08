@@ -35,4 +35,16 @@ urlpatterns = [
         
         # Detalhes do boleto
         path('boletos/<int:boleto_id>/detalhes/', views.detalhar_boleto, name='detalhar_boleto'),
+        
+        # Automação financeira
+        path('gerar-boletos-automaticos/', views.gerar_boletos_automaticos, name='gerar_boletos_automaticos'),
+        path('executar-rotinas-financeiras/', views.executar_rotinas_financeiras, name='executar_rotinas_financeiras'),
+        
+        # Gerenciamento manual de boletos
+        path('boletos/criar-manual/', views.criar_boleto_manual, name='criar_boleto_manual'),
+        path('boletos/<int:boleto_id>/excluir/', views.excluir_boleto, name='excluir_boleto'),
+        
+        # PDF e pagamento
+        path('boletos/<int:boleto_id>/pdf/', views.imprimir_boleto_pdf, name='imprimir_boleto_pdf'),
+        path('pagamento-codigo-barras/', views.processar_pagamento_codigo_barras, name='processar_pagamento_codigo_barras'),
     ]

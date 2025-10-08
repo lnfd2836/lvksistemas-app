@@ -118,14 +118,98 @@
     </div>
 </div>
 
+<!-- Automação Financeira -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-robot"></i> Automação Financeira
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-calendar-check fa-2x text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">Gerar Boletos Automáticos</h6>
+                                <p class="text-muted mb-0 small">
+                                    Gera boletos para lojas que vencem em 10 dias
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <form method="post" action="{% url 'controle_financeiro:gerar_boletos_automaticos' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="dias_antecedencia" value="10">
+                                    <button type="submit" class="btn btn-primary btn-sm" 
+                                            onclick="return confirm('Gerar boletos automáticos para lojas que vencem em 10 dias?')">
+                                        <i class="fas fa-play"></i> Executar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-cogs fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">Executar Todas as Rotinas</h6>
+                                <p class="text-muted mb-0 small">
+                                    Verifica vencimentos, gera boletos e atualiza status
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <form method="post" action="{% url 'controle_financeiro:executar_rotinas_financeiras' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm" 
+                                            onclick="return confirm('Executar todas as rotinas financeiras?')">
+                                        <i class="fas fa-play-circle"></i> Executar Tudo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle"></i> Automação Configurada
+                    </h6>
+                    <p class="mb-0">
+                        <strong>Regra:</strong> Os boletos são gerados automaticamente apenas 10 dias antes do vencimento da loja. 
+                        Isso evita gerar boletos muito cedo e garante que as lojas recebam o boleto no momento adequado.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <!-- Boletos Gerados -->
     <div class="col-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="fas fa-barcode"></i> Boletos Gerados
                 </h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#criarBoletoModal">
+                        <i class="fas fa-plus"></i> Criar Boleto
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#pagarCodigoBarrasModal">
+                        <i class="fas fa-barcode"></i> Pagar com Código
+                    </button>
+                    <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> Ver Todos
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 {% if boletos_recentes %}
@@ -158,17 +242,33 @@
                                         </span>
                                     </td>
                                     <td>
-                                        {% if boleto.status == 'pendente' %}
-                                        <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
-                                           class="btn btn-success btn-sm" 
-                                           onclick="return confirm('Marcar boleto como pago?')">
-                                            <i class="fas fa-check"></i>
-                                        </a>
-                                        {% else %}
-                                        <span class="text-muted">
-                                            <i class="fas fa-{% if boleto.status == 'pago' %}check{% else %}times{% endif %}"></i>
-                                        </span>
-                                        {% endif %}
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}" 
+                                               class="btn btn-outline-info btn-sm" title="Ver Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}" 
+                                               class="btn btn-outline-secondary btn-sm" title="Imprimir PDF" target="_blank">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            
+                                            {% if boleto.status == 'pendente' %}
+                                            <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
+                                               class="btn btn-success btn-sm" title="Marcar como Pago"
+                                               onclick="return confirm('Marcar boleto como pago?')">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if boleto.status != 'pago' %}
+                                            <a href="{% url 'controle_financeiro:excluir_boleto' boleto.id %}" 
+                                               class="btn btn-danger btn-sm" title="Excluir Boleto"
+                                               onclick="return confirm('Tem certeza que deseja excluir este boleto?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -331,4 +431,149 @@
     font-size: 0.875rem;
 }
 </style>
+
+<!-- Modal para Criar Boleto -->
+<div class="modal fade" id="criarBoletoModal" tabindex="-1" aria-labelledby="criarBoletoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="criarBoletoModalLabel">
+                    <i class="fas fa-plus-circle"></i> Criar Novo Boleto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'controle_financeiro:criar_boleto_manual' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="loja_select" class="form-label">Selecionar Loja</label>
+                            <select class="form-select" id="loja_select" name="controle_id" required>
+                                <option value="">Escolha uma loja...</option>
+                                {% for controle in controles_recentes %}
+                                <option value="{{ controle.id }}">
+                                    {{ controle.loja.nome }} - {{ controle.loja.cnpj }} 
+                                    (Vence: {{ controle.data_vencimento|date:"d/m/Y" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="valor_boleto" class="form-label">Valor do Boleto</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="valor_boleto" name="valor" 
+                                       step="0.01" min="0.01" placeholder="0,00" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="dias_vencimento" class="form-label">Dias para Vencimento</label>
+                            <input type="number" class="form-control" id="dias_vencimento" name="dias_vencimento" 
+                                   value="30" min="1" max="365" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes_boleto" class="form-label">Observações (Opcional)</label>
+                        <textarea class="form-control" id="observacoes_boleto" name="observacoes" rows="3" 
+                                  placeholder="Observações adicionais para o boleto..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Informações
+                        </h6>
+                        <ul class="mb-0">
+                            <li>O boleto será gerado com a configuração bancária ativa</li>
+                            <li>O valor padrão será o valor mensal da loja selecionada</li>
+                            <li>A data de vencimento será calculada a partir de hoje</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Criar Boleto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-preencher valor quando selecionar loja
+document.getElementById('loja_select').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+        // Aqui você pode adicionar lógica para buscar o valor via AJAX
+        // Por enquanto, vamos deixar o usuário definir manualmente
+        document.getElementById('valor_boleto').focus();
+    }
+});
+</script>
+
+<!-- Modal para Pagamento por Código de Barras -->
+<div class="modal fade" id="pagarCodigoBarrasModal" tabindex="-1" aria-labelledby="pagarCodigoBarrasModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pagarCodigoBarrasModalLabel">
+                    <i class="fas fa-barcode"></i> Pagar com Código de Barras
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'controle_financeiro:processar_pagamento_codigo_barras' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Como usar
+                        </h6>
+                        <p class="mb-0">
+                            Digite ou cole o código de barras do boleto para processar o pagamento automaticamente.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="codigo_barras" class="form-label">Código de Barras</label>
+                        <textarea class="form-control" id="codigo_barras" name="codigo_barras" rows="3" 
+                                  placeholder="Cole aqui o código de barras do boleto..." required></textarea>
+                        <div class="form-text">
+                            O código de barras geralmente tem 44 dígitos numéricos.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> Atenção
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Certifique-se de que o código está correto</li>
+                            <li>O boleto será marcado como pago imediatamente</li>
+                            <li>Esta ação não pode ser desfeita facilmente</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Processar Pagamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

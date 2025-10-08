@@ -2,46 +2,36 @@
 
 ## Introduction
 
-The application is experiencing a server error (500) when accessing the `/lojas/` URL on Heroku. The error is a Django TemplateSyntaxError indicating that the template parser cannot parse a comparison operation `status_filter=='ativa'` in one of the templates. This error prevents users from accessing the lojas (stores) listing page, which is a critical functionality of the system.
+This feature addresses a critical template syntax error in the Django application where the template is using incorrect comparison syntax (`==`) instead of the proper Django template filter syntax. The error occurs in the store detail template when trying to conditionally select options based on the store's status.
 
 ## Requirements
 
 ### Requirement 1
 
-**User Story:** As a user, I want to access the lojas listing page without encountering server errors, so that I can view and manage stores in the system.
+**User Story:** As a system administrator, I want the store detail page to load without template syntax errors, so that I can view and manage store information properly.
 
 #### Acceptance Criteria
 
-1. WHEN a user navigates to `/lojas/` THEN the system SHALL display the lojas listing page without errors
-2. WHEN the lojas template is rendered THEN the system SHALL properly parse all template syntax without throwing TemplateSyntaxError
-3. WHEN status filtering is applied THEN the system SHALL correctly evaluate filter conditions in templates
+1. WHEN a user navigates to the store detail page THEN the page SHALL load without TemplateSyntaxError
+2. WHEN the status selection modal is rendered THEN the correct status option SHALL be pre-selected based on the store's current status
+3. WHEN the template uses comparison logic THEN it SHALL use proper Django template syntax instead of Python comparison operators
 
 ### Requirement 2
 
-**User Story:** As a developer, I want to identify and fix the specific template causing the syntax error, so that the application functions correctly in production.
+**User Story:** As a developer, I want all template comparisons to follow Django best practices, so that the application is maintainable and error-free.
 
 #### Acceptance Criteria
 
-1. WHEN investigating the error THEN the system SHALL identify which template file contains the malformed syntax
-2. WHEN examining the template THEN the system SHALL locate the specific line with `status_filter=='ativa'` syntax
-3. WHEN fixing the syntax THEN the system SHALL use proper Django template syntax for comparisons
+1. WHEN template files contain conditional logic THEN they SHALL use Django template filters and tags
+2. WHEN comparing values in templates THEN the system SHALL use `ifequal`, `if` with proper syntax, or appropriate template filters
+3. WHEN the fix is applied THEN all existing functionality SHALL remain intact
 
 ### Requirement 3
 
-**User Story:** As a system administrator, I want to ensure template syntax errors are caught before deployment, so that production issues are prevented.
+**User Story:** As a user, I want the status change modal to work correctly, so that I can update store statuses as needed.
 
 #### Acceptance Criteria
 
-1. WHEN templates are modified THEN the system SHALL validate template syntax during development
-2. WHEN running tests THEN the system SHALL include template rendering tests to catch syntax errors
-3. WHEN deploying THEN the system SHALL verify all templates can be parsed successfully
-
-### Requirement 4
-
-**User Story:** As a user, I want status filtering functionality to work correctly, so that I can filter lojas by their status (active, inactive, etc.).
-
-#### Acceptance Criteria
-
-1. WHEN applying status filters THEN the system SHALL correctly filter lojas based on status values
-2. WHEN status is 'ativa' THEN the system SHALL display only active stores
-3. WHEN no status filter is applied THEN the system SHALL display all stores regardless of status
+1. WHEN the status modal opens THEN the current status SHALL be visually indicated as selected
+2. WHEN I change the status and submit THEN the new status SHALL be saved correctly
+3. WHEN the modal displays status options THEN all available statuses SHALL be shown (ativa, inativa, suspensa)

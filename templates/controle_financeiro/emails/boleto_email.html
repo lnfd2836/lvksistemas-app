@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boleto de Cobrança - {{ loja.nome }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .boleto-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .highlight {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .codigo-barras {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            border: 1px solid #ffeaa7;
+        }
+        .btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .urgente {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧾 Boleto de Cobrança</h1>
+        <p>{{ beneficiario }}</p>
+    </div>
+    
+    <div class="content">
+        <h2>Olá, {{ loja.nome }}!</h2>
+        
+        <p>Seu boleto de cobrança está disponível para pagamento.</p>
+        
+        {% if dias_para_vencimento <= 5 %}
+        <div class="urgente">
+            <strong>⚠️ ATENÇÃO:</strong> 
+            {% if dias_para_vencimento <= 0 %}
+                Este boleto está vencido há {{ dias_para_vencimento|add:"-1"|default:"0" }} dias.
+            {% elif dias_para_vencimento == 1 %}
+                Este boleto vence amanhã!
+            {% else %}
+                Este boleto vence em {{ dias_para_vencimento }} dias.
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="boleto-info">
+            <h3>📋 Informações do Boleto</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Número do Boleto:</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ boleto.numero_boleto }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Valor:</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; color: #28a745; font-weight: bold;">{{ valor_formatado }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Vencimento:</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ vencimento_formatado }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px;"><strong>Beneficiário:</strong></td>
+                    <td style="padding: 8px;">{{ beneficiario }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="highlight">
+            <h3>💳 Como Pagar</h3>
+            <p><strong>Opção 1:</strong> Use a linha digitável abaixo em qualquer banco, internet banking ou aplicativo:</p>
+            
+            <div class="codigo-barras">
+                <strong>Linha Digitável:</strong><br>
+                {{ boleto.linha_digitavel }}
+            </div>
+            
+            <p><strong>Opção 2:</strong> Acesse seu dashboard no sistema e baixe o boleto em PDF:</p>
+            <a href="{{ request.build_absolute_uri }}" class="btn">🔗 Acessar Meu Dashboard</a>
+        </div>
+        
+        <div class="highlight">
+            <h3>📱 Pagamento via PIX ou App</h3>
+            <p>Você também pode pagar usando:</p>
+            <ul>
+                <li>PIX - Use o código de barras no seu app bancário</li>
+                <li>Internet Banking - Cole a linha digitável</li>
+                <li>Aplicativos bancários - Escaneie o código de barras do PDF</li>
+                <li>Casas lotéricas - Leve o boleto impresso</li>
+            </ul>
+        </div>
+        
+        {% if boleto.configuracao.instrucoes %}
+        <div class="highlight">
+            <h3>📝 Instruções Importantes</h3>
+            <p>{{ boleto.configuracao.instrucoes|linebreaks }}</p>
+        </div>
+        {% endif %}
+        
+        <div class="highlight">
+            <h3>❓ Dúvidas?</h3>
+            <p>Em caso de dúvidas sobre este boleto, entre em contato conosco:</p>
+            <ul>
+                <li>📧 Email: {{ beneficiario|lower|slugify }}@sistema.com</li>
+                <li>📞 Telefone: (11) 99999-9999</li>
+                <li>💬 WhatsApp: (11) 99999-9999</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Este é um email automático. Por favor, não responda.</p>
+        <p>{{ beneficiario }} - Sistema de Cobrança</p>
+        <p>Gerado em {{ boleto.data_criacao|date:"d/m/Y H:i" }}</p>
+    </div>
+</body>
+</html>

@@ -77,11 +77,15 @@ class MandatoryPasswordChangeMiddleware:
                 
                 # Adiciona mensagem informativa (apenas uma vez por sessão)
                 if not request.session.get('password_change_message_shown', False):
-                    messages.warning(
-                        request, 
-                        'Por segurança, você deve alterar sua senha provisória antes de continuar.'
-                    )
-                    request.session['password_change_message_shown'] = True
+                    try:
+                        messages.warning(
+                            request, 
+                            'Por segurança, você deve alterar sua senha provisória antes de continuar.'
+                        )
+                        request.session['password_change_message_shown'] = True
+                    except Exception as msg_error:
+                        logger.warning(f'Erro ao adicionar mensagem: {msg_error}')
+                        request.session['password_change_message_shown'] = True
                 
                 # Redireciona para página de troca de senha
                 return redirect('usuarios:change_mandatory_password')

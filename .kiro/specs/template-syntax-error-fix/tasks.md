@@ -1,19 +1,31 @@
 # Implementation Plan
 
-- [x] 1. Fix template syntax errors in lojas listing template
-  - Correct the malformed Django template syntax on lines 127, 129, and 130 in `templates/lojas/listar.html`
-  - Replace `status_filter=='ativa'` with proper Django template syntax `status_filter == "ativa"`
-  - Apply consistent spacing and quoting for all status filter comparisons
-  - _Requirements: 1.1, 1.2, 2.2_
+- [x] 1. Fix template syntax error in store detail template
+  - Update the conditional syntax in `templates/lojas/detalhar.html` from `==` to proper Django template syntax
+  - Replace `{% if loja.status=="ativa" %}` with `{% if loja.status == "ativa" %}` (with proper spacing)
+  - Apply the same fix to "inativa" and "suspensa" status comparisons
+  - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2_
 
-- [x] 2. Create template rendering tests to prevent future syntax errors
-  - Write unit test to verify `templates/lojas/listar.html` renders without TemplateSyntaxError
-  - Create test cases for different status filter values (ativa, inativa, suspensa, none)
-  - Test that correct option is marked as selected based on status_filter context variable
-  - _Requirements: 3.1, 3.2, 4.1, 4.2, 4.3_
+- [x] 2. Verify template renders correctly
+  - Test that the template loads without TemplateSyntaxError
+  - Ensure the correct status option is pre-selected based on store status
+  - Validate that all three status options (ativa, inativa, suspensa) work correctly
+  - _Requirements: 1.1, 1.2, 3.1, 3.3_
 
-- [x] 3. Validate template syntax and functionality
-  - Run template rendering tests to ensure syntax is correct
-  - Test the lojas listing page with different status filter parameters
-  - Verify dropdown selections work correctly for all status values
-  - _Requirements: 1.1, 1.3, 4.1, 4.2, 4.3_
+- [ ]* 2.1 Create template syntax tests
+  - Write unit tests to verify template renders without syntax errors
+  - Test template with different status values (ativa, inativa, suspensa, None)
+  - Create regression tests to prevent similar syntax errors in the future
+  - _Requirements: 1.1, 2.2_
+
+- [x] 3. Search and fix any other template syntax issues
+  - Scan all template files for similar `=="` syntax errors
+  - Fix any other instances of incorrect comparison operators in templates
+  - Ensure consistent Django template syntax across the application
+  - _Requirements: 2.1, 2.2_
+
+- [ ]* 3.1 Add template validation to CI/CD
+  - Create a script to validate Django template syntax
+  - Add template syntax checking to the development workflow
+  - Document proper Django template syntax guidelines for the team
+  - _Requirements: 2.1, 2.2_

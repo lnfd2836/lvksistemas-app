@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+{% load static admin_urls admin_modify %}
+
+{% block title %}
+    {% if add %}Adicionar {{ opts.verbose_name }}{% else %}Alterar {{ opts.verbose_name }}{% endif %} | {{ site_title|default:"Django site admin" }}
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ app_label|capfirst|escape }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+    <li class="breadcrumb-item active">
+        {% if add %}Adicionar{% else %}Alterar{% endif %}
+    </li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        {% if add %}
+            <i class="fas fa-plus me-2"></i>
+            Adicionar {{ opts.verbose_name }}
+        {% else %}
+            <i class="fas fa-edit me-2"></i>
+            Alterar {{ opts.verbose_name }}
+        {% endif %}
+    </h2>
+    
+    <div>
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>
+            Voltar à Lista
+        </a>
+        {% if not add and has_view_permission %}
+            <a href="{% url opts|admin_urlname:'history' original.pk|admin_urlquote %}" class="btn btn-info">
+                <i class="fas fa-history me-2"></i>
+                Histórico
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if errors %}
+    <div class="alert alert-danger">
+        <h5><i class="fas fa-exclamation-triangle me-2"></i>Por favor, corrija os erros abaixo:</h5>
+        {{ adminform.form.non_field_errors }}
+    </div>
+{% endif %}
+
+<form method="post" id="{{ opts.model_name }}_form" novalidate>
+    {% csrf_token %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-form me-2"></i>
+                Informações do {{ opts.verbose_name }}
+            </h5>
+        </div>
+        
+        <div class="card-body">
+            {% if is_popup %}
+                <input type="hidden" name="{{ is_popup_var }}" value="1">
+            {% endif %}
+            {% if to_field %}
+                <input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">
+            {% endif %}
+            
+            {% for fieldset in adminform %}
+                {% include "admin/includes/fieldset.html" %}
+            {% endfor %}
+            
+            {% for inline_admin_formset in inline_admin_formsets %}
+                {% include inline_admin_formset.opts.template %}
+            {% endfor %}
+        </div>
+        
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    {% if not add and has_delete_permission %}
+                        <a href="{% url opts|admin_urlname:'delete' original.pk|admin_urlquote %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>
+                            Excluir
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    {% if show_save_and_add_another %}
+                        <button type="submit" name="_addanother" value="1" class="btn btn-info">
+                            <i class="fas fa-plus me-2"></i>
+                            Salvar e adicionar outro
+                        </button>
+                    {% endif %}
+                    
+                    {% if show_save_and_continue %}
+                        <button type="submit" name="_continue" value="1" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>
+                            Salvar e continuar editando
+                        </button>
+                    {% endif %}
+                    
+                    <button type="submit" name="_save" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>
+                        {% if add %}Adicionar{% else %}Salvar{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adicionar classes Bootstrap aos campos de formulário
+            const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="url"], input[type="tel"], textarea, select');
+            inputs.forEach(input => {
+                if (!input.classList.contains('form-control') && !input.classList.contains('form-check-input')) {
+                    input.classList.add('form-control');
+                }
+            });
+            
+            // Adicionar classes aos checkboxes e radios
+            const checkboxes = document.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.classList.add('form-check-input');
+            });
+            
+            // Melhorar aparência dos labels
+            const labels = document.querySelectorAll('label');
+            labels.forEach(label => {
+                if (!label.classList.contains('form-check-label')) {
+                    label.classList.add('form-label');
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% endblock %}

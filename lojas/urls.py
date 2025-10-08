@@ -28,4 +28,21 @@ urlpatterns = [
     path('vendas/', views.gerenciar_vendas, name='gerenciar_vendas'),
     path('vendas/nova/', views.nova_venda, name='nova_venda'),
     path('vendas/<int:venda_id>/detalhar/', views.detalhar_venda, name='detalhar_venda'),
+    
+    # Gerenciamento de cardápio (lanchonetes)
+    path('cardapio/', views.gerenciar_cardapio, name='gerenciar_cardapio'),
+    path('cardapio/adicionar/', views.adicionar_item_cardapio, name='adicionar_item_cardapio'),
+    path('cardapio/<int:produto_id>/editar/', views.editar_item_cardapio, name='editar_item_cardapio'),
+    
+    # Gerenciamento de mesas (lanchonetes)
+    path('mesas/', views.gerenciar_mesas, name='gerenciar_mesas'),
+    path('mesas/adicionar/', views.adicionar_mesa, name='adicionar_mesa'),
+    path('mesas/<int:mesa_id>/editar/', views.editar_mesa, name='editar_mesa'),
+    path('mesas/<int:mesa_id>/alterar-status/', views.alterar_status_mesa, name='alterar_status_mesa'),
+    
+    # Gerenciamento de pedidos (lanchonetes)
+    path('pedidos/', views.gerenciar_pedidos, name='gerenciar_pedidos'),
+    path('pedidos/novo/', views.novo_pedido, name='novo_pedido'),
+    path('pedidos/<int:pedido_id>/detalhar/', views.detalhar_pedido, name='detalhar_pedido'),
+    path('pedidos/<int:pedido_id>/alterar-status/', views.alterar_status_pedido, name='alterar_status_pedido'),
 ]

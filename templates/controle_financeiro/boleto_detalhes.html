@@ -11,7 +11,14 @@
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="fas fa-file-invoice"></i> Boleto {{ boleto.numero_boleto }}
                 </h6>
-                <div>
+                <div class="btn-group" role="group">
+                    {% if boleto.status != 'cancelado' %}
+                    <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}" 
+                       class="btn btn-primary btn-sm" target="_blank">
+                        <i class="fas fa-print"></i> Imprimir PDF
+                    </a>
+                    {% endif %}
+                    
                     {% if user.is_superuser %}
                     <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Voltar
@@ -176,6 +183,22 @@
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Instruções para Código de Barras Visual -->
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-camera"></i> Código de Barras Visual
+                            </h6>
+                            <p class="mb-2">
+                                <strong>📱 Para escanear com a câmera:</strong>
+                            </p>
+                            <ol class="mb-0">
+                                <li>Baixe o <strong>PDF do boleto</strong> clicando no botão "Imprimir PDF" acima</li>
+                                <li>Abra o PDF no seu celular ou computador</li>
+                                <li>Use a <strong>câmera do seu app bancário</strong> para escanear as barrinhas do código</li>
+                                <li>O app reconhecerá automaticamente e preencherá os dados</li>
+                            </ol>
                         </div>
                     </div>
                 </div>

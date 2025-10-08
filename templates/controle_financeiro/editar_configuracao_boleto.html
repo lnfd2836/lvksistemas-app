@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Editar Configuração de Boleto{% endblock %}
 {% block page_title %}Editar Configuração de Boleto{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/boleto-config.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -10,24 +15,44 @@
             <div>
                 <p class="text-muted mb-0">{{ config.nome_banco }} - {{ config.nome_beneficiario }}</p>
             </div>
-            <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+                {% if not config.ativo %}
+                <button type="button" class="btn btn-success" onclick="ativarConfiguracao({{ config.id }})">
+                    <i class="fas fa-check"></i> Ativar Esta Configuração
+                </button>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 
 <div class="row">
     <div class="col-xl-8">
-        <div class="card shadow">
-            <div class="card-header py-3">
+        <div class="card shadow config-form-container config-form-visible">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="fas fa-edit"></i> Editar Configuração
                 </h6>
+                <span class="badge bg-{% if config.ativo %}success{% else %}secondary{% endif %}">
+                    {% if config.ativo %}Ativo{% else %}Inativo{% endif %}
+                </span>
             </div>
             <div class="card-body">
-                <form method="post">
+                {% if form_errors %}
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Erro na Validação
+                    </h6>
+                    <p class="mb-0">Por favor, corrija os erros abaixo e tente novamente.</p>
+                </div>
+                {% endif %}
+                
+                <form method="post" id="boleto-config-form">
                     {% csrf_token %}
+                    <input type="hidden" name="config_id" value="{{ config.id }}">
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -222,4 +247,67 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass server-side data to JavaScript
+    window.boletoConfigData = {
+        hasConfigurations: true,
+        showForm: true,
+        formErrors: {{ form_errors|yesno:"true,false" }},
+        editing: true,
+        configId: {{ config.id }}
+    };
+    
+    // Function to activate a configuration
+    function ativarConfiguracao(configId) {
+        if (confirm('Tem certeza que deseja ativar esta configuração? A configuração atual será desativada.')) {
+            // Create a form to submit the activation
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "controle_financeiro:configurar_boletos" %}';
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            // Add config_id
+            const configInput = document.createElement('input');
+            configInput.type = 'hidden';
+            configInput.name = 'config_id';
+            configInput.value = configId;
+            form.appendChild(configInput);
+            
+            // Add ativo field
+            const ativoInput = document.createElement('input');
+            ativoInput.type = 'hidden';
+            ativoInput.name = 'ativo';
+            ativoInput.value = 'on';
+            form.appendChild(ativoInput);
+            
+            // Copy all current form data to preserve changes
+            const currentForm = document.getElementById('boleto-config-form');
+            const formData = new FormData(currentForm);
+            
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrfmiddlewaretoken' && key !== 'config_id' && key !== 'ativo') {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+<script src="{% static 'js/boleto-config.js' %}"></script>
 {% endblock %}
