@@ -103,6 +103,64 @@ class BoletoGerado(models.Model):
             return delta.days
         return 0
     
+    def validar_e_corrigir_codigo(self):
+        """Valida e corrige automaticamente o código de barras/linha digitável"""
+        try:
+            from .boleto_simple_corrector import BoletoSimpleCorrector
+            
+            corrector = BoletoSimpleCorrector()
+            
+            # Tentar corrigir linha digitável se existir
+            if self.linha_digitavel:
+                result = corrector.correct_single_dv_error(self.linha_digitavel)
+                
+                if result['success'] and result.get('corrections'):
+                    # Código foi corrigido
+                    self.linha_digitavel = result['corrected_code']
+                    
+                    # Log da correção
+                    corrections_info = []
+                    for correction in result['corrections']:
+                        corrections_info.append(f"Campo {correction['campo']}: DV {correction['dv_original']} → {correction['dv_correto']}")
+                    
+                    correction_log = f"Correção automática aplicada: {', '.join(corrections_info)}"
+                    
+                    if self.observacoes:
+                        self.observacoes += f"\n{timezone.now().strftime('%d/%m/%Y %H:%M')}: {correction_log}"
+                    else:
+                        self.observacoes = f"{timezone.now().strftime('%d/%m/%Y %H:%M')}: {correction_log}"
+                    
+                    return {
+                        'corrected': True,
+                        'message': correction_log,
+                        'corrections': result['corrections']
+                    }
+            
+            return {
+                'corrected': False,
+                'message': 'Código já está válido ou não precisa de correção'
+            }
+            
+        except Exception as e:
+            return {
+                'corrected': False,
+                'message': f'Erro na validação: {str(e)}'
+            }
+    
+    def save(self, *args, **kwargs):
+        """Override do save para aplicar correção automática"""
+        # Se é um novo boleto ou a linha digitável foi alterada, validar e corrigir
+        if not self.pk or 'linha_digitavel' in kwargs.get('update_fields', []):
+            correction_result = self.validar_e_corrigir_codigo()
+            
+            # Se houve correção, não salvar ainda para evitar loop
+            if correction_result['corrected']:
+                # Salvar sem chamar validação novamente
+                super().save(*args, **kwargs)
+                return
+        
+        super().save(*args, **kwargs)
+    
     def marcar_como_pago(self):
         """Marca o boleto como pago"""
         self.status = 'pago'
