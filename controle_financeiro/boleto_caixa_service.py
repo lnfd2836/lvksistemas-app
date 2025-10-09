@@ -149,6 +149,7 @@ class BoletoCaixaService:
         """
         Calcula fator de vencimento conforme padrão FEBRABAN
         Base: 07/10/1997 = fator 1000
+        Quando ultrapassa 9999, reinicia em 1000 (padrão FEBRABAN)
         """
         
         data_base = datetime(1997, 10, 7).date()
@@ -157,7 +158,12 @@ class BoletoCaixaService:
         diferenca = (data_venc - data_base).days
         fator = 1000 + diferenca
         
-        # Fator deve ter 4 dígitos
+        # Padrão FEBRABAN: quando ultrapassa 9999, reinicia o ciclo
+        # Isso acontece aproximadamente a cada 24 anos
+        while fator > 9999:
+            fator = fator - 8999  # Reinicia em 1000 (9999 - 8999 = 1000)
+        
+        # Garantir que tenha exatamente 4 dígitos
         return str(fator).zfill(4)
     
     def _gerar_codigo_barras_caixa(self, configuracao, nosso_numero, valor, fator_vencimento):

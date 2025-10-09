@@ -84,8 +84,7 @@
                                             {% elif boleto.dias_para_vencimento == 0 %}
                                             <span class="badge badge-warning ml-2">Vence hoje</span>
                                             {% else %}
-                                            <span class="badge badge-danger ml-2">Vencido há {{
-                                                boleto.dias_para_vencimento|add:"-1"|floatformat:"0" }} dias</span>
+                                            <span class="badge badge-danger ml-2">Vencido há {{ boleto.dias_para_vencimento|add:"-1"|floatformat:"0" }} dias</span>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -97,8 +96,7 @@
                                                 {{ boleto.get_status_display }}
                                             </span>
                                             {% if boleto.status == 'pago' and boleto.data_pagamento %}
-                                            <small class="text-muted ml-2">Pago em {{ boleto.data_pagamento|date:"d/m/Y
-                                                H:i" }}</small>
+                                            <small class="text-muted ml-2">Pago em {{ boleto.data_pagamento|date:"d/m/Y H:i" }}</small>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -129,8 +127,7 @@
                                 <tbody>
                                     <tr>
                                         <td class="font-weight-bold bg-light" width="200">Banco</td>
-                                        <td>{{ boleto.configuracao.codigo_banco }} - {{ boleto.configuracao.nome_banco
-                                            }}</td>
+                                        <td>{{ boleto.configuracao.codigo_banco }} - {{ boleto.configuracao.nome_banco }}</td>
                                     </tr>
                                     <tr>
                                         <td class="font-weight-bold bg-light">Agência</td>
