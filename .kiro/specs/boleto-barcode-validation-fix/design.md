@@ -220,96 +220,91 @@ class BarcodeValidator:
         """
         Método principal de validação
         """
-        self.errors = Estrutura B
-        
-        try:
-            normalized = self.normalize_input(input_code)
-            input_type = self.detect_type(normalized)
-            
-            if input_type == 'codigo_barras':
-                return self.validate_codigo_barras(normalized)
-            elif input_type == 'linha_digitavel':
-                return self.validate_linha_digitavel(normalized)
-            else:
-                self.errors.append("Formato inválido. Use 44 dígitos (código de barras) ou 47-48 dígitos (linha digitável)")
-                return False
-                
-        except Exception as e:
-            self.errors.append(f"Erro na validação: {str(e)}")
-            return False
-    
-    def get_errors(self):
-        return self.errors
-    
-    def get_codigo_barras(self, input_code):
-        """
-        Retorna código de barras, convertendo se necessário
-        """
-        normalized = self.normalize_input(input_code)
-        input_type = self.detect_type(normalized)
-        
-        if input_type == 'codigo_barras':
-            return normalized
-        elif input_type == 'linha_digitavel':
-            return self.convert_linha_to_codigo(normalized)
-        else:
-            raise ValueError("Formato inválido")
-```
+        self.errors = Estrutura Base
 
-### 2. Integration with Django Models
-```python
-# Em models.py
-class BoletoGerado(models.Model):
-    # ... campos existentes ...
-    
-    def validate_codigo_barras(self):
-        """
-        Valida código de barras do boleto
-        """
-        validator = BarcodeValidator()
-        return validator.validate(self.codigo_barras)
-    
-    def validate_linha_digitavel(self):
-        """
-        Valida linha digitável do boleto
-        """
-        validator = BarcodeValidator()
-        return validator.validate(self.linha_digitavel)
-    
-    def sync_codigo_linha(self):
-        """
-        Sincroniza código de barras e linha digitável
-        """
-        validator = BarcodeValidator()
-        
-        if self.codigo_barras and not self.linha_digitavel:
-            self.linha_digitavel = validator.convert_codigo_to_linha(self.codigo_barras)
-        elif self.linha_digitavel and not self.codigo_barras:
-            self.codigo_barras = validator.get_codigo_barras(self.linha_digitavel)
-```
+1. **Analisar código atual de validação**
+   - Localizar onde está a validação atual
+   - Identificar pontos de falha com boletos Caixa
+   - Documentar algoritmos atuais
 
-### 3. View Integration
-```python
-# Em views.py
-def processar_codigo_barras(request):
-    """
-    Processa código de barras ou linha digitável
-    """
-    if request.method == 'POST':
-        codigo_input = request.POST.get('codigo_barras', '').strip()
-        
-        validator = BarcodeValidator()
-        
-        if validator.validate(codigo_input):
-            # Obter código de barras normalizado
-            codigo_barras = validator.get_codigo_barras(codigo_input)
-            
-            # Buscar boleto
-            try:
-                boleto = BoletoGerado.objects.get(codigo_barras=codigo_barras)
-                # Processar pagamento...
-                return JsonResponse({'success': True, 'boleto_id': boleto.id})
-            except BoletoGerado.DoesNotExist:
+2. **Criar estrutura base para múltiplos layouts**
+   - Implementar detector de layout
+   - Criar interface comum para validadores
+   - Preparar estrutura para extensibilidade
+
+### Fase 2: Implementação SIGCB
+
+1. **Implementar validador SIGCB específico**
+   - Algoritmos de dígito verificador corretos
+   - Validação de campos específicos
+   - Tratamento de casos especiais
+
+2. **Implementar conversor de formatos**
+   - Conversão linha digitável ↔ código de barras
+   - Normalização de entrada (remover espaços, pontos)
+   - Validação de formato de entrada
+
+### Fase 3: Integração e Testes
+
+1. **Integrar com sistema existente**
+   - Substituir validação atual pela nova
+   - Manter compatibilidade com outros bancos
+   - Adicionar logs detalhados
+
+2. **Testes abrangentes**
+   - Casos de teste para SIGCB
+   - Testes de regressão para outros bancos
+   - Testes de performance
+
+### Fase 4: Validação e Documentação
+
+1. **Validar com casos reais**
+   - Testar com boletos Caixa reais
+   - Validar com outros bancos
+   - Confirmar correção do problema original
+
+2. **Documentar implementação**
+   - Documentar algoritmos SIGCB
+   - Criar guia de troubleshooting
+   - Atualizar documentação de API
+
+## Security Considerations
+
+### Validação Robusta
+- Validar todos os inputs antes do processamento
+- Sanitizar entradas para evitar injection
+- Validar limites de campos numéricos
+
+### Logging de Segurança
+- Log de tentativas de validação
+- Registro de códigos rejeitados (sem dados sensíveis)
+- Monitoramento de padrões suspeitos
+
+## Performance Considerations
+
+### Otimizações
+- Cache de validações frequentes
+- Detecção rápida de layout por prefixo
+- Validação lazy (só valida campos necessários)
+
+### Métricas
+- Tempo de validação por tipo de boleto
+- Taxa de sucesso por banco
+- Performance comparativa antes/depois
+
+## Success Criteria
+
+### Critérios Técnicos
+- [ ] Linha digitável `10492.67014 51500.171429 22946.570144 7 22600000002990` validada com sucesso
+- [ ] Outros boletos Caixa SIGCB funcionando
+- [ ] Compatibilidade mantida com outros bancos
+- [ ] Performance igual ou melhor que implementação atual
+
+### Critérios de Negócio
+- [ ] Redução de erros de validação para boletos Caixa
+- [ ] Feedback positivo dos usuários
+- [ ] Suporte adequado ao layout SIGCB conforme orientação do banco
+- [ ] Sistema mais robusto para diferentes layouts de boletot BoletoGerado.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Boleto não encontrado'})
         else:
             errors = validator.get_errors()

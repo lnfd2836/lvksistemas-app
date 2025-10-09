@@ -217,6 +217,7 @@ class BoletoCaixaService:
         agencia_completa = re.sub(r'[^0-9]', '', str(configuracao.agencia))[:4]
         agencia_limpa = agencia_completa.zfill(4)
         
+        # CORREÇÃO: Para SIGCB, usar primeiros 2 dígitos da conta, não do código do cedente
         conta_completa = re.sub(r'[^0-9]', '', str(configuracao.conta))[:2]  # Primeiros 2 dígitos
         conta_limpa = conta_completa.zfill(2)
         
@@ -248,6 +249,15 @@ class BoletoCaixaService:
         
         # Montar campo livre: cedente(6) + nosso_numero(10) + agencia_conta(6) + carteira(3) = 25 dígitos
         campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_conta_campo}{carteira_campo}"
+        
+        # Log dos componentes do campo livre (apenas em modo debug)
+        # print(f"DEBUG SIGCB - Componentes do Campo Livre:")
+        # print(f"  Código Cedente: '{codigo_cedente}' ({len(codigo_cedente)} dígitos)")
+        # print(f"  Nosso Número: '{nosso_numero_limpo}' ({len(nosso_numero_limpo)} dígitos)")
+        # print(f"  Agência: '{agencia_limpa}' ({len(agencia_limpa)} dígitos)")
+        # print(f"  Conta (parte): '{conta_limpa}' ({len(conta_limpa)} dígitos)")
+        # print(f"  Carteira: '{carteira_campo}' ({len(carteira_campo)} dígitos)")
+        # print(f"  Campo Livre: '{campo_livre}' ({len(campo_livre)} dígitos)")
         
         # Validar campo livre antes de continuar
         if len(campo_livre) != 25:
