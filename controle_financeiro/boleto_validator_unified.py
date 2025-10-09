@@ -14,6 +14,8 @@ try:
     from .boleto_validator_base import ValidationResult, BoletoComponents
     from .boleto_error_messages import error_messages, ErrorCategory
     from .barcode_validator import BarcodeValidator  # Validador original
+    from .boleto_dv_corrector import BoletoDVCorrector, DVCorrectionResult
+    from .boleto_simple_corrector import BoletoSimpleCorrector
 except ImportError:
     from boleto_layout_detector import BoletoLayoutDetector, BoletoLayout
     from boleto_input_normalizer import BoletoInputNormalizer
@@ -22,6 +24,8 @@ except ImportError:
     from boleto_validator_base import ValidationResult, BoletoComponents
     from boleto_error_messages import error_messages, ErrorCategory
     from barcode_validator import BarcodeValidator  # Validador original
+    from boleto_dv_corrector import BoletoDVCorrector, DVCorrectionResult
+    from boleto_simple_corrector import BoletoSimpleCorrector
 
 
 # Configurar logging
@@ -39,6 +43,8 @@ class BoletoValidatorUnified:
         self.layout_detector = BoletoLayoutDetector()
         self.input_normalizer = BoletoInputNormalizer()
         self.format_converter = BoletoFormatConverter()
+        self.dv_corrector = BoletoDVCorrector()
+        self.simple_corrector = BoletoSimpleCorrector()
         
         # Validadores específicos
         self.sigcb_validator = SIGCBValidator()
@@ -47,6 +53,9 @@ class BoletoValidatorUnified:
         # Cache de validações
         self._validation_cache = {}
         self._cache_enabled = True
+        
+        # Configurações de correção de DV
+        self.dv_correction_mode = 'warning'  # 'strict', 'warning', 'auto'
     
     def validate(self, codigo_input: str, enable_cache: bool = True) -> ValidationResult:
         """
@@ -425,6 +434,120 @@ class BoletoValidatorUnified:
                 validation_result.details.get("detected_layout")
             )
         }
+    
+    def validate_with_dv_correction(self, codigo_input: str, correction_mode: str = None) -> Dict[str, Any]:
+        """
+        Validação com correção automática de DV
+        
+        Args:
+            codigo_input: Código de entrada
+            correction_mode: Modo de correção ('strict', 'warning', 'auto')
+            
+        Returns:
+            Dict: Resultado com validação e correção
+        """
+        
+        if correction_mode is None:
+            correction_mode = self.dv_correction_mode
+        
+        # Primeiro, tentar correção de DV
+        correction_result = self.dv_corrector.correct_dv_errors(codigo_input, correction_mode)
+        
+        # Validar o código (original ou corrigido)
+        codigo_para_validar = correction_result.corrected_code if correction_result.is_corrected else codigo_input
+        validation_result = self.validate(codigo_para_validar)
+        
+        # Preparar resultado combinado
+        result = {
+            "is_valid": validation_result.is_valid,
+            "original_code": codigo_input,
+            "final_code": codigo_para_validar,
+            "dv_correction": correction_result,
+            "validation": validation_result,
+            "user_message": self.dv_corrector.get_user_friendly_message(correction_result)
+        }
+        
+        # Se ainda há erros após correção, incluir informações de debug
+        if not validation_result.is_valid:
+            result["remaining_errors"] = validation_result.errors
+            result["debug_info"] = {
+                "corrections_attempted": len(correction_result.corrections_made),
+                "confidence_level": correction_result.confidence_level,
+                "warnings": correction_result.warnings
+            }
+        
+        return result
+    
+    def set_dv_correction_mode(self, mode: str):
+        """
+        Define o modo de correção de DV
+        
+        Args:
+            mode: 'strict' (não corrige), 'warning' (corrige e avisa), 'auto' (corrige silenciosamente)
+        """
+        
+        valid_modes = ['strict', 'warning', 'auto']
+        if mode not in valid_modes:
+            raise ValueError(f"Modo inválido: {mode}. Válidos: {valid_modes}")
+        
+        self.dv_correction_mode = mode
+        logger.info(f"DV correction mode set to: {mode}")
+    
+    def validate_with_simple_correction(self, codigo_input: str) -> Dict[str, Any]:
+        """
+        Validação com correção simples de DV
+        
+        Args:
+            codigo_input: Código de entrada
+            
+        Returns:
+            Dict: Resultado com validação e correção simples
+        """
+        
+        # Tentar correção simples primeiro
+        correction_result = self.simple_corrector.correct_single_dv_error(codigo_input)
+        
+        # Usar código corrigido se a correção foi bem-sucedida
+        codigo_para_validar = (
+            correction_result['corrected_code'] 
+            if correction_result['success'] and correction_result.get('corrections')
+            else codigo_input
+        )
+        
+        # Validar o código (original ou corrigido)
+        validation_result = self.validate(codigo_para_validar)
+        
+        # Preparar resultado combinado
+        result = {
+            "is_valid": validation_result.is_valid,
+            "original_code": codigo_input,
+            "final_code": codigo_para_validar,
+            "correction_applied": correction_result['success'] and bool(correction_result.get('corrections')),
+            "correction_result": correction_result,
+            "validation_result": validation_result
+        }
+        
+        # Adicionar mensagem amigável
+        if correction_result['success']:
+            result["user_message"] = self.simple_corrector.get_user_friendly_message(correction_result)
+        else:
+            result["user_message"] = {
+                'type': 'error',
+                'title': 'Erro no Boleto',
+                'message': correction_result.get('error', 'Erro na validação'),
+                'action_required': True
+            }
+        
+        # Se ainda há erros após correção, incluir informações
+        if not validation_result.is_valid:
+            result["remaining_errors"] = validation_result.errors
+            result["debug_info"] = {
+                "correction_attempted": correction_result['success'],
+                "corrections_made": len(correction_result.get('corrections', [])),
+                "validation_errors": len(validation_result.errors)
+            }
+        
+        return result
     
     def enable_cache(self, enabled: bool = True):
         """Habilita/desabilita cache"""

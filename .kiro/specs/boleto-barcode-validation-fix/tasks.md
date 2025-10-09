@@ -91,7 +91,7 @@
     - _Requirements: 3.1, 3.3, 4.1_
 
 - [ ] 7. Implementar testes abrangentes
-  - [ ]* 7.1 Criar testes unitários para validador SIGCB
+  - [x]* 7.1 Criar testes unitários para validador SIGCB
     - Testar validação da linha digitável problema: `10492.67014 51500.171429 22946.570144 7 22600000002990`
     - Criar testes para diferentes casos de boletos Caixa
     - Implementar testes de conversão entre formatos
