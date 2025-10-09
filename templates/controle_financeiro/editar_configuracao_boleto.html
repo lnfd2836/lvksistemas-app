@@ -89,13 +89,23 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="codigo_cedente" class="form-label">Código do Cedente</label>
                             <input type="text" class="form-control" id="codigo_cedente" name="codigo_cedente" 
                                    value="{{ config.codigo_cedente|default:'' }}" 
                                    placeholder="Código do cedente/beneficiário no banco">
                             <div class="form-text">
                                 <strong>Importante:</strong> Código fornecido pelo banco para identificação do beneficiário.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="convenio" class="form-label">Número do Convênio</label>
+                            <input type="text" class="form-control" id="convenio" name="convenio" 
+                                   value="{{ config.convenio|default:'' }}" 
+                                   placeholder="Número do convênio de cobrança">
+                            <div class="form-text">
+                                <strong>Para Caixa:</strong> Número do convênio de cobrança fornecido pela Caixa.
                             </div>
                         </div>
                     </div>
@@ -219,6 +229,20 @@
                     <strong>Carteira:</strong>
                     <span class="ms-2">{{ config.carteira }}</span>
                 </div>
+                
+                {% if config.codigo_cedente %}
+                <div class="mb-3">
+                    <strong>Código do Cedente:</strong>
+                    <span class="ms-2">{{ config.codigo_cedente }}</span>
+                </div>
+                {% endif %}
+                
+                {% if config.convenio %}
+                <div class="mb-3">
+                    <strong>Convênio:</strong>
+                    <span class="ms-2">{{ config.convenio }}</span>
+                </div>
+                {% endif %}
             </div>
         </div>
         
