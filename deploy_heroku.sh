@@ -1,14 +1,14 @@
 #!/bin/bash
 
 echo "========================================="
-echo "Deploy para Heroku - Correção Redirect Loop"
+echo "Deploy para Heroku - Correção Boletos Caixa"
 echo "========================================="
 
 # Verifica se está no git
 if [ ! -d ".git" ]; then
     echo "Inicializando repositório Git..."
     git init
-    git remote add heroku https://git.heroku.com/lvksistemas-app-4f6fa281e217.git
+    git remote add heroku https://git.heroku.com/lvksistemas-app.git
 fi
 
 # Adiciona todas as mudanças
@@ -17,12 +17,16 @@ git add .
 
 # Commit das mudanças
 echo "Fazendo commit das correções..."
-git commit -m "Fix: Corrige redirect loop entre /dashboard/ e /login/
+git commit -m "Fix: Corrige geração de códigos de barras inválidos para boletos Caixa
 
-- Melhora middleware SessaoUnicaMiddleware para evitar loops
-- Adiciona criação automática de sessão quando necessário
-- Corrige view de login para gerenciar sessões corretamente
-- Adiciona comando para limpar sessões problemáticas"
+- Corrige algoritmos DV módulo 11 e módulo 10 conforme padrão FEBRABAN
+- Corrige estrutura do campo livre da Caixa (25 dígitos exatos)
+- Adiciona sistema de validação abrangente de códigos de barras
+- Adiciona BarcodeValidator com validações completas
+- Integra validação no fluxo de geração de boletos
+- Corrige problema de campo livre com 26 dígitos
+- Adiciona campo convênio no template de edição de configuração
+- Melhora tratamento de erros e mensagens de validação"
 
 # Push para o Heroku
 echo "Fazendo deploy para o Heroku..."

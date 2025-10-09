@@ -181,25 +181,39 @@ class BoletoCaixaService:
         # D (17-22): Agência (4 dígitos) + Conta (2 primeiros dígitos)
         # C (23-25): Carteira (3 dígitos)
         
-        # Código do cedente (6 dígitos)
-        codigo_cedente = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or '')).zfill(6)[:6]
+        # Código do cedente (6 dígitos) - Primeiro truncar, depois preencher
+        cedente_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))[:6]
+        codigo_cedente = cedente_limpo.zfill(6)
         
-        # Nosso número sem DV (10 dígitos)
-        nosso_numero_limpo = re.sub(r'[^0-9]', '', str(nosso_numero))[-10:].zfill(10)
+        # Nosso número sem DV (10 dígitos) - Pegar os últimos 10 dígitos
+        nosso_numero_completo = re.sub(r'[^0-9]', '', str(nosso_numero))
+        nosso_numero_limpo = nosso_numero_completo[-10:].zfill(10)
         
         # Agência (4 dígitos) + primeiros 2 dígitos da conta
-        agencia_limpa = re.sub(r'[^0-9]', '', str(configuracao.agencia)).zfill(4)[:4]
-        conta_limpa = re.sub(r'[^0-9]', '', str(configuracao.conta)).zfill(6)[:2]  # Primeiros 2 dígitos da conta
+        agencia_completa = re.sub(r'[^0-9]', '', str(configuracao.agencia))[:4]
+        agencia_limpa = agencia_completa.zfill(4)
+        
+        conta_completa = re.sub(r'[^0-9]', '', str(configuracao.conta))[:2]  # Primeiros 2 dígitos
+        conta_limpa = conta_completa.zfill(2)
+        
         agencia_conta_campo = f"{agencia_limpa}{conta_limpa}"
         
-        # Carteira (3 dígitos)
-        carteira_campo = re.sub(r'[^0-9]', '', str(configuracao.carteira)).zfill(3)[:3]
+        # Carteira (3 dígitos) - Primeiro limpar, depois truncar, depois preencher
+        carteira_limpa = re.sub(r'[^0-9]', '', str(configuracao.carteira))[:3]  # Máximo 3 dígitos
+        carteira_campo = carteira_limpa.zfill(3)  # Preencher com zeros à esquerda
+        
+        # Validar tamanhos dos componentes antes de montar
+        if len(codigo_cedente) != 6:
+            raise ValueError(f"Código do cedente deve ter 6 dígitos: {codigo_cedente} ({len(codigo_cedente)})")
+        if len(nosso_numero_limpo) != 10:
+            raise ValueError(f"Nosso número deve ter 10 dígitos: {nosso_numero_limpo} ({len(nosso_numero_limpo)})")
+        if len(agencia_conta_campo) != 6:
+            raise ValueError(f"Agência+conta deve ter 6 dígitos: {agencia_conta_campo} ({len(agencia_conta_campo)})")
+        if len(carteira_campo) != 3:
+            raise ValueError(f"Carteira deve ter 3 dígitos: {carteira_campo} ({len(carteira_campo)})")
         
         # Montar campo livre: cedente(6) + nosso_numero(10) + agencia_conta(6) + carteira(3) = 25 dígitos
         campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_conta_campo}{carteira_campo}"
-        
-        # Garantir que o campo livre tenha exatamente 25 dígitos
-        campo_livre = campo_livre[:25].ljust(25, '0')
         
         # Validar campo livre antes de continuar
         if len(campo_livre) != 25:
