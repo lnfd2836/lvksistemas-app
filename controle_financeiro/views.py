@@ -341,6 +341,7 @@ def configurar_boletos(request):
                 config.conta = request.POST.get('conta')
                 config.carteira = request.POST.get('carteira')
                 config.codigo_cedente = request.POST.get('codigo_cedente', '')
+                config.convenio = request.POST.get("convenio", "") or None
                 config.nome_beneficiario = request.POST.get('nome_beneficiario')
                 config.cnpj_beneficiario = request.POST.get('cnpj_beneficiario')
                 config.endereco_beneficiario = request.POST.get('endereco_beneficiario')
@@ -411,7 +412,7 @@ def configurar_caixa(request):
     configuracao_existente = ConfiguracaoBoleto.objects.filter(codigo_banco='104').first()
     
     if request.method == 'POST':
-        # Debug removido para produção
+        # Processamento do formulário
         try:
             # Validação de campos obrigatórios
             campos_obrigatorios = {
@@ -444,6 +445,7 @@ def configurar_caixa(request):
             for campo, nome in campos_opcionais.items():
                 valor = request.POST.get(campo, '').strip()
                 dados[campo] = valor if valor else None
+                # Campo processado
             
             # Validações específicas
             if dados['agencia'] and (len(dados['agencia']) != 4 or not dados['agencia'].isdigit()):
