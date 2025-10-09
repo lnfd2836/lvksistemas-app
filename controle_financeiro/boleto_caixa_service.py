@@ -83,18 +83,15 @@ class BoletoCaixaService:
     def _gerar_nosso_numero_caixa(self, configuracao):
         """
         Gera nosso número para a Caixa
-        Formato: NNNNNNNNNN-D (Sequencial + DV) - APENAS NÚMEROS
+        Formato: NNNNNNNNNN (10 dígitos) - APENAS NÚMEROS
         """
         
         # Para teste, usar timestamp como sequencial
         timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
         sequencial = timestamp[-10:].zfill(10)  # Últimos 10 dígitos - APENAS NÚMEROS
         
-        # Calcular dígito verificador
-        dv = self._calcular_dv_nosso_numero_caixa(sequencial)
-        
-        # Nosso número completo - APENAS NÚMEROS
-        nosso_numero = f"{sequencial}{dv}"  # SEM hífen, apenas números
+        # Nosso número completo - APENAS NÚMEROS (sem DV por enquanto)
+        nosso_numero = sequencial
         
         return nosso_numero
     
@@ -151,12 +148,15 @@ class BoletoCaixaService:
         # A = Agência (4) + zeros (2)
         # D = Carteira (3)
         
-        codigo_cedente = re.sub(r'[^0-9]', '', configuracao.codigo_cedente).zfill(6)[:6]
-        nosso_numero_limpo = re.sub(r'[^0-9]', '', nosso_numero)[-10:].zfill(10)
-        agencia_campo = f"{re.sub(r'[^0-9]', '', configuracao.agencia).zfill(4)}00"
-        carteira_campo = re.sub(r'[^0-9]', '', configuracao.carteira).zfill(3)
+        codigo_cedente = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or '')).zfill(6)[:6]
+        nosso_numero_limpo = re.sub(r'[^0-9]', '', str(nosso_numero))[-10:].zfill(10)
+        agencia_campo = f"{re.sub(r'[^0-9]', '', str(configuracao.agencia)).zfill(4)}00"
+        carteira_campo = re.sub(r'[^0-9]', '', str(configuracao.carteira)).zfill(3)
         
         campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_campo}{carteira_campo}"
+        
+        # Garantir que o campo livre tenha exatamente 25 dígitos
+        campo_livre = campo_livre[:25].ljust(25, '0')
         
         # Montar código sem DV
         codigo_sem_dv = f"{self.codigo_banco}{self.moeda}{fator_vencimento}{valor_centavos}{campo_livre}"
@@ -166,6 +166,13 @@ class BoletoCaixaService:
         
         # Código de barras completo
         codigo_barras = f"{self.codigo_banco}{self.moeda}{dv_geral}{fator_vencimento}{valor_centavos}{campo_livre}"
+        
+        # Garantir que tenha exatamente 44 dígitos
+        codigo_barras = codigo_barras[:44].ljust(44, '0')
+        
+        # Validar tamanho final
+        if len(codigo_barras) != 44:
+            raise ValueError(f"Código de barras deve ter 44 dígitos, mas tem {len(codigo_barras)}: {codigo_barras}")
         
         return codigo_barras
     
