@@ -80,6 +80,12 @@ class BoletoSimpleCorrector(DVCalculatorMixin, FormatNormalizerMixin):
         if dv3_error:
             errors_found.append(dv3_error)
         
+        # Verificar DV geral (campo 4) se não há outros erros ou há poucos erros
+        if len(errors_found) <= 2:
+            dv_geral_result = self.correct_dv_geral_error(codigo_input)
+            if dv_geral_result['success'] and dv_geral_result.get('corrections'):
+                errors_found.extend(dv_geral_result['corrections'])
+        
         # Se não há erros, retornar sucesso
         if not errors_found:
             return {
@@ -128,6 +134,115 @@ class BoletoSimpleCorrector(DVCalculatorMixin, FormatNormalizerMixin):
                     'confidence': 'low'
                 }
     
+    def correct_dv_geral_error(self, codigo_input: str) -> Dict[str, Any]:
+        """
+        Corrige especificamente erro de DV geral (campo 4)
+        
+        Args:
+            codigo_input: Linha digitável
+            
+        Returns:
+            Dict: Resultado da correção
+        """
+        
+        # Normalizar entrada
+        normalized = self.normalizer.normalize(codigo_input)
+        
+        if not normalized.is_valid_format or normalized.input_format != "linha_digitavel":
+            return {
+                'success': False,
+                'error': 'Formato inválido ou não é linha digitável',
+                'original_code': codigo_input,
+                'corrected_code': codigo_input
+            }
+        
+        linha_limpa = normalized.normalized_code
+        
+        if len(linha_limpa) != 47:
+            return {
+                'success': False,
+                'error': f'Comprimento inválido: {len(linha_limpa)} (esperado 47)',
+                'original_code': codigo_input,
+                'corrected_code': codigo_input
+            }
+        
+        # Verificar se é apenas erro de DV geral
+        try:
+            # Reconstruir código de barras para calcular DV geral correto
+            campo1 = linha_limpa[0:10]   # Sem DV
+            campo2 = linha_limpa[11:21]  # Sem DV
+            campo3 = linha_limpa[22:32]  # Sem DV
+            campo4 = linha_limpa[33:34]  # DV geral atual
+            campo5 = linha_limpa[34:47]  # Vencimento + valor
+            
+            # Montar código de barras sem DV geral
+            banco_moeda = campo1[0:4]
+            campo_livre_p1 = campo1[4:10]
+            campo_livre_p2 = campo2
+            campo_livre_p3 = campo3[1:]  # Remove primeiro dígito
+            vencimento = campo5[0:4]
+            valor = campo5[4:13]
+            
+            campo_livre = campo_livre_p1 + campo_livre_p2 + campo_livre_p3
+            codigo_sem_dv = banco_moeda + vencimento + valor + campo_livre
+            
+            # Calcular DV geral correto
+            dv_geral_correto = self.calculate_dv_modulo11_febraban(codigo_sem_dv)
+            dv_geral_informado = int(campo4)
+            
+            if dv_geral_informado == dv_geral_correto:
+                return {
+                    'success': True,
+                    'message': 'DV geral já está correto',
+                    'original_code': codigo_input,
+                    'corrected_code': codigo_input,
+                    'corrections': []
+                }
+            
+            # Corrigir DV geral
+            linha_corrigida = linha_limpa[:33] + str(dv_geral_correto) + linha_limpa[34:]
+            
+            return {
+                'success': True,
+                'message': f'DV geral corrigido: {dv_geral_informado} → {dv_geral_correto}',
+                'original_code': codigo_input,
+                'corrected_code': linha_corrigida,
+                'corrections': [{
+                    'campo': 'dv_geral',
+                    'dv_original': dv_geral_informado,
+                    'dv_correto': dv_geral_correto,
+                    'error_message': f'DV geral corrigido: {dv_geral_informado} → {dv_geral_correto}'
+                }],
+                'confidence': 'high'
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Erro ao corrigir DV geral: {str(e)}',
+                'original_code': codigo_input,
+                'corrected_code': codigo_input
+            }
+    
+    def calculate_dv_modulo11_febraban(self, codigo: str) -> int:
+        """Calcula DV usando módulo 11 FEBRABAN"""
+        
+        sequencia = "4329876543298765432987654329876543298765432"
+        soma = 0
+        
+        for i, digito in enumerate(reversed(codigo)):
+            if digito.isdigit():
+                multiplicador = int(sequencia[i % len(sequencia)])
+                produto = int(digito) * multiplicador
+                soma += produto
+        
+        resto = soma % 11
+        
+        if resto in [0, 10, 11]:
+            return 1
+        else:
+            return 11 - resto
+    
     def _check_campo_dv(self, campo: str, campo_num: int) -> Optional[Dict[str, Any]]:
         """Verifica DV de um campo específico"""
         
@@ -157,6 +272,15 @@ class BoletoSimpleCorrector(DVCalculatorMixin, FormatNormalizerMixin):
         """Aplica uma única correção na linha digitável"""
         
         campo_num = error['campo']
+        
+        # Tratar DV geral separadamente
+        if campo_num == 'dv_geral':
+            dv_correto = error['dv_correto']
+            # DV geral está na posição 33
+            corrected_line = linha_limpa[:33] + str(dv_correto) + linha_limpa[34:]
+            return corrected_line
+        
+        # Campos normais (1, 2, 3)
         dv_correto = error['dv_correto']
         
         # Determinar posições do campo
@@ -189,8 +313,12 @@ class BoletoSimpleCorrector(DVCalculatorMixin, FormatNormalizerMixin):
         
         corrected_line = linha_limpa
         
-        # Aplicar correções em ordem reversa para não afetar posições
-        for error in sorted(errors, key=lambda x: x['campo'], reverse=True):
+        # Separar correções de DV geral das outras
+        dv_geral_corrections = [e for e in errors if e.get('campo') == 'dv_geral']
+        campo_corrections = [e for e in errors if e.get('campo') != 'dv_geral' and isinstance(e.get('campo'), int)]
+        
+        # Aplicar correções de campos em ordem reversa para não afetar posições
+        for error in sorted(campo_corrections, key=lambda x: x['campo'], reverse=True):
             campo_num = error['campo']
             dv_correto = error['dv_correto']
             
@@ -216,6 +344,11 @@ class BoletoSimpleCorrector(DVCalculatorMixin, FormatNormalizerMixin):
                 campo_corrigido + 
                 corrected_line[end_pos:]
             )
+        
+        # Aplicar correções de DV geral
+        for error in dv_geral_corrections:
+            dv_correto = error['dv_correto']
+            corrected_line = corrected_line[:33] + str(dv_correto) + corrected_line[34:]
         
         return corrected_line
     

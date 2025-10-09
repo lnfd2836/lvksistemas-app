@@ -5,6 +5,11 @@ Utilitários para o sistema de controle financeiro
 from django.contrib import messages
 from django.utils import timezone
 from .boleto_auto_validator import auto_validator
+from .boleto_fix_especifico import (
+    corrigir_boleto_especifico,
+    processar_boleto_com_correcao_django,
+    validar_e_corrigir_boleto_simples
+)
 
 
 def processar_boleto_com_correcao(request, codigo_input, context_name="boleto"):
@@ -20,6 +25,13 @@ def processar_boleto_com_correcao(request, codigo_input, context_name="boleto"):
         Dict: Resultado do processamento
     """
     
+    # Primeiro, tentar correção específica conhecida
+    resultado_especifico = processar_boleto_com_correcao_django(request, codigo_input, context_name)
+    
+    if resultado_especifico['success']:
+        return resultado_especifico
+    
+    # Se não há correção específica, usar validador automático
     result = auto_validator.validate_and_auto_correct(codigo_input)
     
     if result['success']:
