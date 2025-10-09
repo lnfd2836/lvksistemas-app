@@ -28,6 +28,20 @@ class BoletoPDFService:
     def __init__(self):
         self.width, self.height = A4
         self.margin = 2 * cm
+    
+    def _formatar_cnpj(self, cnpj):
+        """Formata CNPJ para exibição"""
+        if not cnpj:
+            return "Não informado"
+        
+        # Remove caracteres não numéricos
+        cnpj_numeros = ''.join(filter(str.isdigit, cnpj))
+        
+        # Formata se tiver 14 dígitos
+        if len(cnpj_numeros) == 14:
+            return f"{cnpj_numeros[:2]}.{cnpj_numeros[2:5]}.{cnpj_numeros[5:8]}/{cnpj_numeros[8:12]}-{cnpj_numeros[12:14]}"
+        
+        return cnpj  # Retorna original se não conseguir formatar
         
     def gerar_pdf_boleto(self, boleto):
         """
@@ -95,125 +109,289 @@ class BoletoPDFService:
         titulo_style = ParagraphStyle(
             'TituloBoleto',
             parent=styles['Heading1'],
-            fontSize=16,
+            fontSize=18,
             textColor=colors.black,
             alignment=TA_CENTER,
-            spaceAfter=20
+            spaceAfter=15
         )
         
-        titulo = Paragraph("BOLETO DE COBRANÇA", titulo_style)
+        titulo = Paragraph("<b>BOLETO DE COBRANÇA BANCÁRIA</b>", titulo_style)
         
-        # Informações do banco
+        # Linha separadora
+        linha_style = ParagraphStyle(
+            'Linha',
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=TA_CENTER
+        )
+        
+        linha = Paragraph("─" * 100, linha_style)
+        
+        # Informações principais do banco em layout mais profissional
         banco_data = [
-            [f"{boleto.configuracao.codigo_banco}-X", boleto.configuracao.nome_banco, "Vencimento", boleto.data_vencimento.strftime("%d/%m/%Y")],
-            ["", "", "Valor do Documento", f"R$ {boleto.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")]
+            # Primeira linha - Banco e código
+            [
+                f"{boleto.configuracao.codigo_banco}-X", 
+                boleto.configuracao.nome_banco.upper(), 
+                "VENCIMENTO", 
+                boleto.data_vencimento.strftime("%d/%m/%Y")
+            ],
+            # Segunda linha - Espaço e valor
+            [
+                "", 
+                "", 
+                "VALOR DO DOCUMENTO", 
+                f"R$ {boleto.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            ]
         ]
         
-        banco_table = Table(banco_data, colWidths=[3*cm, 8*cm, 3*cm, 4*cm])
+        banco_table = Table(banco_data, colWidths=[2.5*cm, 9*cm, 3.5*cm, 3*cm])
         banco_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            # Estilo da primeira linha (cabeçalho)
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            
+            # Estilo da segunda linha (valores)
+            ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, 1), colors.black),
+            ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 1), (-1, 1), 10),
+            
+            # Alinhamento
+            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Bordas
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('LINEBELOW', (0, 0), (-1, 0), 2, colors.black),
         ]))
         
-        return [titulo, Spacer(1, 10), banco_table, Spacer(1, 20)]
+        return [titulo, Spacer(1, 5), linha, Spacer(1, 10), banco_table, Spacer(1, 20)]
     
     def _criar_dados_beneficiario(self, boleto):
         """Cria seção com dados do beneficiário"""
         styles = getSampleStyleSheet()
         
-        beneficiario_style = ParagraphStyle(
-            'Beneficiario',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.black,
-            alignment=TA_LEFT
+        # Título da seção
+        titulo_style = ParagraphStyle(
+            'TituloBeneficiario',
+            fontSize=12,
+            textColor=colors.darkblue,
+            alignment=TA_LEFT,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
         )
         
+        titulo = Paragraph("📋 DADOS DO BENEFICIÁRIO (RECEBEDOR)", titulo_style)
+        
+        # Dados do beneficiário em formato mais organizado
         beneficiario_data = [
-            ["Beneficiário:", boleto.configuracao.nome_beneficiario],
-            ["CNPJ:", boleto.configuracao.cnpj_beneficiario],
+            ["Beneficiário:", boleto.configuracao.nome_beneficiario.upper()],
+            ["CNPJ:", self._formatar_cnpj(boleto.configuracao.cnpj_beneficiario)],
             ["Endereço:", boleto.configuracao.endereco_beneficiario],
-            ["Agência/Conta:", f"{boleto.configuracao.agencia} / {boleto.configuracao.conta}"],
+            ["Banco:", f"{boleto.configuracao.codigo_banco} - {boleto.configuracao.nome_banco}"],
+            ["Agência:", boleto.configuracao.agencia],
+            ["Conta:", boleto.configuracao.conta],
+            ["Carteira:", boleto.configuracao.carteira],
         ]
         
-        beneficiario_table = Table(beneficiario_data, colWidths=[3*cm, 15*cm])
+        # Adicionar código do cedente se existir
+        if boleto.configuracao.codigo_cedente:
+            beneficiario_data.append(["Código Cedente:", boleto.configuracao.codigo_cedente])
+        
+        beneficiario_table = Table(beneficiario_data, colWidths=[3.5*cm, 14.5*cm])
         beneficiario_table.setStyle(TableStyle([
+            # Estilo dos labels
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('FONTSIZE', (0, 0), (0, -1), 9),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.darkblue),
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            
+            # Estilo dos valores
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (1, 0), (1, -1), 9),
+            ('TEXTCOLOR', (1, 0), (1, -1), colors.black),
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            
+            # Espaçamento
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (0, -1), 5),
+            ('RIGHTPADDING', (1, 0), (1, -1), 5),
+            
+            # Bordas alternadas
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),
+            ('BACKGROUND', (0, 4), (-1, 4), colors.lightgrey),
+            ('BACKGROUND', (0, 6), (-1, 6), colors.lightgrey),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
         
-        return [beneficiario_table, Spacer(1, 15)]
+        return [titulo, beneficiario_table, Spacer(1, 15)]
     
     def _criar_dados_pagador(self, boleto):
         """Cria seção com dados do pagador (loja)"""
         styles = getSampleStyleSheet()
         
+        # Título da seção
+        titulo_style = ParagraphStyle(
+            'TituloPagador',
+            fontSize=12,
+            textColor=colors.darkgreen,
+            alignment=TA_LEFT,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
+        )
+        
+        titulo = Paragraph("🏪 DADOS DO PAGADOR (SACADO)", titulo_style)
+        
         loja = boleto.controle_financeiro.loja
         
+        # Dados do pagador organizados
         pagador_data = [
-            ["Pagador:", loja.nome],
-            ["CNPJ:", loja.cnpj],
-            ["Endereço:", loja.endereco],
-            ["Email:", loja.email],
-            ["Telefone:", loja.telefone],
+            ["Razão Social:", loja.nome.upper()],
+            ["CNPJ:", self._formatar_cnpj(loja.cnpj)],
+            ["Endereço:", loja.endereco or "Não informado"],
+            ["Cidade/UF:", f"{loja.cidade}/{loja.estado}" if loja.cidade and loja.estado else "Não informado"],
+            ["CEP:", loja.cep or "Não informado"],
+            ["Email:", loja.email or "Não informado"],
+            ["Telefone:", loja.telefone or "Não informado"],
         ]
         
-        pagador_table = Table(pagador_data, colWidths=[3*cm, 15*cm])
+        # Adicionar tipo de loja se existir
+        if hasattr(loja, 'tipo_loja') and loja.tipo_loja:
+            pagador_data.append(["Tipo de Negócio:", loja.tipo_loja.get_nome_display()])
+        
+        pagador_table = Table(pagador_data, colWidths=[3.5*cm, 14.5*cm])
         pagador_table.setStyle(TableStyle([
+            # Estilo dos labels
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('FONTSIZE', (0, 0), (0, -1), 9),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.darkgreen),
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            
+            # Estilo dos valores
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (1, 0), (1, -1), 9),
+            ('TEXTCOLOR', (1, 0), (1, -1), colors.black),
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            
+            # Espaçamento
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (0, -1), 5),
+            ('RIGHTPADDING', (1, 0), (1, -1), 5),
+            
+            # Bordas alternadas
+            ('BACKGROUND', (0, 1), (-1, 1), colors.lightgrey),
+            ('BACKGROUND', (0, 3), (-1, 3), colors.lightgrey),
+            ('BACKGROUND', (0, 5), (-1, 5), colors.lightgrey),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
         
-        return [pagador_table, Spacer(1, 15)]
+        return [titulo, pagador_table, Spacer(1, 15)]
     
     def _criar_informacoes_boleto(self, boleto):
         """Cria seção com informações do boleto"""
         
+        # Título da seção
+        titulo_style = ParagraphStyle(
+            'TituloInfo',
+            fontSize=12,
+            textColor=colors.darkorange,
+            alignment=TA_LEFT,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
+        )
+        
+        titulo = Paragraph("📄 INFORMAÇÕES DO BOLETO", titulo_style)
+        
+        # Calcular dias para vencimento
+        dias_vencimento = (boleto.data_vencimento.date() - timezone.now().date()).days
+        status_vencimento = "No prazo"
+        if dias_vencimento < 0:
+            status_vencimento = f"Vencido há {abs(dias_vencimento)} dias"
+        elif dias_vencimento == 0:
+            status_vencimento = "Vence hoje"
+        elif dias_vencimento <= 3:
+            status_vencimento = f"Vence em {dias_vencimento} dias"
+        
+        # Informações principais do boleto
         info_data = [
             ["Número do Boleto:", boleto.numero_boleto, "Data de Emissão:", boleto.data_criacao.strftime("%d/%m/%Y")],
             ["Nosso Número:", boleto.numero_boleto[-10:], "Data de Vencimento:", boleto.data_vencimento.strftime("%d/%m/%Y")],
-            ["Carteira:", boleto.configuracao.carteira, "Valor do Documento:", f"R$ {boleto.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")],
+            ["Status do Boleto:", boleto.get_status_display().upper(), "Situação:", status_vencimento],
+            ["Valor do Documento:", f"R$ {boleto.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "Carteira:", boleto.configuracao.carteira],
         ]
         
         # Adicionar informações de multa e juros se configuradas
-        if boleto.configuracao.multa > 0:
-            info_data.append(["Multa após vencimento:", f"{boleto.configuracao.multa}%", "Juros ao mês:", f"{boleto.configuracao.juros}%"])
+        if boleto.configuracao.multa > 0 or boleto.configuracao.juros > 0:
+            info_data.append([
+                "Multa após vencimento:", 
+                f"{boleto.configuracao.multa}%" if boleto.configuracao.multa > 0 else "Não aplicável", 
+                "Juros ao mês:", 
+                f"{boleto.configuracao.juros}%" if boleto.configuracao.juros > 0 else "Não aplicável"
+            ])
         
         if boleto.configuracao.desconto > 0:
-            info_data.append(["Desconto até vencimento:", f"{boleto.configuracao.desconto}%", "", ""])
+            info_data.append([
+                "Desconto até vencimento:", 
+                f"{boleto.configuracao.desconto}%", 
+                "Valor com desconto:", 
+                f"R$ {boleto.valor * (1 - boleto.configuracao.desconto/100):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            ])
+        
+        # Adicionar informações de pagamento se já foi pago
+        if boleto.status == 'pago' and boleto.data_pagamento:
+            info_data.append([
+                "Data de Pagamento:", 
+                boleto.data_pagamento.strftime("%d/%m/%Y %H:%M"), 
+                "Status:", 
+                "✅ PAGO"
+            ])
         
         info_table = Table(info_data, colWidths=[4*cm, 5*cm, 4*cm, 5*cm])
         info_table.setStyle(TableStyle([
+            # Labels (colunas 0 e 2)
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
             ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (0, -1), 9),
+            ('FONTSIZE', (2, 0), (2, -1), 9),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.darkorange),
+            ('TEXTCOLOR', (2, 0), (2, -1), colors.darkorange),
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+            
+            # Valores (colunas 1 e 3)
             ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
             ('FONTNAME', (3, 0), (3, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTSIZE', (1, 0), (1, -1), 9),
+            ('FONTSIZE', (3, 0), (3, -1), 9),
+            ('TEXTCOLOR', (1, 0), (1, -1), colors.black),
+            ('TEXTCOLOR', (3, 0), (3, -1), colors.black),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('ALIGN', (3, 0), (3, -1), 'LEFT'),
+            
+            # Espaçamento e bordas
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            
+            # Destacar linha do valor
+            ('BACKGROUND', (0, 3), (-1, 3), colors.lightyellow),
+            ('FONTSIZE', (0, 3), (-1, 3), 10),
+            ('FONTNAME', (0, 3), (-1, 3), 'Helvetica-Bold'),
         ]))
         
-        return [info_table, Spacer(1, 20)]
+        return [titulo, info_table, Spacer(1, 20)]
     
     def _criar_codigo_barras(self, boleto):
         """Cria código de barras do boleto"""
