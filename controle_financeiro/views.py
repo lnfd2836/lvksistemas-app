@@ -407,6 +407,26 @@ def configurar_caixa(request):
     """Configuração específica para Caixa Econômica Federal"""
     
     if request.method == 'POST':
+        # Redirecionar para a view principal de configuração
+        # mas com dados pré-preenchidos da Caixa
+        return configurar_boletos(request)
+    
+    # Buscar configuração existente da Caixa
+    configuracao_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco='104').first()
+    
+    context = {
+        'configuracao_caixa': configuracao_caixa,
+    }
+    
+    return render(request, 'controle_financeiro/configurar_caixa.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def configurar_caixa(request):
+    """Configuração específica para Caixa Econômica Federal"""
+    
+    if request.method == 'POST':
         try:
             # Validação específica da Caixa
             agencia = request.POST.get('agencia', '').strip()

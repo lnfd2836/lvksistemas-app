@@ -186,6 +186,22 @@
                         Isso evita gerar boletos muito cedo e garante que as lojas recebam o boleto no momento adequado.
                     </p>
                 </div>
+                
+                <!-- Configuração da Caixa -->
+                <div class="alert alert-warning mt-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-university"></i> Configuração da Caixa Econômica Federal
+                    </h6>
+                    <p class="mb-2">
+                        <strong>Boletos Reais:</strong> Configure sua conta da Caixa para gerar boletos válidos que direcionam pagamentos para sua conta.
+                    </p>
+                    <a href="{% url 'controle_financeiro:configurar_caixa' %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-cog"></i> Configurar Caixa
+                    </a>
+                    <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list"></i> Ver Configurações
+                    </a>
+                </div>
             </div>
         </div>
     </div>
