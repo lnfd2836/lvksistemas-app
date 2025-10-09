@@ -187,9 +187,13 @@ class BoletoCaixaService:
         # D (17-22): Agência (4 dígitos) + Conta (2 primeiros dígitos)
         # C (23-25): Carteira (3 dígitos)
         
-        # Código do cedente (6 dígitos) - Primeiro truncar, depois preencher
-        cedente_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))[:6]
-        codigo_cedente = cedente_limpo.zfill(6)
+        # Código do cedente (6 dígitos)
+        # Para códigos com mais de 6 dígitos, usar os últimos 6
+        cedente_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))
+        if len(cedente_limpo) > 6:
+            codigo_cedente = cedente_limpo[-6:]  # Últimos 6 dígitos
+        else:
+            codigo_cedente = cedente_limpo.zfill(6)  # Preencher com zeros à esquerda
         
         # Nosso número sem DV (10 dígitos) - Pegar os últimos 10 dígitos
         nosso_numero_completo = re.sub(r'[^0-9]', '', str(nosso_numero))

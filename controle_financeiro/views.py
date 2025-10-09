@@ -511,8 +511,6 @@ def configurar_caixa(request):
             
         except Exception as e:
             messages.error(request, f'Erro ao salvar configuração da Caixa: {str(e)}')
-            import traceback
-            print(f"Erro detalhado: {traceback.format_exc()}")
     
     context = {
         'configuracao_existente': configuracao_existente,
@@ -636,6 +634,15 @@ def gerar_boleto(request, controle_id):
                     success_msg += warning_msg
                 
                 messages.success(request, success_msg)
+                
+                # Aviso importante sobre ativação do convênio
+                if not config.convenio:
+                    messages.warning(
+                        request, 
+                        '⚠️ IMPORTANTE: Para que os boletos funcionem nos sistemas bancários, '
+                        'o convênio deve ser ativado pela Caixa Econômica Federal. '
+                        'Entre em contato com seu gerente para ativar o convênio de cobrança.'
+                    )
                 numero_boleto = dados_boleto['numero_boleto']  # Para usar no redirect
                 
             else:
