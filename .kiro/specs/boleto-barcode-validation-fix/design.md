@@ -2,217 +2,506 @@
 
 ## Overview
 
-The current boleto barcode generation system has critical flaws that produce invalid barcodes, preventing customers from making payments. The main issues identified are:
+Este documento detalha o design para implemer a valiorte ao layoutos de barraB na validação de eis no sistearras de boemtos. O proble códtual é que o sistema rejeita bolets deviddos da Caixa Econômica Federal porque não reconhece o layout específico SIGCB (Sistema Integrado de Ge Cobncária) usado po.
 
-1. **Incorrect DV (Digit Verification) calculations** - The current modulo 10 and modulo 11 algorithms don't follow FEBRABAN standards
-2. **Invalid campo livre structure** - The 25-digit free field doesn't match Caixa Econômica Federal specifications
-3. **Missing validation** - No validation occurs before saving barcodes to the database
-4. **Inconsistent nosso número generation** - The "nosso número" generation doesn't include proper digit verification
-
-The solution involves fixing the BoletoCaixaService class, adding comprehensive validation, and implementing proper error handling and logging.
+**Probl da Específico:**.6701a digitável `10492.67010144 7 .1714000002990` é144 7 22600000002990` está sendo rejeitada como inválida.
 
 ## Architecture
 
-### Current Architecture Issues
-- `BoletoCaixaService` generates invalid barcodes due to incorrect algorithms
-- No validation layer between generation and storage
-- Missing error handling for edge cases
-- No logging for debugging barcode generation issues
+### Current State Analysis
 
-### Proposed Architecture
+**Linha Da Identificado:**
+- Sistema usa validaçãca FEBRABAN que não contempla especificidades do SIGCB
+- B92.67104 (Caixa) requer tratament4 7 226000iado conforme orientação do suporte
+```tmos de validação estar inadequados para o layout SIGCB
+
+**Layout ra FEBRABAN:**
+- Banco: 104 (Caixa Econômicnco + 4 primeiros dígitos do campo livre + DV)
+- Formato específico de campo livre diferente do padrão FEBRABAN genérico
+- Cagoritmos de dígito ver(15º ao 2podem ter particularidade+ DV)
+- Cstrutura de (Dígito mero específicaal)B
+
+### Target Ahitecte
+
+**Val Hierárquica:**
+1. **De60000000e Banco**: Identificar b657o pelos prims 3 dígitos
+```Seleção de Layout* regras espr banco
+3. **Validação EspecíficaUsar algoritmos apropriados para cada layout
+4.# VConversão Algura**: Converter entre linha digitávo de barra
+
+#### mponents and Intertion
+```python
+def 1. Dalize_barc Layout de Boleto
+    """
+ ``python
+class BolLayoutDetect
+    #""Detecta o layout esps, hífens boleto baseado no banco"""
+    
+    deturn normlayout(self, codigo_barras_ou_linha: str) ->tr:
+        
+def     Detecta o ype(normalizleto
+        Returns: 'S 'FEBRABAN_PADRAO', 'OUTROS'
+        """
+        pass
+    
+    def is_caixa_sigcb(self, cod-> bool:
+         len(rifica se éinoleto Caixa com layout S"""
+        pass
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Views Layer   │───▶│ Validation Layer │───▶│ Service Layer   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌──────────────────┐    ┌─────────────────┐
-                       │ Error Handling   │    │ Logging System  │
-                       └──────────────────┘    └─────────────────┘
+
+### 2. Vador SIGCB Específico
+
+`### 2. Linha Digitável Validation
+`lass SIGCBValidator:
+    v""Validadonhaspecífico para la:XA SIGCB"""
+    
+    def validate_linha_vel covel(self, linha: str)N
+        """Valida digitável"
+      Norass
+    
+    def validate_codigo_barras(self, r) -> bool:
+        """Valida código de in [47, 48CB"""
+        pass
+    
+    # Extraract_fields(self, codigtr) -> dict:
+    c   """Extrai campos específicos do SIGCB"""
+        pass
+```
+
+### 3. Co5 = linha_lFormatos
+
+```py Van
+class BoletoFordate_campoer:
+    """Converte entre linha digitável e código de barras"""
+    
+    def linha_toate_campo_rras(seo2, linha: str, l10]):) -> str:
+        """Converte linha dig verificada código de barras"""
+        pass
+    
+    def codigo_barras_to_linha(self, codigo: str, l3 iut: str) -> str:
+       """Converte código de barrnha digitável"""
+    # Valida
+```
+
+### 4. Validador Unificado
+
+```python
+class BoletoValidato
+def v""Interface unificada , dv_esperação de boletos"""
+    
+    Valida dit__(self):
+       or = BoletoLayoutDetector
+    somaself.sigcb_valior = SIGCBValidat
+        self.febraban_validator = FEBRABANValidator()
+      .converter = BoletoFormatConverter()
+    for i in range(len(campo) - 1, -1, -1):
+    def validate(self, codigo_input: str) -> ValidationResult
+        """Valida qualquer formato de boleto"""
+        pass
+```
+
+#   s
+
+### Estrutura do Lay if SIGCB
+
+**  retuDigitável SIGCB (47-48 dígitos):**
+```
+10492.67014 515001429 22946.570144 7 22600
+│### 3. C││ │││││ Barra││ │││││ ││││ │ ││││││││││││││
+│││││ │││││ │││││ │││││││ │││││││││ │ alor (10 dígitos)
+│││││ lidate_cod│ │││││││ │││││ │││││││ ncimento (4 dígitos)
+││  """│││ │││││ │││││││ │││││ ││││ral
+│││││ li│││ ódigo de│││││ │││││ 4 díampo 5 (6 dígi
+ ││││ │││││ ││││││ └─ DV Campo 4
+    if l│││ │││││ └!= 44: (7 dígitos)
+│││││ │││││ └─ DV Campo 3
+│││││ └─ Campo 3 (5 dígito
+    anco + DV +  (pos 1 + DV Campo 1
+```
+    
+    # Mo de Barras  sem DV padígitos):**
+`  
+104972000029902670151501429229465701
+│││││ Calcular││││││││││││││││o 1││││││││││││
+│││└─ DV Geral
+││└─ co (104)
+│└─ Moeda (9 = Real)
+└       re 1-3: Banco, "Díição 4: DVicaosição 5: do. imentado: {dv_calculado}, Informado: {dv_informado}"
+   
+
+### Campos Especíos SIGCB
+
+```pyt"
+@dataclass
+class SI
+    baquencia =  "104"  #4329876543ixa
+    dv_ge= 0tr
+    vencimento:
+    folor: str
+    nosso_numero: str
+    agencstr
+    resto: str
+    cartei
+    
+    def __purt_init__(self):
+        """Validaçõeicas do SIGCB"""
+        if self.b - r != "104":
+    raise ValueError é específico da Caixa (104)")
+```
+
+##`pyror Handling
+
+    ""pos de Erro Específ
+    Converte linha digitável para código de barras
+  `python
+c   liSIGCBValidationErrorode_intion):
+    """ecífico de validaç"""
+    passtrair partes da linha digitável
+    banco = linha[0:3]
+    moBoletoLayoutEr4]r(Exception):
+    ""_gera de detecção de layout"""
+    pass
+
+class BoletoFormatError(Exception):
+    """Ertar campo livre
+    campo_livre = (linha[4:9] + linha[10:20] + linha[21:31])
+    
+    # Montar código de barras
+    codigo_barras = banco + moeda + dv_geral + vencimento + valor + campo_livre
+    
+    return codigo_barras
+
+def convert_codigo_to_linha(codigo_barras):
+    """
+    Converte código de barras para linha digitável
+    """
+    if len(codigo_barras) != 44:
+        raise ValueError("Código de barras deve ter 44 dígitos")
+    
+    banco = codigo_barras[0:3]
+    moeda = codigo_barras[3:4]
+    dv_geral = codigo_barras[4:5]
+    vencimento = codigo_barras[5:9]
+    valor = codigo_barras[9:19]
+   python
+class TestSI
+    # Montar campos da linha digitável
+    campo1_base = banco + moeda + campo_livre[0:5]
+    campo1_dv = calculate_dv_modulo10(campo1_base)
+    campo1 = campo1_base + str(campo1_dv)
+    
+    campo2_base = campo_livre[5:15]
+    campo2_dv = calculate_dv_modulo10(campo2_base)
+    campo2 = campo2_base + str(campo2_dv)
+    
+    campo3_base = campo_livre[15:25]
+    campo3_dv = calculate_dv_modulo10(campo3_base)
+    campo3 = campo3_base + str(campo3_dv)
+    
+    campo4 = dv_geral
+    campo5 = vencimento + valor
+    
+    return campo1 + campo2 + campo3 + campo4 + campo5
 ```
 
 ## Components and Interfaces
 
-### 1. Enhanced BoletoCaixaService
-**Purpose**: Generate valid barcodes following FEBRABAN and Caixa specifications
+### 1. BarcodeValidator Class
+```python
+class BarcodeValidator:
+    """
+    Classe principal para validação de códigos de barras e linhas digitáveis
+    """
+    
+    def __init__(self):
+        self.errors = []
+    
+    def validate(self, input_code):
+        """
+        Método principal de validação
+        """
+        self.errors = Estrutura B
+        
+        try:
+            normalized = self.normalize_input(input_code)
+            input_type = self.detect_type(normalized)
+            
+            if input_type == 'codigo_barras':
+                return self.validate_codigo_barras(normalized)
+            elif input_type == 'linha_digitavel':
+                return self.validate_linha_digitavel(normalized)
+            else:
+                self.errors.append("Formato inválido. Use 44 dígitos (código de barras) ou 47-48 dígitos (linha digitável)")
+                return False
+                
+        except Exception as e:
+            self.errors.append(f"Erro na validação: {str(e)}")
+            return False
+    
+    def get_errors(self):
+        return self.errors
+    
+    def get_codigo_barras(self, input_code):
+        """
+        Retorna código de barras, convertendo se necessário
+        """
+        normalized = self.normalize_input(input_code)
+        input_type = self.detect_type(normalized)
+        
+        if input_type == 'codigo_barras':
+            return normalized
+        elif input_type == 'linha_digitavel':
+            return self.convert_linha_to_codigo(normalized)
+        else:
+            raise ValueError("Formato inválido")
+```
 
-**Key Methods**:
-- `gerar_boleto_caixa()` - Main generation method with validation
-- `_calcular_dv_modulo11_febraban()` - Correct modulo 11 calculation
-- `_calcular_dv_modulo10_febraban()` - Correct modulo 10 calculation
-- `_gerar_campo_livre_caixa()` - Generate proper 25-digit free field
-- `_validar_codigo_barras()` - Validate generated barcode
+### 2. Integration with Django Models
+```python
+# Em models.py
+class BoletoGerado(models.Model):
+    # ... campos existentes ...
+    
+    def validate_codigo_barras(self):
+        """
+        Valida código de barras do boleto
+        """
+        validator = BarcodeValidator()
+        return validator.validate(self.codigo_barras)
+    
+    def validate_linha_digitavel(self):
+        """
+        Valida linha digitável do boleto
+        """
+        validator = BarcodeValidator()
+        return validator.validate(self.linha_digitavel)
+    
+    def sync_codigo_linha(self):
+        """
+        Sincroniza código de barras e linha digitável
+        """
+        validator = BarcodeValidator()
+        
+        if self.codigo_barras and not self.linha_digitavel:
+            self.linha_digitavel = validator.convert_codigo_to_linha(self.codigo_barras)
+        elif self.linha_digitavel and not self.codigo_barras:
+            self.codigo_barras = validator.get_codigo_barras(self.linha_digitavel)
+```
 
-### 2. BarcodeValidator Class
-**Purpose**: Comprehensive validation of generated barcodes
-
-**Methods**:
-- `validate_barcode_format()` - Check 44-digit format
-- `validate_dv_calculations()` - Verify all digit verifications
-- `validate_campo_livre()` - Validate free field structure
-- `validate_linha_digitavel()` - Validate typeable line
-
-### 3. BoletoLogger Class
-**Purpose**: Detailed logging for debugging and monitoring
-
-**Methods**:
-- `log_generation_steps()` - Log each step of barcode generation
-- `log_validation_results()` - Log validation outcomes
-- `log_errors()` - Log errors with context
-
-### 4. BoletoFixService Class
-**Purpose**: Fix existing invalid boletos
-
-**Methods**:
-- `identify_invalid_boletos()` - Find boletos with invalid barcodes
-- `regenerate_boleto()` - Regenerate valid barcode for existing boleto
-- `batch_fix_boletos()` - Fix multiple boletos in batch
+### 3. View Integration
+```python
+# Em views.py
+def processar_codigo_barras(request):
+    """
+    Processa código de barras ou linha digitável
+    """
+    if request.method == 'POST':
+        codigo_input = request.POST.get('codigo_barras', '').strip()
+        
+        validator = BarcodeValidator()
+        
+        if validator.validate(codigo_input):
+            # Obter código de barras normalizado
+            codigo_barras = validator.get_codigo_barras(codigo_input)
+            
+            # Buscar boleto
+            try:
+                boleto = BoletoGerado.objects.get(codigo_barras=codigo_barras)
+                # Processar pagamento...
+                return JsonResponse({'success': True, 'boleto_id': boleto.id})
+            except BoletoGerado.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Boleto não encontrado'})
+        else:
+            errors = validator.get_errors()
+            return JsonResponse({'success': False, 'errors': errors})
+```
 
 ## Data Models
 
-### Enhanced BoletoGerado Model
-Add validation fields:
-```python
-class BoletoGerado(models.Model):
-    # ... existing fields ...
+### No Database Changes Required
+- Campos existentes `codigo_barras` e `linha_digitavel` são mantidos
+- Apenas melhorar validação e conversão entre formatos
+- Adicionar métodos de validação nos models existentes
+
+## Validation
+```p
+# Adicionar ao modelo existente
+class BoletoGerado(models.Model):.. campos existentes ...
     
-    # New validation fields
-    barcode_valid = models.BooleanField(default=False)
-    validation_errors = models.JSONField(default=list, blank=True)
-    generation_log = models.JSONField(default=dict, blank=True)
-    last_validation = models.DateTimeField(null=True, blank=True)
+ def clean(self):
+        """
+        Validação customizada do modelo
+     "
+        super().clea)
+      
+        validator = BarcodeValidator()
+        
+  lf.codigo_barras:         if not validator.validate(self.digo_barras):
+                raise ValidationError(           codigo_barras': validaors()
+                })
+        
+        if self.digitavel:
+            ifidator.valself.linha_dig):
+                raise ValidationError({                'linha_digitaveldator.get_errors()
+       })
+    
+    def save(self, *args, **kwargs):
+        ""
+      ncronizar códiha antes de salvar
+  
+        self.syncigo_linha()
+        lean()
+        super(save(*args, **kwar``
+
+## Err Handling
+
+### Detailessages
+```p
+ERROR_MESSAGES = {
+    'formato 'Formato álido. Use 44 dígitos (códis) ou 47-48 dígitosinha digitável)',
+  anho_incorreto': ncorreto. Cód de barras: 44 dí digitável: 47-48 dígitos',
+    'caracteres_invalidos': 'Apen são permitidos',
+    'dv_cpo1_invalidoerificador do campotá incorreto',   'dv_2_invalidoverificador do campo 2 está iorreto',
+_campo3_invalido': 'Dígito verificador do campo 3 está incorrev_geral_invalido': 'Dígito verifigeral está incor   'banco_invalido': 'Código do banco nãhecido',
+    'exemplo_formato': lo de linha digitáv0492.67014 1429 22946.570144 7 200000002990'
+}
+`
+### Ltrategy
+```pymport logging
+r = logging.getLogger('boleto_validation')alidation_ecode, error_type, details):
+    """
+    Log detalha debug de vdação
+    """
+    logger.error(fon failed - Input:put_code[:10]}..., Err {er Details: {details}")
+
+def log_validation_success(input_code, ):
+    """
+    Log de validação bem-
+    """
+    lf"Validation success - Type: {result_type}, Input: {inputde[:10]}...")
 ```
-
-## Error Handling
-
-### Validation Errors
-- **Format Errors**: Invalid length, non-numeric characters
-- **DV Errors**: Incorrect digit verification calculations
-- **Campo Livre Errors**: Invalid free field structure
-- **Configuration Errors**: Missing or invalid bank configuration
-
-### Error Response Strategy
-1. **Generation Phase**: Raise specific exceptions with detailed messages
-2. **Validation Phase**: Return validation results with error details
-3. **Storage Phase**: Only save valid barcodes, log invalid attempts
-4. **User Interface**: Display clear error messages with corrective actions
 
 ## Testing Strategy
 
 ### Unit Tests
-- Test each DV calculation method with known valid inputs
-- Test barcode generation with various configurations
-- Test validation methods with both valid and invalid barcodes
-- Test error handling for edge cases
-
-### Integration Tests
-- Test complete boleto generation flow
-- Test validation integration with database operations
-- Test error handling in views and services
-
-### Validation Tests
-- Test against known valid Caixa barcodes
-- Test with real bank configurations
-- Test edge cases (minimum/maximum values, special dates)
-
-### Performance Tests
-- Test batch validation of existing boletos
-- Test generation performance under load
-
-## Implementation Details
-
-### FEBRABAN Barcode Structure (44 digits)
-```
-Positions: AAABCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
-A (1-3):   Bank code (104 for Caixa)
-B (4):     Currency code (9 for Real)
-C (5):     General DV (calculated using modulo 11)
-D (6-44):  Due date factor (4) + Amount (10) + Free field (25)
-```
-
-### Caixa Free Field Structure (25 digits)
-```
-Positions: CCCCCCNNNNNNNNNNAAAAAADDD
-C (1-6):   Beneficiary code (6 digits)
-N (7-16):  Our number without DV (10 digits)
-A (17-22): Agency (4) + zeros (2)
-D (23-25): Wallet code (3 digits)
-```
-
-### DV Calculation Algorithms
-
-#### Modulo 11 (General DV)
 ```python
-def _calcular_dv_modulo11_febraban(self, codigo):
-    """FEBRABAN standard modulo 11 calculation"""
-    sequence = "4329876543298765432987654329876543298765432"
-    soma = 0
+class TearcodeValidatio
     
-    for i, digit in enumerate(reversed(codigo)):
-        if digit.isdigit():
-            produto = int(digit) * int(sequence[i % len(sequence)])
-            soma += produto
+    def setUp(       se.validator = BarcodeValidator()
     
-    resto = soma % 11
+ef tesha_digivel_caiida(self):
+    ""
+        inha digitável da  que esta
+        """
+        linha = "10492.67014 51500.171429 27 226000000      self.asserself.valiate(lin)
     
-    # FEBRABAN rules for modulo 11
-    if resto in [0, 10, 11]:
-        return 1
-    else:
-        return 11 - resto
+est_cod_caixa_valido(self) """
+        Testa código de barras corente
+        "
+        codigo = "10496000000029902670151500171429229465701"
+        self.assertTrue(self.validator.validateigo))
+    
+    def test_conversao_linha_para_codigo(self):
+        """
+     nversão entre formatos
+            linha = "10492.67011500.171429 229 7 22600000000"
+        codigo_esperado = "10497220299026701515001765701"      codigo_convertido = self.validator.get_codigo_ba
+        self.assertEqual(cigo_convertido, codigo_esperado)
+    
+    def test_rentes_bancos(self):
+        "" Testa validaç com difercos
+        """
+        # Bo do Brasil, Itaú, Bradesco, etc.
+        linhas_validas = [
+            "00190.00009 79001 00000.0 7 84600000001000"BB
+            "34191.79001 01043.520.150008 1 84600000001",  # Itaú
+     dicionar mais exemplos...
+        ]
+        for linha in linhas_v            wiubTest(linha=linha):
+                self.assertTrue(self.validator.va))
 ```
 
-#### Modulo 10 (Linha Digitável DVs)
+#Integn Tests
+``class TestBoletoValidationIntegration(Tesse):
+    
+    def test_processmento_linha_digitavel(self):
+        ""   Testa processamento complecom linha digitáve      """
+        # Criar de teste
+        boleto = BoletoGerado.objec
+           barras=72260000000299026701515001714292465701"      # ... outroos
+        )
+        
+      tar processamnha digitável
+        response = self.client./processar-pagamento/', {
+         'codigo_': '10492.67014 51500.171429 22946.570144 7 22600000002990'
+        })
+        elf.assertEqual(response.status_code,   data = response.json       self.assertTrue(data['success'])
+```
+
+## Performance Considons
+
+### Caching Validation Results
 ```python
-def _calcular_dv_modulo10_febraban(self, codigo):
-    """FEBRABAN standard modulo 10 calculation"""
-    soma = 0
-    multiplicador = 2
+o.core.cacht cache
+
+def valith_cache(input  """
+    Vcom cache para evitar reprocessamento
+    """
+    cache_key = f"barcode_validation_{hash(input_code)}"
+    result = cache.get(cache_key)
     
-    for digit in reversed(codigo):
-        if digit.isdigit():
-            produto = int(digit) * multiplicador
-            if produto > 9:
-                produto = sum(int(d) for d in str(produto))
-            soma += produto
-            multiplicador = 3 - multiplicador  # Alternate between 2 and 1
+    if result is None:
+        validator = BarcodeValidator()
+        result = validator.validate(input_code)
+        cache.set(cache_key, result, timeout=3600)  # 1 hora
     
-    resto = soma % 10
-    return 0 if resto == 0 else 10 - resto
+    return result
 ```
 
-## Migration Strategy
+### Optimization for Bulk Operations
+```python
+def validate_bulk_codes(codes_list):
+    """
+    Validação em lote otimizada
+    """
+    validator = BarcodeValidator()
+    results = []
+    
+    for code in codes_list:
+        try:
+            is_valid = validator.validate(code)
+            results.append({
+                'code': code,
+                'valid': is_valid,
+                'errors': validator.get_errors() if not is_valid else []
+            })
+        except Exception as e:
+            results.append({
+                'code': code,
+                'valid': False,
+                'errors': [str(e)]
+            })
+    
+    return results
+```
 
-### Phase 1: Fix Generation Service
-1. Update BoletoCaixaService with correct algorithms
-2. Add comprehensive validation
-3. Implement proper error handling
+## Success Criteria
 
-### Phase 2: Add Validation Layer
-1. Create BarcodeValidator class
-2. Integrate validation into generation flow
-3. Add validation to existing boletos
+### Technical Success
+- [ ] Linha digitável `10492.67014 51500.171429 22946.570144 7 22600000002990` validada corretamente
+- [ ] Conversão bidirecional entre linha digitável e código de barras funcionando
+- [ ] Validação de dígitos verificadores implementada conforme FEBRABAN
+- [ ] Suporte a todos os principais bancos brasileiros
+- [ ] Mensagens de erro claras e específicas
 
-### Phase 3: Fix Existing Data
-1. Identify invalid boletos in database
-2. Regenerate valid barcodes
-3. Update boleto records with valid data
+### User Experience Success
+- [ ] Códigos podem ser colados com ou sem formatação
+- [ ] Feedback imediato sobre erros de validação
+- [ ] Exemplos de formato correto mostrados em caso de erro
+- [ ] Performance mantida ou melhorada
 
-### Phase 4: Monitoring and Logging
-1. Add detailed logging
-2. Create monitoring dashboard
-3. Set up alerts for validation failures
-
-## Security Considerations
-
-- Validate all input parameters before processing
-- Sanitize bank configuration data
-- Log security-relevant events (failed validations, suspicious patterns)
-- Ensure generated barcodes don't expose sensitive information
-
-## Performance Considerations
-
-- Cache validation results for frequently accessed boletos
-- Optimize DV calculations for batch processing
-- Use database indexes for validation queries
-- Implement async processing for batch operations
+### Business Success
+- [ ] Redução significativa de erros de "código inválido"
+- [ ] Maior taxa de sucesso no processamento de boletos
+- [ ] Menos suporte necessário para problemas de validação
+- [ ] Compatibilidade com todos os bancos do sistema

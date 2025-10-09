@@ -6,7 +6,15 @@ Segue as especificações técnicas da CEF para boletos registrados
 from datetime import datetime, timedelta
 from django.utils import timezone
 import re
-from .barcode_validator import BarcodeValidator, BarcodeValidationResult
+try:
+    from .boleto_validator_unified import BoletoValidatorUnified
+    from .boleto_validator_base import ValidationResult
+    # Manter compatibilidade com código legado
+    from .barcode_validator import BarcodeValidator, BarcodeValidationResult
+except ImportError:
+    from boleto_validator_unified import BoletoValidatorUnified
+    from boleto_validator_base import ValidationResult
+    from barcode_validator import BarcodeValidator, BarcodeValidationResult
 
 
 class BoletoCaixaService:
@@ -15,7 +23,13 @@ class BoletoCaixaService:
     def __init__(self):
         self.codigo_banco = "104"  # Código da Caixa Econômica Federal
         self.moeda = "9"  # Real
-        self.validator = BarcodeValidator()  # Validador de códigos de barras
+        # Usar novo validador unificado com fallback para o legado
+        try:
+            self.validator = BoletoValidatorUnified()
+            self.use_unified_validator = True
+        except Exception:
+            self.validator = BarcodeValidator()
+            self.use_unified_validator = False
         
     def gerar_boleto_caixa(self, controle_financeiro, configuracao, dias_vencimento=30):
         """
@@ -405,16 +419,32 @@ class BoletoCaixaService:
     def _validar_boleto_completo(self, codigo_barras: str, linha_digitavel: str) -> BarcodeValidationResult:
         """
         Executa validação completa do boleto gerado
-        Utiliza o BarcodeValidator para verificar todos os aspectos do boleto
+        Utiliza o validador unificado com suporte ao layout SIGCB
         """
         try:
-            # Executar validação completa
-            validation_result = self.validator.validate_complete(codigo_barras, linha_digitavel)
-            
-            # Adicionar validações específicas da Caixa
-            self._validar_especificacoes_caixa(codigo_barras, validation_result)
-            
-            return validation_result
+            if self.use_unified_validator:
+                # Usar novo validador unificado
+                validation_result = self.validator.validate(codigo_barras)
+                
+                # Converter resultado para formato compatível
+                legacy_result = self._convert_to_legacy_result(validation_result)
+                
+                # Validar linha digitável se fornecida
+                if linha_digitavel:
+                    linha_validation = self.validator.validate(linha_digitavel)
+                    if not linha_validation.is_valid:
+                        for error in linha_validation.errors:
+                            legacy_result.add_error(f"Linha digitável: {error}")
+                
+                return legacy_result
+            else:
+                # Fallback para validador legado
+                validation_result = self.validator.validate_complete(codigo_barras, linha_digitavel)
+                
+                # Adicionar validações específicas da Caixa
+                self._validar_especificacoes_caixa(codigo_barras, validation_result)
+                
+                return validation_result
             
         except Exception as e:
             # Se houver erro na validação, criar resultado com erro
@@ -468,3 +498,26 @@ class BoletoCaixaService:
         Pode ser usado para verificar boletos já salvos no banco de dados
         """
         return self._validar_boleto_completo(codigo_barras, linha_digitavel)
+    
+    def _convert_to_legacy_result(self, unified_result: ValidationResult) -> BarcodeValidationResult:
+        """
+        Converte resultado do validador unificado para formato legado
+        Mantém compatibilidade com código existente
+        """
+        legacy_result = BarcodeValidationResult()
+        
+        # Copiar status de validação
+        legacy_result.is_valid = unified_result.is_valid
+        
+        # Copiar erros e avisos
+        for error in unified_result.errors:
+            legacy_result.add_error(error)
+        
+        for warning in unified_result.warnings:
+            legacy_result.add_warning(warning)
+        
+        # Copiar detalhes relevantes
+        for key, value in unified_result.details.items():
+            legacy_result.add_detail(key, value)
+        
+        return legacy_result

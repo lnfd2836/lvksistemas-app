@@ -2,56 +2,82 @@
 
 ## Introduction
 
-The system is generating invalid barcodes for boletos (Brazilian bank slips), causing payment processing failures. The current barcode generation logic in the BoletoCaixaService needs to be fixed to ensure compliance with FEBRABAN standards and Caixa Econômica Federal specifications. The invalid barcode prevents customers from making payments through banking apps, ATMs, and other payment channels.
+O sistema está apresentando erro de "código de barras inválido" ao processar boletos válidos da Caixa Econômica Federal. A linha digitável `10492.67014 51500.171429 22946.570144 7 22600000002990` está sendo rejeitada pelo sistema, mesmo sendo um código válido conforme padrão FEBRABAN.
+
+**Informação Crítica do Suporte Caixa:** O banco informou que é necessário usar o layout CAIXA SIGCB para processamento correto dos boletos.
+
+O objetivo é corrigir a validação de códigos de barras e linhas digitáveis para aceitar corretamente o layout CAIXA SIGCB e outros formatos válidos de boletos bancários brasileiros.
 
 ## Requirements
 
 ### Requirement 1
 
-**User Story:** As a system administrator, I want boletos to generate valid barcodes, so that customers can successfully make payments through any banking channel.
+**User Story:** Como usuário do sistema, eu quero que códigos de barras válidos sejam aceitos corretamente, para que eu possa processar pagamentos de boletos sem erros.
 
 #### Acceptance Criteria
 
-1. WHEN a boleto is generated THEN the system SHALL produce a valid 44-digit barcode that complies with FEBRABAN standards
-2. WHEN the barcode is validated THEN it SHALL pass all digit verification checks (DV calculations)
-3. WHEN the barcode is scanned by banking systems THEN it SHALL be recognized and processed successfully
+1. WHEN inserindo uma linha digitável válida THEN o sistema SHALL aceitar e processar corretamente
+2. WHEN a linha digitável segue o padrão FEBRABAN THEN o sistema SHALL validar os dígitos verificadores
+3. WHEN há espaços ou pontos na linha digitável THEN o sistema SHALL normalizar automaticamente
+4. IF a linha digitável é inválida THEN o sistema SHALL mostrar mensagem de erro específica
+5. WHEN convertendo linha digitável para código de barras THEN o sistema SHALL seguir as regras FEBRABAN
 
 ### Requirement 2
 
-**User Story:** As a customer, I want to be able to pay boletos using the barcode, so that I can complete my payments through my preferred banking channel.
+**User Story:** Como desenvolvedor, eu quero implementar validação robusta de códigos de barras com suporte ao layout CAIXA SIGCB, para que o sistema funcione corretamente com boletos da Caixa Econômica Federal.
 
 #### Acceptance Criteria
 
-1. WHEN I scan the barcode with my banking app THEN the system SHALL recognize the payment information correctly
-2. WHEN I enter the linha digitável manually THEN the system SHALL accept the payment without errors
-3. WHEN the payment is processed THEN the boleto status SHALL be updated correctly in the system
+1. WHEN processando boletos da Caixa THEN o sistema SHALL usar layout CAIXA SIGCB conforme orientação do banco
+2. WHEN validando dígito verificador THEN o sistema SHALL usar algoritmo módulo 10 e módulo 11 apropriado para cada banco
+3. WHEN identificando banco 104 (Caixa) THEN o sistema SHALL aplicar regras específicas do SIGCB
+4. IF o código tem formato SIGCB THEN o sistema SHALL processar campos específicos deste layout
+5. WHEN há erro de validação THEN o sistema SHALL log detalhado incluindo layout detectado
 
 ### Requirement 3
 
-**User Story:** As a developer, I want comprehensive validation of barcode generation, so that I can ensure all generated boletos are valid before they are sent to customers.
+**User Story:** Como administrador, eu quero feedback claro sobre erros de código de barras, para que eu possa orientar usuários sobre o formato correto.
 
 #### Acceptance Criteria
 
-1. WHEN a barcode is generated THEN the system SHALL validate the barcode format before saving
-2. WHEN validation fails THEN the system SHALL provide clear error messages indicating the specific issue
-3. WHEN debugging is needed THEN the system SHALL log detailed information about barcode generation steps
+1. WHEN há erro de formato THEN o sistema SHALL mostrar exemplo de formato correto
+2. WHEN dígito verificador está incorreto THEN o sistema SHALL indicar qual campo tem erro
+3. WHEN linha digitável é muito curta/longa THEN o sistema SHALL mostrar tamanho esperado
+4. IF há caracteres inválidos THEN o sistema SHALL indicar quais caracteres são permitidos
+5. WHEN validação falha THEN o sistema SHALL sugerir verificar se código foi digitado corretamente
 
 ### Requirement 4
 
-**User Story:** As a system administrator, I want to identify and fix existing invalid boletos, so that customers with pending payments can complete their transactions.
+**User Story:** Como usuário, eu quero que o sistema aceite diferentes formatos de entrada, para que eu possa colar códigos com ou sem formatação.
 
 #### Acceptance Criteria
 
-1. WHEN the system runs a validation check THEN it SHALL identify all boletos with invalid barcodes
-2. WHEN invalid boletos are found THEN the system SHALL provide options to regenerate valid barcodes
-3. WHEN boletos are regenerated THEN the system SHALL preserve all original payment information and dates
+1. WHEN colando código com espaços THEN o sistema SHALL remover espaços automaticamente
+2. WHEN código tem pontos e espaços THEN o sistema SHALL normalizar para apenas números
+3. WHEN há quebras de linha THEN o sistema SHALL limpar automaticamente
+4. IF código tem 44 dígitos THEN o sistema SHALL aceitar como código de barras direto
+5. WHEN código tem 47-48 dígitos THEN o sistema SHALL tratar como linha digitável
 
 ### Requirement 5
 
-**User Story:** As a quality assurance tester, I want automated tests for barcode generation, so that I can verify the system generates valid barcodes consistently.
+**User Story:** Como sistema, eu quero converter corretamente entre linha digitável e código de barras, para que ambos formatos sejam suportados.
 
 #### Acceptance Criteria
 
-1. WHEN tests are executed THEN the system SHALL validate barcode generation for different scenarios
-2. WHEN edge cases are tested THEN the system SHALL handle them gracefully without generating invalid barcodes
-3. WHEN regression testing is performed THEN the system SHALL maintain barcode validity across code changes
+1. WHEN recebendo linha digitável THEN o sistema SHALL converter para código de barras
+2. WHEN recebendo código de barras THEN o sistema SHALL validar diretamente
+3. WHEN convertendo formatos THEN o sistema SHALL preservar todos os dados
+4. IF conversão falha THEN o sistema SHALL manter formato original para validação
+5. WHEN validando qualquer formato THEN o sistema SHALL usar mesmas regras de negócio
+### R
+equirement 6
+
+**User Story:** Como sistema, eu quero implementar suporte específico ao layout CAIXA SIGCB, para que boletos da Caixa Econômica Federal sejam processados corretamente.
+
+#### Acceptance Criteria
+
+1. WHEN detectando banco 104 (Caixa) THEN o sistema SHALL usar layout SIGCB
+2. WHEN processando layout SIGCB THEN o sistema SHALL interpretar campos conforme especificação da Caixa
+3. WHEN validando SIGCB THEN o sistema SHALL usar algoritmos de validação específicos deste layout
+4. IF boleto é SIGCB THEN o sistema SHALL extrair nosso número, vencimento e valor corretamente
+5. WHEN há dúvida sobre layout THEN o sistema SHALL priorizar SIGCB para banco 104
