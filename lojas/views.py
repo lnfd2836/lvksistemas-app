@@ -143,6 +143,8 @@ def criar_loja(request):
                                     status='pendente'
                                 )
                                 
+                                print(f"DEBUG: Boleto da Caixa gerado com sucesso para {loja.nome}: {boleto.numero_boleto}")
+                                
                             else:
                                 # Lógica para outros bancos (mantida para compatibilidade)
                                 numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
@@ -164,6 +166,9 @@ def criar_loja(request):
                         except Exception as boleto_error:
                             # Se houver erro na geração do boleto, log mas não falha a criação da loja
                             logger.error(f"Erro ao gerar boleto para loja {loja.nome}: {str(boleto_error)}")
+                            print(f"DEBUG: Erro na geração de boleto para {loja.nome}: {str(boleto_error)}")
+                            import traceback
+                            traceback.print_exc()
                             boleto = None
                         
                         # Cria notificação sobre o boleto (se foi criado com sucesso)

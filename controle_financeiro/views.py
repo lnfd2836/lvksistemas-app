@@ -670,8 +670,21 @@ def gerar_boleto(request, controle_id):
         
         return redirect('controle_financeiro:detalhar_controle', controle_id=controle_id)
     
-    # Lista configurações ativas
+    # Lista configurações ativas - forçar Caixa se disponível
     configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
+    
+    # Debug: garantir que a Caixa apareça
+    if not configuracoes.exists():
+        # Se não há configurações ativas, ativar a Caixa
+        config_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco="104").first()
+        if config_caixa:
+            config_caixa.ativo = True
+            config_caixa.save()
+            configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
+    
+    print(f"DEBUG: Configurações encontradas para template: {configuracoes.count()}")
+    for config in configuracoes:
+        print(f"  - {config.nome_banco} (ID: {config.id})")
     
     context = {
         'controle': controle,
