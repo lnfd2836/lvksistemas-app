@@ -596,6 +596,11 @@ def gerar_boleto(request, controle_id):
         config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
         
         try:
+            # Forçar uso da Caixa se disponível
+            config_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco="104", ativo=True).first()
+            if config_caixa:
+                config = config_caixa
+            
             # Verificar se é Caixa Econômica Federal
             if config.codigo_banco == "104":
                 # Usar serviço específico da Caixa
@@ -631,6 +636,7 @@ def gerar_boleto(request, controle_id):
                     success_msg += warning_msg
                 
                 messages.success(request, success_msg)
+                numero_boleto = dados_boleto['numero_boleto']  # Para usar no redirect
                 
             else:
                 # Gera número do boleto (simulado para outros bancos)
@@ -655,7 +661,6 @@ def gerar_boleto(request, controle_id):
             messages.error(request, f'Erro ao gerar boleto: {str(e)}')
             return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
         
-        messages.success(request, f'Boleto {numero_boleto} gerado com sucesso!')
         return redirect('controle_financeiro:detalhar_controle', controle_id=controle_id)
     
     # Lista configurações ativas

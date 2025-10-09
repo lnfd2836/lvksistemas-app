@@ -113,37 +113,71 @@ def criar_loja(request):
                     from lojas.utils.plan_mapping import create_both_financial_records
                     controle_financeiro, assinatura_loja = create_both_financial_records(loja, plano_comercial)
                     
-                    # Gera boleto automaticamente usando a configuração padrão
+                    # Gera boleto automaticamente usando o serviço correto
                     configuracao_boleto = ConfiguracaoBoleto.objects.filter(ativo=True).first()
                     if configuracao_boleto:
-                        # Gera número do boleto
-                        numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
-                        linha_digitavel = f"23791{configuracao_boleto.agencia.zfill(4)}{configuracao_boleto.conta.zfill(8)}{numero_boleto.zfill(10)}"
-                        codigo_barras = linha_digitavel.replace(' ', '')
-                        
-                        # Cria o boleto
-                        boleto = BoletoGerado.objects.create(
-                            controle_financeiro=controle_financeiro,
-                            configuracao=configuracao_boleto,
-                            numero_boleto=numero_boleto,
-                            linha_digitavel=linha_digitavel,
-                            codigo_barras=codigo_barras,
-                            valor=plano_comercial.preco_mensal,
-                            data_vencimento=timezone.now() + timedelta(days=7),
-                            status='pendente'
-                        )
-                        
-                        # Cria notificação sobre o boleto
                         try:
-                            Notificacao.objects.create(
-                                titulo=f"Boleto gerado para {loja.nome}",
-                                mensagem=f"Boleto {numero_boleto} gerado automaticamente. Valor: R$ {plano_comercial.preco_mensal}",
-                                tipo='info',
-                                prioridade='media',
-                                usuario=request.user
-                            )
-                        except:
-                            pass
+                            # Verificar se é Caixa Econômica Federal
+                            if configuracao_boleto.codigo_banco == "104":
+                                # Usar serviço específico da Caixa
+                                from controle_financeiro.boleto_caixa_service import BoletoCaixaService
+                                
+                                caixa_service = BoletoCaixaService()
+                                dados_boleto = caixa_service.gerar_boleto_caixa(controle_financeiro, configuracao_boleto, dias_vencimento=7)
+                                
+                                # Verificar se o boleto foi validado com sucesso
+                                if not dados_boleto.get('is_valid', False):
+                                    validation_errors = dados_boleto.get('validation_result', {}).get('errors', [])
+                                    error_msg = '; '.join(validation_errors) if validation_errors else 'Erro de validação desconhecido'
+                                    raise ValueError(f"Boleto gerado é inválido: {error_msg}")
+                                
+                                # Criar boleto com dados válidos da Caixa
+                                boleto = BoletoGerado.objects.create(
+                                    controle_financeiro=controle_financeiro,
+                                    configuracao=configuracao_boleto,
+                                    numero_boleto=dados_boleto['numero_boleto'],
+                                    linha_digitavel=dados_boleto['linha_digitavel'],
+                                    codigo_barras=dados_boleto['codigo_barras'],
+                                    valor=dados_boleto['valor'],
+                                    data_vencimento=dados_boleto['data_vencimento'],
+                                    status='pendente'
+                                )
+                                
+                            else:
+                                # Lógica para outros bancos (mantida para compatibilidade)
+                                numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                                linha_digitavel = f"23791{configuracao_boleto.agencia.zfill(4)}{configuracao_boleto.conta.zfill(8)}{numero_boleto.zfill(10)}"
+                                codigo_barras = linha_digitavel.replace(' ', '')
+                                
+                                # Cria o boleto
+                                boleto = BoletoGerado.objects.create(
+                                    controle_financeiro=controle_financeiro,
+                                    configuracao=configuracao_boleto,
+                                    numero_boleto=numero_boleto,
+                                    linha_digitavel=linha_digitavel,
+                                    codigo_barras=codigo_barras,
+                                    valor=plano_comercial.preco_mensal,
+                                    data_vencimento=timezone.now() + timedelta(days=7),
+                                    status='pendente'
+                                )
+                                
+                        except Exception as boleto_error:
+                            # Se houver erro na geração do boleto, log mas não falha a criação da loja
+                            logger.error(f"Erro ao gerar boleto para loja {loja.nome}: {str(boleto_error)}")
+                            boleto = None
+                        
+                        # Cria notificação sobre o boleto (se foi criado com sucesso)
+                        if boleto:
+                            try:
+                                Notificacao.objects.create(
+                                    titulo=f"Boleto gerado para {loja.nome}",
+                                    mensagem=f"Boleto {boleto.numero_boleto} gerado automaticamente. Valor: R$ {boleto.valor}",
+                                    tipo='info',
+                                    prioridade='media',
+                                    usuario=request.user
+                                )
+                            except:
+                                pass
                     
                 except Exception as e:
                     # Log do erro e reverte a transação
