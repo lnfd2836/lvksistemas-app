@@ -403,6 +403,70 @@ def configurar_boletos(request):
 
 @login_required
 @user_passes_test(is_superuser)
+def configurar_caixa(request):
+    """Configuração específica para Caixa Econômica Federal"""
+    
+    if request.method == 'POST':
+        try:
+            # Validação específica da Caixa
+            agencia = request.POST.get('agencia', '').strip()
+            if not agencia or len(agencia) != 4 or not agencia.isdigit():
+                messages.error(request, 'Agência deve ter exatamente 4 dígitos numéricos.')
+                return render(request, 'controle_financeiro/configurar_caixa.html')
+            
+            conta = request.POST.get('conta', '').strip()
+            if not conta or not conta.isdigit():
+                messages.error(request, 'Conta deve conter apenas números.')
+                return render(request, 'controle_financeiro/configurar_caixa.html')
+            
+            carteira = request.POST.get('carteira', '').strip()
+            if carteira not in ['1', '2', '14', '24']:
+                messages.error(request, 'Carteira deve ser 1, 2, 14 ou 24 para a Caixa.')
+                return render(request, 'controle_financeiro/configurar_caixa.html')
+            
+            codigo_cedente = request.POST.get('codigo_cedente', '').strip()
+            if not codigo_cedente:
+                messages.error(request, 'Código do cedente é obrigatório para a Caixa.')
+                return render(request, 'controle_financeiro/configurar_caixa.html')
+            
+            # Desativar configurações existentes
+            ConfiguracaoBoleto.objects.update(ativo=False)
+            
+            # Criar nova configuração da Caixa
+            config = ConfiguracaoBoleto.objects.create(
+                nome_banco="Caixa Econômica Federal",
+                codigo_banco="104",
+                agencia=agencia,
+                conta=conta,
+                carteira=carteira,
+                codigo_cedente=codigo_cedente,
+                convenio=request.POST.get('convenio', ''),
+                nome_beneficiario=request.POST.get('nome_beneficiario'),
+                cnpj_beneficiario=request.POST.get('cnpj_beneficiario'),
+                endereco_beneficiario=request.POST.get('endereco_beneficiario'),
+                instrucoes=request.POST.get('instrucoes', ''),
+                multa=Decimal(request.POST.get('multa', 2.00)),
+                juros=Decimal(request.POST.get('juros', 1.00)),
+                desconto=Decimal(request.POST.get('desconto', 0.00)),
+                ativo=True
+            )
+            
+            messages.success(
+                request, 
+                f'✅ Configuração da Caixa salva com sucesso! '
+                f'Agência: {agencia}, Conta: {conta}, Carteira: {carteira}'
+            )
+            
+            return redirect('controle_financeiro:configurar_boletos')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao salvar configuração da Caixa: {str(e)}')
+    
+    return render(request, 'controle_financeiro/configurar_caixa.html')
+
+
+@login_required
+@user_passes_test(is_superuser)
 def editar_configuracao_boleto(request, config_id):
     """Edita uma configuração de boleto"""
     

@@ -25,6 +25,7 @@ urlpatterns = [
     
     # Configuração de boletos
     path('boletos/configurar/', views.configurar_boletos, name='configurar_boletos'),
+    path('boletos/configurar/caixa/', views.configurar_caixa, name='configurar_caixa'),
     path('boletos/configurar/<int:config_id>/', views.editar_configuracao_boleto, name='editar_configuracao_boleto'),
     path('boletos/gerar/<int:controle_id>/', views.gerar_boleto, name='gerar_boleto'),
     path('boletos/', views.listar_boletos, name='listar_boletos'),
