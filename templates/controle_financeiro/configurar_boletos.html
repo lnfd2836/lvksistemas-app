@@ -40,24 +40,18 @@
                 Ag: {{ configuracao_ativa.agencia }} / Conta: {{ configuracao_ativa.conta }} -
                 {{ configuracao_ativa.nome_beneficiario }}
             </div>
-            <button type="button" class="btn btn-outline-success btn-sm" onclick="editarConfiguracao()">
-                <i class="fas fa-edit"></i> Editar Configuração
-            </button>
+            <span class="badge bg-success">
+                <i class="fas fa-check"></i> Configurado
+            </span>
         </div>
     </div>
 </div>
 {% else %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="alert alert-warning d-flex justify-content-between align-items-center">
-            <div>
-                <h6 class="mb-1"><i class="fas fa-exclamation-triangle"></i> Configuração Necessária</h6>
-                <p class="mb-0">Você precisa configurar os dados bancários para que as lojas possam gerar boletos de
-                    pagamento.</p>
-            </div>
-            <button type="button" class="btn btn-primary" onclick="mostrarFormulario()">
-                <i class="fas fa-plus"></i> Configurar Agora
-            </button>
+        <div class="alert alert-info">
+            <h6 class="mb-1"><i class="fas fa-info-circle"></i> Configure os Dados Bancários</h6>
+            <p class="mb-0">Preencha os dados abaixo para configurar a Caixa Econômica Federal como banco padrão para recebimento de pagamentos.</p>
         </div>
     </div>
 </div>
@@ -66,13 +60,12 @@
 <!-- Formulário de Configuração -->
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="config-form-container{% if has_configurations and not show_form %} config-form-hidden{% else %} config-form-visible{% endif %}"
-            id="config-form-container" {% if has_configurations and not show_form %}style="display: none;" {% endif %}>
+        <div class="config-form-container config-form-visible" id="config-form-container">
             <div class="card shadow">
                 <div class="card-header py-3">
                     <h5 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-university"></i>
-                        Configuração da Caixa Econômica Federal
+                        Dados Bancários - Caixa Econômica Federal
                     </h5>
                 </div>
                 <div class="card-body">

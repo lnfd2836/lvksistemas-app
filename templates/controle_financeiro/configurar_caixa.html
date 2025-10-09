@@ -154,9 +154,9 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="convenio" class="form-label">Número do Convênio <span class="text-danger">*</span></label>
+                            <label for="convenio" class="form-label">Número do Convênio</label>
                             <input type="text" class="form-control" id="convenio" name="convenio" 
-                                   placeholder="1234567" required
+                                   placeholder="1234567"
                                    value="{% if configuracao_existente %}{{ configuracao_existente.convenio }}{% elif dados_form %}{{ dados_form.convenio }}{% endif %}">
                             <div class="form-text">Número do convênio de cobrança</div>
                         </div>

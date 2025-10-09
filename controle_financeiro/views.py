@@ -411,6 +411,7 @@ def configurar_caixa(request):
     configuracao_existente = ConfiguracaoBoleto.objects.filter(codigo_banco='104').first()
     
     if request.method == 'POST':
+        # Debug removido para produção
         try:
             # Validação de campos obrigatórios
             campos_obrigatorios = {
@@ -418,10 +419,15 @@ def configurar_caixa(request):
                 'conta': 'Conta',
                 'carteira': 'Carteira',
                 'codigo_cedente': 'Código do Cedente',
-                'convenio': 'Número do Convênio',
                 'nome_beneficiario': 'Nome do Beneficiário',
                 'cnpj_beneficiario': 'CNPJ do Beneficiário',
                 'endereco_beneficiario': 'Endereço do Beneficiário'
+            }
+            
+            # Campos opcionais
+            campos_opcionais = {
+                'convenio': 'Número do Convênio',
+                'instrucoes': 'Instruções'
             }
             
             dados = {}
@@ -433,6 +439,11 @@ def configurar_caixa(request):
                 if not valor:
                     erros.append(f'{nome} é obrigatório')
                 dados[campo] = valor
+            
+            # Processar campos opcionais
+            for campo, nome in campos_opcionais.items():
+                valor = request.POST.get(campo, '').strip()
+                dados[campo] = valor if valor else None
             
             # Validações específicas
             if dados['agencia'] and (len(dados['agencia']) != 4 or not dados['agencia'].isdigit()):
@@ -465,7 +476,7 @@ def configurar_caixa(request):
                 configuracao_existente.conta = dados['conta']
                 configuracao_existente.carteira = dados['carteira']
                 configuracao_existente.codigo_cedente = dados['codigo_cedente']
-                configuracao_existente.convenio = dados['convenio']
+                configuracao_existente.convenio = dados['convenio'] or None
                 configuracao_existente.nome_beneficiario = dados['nome_beneficiario']
                 configuracao_existente.cnpj_beneficiario = dados['cnpj_beneficiario']
                 configuracao_existente.endereco_beneficiario = dados['endereco_beneficiario']
@@ -490,7 +501,7 @@ def configurar_caixa(request):
                     conta=dados['conta'],
                     carteira=dados['carteira'],
                     codigo_cedente=dados['codigo_cedente'],
-                    convenio=dados['convenio'],
+                    convenio=dados['convenio'] or None,
                     nome_beneficiario=dados['nome_beneficiario'],
                     cnpj_beneficiario=dados['cnpj_beneficiario'],
                     endereco_beneficiario=dados['endereco_beneficiario'],
@@ -682,9 +693,7 @@ def gerar_boleto(request, controle_id):
             config_caixa.save()
             configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
     
-    print(f"DEBUG: Configurações encontradas para template: {configuracoes.count()}")
-    for config in configuracoes:
-        print(f"  - {config.nome_banco} (ID: {config.id})")
+    # Logs removidos para produção
     
     context = {
         'controle': controle,
