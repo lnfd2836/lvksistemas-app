@@ -998,10 +998,18 @@ def imprimir_boleto_pdf(request, boleto_id):
             return redirect('dashboard:principal')
     
     try:
-        from .pdf_service import BoletoPDFService
-        
-        pdf_service = BoletoPDFService()
-        return pdf_service.gerar_pdf_boleto(boleto)
+        # Verificar se é boleto da Caixa para usar layout SIGCB
+        if boleto.configuracao.codigo_banco == "104":
+            from .pdf_service_sigcb import BoletoPDFServiceSIGCB
+            
+            pdf_service = BoletoPDFServiceSIGCB()
+            return pdf_service.gerar_pdf_boleto_sigcb(boleto)
+        else:
+            # Usar layout padrão para outros bancos
+            from .pdf_service import BoletoPDFService
+            
+            pdf_service = BoletoPDFService()
+            return pdf_service.gerar_pdf_boleto(boleto)
         
     except Exception as e:
         messages.error(request, f'Erro ao gerar PDF do boleto: {str(e)}')

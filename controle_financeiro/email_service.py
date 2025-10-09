@@ -71,13 +71,20 @@ class BoletoEmailService:
             # Anexar PDF se solicitado
             if incluir_pdf:
                 try:
-                    from .pdf_service import BoletoPDFService
-                    
-                    pdf_service = BoletoPDFService()
+                    # Usar layout SIGCB para boletos da Caixa
+                    if boleto.configuracao.codigo_banco == "104":
+                        from .pdf_service_sigcb import BoletoPDFServiceSIGCB
+                        
+                        pdf_service = BoletoPDFServiceSIGCB()
+                        pdf_response = pdf_service.gerar_pdf_boleto_sigcb(boleto)
+                    else:
+                        from .pdf_service import BoletoPDFService
+                        
+                        pdf_service = BoletoPDFService()
+                        pdf_response = pdf_service.gerar_pdf_boleto(boleto)
                     
                     # Gerar PDF em memória
                     buffer = BytesIO()
-                    pdf_response = pdf_service.gerar_pdf_boleto(boleto)
                     
                     # Extrair conteúdo do PDF da resposta HTTP
                     if hasattr(pdf_response, 'content'):
