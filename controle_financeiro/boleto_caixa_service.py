@@ -6,6 +6,7 @@ Segue as especificações técnicas da CEF para boletos registrados
 from datetime import datetime, timedelta
 from django.utils import timezone
 import re
+from .barcode_validator import BarcodeValidator, BarcodeValidationResult
 
 
 class BoletoCaixaService:
@@ -14,6 +15,7 @@ class BoletoCaixaService:
     def __init__(self):
         self.codigo_banco = "104"  # Código da Caixa Econômica Federal
         self.moeda = "9"  # Real
+        self.validator = BarcodeValidator()  # Validador de códigos de barras
         
     def gerar_boleto_caixa(self, controle_financeiro, configuracao, dias_vencimento=30):
         """
@@ -51,14 +53,28 @@ class BoletoCaixaService:
         # Gerar linha digitável
         linha_digitavel = self._gerar_linha_digitavel_caixa(codigo_barras)
         
-        return {
+        # Validação completa do boleto gerado
+        validation_result = self._validar_boleto_completo(codigo_barras, linha_digitavel)
+        
+        # Se a validação falhou, lançar erro com detalhes
+        if not validation_result.is_valid:
+            error_details = "; ".join(validation_result.errors)
+            raise ValueError(f"Boleto gerado é inválido: {error_details}")
+        
+        # Preparar resultado com informações de validação
+        resultado = {
             'numero_boleto': nosso_numero,
             'codigo_barras': codigo_barras,
             'linha_digitavel': linha_digitavel,
             'data_vencimento': data_vencimento,
             'valor': controle_financeiro.valor_mensal,
-            'fator_vencimento': fator_vencimento
+            'fator_vencimento': fator_vencimento,
+            'validation_result': validation_result,
+            'is_valid': validation_result.is_valid,
+            'validation_warnings': validation_result.warnings
         }
+        
+        return resultado
     
     def _validar_configuracao_caixa(self, configuracao):
         """Valida se a configuração está adequada para a Caixa"""
@@ -84,31 +100,47 @@ class BoletoCaixaService:
         """
         Gera nosso número para a Caixa
         Formato: NNNNNNNNNN (10 dígitos) - APENAS NÚMEROS
+        Para a Caixa, o nosso número é sequencial sem DV no campo livre
         """
         
-        # Para teste, usar timestamp como sequencial
+        # Gerar sequencial baseado em timestamp para garantir unicidade
         timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-        sequencial = timestamp[-10:].zfill(10)  # Últimos 10 dígitos - APENAS NÚMEROS
+        microseconds = str(timezone.now().microsecond).zfill(6)[:4]  # 4 dígitos dos microsegundos
         
-        # Nosso número completo - APENAS NÚMEROS (sem DV por enquanto)
-        nosso_numero = sequencial
+        # Combinar timestamp + microsegundos para criar sequencial único
+        sequencial_completo = f"{timestamp}{microseconds}"
+        
+        # Pegar os últimos 10 dígitos para formar o nosso número
+        nosso_numero = sequencial_completo[-10:].zfill(10)
+        
+        # Garantir que seja apenas números
+        nosso_numero = re.sub(r'[^0-9]', '0', nosso_numero)
         
         return nosso_numero
     
     def _calcular_dv_nosso_numero_caixa(self, nosso_numero):
-        """Calcula dígito verificador do nosso número da Caixa (Módulo 11)"""
+        """
+        Calcula dígito verificador do nosso número da Caixa (Módulo 11)
+        Para a Caixa, o DV do nosso número segue regras específicas
+        """
         
+        # Sequência de multiplicação para módulo 11
         sequencia = "4329876543298765432987654329876543298765"
         soma = 0
         
         for i, digito in enumerate(reversed(nosso_numero)):
             if digito.isdigit():
-                produto = int(digito) * int(sequencia[i % len(sequencia)])
+                multiplicador = int(sequencia[i % len(sequencia)])
+                produto = int(digito) * multiplicador
                 soma += produto
         
         resto = soma % 11
         
-        if resto == 0 or resto == 1:
+        # Regras específicas da Caixa para DV do nosso número:
+        # Se resto = 0 ou 1, DV = 0
+        # Se resto = 10, DV = 0 (diferente do DV geral)
+        # Caso contrário, DV = 11 - resto
+        if resto in [0, 1, 10]:
             return 0
         else:
             return 11 - resto
@@ -141,55 +173,130 @@ class BoletoCaixaService:
         # Valor em centavos (10 dígitos)
         valor_centavos = f"{int(valor * 100):010d}"
         
-        # Campo livre da Caixa (25 posições)
-        # Formato: CCCCCC NNNNNNNNNN AAAAAA DDD
-        # C = Código do cedente (6)
-        # N = Nosso número sem DV (10) 
-        # A = Agência (4) + zeros (2)
-        # D = Carteira (3)
+        # Campo livre da Caixa (25 posições) - Formato específico da CEF
+        # Posições 20-44 do código de barras (25 dígitos)
+        # Formato: CCCCCC NNNNNNNNNN DDDDDD CCC
+        # C (1-6):   Código do cedente/beneficiário (6 dígitos)
+        # N (7-16):  Nosso número sem DV (10 dígitos)
+        # D (17-22): Agência (4 dígitos) + Conta (2 primeiros dígitos)
+        # C (23-25): Carteira (3 dígitos)
         
+        # Código do cedente (6 dígitos)
         codigo_cedente = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or '')).zfill(6)[:6]
-        nosso_numero_limpo = re.sub(r'[^0-9]', '', str(nosso_numero))[-10:].zfill(10)
-        agencia_campo = f"{re.sub(r'[^0-9]', '', str(configuracao.agencia)).zfill(4)}00"
-        carteira_campo = re.sub(r'[^0-9]', '', str(configuracao.carteira)).zfill(3)
         
-        campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_campo}{carteira_campo}"
+        # Nosso número sem DV (10 dígitos)
+        nosso_numero_limpo = re.sub(r'[^0-9]', '', str(nosso_numero))[-10:].zfill(10)
+        
+        # Agência (4 dígitos) + primeiros 2 dígitos da conta
+        agencia_limpa = re.sub(r'[^0-9]', '', str(configuracao.agencia)).zfill(4)[:4]
+        conta_limpa = re.sub(r'[^0-9]', '', str(configuracao.conta)).zfill(6)[:2]  # Primeiros 2 dígitos da conta
+        agencia_conta_campo = f"{agencia_limpa}{conta_limpa}"
+        
+        # Carteira (3 dígitos)
+        carteira_campo = re.sub(r'[^0-9]', '', str(configuracao.carteira)).zfill(3)[:3]
+        
+        # Montar campo livre: cedente(6) + nosso_numero(10) + agencia_conta(6) + carteira(3) = 25 dígitos
+        campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_conta_campo}{carteira_campo}"
         
         # Garantir que o campo livre tenha exatamente 25 dígitos
         campo_livre = campo_livre[:25].ljust(25, '0')
         
-        # Montar código sem DV
+        # Validar campo livre antes de continuar
+        if len(campo_livre) != 25:
+            raise ValueError(f"Campo livre deve ter exatamente 25 dígitos, mas tem {len(campo_livre)}: {campo_livre}")
+        
+        # Montar código sem DV para cálculo do DV geral
+        # Formato: banco(3) + moeda(1) + vencimento(4) + valor(10) + campo_livre(25) = 43 dígitos
         codigo_sem_dv = f"{self.codigo_banco}{self.moeda}{fator_vencimento}{valor_centavos}{campo_livre}"
         
-        # Calcular DV geral
+        # Validar código sem DV
+        if len(codigo_sem_dv) != 43:
+            raise ValueError(f"Código sem DV deve ter 43 dígitos, mas tem {len(codigo_sem_dv)}: {codigo_sem_dv}")
+        
+        # Calcular DV geral usando módulo 11 FEBRABAN
         dv_geral = self._calcular_dv_codigo_barras(codigo_sem_dv)
         
-        # Código de barras completo
+        # Montar código de barras completo
+        # Formato: banco(3) + moeda(1) + dv(1) + vencimento(4) + valor(10) + campo_livre(25) = 44 dígitos
         codigo_barras = f"{self.codigo_banco}{self.moeda}{dv_geral}{fator_vencimento}{valor_centavos}{campo_livre}"
         
-        # Garantir que tenha exatamente 44 dígitos
-        codigo_barras = codigo_barras[:44].ljust(44, '0')
-        
-        # Validar tamanho final
+        # Validação final rigorosa
         if len(codigo_barras) != 44:
-            raise ValueError(f"Código de barras deve ter 44 dígitos, mas tem {len(codigo_barras)}: {codigo_barras}")
+            raise ValueError(f"Código de barras deve ter exatamente 44 dígitos, mas tem {len(codigo_barras)}: {codigo_barras}")
+        
+        if not codigo_barras.isdigit():
+            raise ValueError(f"Código de barras deve conter apenas dígitos: {codigo_barras}")
+        
+        # Validar o código de barras gerado
+        self._validar_codigo_barras_gerado(codigo_barras)
         
         return codigo_barras
     
-    def _calcular_dv_codigo_barras(self, codigo):
-        """Calcula dígito verificador do código de barras (Módulo 11)"""
+    def _validar_codigo_barras_gerado(self, codigo_barras):
+        """
+        Valida se o código de barras gerado está correto
+        Verifica formato, DV e estrutura
+        """
         
-        sequencia = "432987654329876543298765432987654329876543298765432"
+        if len(codigo_barras) != 44:
+            raise ValueError(f"Código de barras inválido: deve ter 44 dígitos, tem {len(codigo_barras)}")
+        
+        if not codigo_barras.isdigit():
+            raise ValueError(f"Código de barras inválido: deve conter apenas números")
+        
+        # Extrair componentes para validação
+        banco = codigo_barras[0:3]
+        moeda = codigo_barras[3:4]
+        dv_informado = int(codigo_barras[4:5])
+        vencimento = codigo_barras[5:9]
+        valor = codigo_barras[9:19]
+        campo_livre = codigo_barras[19:44]
+        
+        # Validar banco
+        if banco != "104":
+            raise ValueError(f"Código do banco inválido: esperado 104, recebido {banco}")
+        
+        # Validar moeda
+        if moeda != "9":
+            raise ValueError(f"Código da moeda inválido: esperado 9, recebido {moeda}")
+        
+        # Validar campo livre
+        if len(campo_livre) != 25:
+            raise ValueError(f"Campo livre inválido: deve ter 25 dígitos, tem {len(campo_livre)}")
+        
+        # Recalcular DV para validação
+        codigo_sem_dv = f"{banco}{moeda}{vencimento}{valor}{campo_livre}"
+        dv_calculado = self._calcular_dv_codigo_barras(codigo_sem_dv)
+        
+        if dv_informado != dv_calculado:
+            raise ValueError(
+                f"DV inválido: calculado {dv_calculado}, informado {dv_informado}. "
+                f"Código sem DV: {codigo_sem_dv}"
+            )
+    
+    def _calcular_dv_codigo_barras(self, codigo):
+        """
+        Calcula dígito verificador do código de barras (Módulo 11 FEBRABAN)
+        Sequência de multiplicação: 4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2
+        """
+        
+        # Sequência de multiplicação padrão FEBRABAN para módulo 11
+        sequencia = "4329876543298765432987654329876543298765432"
         soma = 0
         
+        # Multiplica cada dígito pela sequência correspondente (da direita para esquerda)
         for i, digito in enumerate(reversed(codigo)):
             if digito.isdigit():
-                produto = int(digito) * int(sequencia[i % len(sequencia)])
+                multiplicador = int(sequencia[i % len(sequencia)])
+                produto = int(digito) * multiplicador
                 soma += produto
         
         resto = soma % 11
         
-        if resto == 0 or resto == 1 or resto == 10:
+        # Regras FEBRABAN para módulo 11:
+        # Se resto = 0, 10 ou 11, DV = 1
+        # Caso contrário, DV = 11 - resto
+        if resto in [0, 10, 11]:
             return 1
         else:
             return 11 - resto
@@ -235,17 +342,95 @@ class BoletoCaixaService:
         return f"{campo1} {campo2} {campo3} {campo4} {campo5}"
     
     def _calcular_dv_modulo10(self, codigo):
-        """Calcula dígito verificador módulo 10"""
+        """
+        Calcula dígito verificador módulo 10 (FEBRABAN)
+        Multiplica alternadamente por 2 e 1, da direita para esquerda
+        Se o produto for maior que 9, soma os dígitos
+        """
         
-        sequencia = "2121212121212121212121212121212121212121"
         soma = 0
+        multiplicador = 2  # Começa com 2
         
-        for i, digito in enumerate(reversed(codigo)):
+        # Processa da direita para esquerda
+        for digito in reversed(codigo):
             if digito.isdigit():
-                produto = int(digito) * int(sequencia[i % len(sequencia)])
+                produto = int(digito) * multiplicador
+                
+                # Se produto > 9, soma os dígitos (ex: 18 = 1+8 = 9)
                 if produto > 9:
                     produto = sum(int(d) for d in str(produto))
+                
                 soma += produto
+                
+                # Alterna multiplicador entre 2 e 1
+                multiplicador = 3 - multiplicador  # 2->1, 1->2
         
         resto = soma % 10
         return 0 if resto == 0 else 10 - resto
+    
+    def _validar_boleto_completo(self, codigo_barras: str, linha_digitavel: str) -> BarcodeValidationResult:
+        """
+        Executa validação completa do boleto gerado
+        Utiliza o BarcodeValidator para verificar todos os aspectos do boleto
+        """
+        try:
+            # Executar validação completa
+            validation_result = self.validator.validate_complete(codigo_barras, linha_digitavel)
+            
+            # Adicionar validações específicas da Caixa
+            self._validar_especificacoes_caixa(codigo_barras, validation_result)
+            
+            return validation_result
+            
+        except Exception as e:
+            # Se houver erro na validação, criar resultado com erro
+            result = BarcodeValidationResult()
+            result.add_error(f"Erro durante validação: {str(e)}")
+            return result
+    
+    def _validar_especificacoes_caixa(self, codigo_barras: str, result: BarcodeValidationResult):
+        """
+        Adiciona validações específicas da Caixa Econômica Federal
+        """
+        try:
+            # Extrair campo livre para validações específicas
+            campo_livre = codigo_barras[19:44]
+            
+            # Validar estrutura específica da Caixa
+            codigo_cedente = campo_livre[0:6]
+            nosso_numero = campo_livre[6:16]
+            agencia_conta = campo_livre[16:22]
+            carteira = campo_livre[22:25]
+            
+            # Validações específicas da Caixa
+            if codigo_cedente == "000000":
+                result.add_warning("Código do cedente é zero - verificar configuração")
+            
+            if nosso_numero == "0000000000":
+                result.add_error("Nosso número não pode ser zero")
+            
+            agencia = agencia_conta[0:4]
+            if agencia == "0000":
+                result.add_error("Agência não pode ser zero")
+            
+            # Validar carteira específica da Caixa
+            carteiras_caixa = ["001", "002", "014", "024"]
+            if carteira not in carteiras_caixa:
+                result.add_warning(f"Carteira {carteira} pode não ser padrão da Caixa")
+            
+            # Adicionar detalhes específicos da Caixa
+            result.add_detail('caixa_codigo_cedente', codigo_cedente)
+            result.add_detail('caixa_nosso_numero', nosso_numero)
+            result.add_detail('caixa_agencia', agencia)
+            result.add_detail('caixa_carteira', carteira)
+            result.add_detail('caixa_carteira_valida', carteira in carteiras_caixa)
+            
+        except Exception as e:
+            result.add_error(f"Erro na validação específica da Caixa: {str(e)}")
+    
+    def validar_boleto_existente(self, codigo_barras: str, linha_digitavel: str = None) -> BarcodeValidationResult:
+        """
+        Método público para validar boletos existentes
+        Pode ser usado para verificar boletos já salvos no banco de dados
+        """
+        return self._validar_boleto_completo(codigo_barras, linha_digitavel)

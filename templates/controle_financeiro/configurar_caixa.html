@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Configurar Boletos - Caixa Econômica Federal{% endblock %}
-{% block page_title %}Configuração de Boletos - Caixa Econômica Federal{% endblock %}
+{% block title %}Configurar Caixa Econômica Federal{% endblock %}
+{% block page_title %}Configuração da Caixa Econômica Federal{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="alert alert-info">
             <h5 class="alert-heading">
-                <i class="fas fa-university"></i> Configuração da Caixa Econômica Federal
+                <i class="fas fa-university"></i> Configuração para Boletos Reais da Caixa
             </h5>
             <p class="mb-2">
-                <strong>IMPORTANTE:</strong> Esta configuração gerará boletos REAIS que direcionarão pagamentos para sua conta na Caixa.
+                <strong>IMPORTANTE:</strong> Esta configuração gerará boletos REAIS que direcionarão pagamentos para sua conta na Caixa Econômica Federal.
             </p>
             <ul class="mb-0">
                 <li>Certifique-se de que todos os dados estão corretos</li>
@@ -22,86 +22,143 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
+<!-- Guia de Configuração -->
+<div class="row mb-4">
+    <div class="col-12">
         <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-cog"></i> Dados da Conta Caixa
-                </h6>
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-ol"></i> Guia de Configuração - Caixa Econômica Federal
+                </h5>
             </div>
             <div class="card-body">
-                <form method="post" action="{% url 'controle_financeiro:configurar_boletos' %}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">📋 Dados Necessários:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span><strong>Código do Banco:</strong></span>
+                                <span class="badge bg-primary">104</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Agência:</strong> 4 dígitos (ex: 1234)
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Conta:</strong> Número da sua conta
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Carteira:</strong> 1, 2, 14 ou 24
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Código do Cedente:</strong> Fornecido pela Caixa
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Convênio:</strong> Número do convênio de cobrança
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">✅ Onde Encontrar:</h6>
+                        <div class="alert alert-light">
+                            <p><strong>No seu gerente da Caixa:</strong></p>
+                            <ul>
+                                <li>Código do cedente</li>
+                                <li>Número do convênio</li>
+                                <li>Carteira autorizada</li>
+                            </ul>
+                            
+                            <p><strong>No seu extrato/cartão:</strong></p>
+                            <ul>
+                                <li>Agência (4 dígitos)</li>
+                                <li>Número da conta</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Atenção:</strong> Sem o código do cedente e convênio, os boletos não funcionarão corretamente.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de Configuração -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog"></i> Configuração dos Dados da Caixa
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'controle_financeiro:configurar_caixa' %}">
                     {% csrf_token %}
                     
                     <!-- Dados Bancários -->
                     <h6 class="mb-3 text-primary">🏦 Dados Bancários</h6>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="nome_banco" class="form-label">Nome do Banco</label>
                             <input type="text" class="form-control" id="nome_banco" name="nome_banco" 
                                    value="Caixa Econômica Federal" readonly>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="codigo_banco" class="form-label">Código do Banco</label>
                             <input type="text" class="form-control" id="codigo_banco" name="codigo_banco" 
                                    value="104" readonly>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="agencia" class="form-label">Agência <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="agencia" name="agencia" 
+                                   placeholder="1234" maxlength="4" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.agencia }}{% elif dados_form %}{{ dados_form.agencia }}{% endif %}">
+                            <div class="form-text">Exatamente 4 dígitos</div>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="agencia" class="form-label">Agência <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="agencia" name="agencia" 
-                                   placeholder="Ex: 1234" maxlength="4" required>
-                            <div class="form-text">
-                                <strong>4 dígitos</strong> - Sem o dígito verificador
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4 mb-3">
                             <label for="conta" class="form-label">Conta <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="conta" name="conta" 
-                                   placeholder="Ex: 12345678" required>
-                            <div class="form-text">
-                                Número da conta <strong>sem</strong> o dígito verificador
-                            </div>
+                                   placeholder="12345678" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.conta }}{% elif dados_form %}{{ dados_form.conta }}{% endif %}">
+                            <div class="form-text">Número da sua conta na Caixa</div>
                         </div>
                         
                         <div class="col-md-4 mb-3">
                             <label for="carteira" class="form-label">Carteira <span class="text-danger">*</span></label>
                             <select class="form-select" id="carteira" name="carteira" required>
-                                <option value="">Selecione...</option>
-                                <option value="1">1 - Cobrança Simples</option>
-                                <option value="2">2 - Cobrança Vinculada</option>
-                                <option value="14">14 - Cobrança sem Registro</option>
-                                <option value="24">24 - Cobrança com Registro</option>
+                                <option value="">Selecione a carteira</option>
+                                <option value="1" {% if configuracao_existente.carteira == '1' or dados_form.carteira == '1' %}selected{% endif %}>1 - Cobrança Simples</option>
+                                <option value="2" {% if configuracao_existente.carteira == '2' or dados_form.carteira == '2' %}selected{% endif %}>2 - Cobrança Vinculada</option>
+                                <option value="14" {% if configuracao_existente.carteira == '14' or dados_form.carteira == '14' %}selected{% endif %}>14 - Cobrança sem Registro</option>
+                                <option value="24" {% if configuracao_existente.carteira == '24' or dados_form.carteira == '24' %}selected{% endif %}>24 - Cobrança com Registro</option>
                             </select>
-                            <div class="form-text">
-                                Consulte seu gerente sobre qual carteira usar
-                            </div>
+                            <div class="form-text">Confirme com seu gerente</div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="codigo_cedente" class="form-label">Código do Cedente <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="codigo_cedente" name="codigo_cedente" 
+                                   placeholder="123456" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.codigo_cedente }}{% elif dados_form %}{{ dados_form.codigo_cedente }}{% endif %}">
+                            <div class="form-text">Fornecido pela Caixa</div>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="codigo_cedente" class="form-label">Código do Cedente <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="codigo_cedente" name="codigo_cedente" 
-                                   placeholder="Ex: 123456" required>
-                            <div class="form-text">
-                                <strong>Fornecido pela Caixa</strong> - Código de identificação do beneficiário
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="convenio" class="form-label">Número do Convênio</label>
+                            <label for="convenio" class="form-label">Número do Convênio <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="convenio" name="convenio" 
-                                   placeholder="Ex: 1234567">
-                            <div class="form-text">
-                                Número do convênio de cobrança (se aplicável)
-                            </div>
+                                   placeholder="1234567" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.convenio }}{% elif dados_form %}{{ dados_form.convenio }}{% endif %}">
+                            <div class="form-text">Número do convênio de cobrança</div>
                         </div>
                     </div>
                     
@@ -112,22 +169,24 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="nome_beneficiario" class="form-label">Razão Social <span class="text-danger">*</span></label>
+                            <label for="nome_beneficiario" class="form-label">Nome/Razão Social <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="nome_beneficiario" name="nome_beneficiario" 
-                                   placeholder="Nome da sua empresa" required>
+                                   placeholder="Sua Empresa Ltda" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.nome_beneficiario }}{% elif dados_form %}{{ dados_form.nome_beneficiario }}{% endif %}">
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="cnpj_beneficiario" class="form-label">CNPJ <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="cnpj_beneficiario" name="cnpj_beneficiario" 
-                                   placeholder="00.000.000/0000-00" required>
+                                   placeholder="12.345.678/0001-90" required
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.cnpj_beneficiario }}{% elif dados_form %}{{ dados_form.cnpj_beneficiario }}{% endif %}">
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="endereco_beneficiario" class="form-label">Endereço Completo <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="endereco_beneficiario" name="endereco_beneficiario" 
-                                  rows="2" placeholder="Rua, número, bairro, cidade, UF, CEP" required></textarea>
+                                  rows="2" placeholder="Rua, número, bairro, cidade/UF, CEP" required>{% if configuracao_existente %}{{ configuracao_existente.endereco_beneficiario }}{% elif dados_form %}{{ dados_form.endereco_beneficiario }}{% endif %}</textarea>
                     </div>
                     
                     <hr>
@@ -137,31 +196,31 @@
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="multa" class="form-label">Multa (%)</label>
+                            <label for="multa" class="form-label">Multa após Vencimento (%)</label>
                             <input type="number" class="form-control" id="multa" name="multa" 
-                                   value="2.00" step="0.01" min="0" max="20">
-                            <div class="form-text">Multa após vencimento</div>
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.multa }}{% else %}2.00{% endif %}" 
+                                   step="0.01" min="0" max="20">
                         </div>
                         
                         <div class="col-md-4 mb-3">
                             <label for="juros" class="form-label">Juros ao Mês (%)</label>
                             <input type="number" class="form-control" id="juros" name="juros" 
-                                   value="1.00" step="0.01" min="0" max="20">
-                            <div class="form-text">Juros mensais</div>
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.juros }}{% else %}1.00{% endif %}" 
+                                   step="0.01" min="0" max="20">
                         </div>
                         
                         <div class="col-md-4 mb-3">
-                            <label for="desconto" class="form-label">Desconto (%)</label>
+                            <label for="desconto" class="form-label">Desconto até Vencimento (%)</label>
                             <input type="number" class="form-control" id="desconto" name="desconto" 
-                                   value="0.00" step="0.01" min="0" max="100">
-                            <div class="form-text">Desconto até vencimento</div>
+                                   value="{% if configuracao_existente %}{{ configuracao_existente.desconto }}{% else %}0.00{% endif %}" 
+                                   step="0.01" min="0" max="100">
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="instrucoes" class="form-label">Instruções do Boleto</label>
                         <textarea class="form-control" id="instrucoes" name="instrucoes" rows="3" 
-                                  placeholder="Ex: Não receber após o vencimento. Em caso de dúvidas, entre em contato."></textarea>
+                                  placeholder="Ex: Não receber após o vencimento. Em caso de dúvidas, entre em contato.">{% if configuracao_existente %}{{ configuracao_existente.instrucoes }}{% endif %}</textarea>
                     </div>
                     
                     <div class="form-check mb-3">
@@ -169,28 +228,29 @@
                         <label class="form-check-label" for="ativo">
                             <strong>Ativar esta configuração</strong>
                         </label>
-                        <div class="form-text">
-                            Ao ativar, esta será a configuração padrão para novos boletos
-                        </div>
+                        <div class="form-text">Esta será a configuração padrão para gerar boletos</div>
                     </div>
                     
-                    <div class="alert alert-warning">
+                    <!-- Alertas Finais -->
+                    <div class="alert alert-danger">
                         <h6 class="alert-heading">
-                            <i class="fas fa-exclamation-triangle"></i> Atenção Final
+                            <i class="fas fa-exclamation-triangle"></i> ATENÇÃO - CONFIGURAÇÃO REAL
                         </h6>
                         <ul class="mb-0">
-                            <li><strong>Confira todos os dados</strong> antes de salvar</li>
-                            <li><strong>Teste com valor baixo</strong> primeiro</li>
-                            <li><strong>Confirme com seu gerente</strong> da Caixa</li>
-                            <li><strong>Os pagamentos irão para sua conta</strong> real</li>
+                            <li><strong>Os boletos gerados serão REAIS</strong></li>
+                            <li><strong>Os pagamentos irão para sua conta na Caixa</strong></li>
+                            <li><strong>Teste com valor baixo primeiro</strong></li>
+                            <li><strong>Confirme todos os dados antes de salvar</strong></li>
                         </ul>
                     </div>
                     
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-secondary me-md-2">
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
-                        <button type="submit" class="btn btn-success">
+                        
+                        <button type="submit" class="btn btn-success btn-lg">
                             <i class="fas fa-save"></i> Salvar Configuração da Caixa
                         </button>
                     </div>
@@ -198,87 +258,82 @@
             </div>
         </div>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-info">
-                    <i class="fas fa-info-circle"></i> Onde Encontrar os Dados
+</div>
+
+<!-- Próximos Passos -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-check-circle"></i> Próximos Passos Após Configurar
                 </h6>
             </div>
             <div class="card-body">
-                <h6 class="text-primary">🏦 No Internet Banking:</h6>
-                <ul class="small">
-                    <li><strong>Agência:</strong> Tela inicial, ao lado do nome</li>
-                    <li><strong>Conta:</strong> Tela inicial, número da conta</li>
-                    <li><strong>Código Cedente:</strong> Menu Cobrança > Configurações</li>
-                </ul>
-                
-                <h6 class="text-primary mt-3">📄 No Extrato/Cartão:</h6>
-                <ul class="small">
-                    <li><strong>Agência:</strong> 4 dígitos antes do hífen</li>
-                    <li><strong>Conta:</strong> Números após a agência</li>
-                </ul>
-                
-                <h6 class="text-primary mt-3">👨‍💼 Com o Gerente:</h6>
-                <ul class="small">
-                    <li><strong>Carteira:</strong> Qual usar para cobrança</li>
-                    <li><strong>Código Cedente:</strong> Código do beneficiário</li>
-                    <li><strong>Convênio:</strong> Se tem convênio ativo</li>
-                </ul>
-                
-                <div class="alert alert-info mt-3">
-                    <small>
-                        <strong>Dica:</strong> Ligue para a Caixa (0800 726 0101) se tiver dúvidas sobre os códigos.
-                    </small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card shadow mt-3">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-success">
-                    <i class="fas fa-check-circle"></i> Próximos Passos
-                </h6>
-            </div>
-            <div class="card-body">
-                <ol class="small">
-                    <li><strong>Configure</strong> os dados reais</li>
-                    <li><strong>Salve</strong> a configuração</li>
-                    <li><strong>Gere um boleto</strong> de teste</li>
-                    <li><strong>Mostre ao gerente</strong> da Caixa</li>
-                    <li><strong>Confirme</strong> se está correto</li>
-                    <li><strong>Use em produção</strong> com segurança</li>
+                <ol>
+                    <li><strong>Gerar um boleto de teste</strong> com valor baixo (R$ 1,00)</li>
+                    <li><strong>Verificar a linha digitável</strong> e código de barras</li>
+                    <li><strong>Mostrar ao gerente da Caixa</strong> para validação</li>
+                    <li><strong>Fazer um pagamento teste</strong> para confirmar</li>
+                    <li><strong>Começar a usar</strong> com confiança!</li>
                 </ol>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-// Máscara para CNPJ
+// Formatação automática de CNPJ
 document.getElementById('cnpj_beneficiario').addEventListener('input', function(e) {
     let value = e.target.value.replace(/\D/g, '');
-    value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-    value = value.replace(/(\d{4})(\d)/, '$1-$2');
-    e.target.value = value;
+    if (value.length <= 14) {
+        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+        value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        e.target.value = value;
+    }
 });
 
 // Validação de agência (4 dígitos)
 document.getElementById('agencia').addEventListener('input', function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 4) {
+        value = value.substring(0, 4);
+    }
+    e.target.value = value;
 });
 
-// Validação de conta (apenas números)
-document.getElementById('conta').addEventListener('input', function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '');
-});
-
-// Validação de código cedente (apenas números)
-document.getElementById('codigo_cedente').addEventListener('input', function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '');
+// Confirmação antes de salvar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const agencia = document.getElementById('agencia').value;
+    const conta = document.getElementById('conta').value;
+    const cedente = document.getElementById('codigo_cedente').value;
+    const convenio = document.getElementById('convenio').value;
+    
+    if (!agencia || !conta || !cedente || !convenio) {
+        alert('Por favor, preencha todos os campos obrigatórios da Caixa!');
+        e.preventDefault();
+        return;
+    }
+    
+    const confirmacao = confirm(
+        '⚠️ ATENÇÃO!\n\n' +
+        'Você está configurando boletos REAIS da Caixa Econômica Federal.\n' +
+        'Os pagamentos irão para sua conta real.\n\n' +
+        'Dados informados:\n' +
+        '• Agência: ' + agencia + '\n' +
+        '• Conta: ' + conta + '\n' +
+        '• Cedente: ' + cedente + '\n' +
+        '• Convênio: ' + convenio + '\n\n' +
+        'Confirma que todos os dados estão corretos?'
+    );
+    
+    if (!confirmacao) {
+        e.preventDefault();
+    }
 });
 </script>
 {% endblock %}

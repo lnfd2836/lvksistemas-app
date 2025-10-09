@@ -402,87 +402,123 @@ def configurar_boletos(request):
 
 
 @login_required
-@user_passes_test(is_superuser)
-def configurar_caixa(request):
-    """Configuração específica para Caixa Econômica Federal"""
-    
-    if request.method == 'POST':
-        # Redirecionar para a view principal de configuração
-        # mas com dados pré-preenchidos da Caixa
-        return configurar_boletos(request)
-    
-    # Buscar configuração existente da Caixa
-    configuracao_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco='104').first()
-    
-    context = {
-        'configuracao_caixa': configuracao_caixa,
-    }
-    
-    return render(request, 'controle_financeiro/configurar_caixa.html', context)
-
-
 @login_required
 @user_passes_test(is_superuser)
 def configurar_caixa(request):
     """Configuração específica para Caixa Econômica Federal"""
     
+    # Buscar configuração existente da Caixa para pré-preencher
+    configuracao_existente = ConfiguracaoBoleto.objects.filter(codigo_banco='104').first()
+    
     if request.method == 'POST':
         try:
-            # Validação específica da Caixa
-            agencia = request.POST.get('agencia', '').strip()
-            if not agencia or len(agencia) != 4 or not agencia.isdigit():
-                messages.error(request, 'Agência deve ter exatamente 4 dígitos numéricos.')
-                return render(request, 'controle_financeiro/configurar_caixa.html')
+            # Validação de campos obrigatórios
+            campos_obrigatorios = {
+                'agencia': 'Agência',
+                'conta': 'Conta',
+                'carteira': 'Carteira',
+                'codigo_cedente': 'Código do Cedente',
+                'convenio': 'Número do Convênio',
+                'nome_beneficiario': 'Nome do Beneficiário',
+                'cnpj_beneficiario': 'CNPJ do Beneficiário',
+                'endereco_beneficiario': 'Endereço do Beneficiário'
+            }
             
-            conta = request.POST.get('conta', '').strip()
-            if not conta or not conta.isdigit():
-                messages.error(request, 'Conta deve conter apenas números.')
-                return render(request, 'controle_financeiro/configurar_caixa.html')
+            dados = {}
+            erros = []
             
-            carteira = request.POST.get('carteira', '').strip()
-            if carteira not in ['1', '2', '14', '24']:
-                messages.error(request, 'Carteira deve ser 1, 2, 14 ou 24 para a Caixa.')
-                return render(request, 'controle_financeiro/configurar_caixa.html')
+            # Validar todos os campos obrigatórios
+            for campo, nome in campos_obrigatorios.items():
+                valor = request.POST.get(campo, '').strip()
+                if not valor:
+                    erros.append(f'{nome} é obrigatório')
+                dados[campo] = valor
             
-            codigo_cedente = request.POST.get('codigo_cedente', '').strip()
-            if not codigo_cedente:
-                messages.error(request, 'Código do cedente é obrigatório para a Caixa.')
-                return render(request, 'controle_financeiro/configurar_caixa.html')
+            # Validações específicas
+            if dados['agencia'] and (len(dados['agencia']) != 4 or not dados['agencia'].isdigit()):
+                erros.append('Agência deve ter exatamente 4 dígitos numéricos')
             
-            # Desativar configurações existentes
+            if dados['conta'] and not dados['conta'].replace('-', '').isdigit():
+                erros.append('Conta deve conter apenas números (e hífen opcional)')
+            
+            if dados['carteira'] and dados['carteira'] not in ['1', '2', '14', '24']:
+                erros.append('Carteira deve ser 1, 2, 14 ou 24 para a Caixa')
+            
+            # Se há erros, retornar com mensagens
+            if erros:
+                for erro in erros:
+                    messages.error(request, erro)
+                
+                context = {
+                    'configuracao_existente': configuracao_existente,
+                    'dados_form': dados  # Para manter os dados preenchidos
+                }
+                return render(request, 'controle_financeiro/configurar_caixa.html', context)
+            
+            # Sempre desativar outras configurações primeiro para evitar duplicatas
             ConfiguracaoBoleto.objects.update(ativo=False)
             
-            # Criar nova configuração da Caixa
-            config = ConfiguracaoBoleto.objects.create(
-                nome_banco="Caixa Econômica Federal",
-                codigo_banco="104",
-                agencia=agencia,
-                conta=conta,
-                carteira=carteira,
-                codigo_cedente=codigo_cedente,
-                convenio=request.POST.get('convenio', ''),
-                nome_beneficiario=request.POST.get('nome_beneficiario'),
-                cnpj_beneficiario=request.POST.get('cnpj_beneficiario'),
-                endereco_beneficiario=request.POST.get('endereco_beneficiario'),
-                instrucoes=request.POST.get('instrucoes', ''),
-                multa=Decimal(request.POST.get('multa', 2.00)),
-                juros=Decimal(request.POST.get('juros', 1.00)),
-                desconto=Decimal(request.POST.get('desconto', 0.00)),
-                ativo=True
-            )
-            
-            messages.success(
-                request, 
-                f'✅ Configuração da Caixa salva com sucesso! '
-                f'Agência: {agencia}, Conta: {conta}, Carteira: {carteira}'
-            )
+            # Verificar se já existe configuração da Caixa para atualizar
+            if configuracao_existente:
+                # Atualizar configuração existente
+                configuracao_existente.agencia = dados['agencia']
+                configuracao_existente.conta = dados['conta']
+                configuracao_existente.carteira = dados['carteira']
+                configuracao_existente.codigo_cedente = dados['codigo_cedente']
+                configuracao_existente.convenio = dados['convenio']
+                configuracao_existente.nome_beneficiario = dados['nome_beneficiario']
+                configuracao_existente.cnpj_beneficiario = dados['cnpj_beneficiario']
+                configuracao_existente.endereco_beneficiario = dados['endereco_beneficiario']
+                configuracao_existente.instrucoes = request.POST.get('instrucoes', '')
+                configuracao_existente.multa = Decimal(request.POST.get('multa', 2.00))
+                configuracao_existente.juros = Decimal(request.POST.get('juros', 1.00))
+                configuracao_existente.desconto = Decimal(request.POST.get('desconto', 0.00))
+                configuracao_existente.ativo = True
+                configuracao_existente.save()
+                
+                messages.success(
+                    request, 
+                    f'✅ Configuração da Caixa atualizada com sucesso! '
+                    f'Agência: {dados["agencia"]}, Conta: {dados["conta"]}, Carteira: {dados["carteira"]}'
+                )
+            else:
+                # Criar nova configuração da Caixa
+                config = ConfiguracaoBoleto.objects.create(
+                    nome_banco="Caixa Econômica Federal",
+                    codigo_banco="104",
+                    agencia=dados['agencia'],
+                    conta=dados['conta'],
+                    carteira=dados['carteira'],
+                    codigo_cedente=dados['codigo_cedente'],
+                    convenio=dados['convenio'],
+                    nome_beneficiario=dados['nome_beneficiario'],
+                    cnpj_beneficiario=dados['cnpj_beneficiario'],
+                    endereco_beneficiario=dados['endereco_beneficiario'],
+                    instrucoes=request.POST.get('instrucoes', ''),
+                    multa=Decimal(request.POST.get('multa', 2.00)),
+                    juros=Decimal(request.POST.get('juros', 1.00)),
+                    desconto=Decimal(request.POST.get('desconto', 0.00)),
+                    ativo=True
+                )
+                
+                messages.success(
+                    request, 
+                    f'✅ Configuração da Caixa criada com sucesso! '
+                    f'Agência: {dados["agencia"]}, Conta: {dados["conta"]}, Carteira: {dados["carteira"]}'
+                )
             
             return redirect('controle_financeiro:configurar_boletos')
             
         except Exception as e:
             messages.error(request, f'Erro ao salvar configuração da Caixa: {str(e)}')
+            import traceback
+            print(f"Erro detalhado: {traceback.format_exc()}")
     
-    return render(request, 'controle_financeiro/configurar_caixa.html')
+    context = {
+        'configuracao_existente': configuracao_existente,
+    }
+    
+    return render(request, 'controle_financeiro/configurar_caixa.html', context)
 
 
 @login_required
@@ -568,6 +604,12 @@ def gerar_boleto(request, controle_id):
                 caixa_service = BoletoCaixaService()
                 dados_boleto = caixa_service.gerar_boleto_caixa(controle, config, dias_vencimento=30)
                 
+                # Verificar se o boleto foi validado com sucesso
+                if not dados_boleto.get('is_valid', False):
+                    validation_errors = dados_boleto.get('validation_result', {}).get('errors', [])
+                    error_msg = '; '.join(validation_errors) if validation_errors else 'Erro de validação desconhecido'
+                    raise ValueError(f"Boleto gerado é inválido: {error_msg}")
+                
                 # Criar boleto com dados válidos da Caixa
                 boleto = BoletoGerado.objects.create(
                     controle_financeiro=controle,
@@ -579,11 +621,16 @@ def gerar_boleto(request, controle_id):
                     data_vencimento=dados_boleto['data_vencimento']
                 )
                 
-                messages.success(
-                    request, 
-                    f'✅ Boleto da Caixa {dados_boleto["numero_boleto"]} gerado com sucesso! '
-                    f'Fator de vencimento: {dados_boleto["fator_vencimento"]}'
-                )
+                # Mensagem de sucesso com informações de validação
+                success_msg = f'✅ Boleto da Caixa {dados_boleto["numero_boleto"]} gerado e validado com sucesso!'
+                
+                # Adicionar avisos se houver
+                warnings = dados_boleto.get('validation_warnings', [])
+                if warnings:
+                    warning_msg = ' Avisos: ' + '; '.join(warnings)
+                    success_msg += warning_msg
+                
+                messages.success(request, success_msg)
                 
             else:
                 # Gera número do boleto (simulado para outros bancos)
