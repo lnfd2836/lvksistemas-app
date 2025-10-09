@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('controle_financeiro', '0001_initial'),
+        ('controle_financeiro', '0003_configuracaoboleto_codigo_cedente'),
     ]
 
     operations = [
