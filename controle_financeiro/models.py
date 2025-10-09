@@ -32,6 +32,7 @@ class ConfiguracaoBoleto(models.Model):
     conta = models.CharField(max_length=20, verbose_name="Conta")
     carteira = models.CharField(max_length=10, verbose_name="Carteira")
     codigo_cedente = models.CharField(max_length=20, verbose_name="Código do Cedente", help_text="Código do cedente/beneficiário no banco", blank=True, null=True)
+    convenio = models.CharField(max_length=20, verbose_name="Número do Convênio", help_text="Número do convênio com a Caixa", blank=True, null=True)
     
     # Dados do beneficiário
     nome_beneficiario = models.CharField(max_length=200, verbose_name="Nome do Beneficiário")

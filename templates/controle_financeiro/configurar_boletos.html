@@ -117,13 +117,23 @@
                         </div>
                     
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="codigo_cedente" class="form-label">Código do Cedente</label>
                                 <input type="text" class="form-control" id="codigo_cedente" name="codigo_cedente" 
                                        value="{% if configuracao_ativa %}{{ configuracao_ativa.codigo_cedente }}{% endif %}"
                                        placeholder="Código do cedente/beneficiário no banco">
                                 <div class="form-text">
                                     <strong>Importante:</strong> Código fornecido pelo banco para identificação do beneficiário.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="convenio" class="form-label">Número do Convênio <span class="text-muted">(Caixa)</span></label>
+                                <input type="text" class="form-control" id="convenio" name="convenio" 
+                                       value="{% if configuracao_ativa %}{{ configuracao_ativa.convenio }}{% endif %}"
+                                       placeholder="Número do convênio com a Caixa">
+                                <div class="form-text">
+                                    <strong>Caixa Econômica Federal:</strong> Número do convênio de cobrança.
                                 </div>
                             </div>
                         </div>

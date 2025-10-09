@@ -475,21 +475,54 @@ def gerar_boleto(request, controle_id):
         config_id = request.POST.get('configuracao')
         config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
         
-        # Gera número do boleto (simulado)
-        numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
-        linha_digitavel = f"23791{config.agencia.zfill(4)}{config.conta.zfill(8)}{numero_boleto.zfill(10)}"
-        codigo_barras = linha_digitavel.replace(' ', '')
-        
-        # Cria o boleto
-        boleto = BoletoGerado.objects.create(
-            controle_financeiro=controle,
-            configuracao=config,
-            numero_boleto=numero_boleto,
-            linha_digitavel=linha_digitavel,
-            codigo_barras=codigo_barras,
-            valor=controle.valor_mensal,
-            data_vencimento=timezone.now() + timedelta(days=7)  # 7 dias para vencimento
-        )
+        try:
+            # Verificar se é Caixa Econômica Federal
+            if config.codigo_banco == "104":
+                # Usar serviço específico da Caixa
+                from .boleto_caixa_service import BoletoCaixaService
+                
+                caixa_service = BoletoCaixaService()
+                dados_boleto = caixa_service.gerar_boleto_caixa(controle, config, dias_vencimento=30)
+                
+                # Criar boleto com dados válidos da Caixa
+                boleto = BoletoGerado.objects.create(
+                    controle_financeiro=controle,
+                    configuracao=config,
+                    numero_boleto=dados_boleto['numero_boleto'],
+                    linha_digitavel=dados_boleto['linha_digitavel'],
+                    codigo_barras=dados_boleto['codigo_barras'],
+                    valor=dados_boleto['valor'],
+                    data_vencimento=dados_boleto['data_vencimento']
+                )
+                
+                messages.success(
+                    request, 
+                    f'✅ Boleto da Caixa {dados_boleto["numero_boleto"]} gerado com sucesso! '
+                    f'Fator de vencimento: {dados_boleto["fator_vencimento"]}'
+                )
+                
+            else:
+                # Gera número do boleto (simulado para outros bancos)
+                numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                linha_digitavel = f"23791{config.agencia.zfill(4)}{config.conta.zfill(8)}{numero_boleto.zfill(10)}"
+                codigo_barras = linha_digitavel.replace(' ', '')
+                
+                # Cria o boleto
+                boleto = BoletoGerado.objects.create(
+                    controle_financeiro=controle,
+                    configuracao=config,
+                    numero_boleto=numero_boleto,
+                    linha_digitavel=linha_digitavel,
+                    codigo_barras=codigo_barras,
+                    valor=controle.valor_mensal,
+                    data_vencimento=timezone.now() + timedelta(days=7)  # 7 dias para vencimento
+                )
+                
+                messages.success(request, f'Boleto {numero_boleto} gerado com sucesso!')
+                
+        except Exception as e:
+            messages.error(request, f'Erro ao gerar boleto: {str(e)}')
+            return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
         
         messages.success(request, f'Boleto {numero_boleto} gerado com sucesso!')
         return redirect('controle_financeiro:detalhar_controle', controle_id=controle_id)
