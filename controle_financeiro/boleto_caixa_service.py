@@ -83,21 +83,18 @@ class BoletoCaixaService:
     def _gerar_nosso_numero_caixa(self, configuracao):
         """
         Gera nosso número para a Caixa
-        Formato: AAAANNNNNNNNNNN-D (Agência + Sequencial + DV)
+        Formato: NNNNNNNNNN-D (Sequencial + DV) - APENAS NÚMEROS
         """
         
         # Para teste, usar timestamp como sequencial
         timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-        sequencial = timestamp[-10:].zfill(10)  # Últimos 10 dígitos
-        
-        # Nosso número sem DV: Agência + Sequencial
-        nosso_numero_base = f"{configuracao.agencia}{sequencial}"
+        sequencial = timestamp[-10:].zfill(10)  # Últimos 10 dígitos - APENAS NÚMEROS
         
         # Calcular dígito verificador
-        dv = self._calcular_dv_nosso_numero_caixa(nosso_numero_base)
+        dv = self._calcular_dv_nosso_numero_caixa(sequencial)
         
-        # Nosso número completo
-        nosso_numero = f"{nosso_numero_base}-{dv}"
+        # Nosso número completo - APENAS NÚMEROS
+        nosso_numero = f"{sequencial}{dv}"  # SEM hífen, apenas números
         
         return nosso_numero
     
@@ -154,10 +151,10 @@ class BoletoCaixaService:
         # A = Agência (4) + zeros (2)
         # D = Carteira (3)
         
-        codigo_cedente = configuracao.codigo_cedente.zfill(6)[:6]
+        codigo_cedente = re.sub(r'[^0-9]', '', configuracao.codigo_cedente).zfill(6)[:6]
         nosso_numero_limpo = re.sub(r'[^0-9]', '', nosso_numero)[-10:].zfill(10)
-        agencia_campo = f"{configuracao.agencia}00"
-        carteira_campo = configuracao.carteira.zfill(3)
+        agencia_campo = f"{re.sub(r'[^0-9]', '', configuracao.agencia).zfill(4)}00"
+        carteira_campo = re.sub(r'[^0-9]', '', configuracao.carteira).zfill(3)
         
         campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_campo}{carteira_campo}"
         
