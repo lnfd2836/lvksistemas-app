@@ -238,10 +238,10 @@
 <script>
     // Pass server-side data to JavaScript
     window.boletoConfigData = {
-        hasConfigurations: {{ has_configurations | yesno: "true,false" }},
-    showForm: { { show_form | yesno: "true,false" } },
-    formErrors: { { form_errors | yesno: "true,false" } },
-    configuracaoAtiva: {% if configuracao_ativa %} { { configuracao_ativa.id } } {% else %} null{% endif %}
+        hasConfigurations: {{ has_configurations|yesno:"true,false" }},
+        showForm: {{ show_form|yesno:"true,false" }},
+        formErrors: {{ form_errors|yesno:"true,false" }},
+        configuracaoAtiva: {% if configuracao_ativa %}{{ configuracao_ativa.id }}{% else %}null{% endif %}
     };
 
     // Function to show form (for new configuration)
@@ -270,9 +270,8 @@
 
     // Function to cancel editing
     function cancelarEdicao() {
-        const hasConfigurations = {{ has_configurations| yesno: "true,false"
-    }};
-    if (hasConfigurations) {
+        const hasConfigurations = {{ has_configurations|yesno:"true,false" }};
+        if (hasConfigurations) {
         const formContainer = document.getElementById('config-form-container');
         if (formContainer) {
             formContainer.classList.remove('config-form-visible');
