@@ -199,8 +199,18 @@ class BoletoCaixaService:
         agencia_conta_campo = f"{agencia_limpa}{conta_limpa}"
         
         # Carteira (3 dígitos) - Primeiro limpar, depois truncar, depois preencher
-        carteira_limpa = re.sub(r'[^0-9]', '', str(configuracao.carteira))[:3]  # Máximo 3 dígitos
+        carteira_original = str(configuracao.carteira)
+        carteira_sem_letras = re.sub(r'[^0-9]', '', carteira_original)
+        carteira_limpa = carteira_sem_letras[:3]  # Máximo 3 dígitos
         carteira_campo = carteira_limpa.zfill(3)  # Preencher com zeros à esquerda
+        
+        # Debug temporário - remover após correção
+        if len(carteira_campo) != 3:
+            raise ValueError(
+                f"ERRO CARTEIRA DEBUG: original='{carteira_original}', "
+                f"sem_letras='{carteira_sem_letras}', limpa='{carteira_limpa}', "
+                f"final='{carteira_campo}' ({len(carteira_campo)} dígitos)"
+            )
         
         # Validar tamanhos dos componentes antes de montar
         if len(codigo_cedente) != 6:

@@ -45,9 +45,9 @@ heroku run python manage.py migrate
 echo "Limpando sessões problemáticas..."
 heroku run python manage.py limpar_sessoes
 
-# Coleta arquivos estáticos
+# Coleta arquivos estáticos (já feito durante o build, mas executando para garantir)
 echo "Coletando arquivos estáticos..."
-heroku run python manage.py collectstatic --noinput
+heroku run python manage.py collectstatic --no-input || echo "Arquivos estáticos já coletados durante o build"
 
 echo "========================================="
 echo "Deploy e configuração concluídos!"
