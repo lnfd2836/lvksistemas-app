@@ -74,12 +74,12 @@ def dashboard_principal(request):
         # Se é super usuário com loja associada, redirecionar para dashboard da loja
         if user_type == 'super_admin' and context['store']:
             logger.info(f"Super usuário {request.user.username} tem loja associada, redirecionando para dashboard da loja")
-            return redirect('dashboard_loja')
+            return redirect('dashboard:loja')
         
         # Se é store admin, redirecionar para dashboard da loja
         if user_type == 'store_admin':
             logger.info(f"Store admin {request.user.username} redirecionando para dashboard da loja")
-            return redirect('dashboard_loja')
+            return redirect('dashboard:loja')
         
         # Se é super admin sem loja, mostrar dashboard super admin
         if user_type == 'super_admin':
@@ -164,7 +164,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
                 if request.user.is_superuser:
                     logger.info(f"Super usuário {request.user.username} sem loja específica, redirecionando para seleção")
                     # Aqui você pode redirecionar para uma página de seleção de lojas
-                    return redirect('dashboard_principal')
+                    return redirect('dashboard:principal')
                 else:
                     logger.error(f"Usuário {request.user.username} deveria ter loja mas não foi encontrada")
                     messages.error(request, 'Nenhuma loja associada ao seu usuário.')

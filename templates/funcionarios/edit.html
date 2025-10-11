@@ -5,16 +5,16 @@
 {% block page_title %}Editar {{ funcionario.nome_completo }}{% endblock %}
 
 {% block breadcrumb_extra %}
-<li class="breadcrumb-item"><a href="{% url 'funcionarios:detail' funcionario.id %}">{{ funcionario.nome_completo }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'lojas:funcionarios:detail' funcionario.id %}">{{ funcionario.nome_completo }}</a></li>
 <li class="breadcrumb-item active">Editar</li>
 {% endblock %}
 
 {% block page_actions %}
 <div class="btn-group" role="group">
-    <a href="{% url 'funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
+    <a href="{% url 'lojas:funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left me-1"></i>Voltar
     </a>
-    <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'lojas:funcionarios:list' %}" class="btn btn-outline-secondary">
         <i class="fas fa-list me-1"></i>Lista
     </a>
 </div>
@@ -164,7 +164,7 @@
                     
                     <!-- Botões -->
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'lojas:funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i>Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary">

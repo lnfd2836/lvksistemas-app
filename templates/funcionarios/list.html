@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block page_actions %}
-<a href="{% url 'funcionarios:create' %}" class="btn btn-primary">
+<a href="{% url 'lojas:funcionarios:create' %}" class="btn btn-primary">
     <i class="fas fa-plus me-1"></i>Novo Funcionário
 </a>
 {% endblock %}
@@ -152,15 +152,15 @@
                                 </div>
                                 
                                 <div class="d-flex gap-2">
-                                    <a href="{% url 'funcionarios:detail' funcionario.id %}" 
+                                    <a href="{% url 'lojas:funcionarios:detail' funcionario.id %}" 
                                        class="btn btn-sm btn-outline-primary flex-fill">
                                         <i class="fas fa-eye me-1"></i>Ver
                                     </a>
-                                    <a href="{% url 'funcionarios:edit' funcionario.id %}" 
+                                    <a href="{% url 'lojas:funcionarios:edit' funcionario.id %}" 
                                        class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form method="post" action="{% url 'funcionarios:toggle_status' funcionario.id %}" 
+                                    <form method="post" action="{% url 'lojas:funcionarios:toggle_status' funcionario.id %}" 
                                           class="d-inline" onsubmit="return confirmAction('Tem certeza que deseja {% if funcionario.ativo %}desativar{% else %}ativar{% endif %} este funcionário?')">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm {% if funcionario.ativo %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
@@ -224,12 +224,12 @@
                 <h5 class="text-muted">Nenhum funcionário encontrado</h5>
                 <p class="text-muted">
                     {% if search or tipo_funcionario_selected or status_selected %}
-                        Tente ajustar os filtros ou <a href="{% url 'funcionarios:list' %}">limpar a busca</a>.
+                        Tente ajustar os filtros ou <a href="{% url 'lojas:funcionarios:list' %}">limpar a busca</a>.
                     {% else %}
                         Comece cadastrando o primeiro funcionário da sua equipe.
                     {% endif %}
                 </p>
-                <a href="{% url 'funcionarios:create' %}" class="btn btn-primary">
+                <a href="{% url 'lojas:funcionarios:create' %}" class="btn btn-primary">
                     <i class="fas fa-plus me-1"></i>Cadastrar Primeiro Funcionário
                 </a>
             </div>

@@ -25,7 +25,7 @@
                         {% for loja in lojas %}
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100 loja-card" style="cursor: pointer;" 
-                                     onclick="window.location.href='{% url 'funcionarios:list' %}?loja_id={{ loja.id }}'">
+                                     onclick="window.location.href='{% url 'lojas:funcionarios:list' %}?loja_id={{ loja.id }}'">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="me-3">

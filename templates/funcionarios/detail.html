@@ -9,10 +9,10 @@
 
 {% block page_actions %}
 <div class="btn-group" role="group">
-    <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'lojas:funcionarios:list' %}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left me-1"></i>Voltar
     </a>
-    <a href="{% url 'funcionarios:edit' funcionario.id %}" class="btn btn-primary">
+    <a href="{% url 'lojas:funcionarios:edit' funcionario.id %}" class="btn btn-primary">
         <i class="fas fa-edit me-1"></i>Editar
     </a>
     <div class="btn-group" role="group">
@@ -21,7 +21,7 @@
         </button>
         <ul class="dropdown-menu">
             <li>
-                <form method="post" action="{% url 'funcionarios:reset_password' funcionario.id %}" class="d-inline">
+                <form method="post" action="{% url 'lojas:funcionarios:reset_password' funcionario.id %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="dropdown-item" 
                             onclick="return confirmAction('Tem certeza que deseja resetar a senha deste funcionário?')">
@@ -31,7 +31,7 @@
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
-                <form method="post" action="{% url 'funcionarios:toggle_status' funcionario.id %}" class="d-inline">
+                <form method="post" action="{% url 'lojas:funcionarios:toggle_status' funcionario.id %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="dropdown-item {% if funcionario.ativo %}text-warning{% else %}text-success{% endif %}" 
                             onclick="return confirmAction('Tem certeza que deseja {% if funcionario.ativo %}desativar{% else %}ativar{% endif %} este funcionário?')">

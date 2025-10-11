@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+<a href="{% url 'lojas:funcionarios:list' %}" class="btn btn-outline-secondary">
     <i class="fas fa-arrow-left me-1"></i>Voltar
 </a>
 {% endblock %}
@@ -133,7 +133,7 @@
                     
                     <!-- Botões -->
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'lojas:funcionarios:list' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i>Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary">
