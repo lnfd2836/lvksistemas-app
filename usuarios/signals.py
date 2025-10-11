@@ -157,9 +157,15 @@ def verificar_troca_senha_obrigatoria(sender, request, user, **kwargs):
                 except Exception as email_error:
                     logger.error(f"❌ Erro ao enviar email de troca de senha para {user.email}: {email_error}")
                 
-                # Marca que precisa trocar senha (implementar lógica específica)
-                # Por enquanto, apenas loga a informação
-                logger.info(f"ℹ️  Usuário {user.username} deve trocar a senha no primeiro login")
+                # Marca que precisa trocar senha no perfil
+                user.perfil.requires_password_change = True
+                user.perfil.deve_trocar_senha = True  # Campo legado para compatibilidade
+                user.perfil.save()
+                
+                logger.info(f"ℹ️  Usuário {user.username} marcado para trocar senha no primeiro login")
                 
     except Exception as e:
         logger.error(f"Erro ao verificar troca de senha obrigatória para {user.username}: {e}")
+
+# Conectar o signal de verificação de troca de senha obrigatória
+user_logged_in.connect(verificar_troca_senha_obrigatoria)

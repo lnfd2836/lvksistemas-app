@@ -88,7 +88,7 @@ class MandatoryPasswordChangeMiddleware:
                         request.session['password_change_message_shown'] = True
                 
                 # Redireciona para página de troca de senha
-                return redirect('usuarios:change_mandatory_password')
+                return redirect('change_mandatory_password')
             
             # Remove a flag da mensagem se o usuário não precisa mais trocar senha
             if request.session.get('password_change_message_shown', False):
