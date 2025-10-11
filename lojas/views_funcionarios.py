@@ -152,8 +152,9 @@ def gerar_username_unico(nome, sobrenome):
         counter += 1
     
     return username
-@login_r
-equired
+
+
+@login_required
 @require_loja_admin
 def funcionario_create(request):
     """Cria um novo funcionário"""
