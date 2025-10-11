@@ -142,6 +142,23 @@ class AuthenticationService:
                 logger.warning(f"Erro ao acessar loja_admin para usuário {user.username}: {str(e)}")
                 pass
             
+            # Verifica se é funcionário de uma loja
+            try:
+                if hasattr(user, 'funcionario') and user.funcionario:
+                    funcionario = user.funcionario
+                    if funcionario.ativo:
+                        logger.debug(f"Loja encontrada via funcionario para usuário {user.username}: {funcionario.loja.nome}")
+                        return funcionario.loja
+                    else:
+                        logger.debug(f"Usuário {user.username} é funcionário inativo")
+            except ObjectDoesNotExist:
+                # Usuário não é funcionário
+                logger.debug(f"Usuário {user.username} não é funcionário")
+                pass
+            except Exception as e:
+                logger.warning(f"Erro ao acessar funcionario para usuário {user.username}: {str(e)}")
+                pass
+            
             # Tenta buscar através de relacionamentos alternativos
             # Verifica se existe relacionamento direto com Loja via admin_user
             try:
@@ -205,7 +222,7 @@ class AuthenticationService:
             user: Instância do usuário Django
             
         Returns:
-            str: Tipo do usuário (super_admin, store_admin, regular_user, anonymous)
+            str: Tipo do usuário (super_admin, store_admin, funcionario, regular_user, anonymous)
         """
         if not user or not user.is_authenticated:
             return 'anonymous'
@@ -213,6 +230,10 @@ class AuthenticationService:
         try:
             if user.is_superuser:
                 return 'super_admin'
+            elif hasattr(user, 'loja_admin') and user.loja_admin:
+                return 'store_admin'
+            elif hasattr(user, 'funcionario') and user.funcionario and user.funcionario.ativo:
+                return 'funcionario'
             elif AuthenticationService.can_access_store_dashboard(user):
                 return 'store_admin'
             else:

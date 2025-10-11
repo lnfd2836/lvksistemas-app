@@ -127,3 +127,33 @@
     - Documentar como adicionar suporte a novos layouts
     - Criar guia de troubleshooting para problemas de validação
     - _Requirements: 3.3, 3.4_
+- [ ] 9. Corrigir montagem do campo livre SIGCB para remover dados da conta
+  - [ ] 9.1 Analisar implementação atual do campo livre SIGCB
+    - Identificar onde dados da conta estão sendo incluídos incorretamente
+    - Documentar estrutura atual vs especificação oficial da Caixa
+    - Mapear impacto da mudança em códigos existentes
+    - _Requirements: 7.1, 7.3_
+
+  - [ ] 9.2 Implementar correção da montagem do campo livre
+    - Remover uso de dados da conta corrente na construção do campo livre
+    - Implementar estrutura correta: cedente + nosso_numero + agencia_complemento + carteira
+    - Adicionar validação para rejeitar campo livre com dados de conta
+    - _Requirements: 7.1, 7.2, 7.4_
+
+  - [ ] 9.3 Atualizar validação para detectar códigos com dados de conta
+    - Implementar verificação específica para dados de conta no campo livre
+    - Adicionar mensagem de erro específica para este problema
+    - Criar validação que confirma conformidade com especificação SIGCB
+    - _Requirements: 7.3, 7.4, 7.5_
+
+  - [ ] 9.4 Testar correção com código problemático específico
+    - Validar que código `10492670145204324981352946570149762600000002990` é corrigido
+    - Confirmar que novo código gerado não contém dados de conta
+    - Testar conversão entre linha digitável e código de barras corrigido
+    - _Requirements: 7.1, 7.2, 7.5_
+
+  - [ ]* 9.5 Criar testes específicos para validação de campo livre SIGCB
+    - Implementar testes que verificam ausência de dados de conta
+    - Criar casos de teste para diferentes configurações de agência/cedente
+    - Validar que códigos antigos com dados de conta são rejeitados
+    - _Requirements: 7.3, 7.4_

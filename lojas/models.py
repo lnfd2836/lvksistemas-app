@@ -359,3 +359,141 @@ class ItemPedido(models.Model):
         # Calcula subtotal
         self.subtotal = self.quantidade * self.preco_unitario
         super().save(*args, **kwargs)
+
+class TipoFuncionario(models.Model):
+    """Modelo para tipos de funcionários específicos por tipo de loja"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nome = models.CharField(max_length=100, verbose_name="Nome do Tipo")
+    descricao = models.TextField(verbose_name="Descrição")
+    tipo_loja = models.ForeignKey(
+        'modulos.TipoLoja', 
+        on_delete=models.CASCADE, 
+        related_name='tipos_funcionario',
+        verbose_name="Tipo de Loja"
+    )
+    
+    # Permissões em formato JSON
+    permissoes = models.JSONField(
+        default=dict,
+        verbose_name="Permissões",
+        help_text="Permissões específicas do tipo de funcionário"
+    )
+    
+    # Controle
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    data_atualizacao = models.DateTimeField(auto_now=True, verbose_name="Última Atualização")
+    
+    class Meta:
+        verbose_name = "Tipo de Funcionário"
+        verbose_name_plural = "Tipos de Funcionário"
+        unique_together = ['nome', 'tipo_loja']
+        ordering = ['tipo_loja', 'nome']
+    
+    def __str__(self):
+        return f"{self.nome} - {self.tipo_loja.get_nome_display()}"
+    
+    def has_permission(self, module, action):
+        """Verifica se o tipo de funcionário tem permissão para uma ação específica"""
+        if not self.permissoes:
+            return False
+        
+        module_permissions = self.permissoes.get(module, {})
+        if isinstance(module_permissions, list):
+            return action in module_permissions
+        elif isinstance(module_permissions, dict):
+            return module_permissions.get(action, False)
+        
+        return False
+
+
+class Funcionario(models.Model):
+    """Modelo para funcionários de uma loja específica"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='funcionario',
+        verbose_name="Usuário"
+    )
+    loja = models.ForeignKey(
+        Loja, 
+        on_delete=models.CASCADE, 
+        related_name='funcionarios',
+        verbose_name="Loja"
+    )
+    tipo_funcionario = models.ForeignKey(
+        TipoFuncionario, 
+        on_delete=models.CASCADE, 
+        related_name='funcionarios',
+        verbose_name="Tipo de Funcionário"
+    )
+    
+    # Dados do funcionário
+    codigo_funcionario = models.CharField(
+        max_length=20, 
+        unique=True, 
+        verbose_name="Código do Funcionário"
+    )
+    data_admissao = models.DateField(verbose_name="Data de Admissão")
+    salario = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        verbose_name="Salário"
+    )
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    
+    # Controle
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    data_atualizacao = models.DateTimeField(auto_now=True, verbose_name="Última Atualização")
+    
+    class Meta:
+        verbose_name = "Funcionário"
+        verbose_name_plural = "Funcionários"
+        unique_together = ['loja', 'codigo_funcionario']
+        ordering = ['loja', 'user__first_name', 'user__last_name']
+    
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.loja.nome}"
+    
+    def save(self, *args, **kwargs):
+        if not self.codigo_funcionario:
+            # Gera código único para o funcionário
+            self.codigo_funcionario = self.gerar_codigo_funcionario()
+        
+        # Valida se o tipo de funcionário é compatível com o tipo da loja
+        if self.tipo_funcionario.tipo_loja != self.loja.tipo_loja:
+            raise ValueError(
+                f"Tipo de funcionário '{self.tipo_funcionario.nome}' não é compatível "
+                f"com o tipo de loja '{self.loja.tipo_loja.get_nome_display()}'"
+            )
+        
+        super().save(*args, **kwargs)
+    
+    def gerar_codigo_funcionario(self):
+        """Gera um código único para o funcionário"""
+        # Usa as primeiras 4 letras do nome da loja + timestamp
+        loja_prefix = ''.join(c for c in self.loja.nome if c.isalnum())[:4].upper()
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        return f"FUNC{loja_prefix}{timestamp}"
+    
+    def has_permission(self, module, action):
+        """Verifica se o funcionário tem permissão para uma ação específica"""
+        if not self.ativo:
+            return False
+        
+        return self.tipo_funcionario.has_permission(module, action)
+    
+    def get_dashboard_permissions(self):
+        """Retorna as permissões do funcionário para o dashboard"""
+        return self.tipo_funcionario.permissoes
+    
+    @property
+    def nome_completo(self):
+        """Retorna o nome completo do funcionário"""
+        return self.user.get_full_name() or self.user.username

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'lojas'
@@ -45,4 +45,7 @@ urlpatterns = [
     path('pedidos/novo/', views.novo_pedido, name='novo_pedido'),
     path('pedidos/<int:pedido_id>/detalhar/', views.detalhar_pedido, name='detalhar_pedido'),
     path('pedidos/<int:pedido_id>/alterar-status/', views.alterar_status_pedido, name='alterar_status_pedido'),
+    
+    # Gerenciamento de funcionários
+    path('funcionarios/', include('lojas.urls_funcionarios')),
 ]

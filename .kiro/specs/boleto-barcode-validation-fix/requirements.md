@@ -81,3 +81,15 @@ equirement 6
 3. WHEN validando SIGCB THEN o sistema SHALL usar algoritmos de validação específicos deste layout
 4. IF boleto é SIGCB THEN o sistema SHALL extrair nosso número, vencimento e valor corretamente
 5. WHEN há dúvida sobre layout THEN o sistema SHALL priorizar SIGCB para banco 104
+##
+# Requirement 7
+
+**User Story:** Como sistema, eu quero corrigir a montagem do campo livre SIGCB para não incluir dados da conta corrente, para que o código de barras seja válido conforme especificação da Caixa.
+
+#### Acceptance Criteria
+
+1. WHEN montando campo livre SIGCB THEN o sistema SHALL NOT incluir número da conta corrente
+2. WHEN construindo código de barras Caixa THEN o sistema SHALL usar apenas código cedente, nosso número, agência e carteira
+3. WHEN validando com suporte Caixa THEN o sistema SHALL confirmar que campo livre não contém dados de conta
+4. IF campo livre contém dados de conta THEN o sistema SHALL rejeitar como inválido
+5. WHEN gerando boleto SIGCB THEN o sistema SHALL seguir especificação oficial da Caixa sem dados de conta

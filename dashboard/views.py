@@ -161,7 +161,6 @@ def dashboard_loja(request, loja=None, loja_id=None):
             if not target_loja:
                 if request.user.is_superuser:
                     logger.info(f"Super usuário {request.user.username} sem loja específica, redirecionando para seleção")
-                    messages.info(request, 'Selecione uma loja para acessar seu dashboard.')
                     # Aqui você pode redirecionar para uma página de seleção de lojas
                     return redirect('dashboard_principal')
                 else:

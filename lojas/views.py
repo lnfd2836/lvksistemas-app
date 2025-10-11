@@ -108,6 +108,30 @@ def criar_loja(request):
                 admin_user.set_password(loja.senha_provisoria)
                 admin_user.save()
                 
+                # Criar perfil do usuário da loja com troca obrigatória de senha
+                from usuarios.models import PerfilUsuario
+                perfil, created_perfil = PerfilUsuario.objects.get_or_create(
+                    user=admin_user,
+                    defaults={
+                        'requires_password_change': True,
+                        'deve_trocar_senha': True,
+                        'provisional_password_created': timezone.now(),
+                        'is_loja_admin': True,
+                        'is_super_admin': False,
+                    }
+                )
+                
+                if not created_perfil:
+                    # Se o perfil já existia, atualiza os campos necessários
+                    perfil.requires_password_change = True
+                    perfil.deve_trocar_senha = True
+                    perfil.provisional_password_created = timezone.now()
+                    perfil.is_loja_admin = True
+                    perfil.is_super_admin = False
+                    perfil.save()
+                
+                logger.info(f"Perfil criado para usuário da loja {loja.nome}: {admin_user.username}")
+                
                 # Cria ambos os registros financeiros usando o plano selecionado
                 try:
                     from lojas.utils.plan_mapping import create_both_financial_records

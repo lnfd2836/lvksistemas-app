@@ -500,3 +500,97 @@ def validate_bulk_codes(codes_list):
 - [ ] Maior taxa de sucesso no processamento de boletos
 - [ ] Menos suporte necessário para problemas de validação
 - [ ] Compatibilidade com todos os bancos do sistema
+## Corr
+eção Específica do Campo Livre SIGCB
+
+### Problema Identificado
+
+O suporte da Caixa Econômica Federal identificou que a montagem do campo livre está incorreta, especificamente:
+
+1. **Dados da conta corrente estão sendo incluídos no código de barras**
+2. **O número da conta não deve ser utilizado no código de barras SIGCB**
+3. **A estrutura atual está gerando códigos inválidos**
+
+### Análise do Código Atual
+
+No arquivo `controle_financeiro/boleto_caixa_service.py`, linhas 225-231:
+
+```python
+# PROBLEMA: Código atual inclui dados da conta
+conta_completa = re.sub(r'[^0-9]', '', str(configuracao.conta))
+# Para SIGCB, usar os primeiros 2 dígitos da conta (não do código do cedente)
+if len(conta_completa) >= 2:
+    conta_limpa = conta_completa[:2]  # INCORRETO: Não deve usar conta
+else:
+    conta_limpa = conta_completa.zfill(2)
+
+agencia_conta_campo = f"{agencia_limpa}{conta_limpa}"  # INCORRETO
+```
+
+### Estrutura Correta do Campo Livre SIGCB
+
+Conforme especificação oficial da Caixa, o campo livre deve ter **25 posições**:
+
+```
+Posições 20-44 do código de barras (25 dígitos):
+CCCCCC NNNNNNNNNN AAAAAA CCC
+│      │          │      └─ Carteira (3 dígitos)
+│      │          └─ Agência + complemento (6 dígitos) - SEM CONTA
+│      └─ Nosso número (10 dígitos)
+└─ Código do cedente (6 dígitos)
+```
+
+### Correção Necessária
+
+1. **Remover uso da conta corrente** do campo livre
+2. **Usar apenas agência + complemento específico** (não conta)
+3. **Validar que o campo livre não contém dados de conta**
+
+### Implementação da Correção
+
+```python
+def _gerar_codigo_barras_caixa_corrigido(self, configuracao, nosso_numero, valor, fator_vencimento):
+    """
+    Versão corrigida que NÃO usa dados da conta corrente
+    """
+    
+    # Código do cedente (6 dígitos)
+    cedente_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))
+    codigo_cedente = cedente_limpo[-6:].zfill(6) if len(cedente_limpo) > 6 else cedente_limpo.zfill(6)
+    
+    # Nosso número (10 dígitos)
+    nosso_numero_limpo = re.sub(r'[^0-9]', '', str(nosso_numero))[-10:].zfill(10)
+    
+    # CORREÇÃO: Agência + complemento SEM usar conta
+    agencia_limpa = re.sub(r'[^0-9]', '', str(configuracao.agencia))[:4].zfill(4)
+    
+    # Para SIGCB, usar complemento específico baseado na agência ou cedente
+    # NÃO usar dados da conta corrente
+    complemento = "00"  # Ou outro valor específico conforme documentação Caixa
+    agencia_complemento = f"{agencia_limpa}{complemento}"
+    
+    # Carteira (3 dígitos)
+    carteira_limpa = re.sub(r'[^0-9]', '', str(configuracao.carteira))[:3].zfill(3)
+    
+    # Campo livre: cedente(6) + nosso_numero(10) + agencia_complemento(6) + carteira(3) = 25
+    campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_complemento}{carteira_limpa}"
+    
+    # Validar que não há dados de conta
+    if any(str(configuracao.conta) in campo_livre for _ in [1] if configuracao.conta):
+        raise ValueError("Campo livre SIGCB não deve conter dados da conta corrente")
+    
+    return campo_livre
+```
+
+### Validação da Correção
+
+1. **Testar com o código problemático**: `10492670145204324981352946570149762600000002990`
+2. **Verificar que não há dados de conta** no campo livre gerado
+3. **Validar com outros boletos Caixa** para garantir compatibilidade
+4. **Confirmar aprovação do suporte Caixa** após correção
+
+### Impacto da Mudança
+
+- **Códigos existentes** podem precisar ser regenerados
+- **Validação mais rigorosa** para detectar códigos com dados de conta
+- **Compatibilidade** mantida com especificação oficial SIGCB
