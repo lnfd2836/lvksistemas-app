@@ -92,23 +92,12 @@ def simple_login(request):
                     dashboard_url = AuthenticationService.determine_user_dashboard(user)
                     logger.info(f"Redirecionando usuário {user.username} para {dashboard_url}")
                     
-                    # Adicionar mensagem de boas-vindas baseada no tipo de usuário
-                    user_type = AuthenticationService.get_user_type(user)
-                    if user_type == 'super_admin':
-                        messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}! Acesso de Super Administrador.')
-                    elif user_type == 'store_admin':
-                        user_store = AuthenticationService.get_user_store(user)
-                        store_name = user_store.nome if user_store else 'sua loja'
-                        messages.success(request, f'Bem-vindo ao dashboard da {store_name}!')
-                    else:
-                        messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
-                    
+                    # Login bem-sucedido - redirecionar sem mensagens
                     return redirect(dashboard_url)
                     
                 except Exception as e:
                     logger.error(f"Erro ao determinar dashboard após login para usuário {user.username}: {str(e)}")
                     # Fallback para dashboard padrão
-                    messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
                     return redirect('dashboard:principal')
                     
             else:

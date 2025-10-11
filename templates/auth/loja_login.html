@@ -3,11 +3,37 @@
 
 {% block title %}Login - Dashboard da Loja{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<style>
+    .bg-loja-gradient {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    }
+    .text-loja-primary {
+        color: #11998e !important;
+    }
+    .btn-loja {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        color: white;
+    }
+    .btn-loja:hover {
+        background: linear-gradient(135deg, #0e8074 0%, #2dd865 100%);
+        color: white;
+    }
+    .alert-loja {
+        background-color: #d4edda;
+        border-color: #11998e;
+        color: #0e8074;
+    }
+    .form-control:focus {
+        border-color: #11998e;
+        box-shadow: 0 0 0 0.2rem rgba(17, 153, 142, 0.25);
+    }
+        box-shadow: 0 0 0 0.2rem rgba(17, 153, 
 <div class="container-fluid vh-100">
     <div class="row h-100">
         <!-- Lado esquerdo - Informações -->
-        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-primary text-white">
+        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-loja-gradient text-white">
             <div class="text-center">
                 <i class="fas fa-store fa-5x mb-4"></i>
                 <h2 class="mb-3">Dashboard da Loja</h2>
@@ -34,13 +60,13 @@
             <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px;">
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
-                        <i class="fas fa-store fa-3x text-primary mb-3"></i>
+                        <i class="fas fa-store fa-3x text-loja-primary mb-3"></i>
                         <h3 class="card-title">Login da Loja</h3>
                         <p class="text-muted">Acesse o dashboard administrativo</p>
                     </div>
                     
                     {% if user.is_superuser %}
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <div class="alert alert-loja alert-dismissible fade show" role="alert">
                         <h6 class="alert-heading">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Acesso para Administradores de Loja
@@ -102,7 +128,7 @@
                         </div>
                         
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn btn-loja btn-lg">
                                 <i class="fas fa-sign-in-alt me-2"></i>
                                 Entrar no Dashboard
                             </button>
@@ -120,7 +146,7 @@
                     </div>
                     
                     <div class="mt-4">
-                        <div class="alert alert-info">
+                        <div class="alert alert-loja">
                             <h6 class="alert-heading">
                                 <i class="fas fa-info-circle me-2"></i>
                                 Como Acessar

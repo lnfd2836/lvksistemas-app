@@ -136,14 +136,6 @@ def loja_login(request):
                             logger.error(f"Erro ao criar sessão da loja para usuário {user.username}: {str(e)}")
                             # Continua normalmente mesmo se houver erro na sessão
                         
-                        # Mensagem de boas-vindas
-                        if user_store:
-                            messages.success(request, f'Bem-vindo ao dashboard da {user_store.nome}!')
-                        elif user.is_superuser:
-                            messages.success(request, 'Bem-vindo! Acesso de Super Administrador ao sistema de lojas.')
-                        else:
-                            messages.success(request, 'Bem-vindo ao dashboard da loja!')
-                        
                         # Redirecionar para dashboard apropriado
                         dashboard_url = AuthenticationService.determine_user_dashboard(user)
                         return redirect(dashboard_url)
@@ -152,7 +144,6 @@ def loja_login(request):
                         # Usuário não tem acesso à loja
                         if user.is_superuser:
                             logger.info(f"Super usuário {user.username} logado via loja_login, redirecionando para dashboard principal")
-                            messages.info(request, 'Login realizado como Super Administrador. Redirecionando para dashboard principal.')
                             return redirect('dashboard:principal')
                         else:
                             logger.warning(f"Usuário {user.username} tentou login da loja mas não tem loja associada")
