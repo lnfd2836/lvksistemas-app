@@ -1,0 +1,239 @@
+{% extends 'funcionarios/base_funcionarios.html' %}
+{% load static %}
+
+{% block page_actions %}
+<a href="{% url 'funcionarios:create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-1"></i>Novo Funcionário
+</a>
+{% endblock %}
+
+{% block funcionario_content %}
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_funcionarios }}</h4>
+                        <p class="mb-0">Total de Funcionários</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ funcionarios_ativos }}</h4>
+                        <p class="mb-0">Funcionários Ativos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ funcionarios_inativos }}</h4>
+                        <p class="mb-0">Funcionários Inativos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-times fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Nome, username ou código">
+            </div>
+            <div class="col-md-3">
+                <label for="tipo_funcionario" class="form-label">Tipo de Funcionário</label>
+                <select class="form-select" id="tipo_funcionario" name="tipo_funcionario">
+                    <option value="">Todos os tipos</option>
+                    {% for tipo in tipos_funcionario %}
+                        <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == tipo_funcionario_selected %}selected{% endif %}>
+                            {{ tipo.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="ativo" {% if status_selected == 'ativo' %}selected{% endif %}>Ativos</option>
+                    <option value="inativo" {% if status_selected == 'inativo' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Funcionários -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Funcionários</h5>
+    </div>
+    <div class="card-body">
+        {% if funcionarios %}
+            <div class="row">
+                {% for funcionario in funcionarios %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card funcionario-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="funcionario-avatar me-3">
+                                        {{ funcionario.user.first_name|first|upper }}{{ funcionario.user.last_name|first|upper }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ funcionario.nome_completo }}</h6>
+                                        <small class="text-muted">{{ funcionario.codigo_funcionario }}</small>
+                                    </div>
+                                    <div>
+                                        {% if funcionario.ativo %}
+                                            <span class="badge bg-success status-badge">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger status-badge">Inativo</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <strong>Tipo:</strong> {{ funcionario.tipo_funcionario.nome }}
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <strong>Email:</strong> {{ funcionario.user.email }}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <strong>Admissão:</strong> {{ funcionario.data_admissao|date:"d/m/Y" }}
+                                </div>
+                                
+                                <!-- Permissões principais -->
+                                <div class="mb-3">
+                                    <small class="text-muted">Permissões:</small><br>
+                                    {% for module, actions in funcionario.get_dashboard_permissions.items %}
+                                        {% if actions %}
+                                            <span class="badge bg-info permission-badge">{{ module }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'funcionarios:detail' funcionario.id %}" 
+                                       class="btn btn-sm btn-outline-primary flex-fill">
+                                        <i class="fas fa-eye me-1"></i>Ver
+                                    </a>
+                                    <a href="{% url 'funcionarios:edit' funcionario.id %}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'funcionarios:toggle_status' funcionario.id %}" 
+                                          class="d-inline" onsubmit="return confirmAction('Tem certeza que deseja {% if funcionario.ativo %}desativar{% else %}ativar{% endif %} este funcionário?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm {% if funcionario.ativo %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                                            <i class="fas fa-{% if funcionario.ativo %}pause{% else %}play{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginação de funcionários" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if tipo_funcionario_selected %}&tipo_funcionario={{ tipo_funcionario_selected }}{% endif %}{% if status_selected %}&status={{ status_selected }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_funcionario_selected %}&tipo_funcionario={{ tipo_funcionario_selected }}{% endif %}{% if status_selected %}&status={{ status_selected }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if tipo_funcionario_selected %}&tipo_funcionario={{ tipo_funcionario_selected }}{% endif %}{% if status_selected %}&status={{ status_selected }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_funcionario_selected %}&tipo_funcionario={{ tipo_funcionario_selected }}{% endif %}{% if status_selected %}&status={{ status_selected }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if tipo_funcionario_selected %}&tipo_funcionario={{ tipo_funcionario_selected }}{% endif %}{% if status_selected %}&status={{ status_selected }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum funcionário encontrado</h5>
+                <p class="text-muted">
+                    {% if search or tipo_funcionario_selected or status_selected %}
+                        Tente ajustar os filtros ou <a href="{% url 'funcionarios:list' %}">limpar a busca</a>.
+                    {% else %}
+                        Comece cadastrando o primeiro funcionário da sua equipe.
+                    {% endif %}
+                </p>
+                <a href="{% url 'funcionarios:create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Cadastrar Primeiro Funcionário
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

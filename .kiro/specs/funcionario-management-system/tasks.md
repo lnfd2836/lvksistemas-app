@@ -45,22 +45,22 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
 - [ ] 4. Create templates and user interface
-- [ ] 4.1 Create funcionario management templates
+- [x] 4.1 Create funcionario management templates
   - Design responsive funcionario list template
   - Create funcionario creation and edit forms
   - Implement funcionario detail view template
   - Add confirmation dialogs for critical actions
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
-- [ ] 4.2 Integrate funcionario management into dashboard navigation
+- [x] 4.2 Integrate funcionario management into dashboard navigation
   - Add funcionario management menu items to dashboard
   - Create dashboard widgets for funcionario statistics
   - Implement quick actions for funcionario management
   - Add funcionario-related notifications and alerts
   - _Requirements: 1.1, 2.1_
 
-- [ ] 5. Implement data seeding and tipo_funcionario configuration
-- [ ] 5.1 Create data fixtures for default funcionario types
+- [x] 5. Implement data seeding and tipo_funcionario configuration
+- [x] 5.1 Create data fixtures for default funcionario types
   - Create fixtures for all loja types with their specific funcionario types
   - Implement management command to populate default tipos
   - Add validation to ensure tipo compatibility with loja type
@@ -74,15 +74,15 @@
   - Test tipo_funcionario filtering by loja type
   - _Requirements: 1.1, 5.1, 6.1_
 
-- [ ] 6. Add URL routing and integrate with existing system
-- [ ] 6.1 Create URL patterns for funcionario management
+- [x] 6. Add URL routing and integrate with existing system
+- [x] 6.1 Create URL patterns for funcionario management
   - Define URL structure for all funcionario operations
   - Add URL patterns to dashboard app
   - Implement proper URL namespacing
   - Add breadcrumb navigation support
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
-- [ ] 6.2 Update dashboard views to include funcionario access control
+- [x] 6.2 Update dashboard views to include funcionario access control
   - Modify existing dashboard views to check funcionario permissions
   - Add funcionario context to dashboard templates
   - Implement funcionario-specific dashboard customization

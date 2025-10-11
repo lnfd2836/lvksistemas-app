@@ -1,0 +1,230 @@
+{% extends 'funcionarios/base_funcionarios.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block page_title %}Editar {{ funcionario.nome_completo }}{% endblock %}
+
+{% block breadcrumb_extra %}
+<li class="breadcrumb-item"><a href="{% url 'funcionarios:detail' funcionario.id %}">{{ funcionario.nome_completo }}</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+    <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-list me-1"></i>Lista
+    </a>
+</div>
+{% endblock %}
+
+{% block funcionario_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Editar Funcionário</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Dados Pessoais -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-user me-2"></i>Dados Pessoais
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nome" name="nome" 
+                                       value="{{ request.POST.nome|default:funcionario.user.first_name }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sobrenome" class="form-label">Sobrenome <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sobrenome" name="sobrenome" 
+                                       value="{{ request.POST.sobrenome|default:funcionario.user.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ request.POST.email|default:funcionario.user.email }}" required>
+                                <div class="form-text">Usado para login no sistema</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="telefone" class="form-label">Telefone</label>
+                                <input type="tel" class="form-control" id="telefone" name="telefone" 
+                                       value="{{ request.POST.telefone|default:funcionario.user.perfil.telefone }}" 
+                                       placeholder="(11) 99999-9999">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dados Profissionais -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-briefcase me-2"></i>Dados Profissionais
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tipo_funcionario" class="form-label">Tipo de Funcionário <span class="text-danger">*</span></label>
+                                <select class="form-select" id="tipo_funcionario" name="tipo_funcionario" required>
+                                    <option value="">Selecione o tipo</option>
+                                    {% for tipo in tipos_funcionario %}
+                                        <option value="{{ tipo.id }}" 
+                                                {% if request.POST.tipo_funcionario == tipo.id|stringformat:"s" or funcionario.tipo_funcionario.id == tipo.id %}selected{% endif %}
+                                                data-description="{{ tipo.descricao }}">
+                                            {{ tipo.nome }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div id="tipo-description" class="form-text"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="data_admissao" class="form-label">Data de Admissão <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="data_admissao" name="data_admissao" 
+                                       value="{{ request.POST.data_admissao|default:funcionario.data_admissao|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="salario" class="form-label">Salário</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="salario" name="salario" 
+                                           value="{{ request.POST.salario|default:funcionario.salario }}" 
+                                           step="0.01" min="0" placeholder="0,00">
+                                </div>
+                                <div class="form-text">Campo opcional</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código do Funcionário</label>
+                                <input type="text" class="form-control" value="{{ funcionario.codigo_funcionario }}" readonly>
+                                <div class="form-text">Código gerado automaticamente</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
+                            <div class="mb-3">
+                                <label for="observacoes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacoes" name="observacoes" 
+                                          rows="3" placeholder="Informações adicionais sobre o funcionário">{{ request.POST.observacoes|default:funcionario.observacoes }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status atual -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Status Atual</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Status do Funcionário:</strong>
+                                {% if funcionario.ativo %}
+                                    <span class="badge bg-success ms-2">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">Inativo</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Status da Conta:</strong>
+                                {% if funcionario.user.is_active %}
+                                    <span class="badge bg-success ms-2">Conta Ativa</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">Conta Inativa</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">
+                            Para alterar o status do funcionário ou resetar a senha, use as ações na página de detalhes.
+                        </small>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'funcionarios:detail' funcionario.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Atualiza descrição do tipo de funcionário
+    document.getElementById('tipo_funcionario').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const description = selectedOption.getAttribute('data-description');
+        document.getElementById('tipo-description').textContent = description || '';
+    });
+    
+    // Trigger inicial para descrição
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('tipo_funcionario').dispatchEvent(new Event('change'));
+    });
+    
+    // Formatação do telefone
+    document.getElementById('telefone').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 11) {
+            value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (value.length >= 7) {
+            value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        } else if (value.length >= 3) {
+            value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        }
+        e.target.value = value;
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const requiredFields = ['nome', 'sobrenome', 'email', 'tipo_funcionario', 'data_admissao'];
+        let isValid = true;
+        
+        requiredFields.forEach(function(fieldName) {
+            const field = document.getElementById(fieldName);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+        }
+    });
+</script>
+{% endblock %}

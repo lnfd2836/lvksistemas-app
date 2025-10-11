@@ -47,6 +47,124 @@
 </div>
 {% endif %}
 
+<!-- Seção de Gerenciamento -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Gerenciamento da Loja
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Funcionários -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Funcionários
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">{{ total_funcionarios }}</div>
+                                        <div class="text-muted small">
+                                            {{ funcionarios_ativos }} ativos
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-users text-success" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'funcionarios:list' %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Gerenciar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Clientes -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Clientes
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">{{ loja.clientes.count }}</div>
+                                        <div class="text-muted small">Cadastrados</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-user-friends text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'lojas:gerenciar_clientes' %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Gerenciar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Produtos -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Produtos
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">{{ loja.produtos.count }}</div>
+                                        <div class="text-muted small">No catálogo</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-box text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'lojas:gerenciar_produtos' %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Gerenciar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vendas -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Vendas
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">{{ loja.vendas.count }}</div>
+                                        <div class="text-muted small">Realizadas</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-shopping-cart text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{% url 'lojas:gerenciar_vendas' %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Gerenciar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Seção Financeira - Boletos -->
 <div class="row mb-4">
     <div class="col-12">

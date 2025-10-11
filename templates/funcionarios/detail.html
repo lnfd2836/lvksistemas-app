@@ -1,0 +1,260 @@
+{% extends 'funcionarios/base_funcionarios.html' %}
+{% load static %}
+
+{% block page_title %}{{ funcionario.nome_completo }}{% endblock %}
+
+{% block breadcrumb_extra %}
+<li class="breadcrumb-item active">{{ funcionario.nome_completo }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+    <a href="{% url 'funcionarios:edit' funcionario.id %}" class="btn btn-primary">
+        <i class="fas fa-edit me-1"></i>Editar
+    </a>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-cog me-1"></i>Ações
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <form method="post" action="{% url 'funcionarios:reset_password' funcionario.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item" 
+                            onclick="return confirmAction('Tem certeza que deseja resetar a senha deste funcionário?')">
+                        <i class="fas fa-key me-2"></i>Resetar Senha
+                    </button>
+                </form>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form method="post" action="{% url 'funcionarios:toggle_status' funcionario.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item {% if funcionario.ativo %}text-warning{% else %}text-success{% endif %}" 
+                            onclick="return confirmAction('Tem certeza que deseja {% if funcionario.ativo %}desativar{% else %}ativar{% endif %} este funcionário?')">
+                        <i class="fas fa-{% if funcionario.ativo %}pause{% else %}play{% endif %} me-2"></i>
+                        {% if funcionario.ativo %}Desativar{% else %}Ativar{% endif %} Funcionário
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block funcionario_content %}
+<div class="row">
+    <!-- Informações Principais -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Informações Pessoais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Nome Completo</label>
+                            <p class="fw-bold">{{ funcionario.nome_completo }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Código do Funcionário</label>
+                            <p class="fw-bold">{{ funcionario.codigo_funcionario }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email</label>
+                            <p class="fw-bold">{{ funcionario.user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Username</label>
+                            <p class="fw-bold">{{ funcionario.user.username }}</p>
+                        </div>
+                    </div>
+                    {% if funcionario.user.perfil.telefone %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Telefone</label>
+                            <p class="fw-bold">{{ funcionario.user.perfil.telefone }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Informações Profissionais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Tipo de Funcionário</label>
+                            <p class="fw-bold">{{ funcionario.tipo_funcionario.nome }}</p>
+                            <small class="text-muted">{{ funcionario.tipo_funcionario.descricao }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Data de Admissão</label>
+                            <p class="fw-bold">{{ funcionario.data_admissao|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    {% if funcionario.salario %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Salário</label>
+                            <p class="fw-bold">R$ {{ funcionario.salario|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Status</label>
+                            <p>
+                                {% if funcionario.ativo %}
+                                    <span class="badge bg-success fs-6">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">Inativo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if funcionario.observacoes %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Observações</label>
+                            <p class="fw-bold">{{ funcionario.observacoes|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Permissões -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Permissões do Sistema</h5>
+            </div>
+            <div class="card-body">
+                {% with permissions=funcionario.get_dashboard_permissions %}
+                    {% if permissions %}
+                        <div class="row">
+                            {% for module, actions in permissions.items %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="border rounded p-3">
+                                        <h6 class="text-primary mb-2">
+                                            <i class="fas fa-cube me-1"></i>{{ module|title }}
+                                        </h6>
+                                        {% if actions %}
+                                            {% for action in actions %}
+                                                <span class="badge bg-secondary me-1 mb-1">
+                                                    {% if action == 'read' %}
+                                                        <i class="fas fa-eye me-1"></i>Visualizar
+                                                    {% elif action == 'write' %}
+                                                        <i class="fas fa-edit me-1"></i>Editar
+                                                    {% elif action == 'delete' %}
+                                                        <i class="fas fa-trash me-1"></i>Excluir
+                                                    {% else %}
+                                                        {{ action|title }}
+                                                    {% endif %}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">Sem permissões</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                            <p class="text-muted">Nenhuma permissão configurada para este tipo de funcionário.</p>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar com informações adicionais -->
+    <div class="col-lg-4">
+        <!-- Avatar e Status -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <div class="funcionario-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                    {{ funcionario.user.first_name|first|upper }}{{ funcionario.user.last_name|first|upper }}
+                </div>
+                <h5 class="mb-1">{{ funcionario.nome_completo }}</h5>
+                <p class="text-muted mb-2">{{ funcionario.tipo_funcionario.nome }}</p>
+                {% if funcionario.ativo %}
+                    <span class="badge bg-success">Funcionário Ativo</span>
+                {% else %}
+                    <span class="badge bg-danger">Funcionário Inativo</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Informações da Loja -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-store me-2"></i>Loja</h6>
+            </div>
+            <div class="card-body">
+                <p class="fw-bold mb-1">{{ funcionario.loja.nome }}</p>
+                <p class="text-muted mb-2">{{ funcionario.loja.tipo_loja.get_nome_display }}</p>
+                <small class="text-muted">
+                    <i class="fas fa-map-marker-alt me-1"></i>
+                    {{ funcionario.loja.cidade }}, {{ funcionario.loja.estado }}
+                </small>
+            </div>
+        </div>
+        
+        <!-- Informações do Sistema -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Sistema</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Cadastrado em:</small><br>
+                    <strong>{{ funcionario.data_criacao|date:"d/m/Y H:i" }}</strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Última atualização:</small><br>
+                    <strong>{{ funcionario.data_atualizacao|date:"d/m/Y H:i" }}</strong>
+                </div>
+                {% if funcionario.user.perfil.ultimo_acesso %}
+                <div class="mb-2">
+                    <small class="text-muted">Último acesso:</small><br>
+                    <strong>{{ funcionario.user.perfil.ultimo_acesso|date:"d/m/Y H:i" }}</strong>
+                </div>
+                {% endif %}
+                <div>
+                    <small class="text-muted">Status da conta:</small><br>
+                    {% if funcionario.user.is_active %}
+                        <span class="badge bg-success">Conta Ativa</span>
+                    {% else %}
+                        <span class="badge bg-danger">Conta Inativa</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

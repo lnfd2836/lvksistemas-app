@@ -14,6 +14,7 @@ from dashboard.models import DashboardStats, Notificacao
 from usuarios.models import LogAcesso, SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 from dashboard.services.authentication import AuthenticationService
+from lojas.permissions import require_loja_access, get_user_permissions
 import logging
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,7 @@ def dashboard_super_admin(request):
     return render(request, 'dashboard/super_admin.html', context)
 
 
+@require_loja_access
 def dashboard_loja(request, loja=None, loja_id=None):
     """Dashboard específico de uma loja - refatorado para usar AuthenticationService"""
     
@@ -258,12 +260,21 @@ def dashboard_loja(request, loja=None, loja_id=None):
                 ativo=True
             ).order_by('ordem')
         
+        # Estatísticas de funcionários
+        from lojas.models import Funcionario
+        total_funcionarios = Funcionario.objects.filter(loja=target_loja).count()
+        funcionarios_ativos = Funcionario.objects.filter(loja=target_loja, ativo=True).count()
+        funcionarios_inativos = total_funcionarios - funcionarios_ativos
+        
         # Preparar contexto completo
         context = {
             'loja': target_loja,
             'controle_financeiro': controle_financeiro,
             'total_clientes': total_clientes,
             'total_produtos': total_produtos,
+            'total_funcionarios': total_funcionarios,
+            'funcionarios_ativos': funcionarios_ativos,
+            'funcionarios_inativos': funcionarios_inativos,
             'vendas_hoje': vendas_hoje,
             'vendas_semana': vendas_semana,
             'vendas_mes': vendas_mes,

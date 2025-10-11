@@ -1,0 +1,104 @@
+{% extends 'funcionarios/base_funcionarios.html' %}
+{% load static %}
+
+{% block page_title %}Selecionar Loja{% endblock %}
+
+{% block breadcrumb_extra %}
+<li class="breadcrumb-item active">Selecionar Loja</li>
+{% endblock %}
+
+{% block funcionario_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-store me-2"></i>Selecionar Loja para Gerenciar Funcionários</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Como super administrador, você pode gerenciar funcionários de qualquer loja. 
+                    Selecione a loja que deseja gerenciar:
+                </p>
+                
+                {% if lojas %}
+                    <div class="row">
+                        {% for loja in lojas %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 loja-card" style="cursor: pointer;" 
+                                     onclick="window.location.href='{% url 'funcionarios:list' %}?loja_id={{ loja.id }}'">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="me-3">
+                                                <i class="fas fa-store fa-2x text-primary"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ loja.nome }}</h6>
+                                                <small class="text-muted">{{ loja.tipo_loja.get_nome_display }}</small>
+                                            </div>
+                                            <div>
+                                                <span class="badge bg-{{ loja.status|yesno:'success,danger' }}">
+                                                    {{ loja.get_status_display }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ loja.cidade }}, {{ loja.estado }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-envelope me-1"></i>
+                                                {{ loja.email }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>
+                                                Admin: {{ loja.admin_user.get_full_name|default:loja.admin_user.username }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                Funcionários: {{ loja.funcionarios.count }}
+                                            </small>
+                                            <i class="fas fa-arrow-right text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma loja encontrada</h5>
+                        <p class="text-muted">Não há lojas ativas no sistema para gerenciar funcionários.</p>
+                        <a href="{% url 'dashboard:super_admin' %}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar ao Dashboard
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .loja-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .loja-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
