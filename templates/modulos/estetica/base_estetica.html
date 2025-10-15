@@ -100,22 +100,22 @@
             
             <nav class="nav flex-column">
                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                   href="{% url 'estetica:dashboard' %}">
+                   href="{% url 'modulos:estetica_dashboard' %}">
                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                 </a>
                 
                 <a class="nav-link {% if 'agendamento' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'estetica:agendamentos' %}">
+                   href="{% url 'modulos:estetica_agendamentos' %}">
                     <i class="fas fa-calendar-alt me-2"></i>Agendamentos
                 </a>
                 
                 <a class="nav-link {% if 'servico' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'estetica:servicos' %}">
+                   href="{% url 'modulos:estetica_servicos' %}">
                     <i class="fas fa-concierge-bell me-2"></i>Serviços
                 </a>
                 
                 <a class="nav-link {% if 'protocolo' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'estetica:protocolos' %}">
+                   href="{% url 'modulos:estetica_protocolos' %}">
                     <i class="fas fa-weight me-2"></i>Protocolos
                 </a>
                 
@@ -125,7 +125,7 @@
                 </a>
                 
                 <a class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'estetica:relatorios' %}">
+                   href="{% url 'modulos:estetica_relatorios' %}">
                     <i class="fas fa-chart-bar me-2"></i>Relatórios
                 </a>
             </nav>
