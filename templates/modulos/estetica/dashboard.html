@@ -1,0 +1,210 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Visão geral da clínica{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'estetica:criar_agendamento' %}" class="btn btn-light">
+    <i class="fas fa-plus me-2"></i>Novo Agendamento
+</a>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="row mb-4">
+    <!-- Estatísticas -->
+    <div class="col-md-3 mb-3">
+        <div class="card estetica-card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
+                <h4 class="text-primary">{{ agendamentos_hoje.count }}</h4>
+                <p class="text-muted mb-0">Agendamentos Hoje</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card estetica-card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h4 class="text-warning">{{ agendamentos_pendentes }}</h4>
+                <p class="text-muted mb-0">Pendentes</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card estetica-card text-center">
+            <div class="card-body">
+                <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
+                <h4 class="text-success">{{ clientes_novos }}</h4>
+                <p class="text-muted mb-0">Clientes Novos</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card estetica-card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                <h4 class="text-info">{{ servicos_populares.count }}</h4>
+                <p class="text-muted mb-0">Serviços Ativos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Próximos Agendamentos -->
+    <div class="col-md-8 mb-4">
+        <div class="card estetica-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Próximos Agendamentos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if proximos_agendamentos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Serviço</th>
+                                    <th>Data/Hora</th>
+                                    <th>Profissional</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agendamento in proximos_agendamentos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ agendamento.cliente.nome }}</strong>
+                                    </td>
+                                    <td>{{ agendamento.servico.nome }}</td>
+                                    <td>
+                                        {{ agendamento.data_agendamento|date:"d/m/Y" }}<br>
+                                        <small class="text-muted">{{ agendamento.hora_inicio|time:"H:i" }}</small>
+                                    </td>
+                                    <td>{{ agendamento.profissional.get_full_name|default:agendamento.profissional.username }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ agendamento.status }}">
+                                            {{ agendamento.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'estetica:agendamento_detalhes' agendamento.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum agendamento próximo</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agendamentos de Hoje -->
+    <div class="col-md-4 mb-4">
+        <div class="card estetica-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>Agendamentos de Hoje
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if agendamentos_hoje %}
+                    {% for agendamento in agendamentos_hoje %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                        <div>
+                            <strong>{{ agendamento.cliente.nome }}</strong><br>
+                            <small class="text-muted">{{ agendamento.servico.nome }}</small><br>
+                            <small class="text-primary">{{ agendamento.hora_inicio|time:"H:i" }}</small>
+                        </div>
+                        <span class="status-badge status-{{ agendamento.status }}">
+                            {{ agendamento.get_status_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-check fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Nenhum agendamento hoje</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Serviços Mais Populares -->
+    <div class="col-md-6 mb-4">
+        <div class="card estetica-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-star me-2"></i>Serviços Mais Populares
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if servicos_populares %}
+                    {% for servico in servicos_populares %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>{{ servico.nome }}</strong><br>
+                            <small class="text-muted">{{ servico.get_categoria_display }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary">{{ servico.total_agendamentos }} agendamentos</span><br>
+                            <small class="text-success">R$ {{ servico.preco }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Nenhum dado disponível</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ações Rápidas -->
+    <div class="col-md-6 mb-4">
+        <div class="card estetica-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'estetica:criar_agendamento' %}" class="btn btn-estetica">
+                        <i class="fas fa-plus me-2"></i>Novo Agendamento
+                    </a>
+                    <a href="{% url 'estetica:criar_servico' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-concierge-bell me-2"></i>Novo Serviço
+                    </a>
+                    <a href="{% url 'estetica:calendario_agendamentos' %}" class="btn btn-outline-info">
+                        <i class="fas fa-calendar-alt me-2"></i>Ver Calendário
+                    </a>
+                    <a href="{% url 'estetica:relatorios' %}" class="btn btn-outline-success">
+                        <i class="fas fa-chart-bar me-2"></i>Relatórios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

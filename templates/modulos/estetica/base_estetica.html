@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clínica de Estética - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .estetica-sidebar {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
+        min-height: 100vh;
+        padding: 20px 0;
+    }
+    
+    .estetica-sidebar .nav-link {
+        color: white;
+        padding: 12px 20px;
+        margin: 5px 0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .estetica-sidebar .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: translateX(5px);
+    }
+    
+    .estetica-sidebar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-weight: bold;
+    }
+    
+    .estetica-header {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
+        color: white;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+    
+    .estetica-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(233, 30, 99, 0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .estetica-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .estetica-card .card-header {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        border: none;
+    }
+    
+    .btn-estetica {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-estetica:hover {
+        background: linear-gradient(135deg, #c2185b, #e91e63);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    
+    .status-agendado { background-color: #ffc107; color: #000; }
+    .status-confirmado { background-color: #17a2b8; color: white; }
+    .status-em_andamento { background-color: #007bff; color: white; }
+    .status-concluido { background-color: #28a745; color: white; }
+    .status-cancelado { background-color: #dc3545; color: white; }
+    .status-faltou { background-color: #6c757d; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 estetica-sidebar">
+            <div class="text-center mb-4">
+                <i class="fas fa-spa fa-3x text-white mb-2"></i>
+                <h5 class="text-white">Clínica de Estética</h5>
+            </div>
+            
+            <nav class="nav flex-column">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                   href="{% url 'estetica:dashboard' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                
+                <a class="nav-link {% if 'agendamento' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'estetica:agendamentos' %}">
+                    <i class="fas fa-calendar-alt me-2"></i>Agendamentos
+                </a>
+                
+                <a class="nav-link {% if 'servico' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'estetica:servicos' %}">
+                    <i class="fas fa-concierge-bell me-2"></i>Serviços
+                </a>
+                
+                <a class="nav-link {% if 'protocolo' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'estetica:protocolos' %}">
+                    <i class="fas fa-weight me-2"></i>Protocolos
+                </a>
+                
+                <a class="nav-link {% if 'anamnese' in request.resolver_match.url_name or 'evolucao' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="#">
+                    <i class="fas fa-users me-2"></i>Clientes
+                </a>
+                
+                <a class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'estetica:relatorios' %}">
+                    <i class="fas fa-chart-bar me-2"></i>Relatórios
+                </a>
+            </nav>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10">
+            <!-- Header -->
+            <div class="estetica-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h2 class="mb-0">
+                            <i class="fas fa-spa me-2"></i>
+                            {% block page_title %}Clínica de Estética{% endblock %}
+                        </h2>
+                        <p class="mb-0 opacity-75">{% block page_subtitle %}Sistema completo de gestão{% endblock %}</p>
+                    </div>
+                    <div class="col-auto">
+                        {% block header_actions %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Page Content -->
+            {% block estetica_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-hide alerts after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut('slow');
+    }, 5000);
+    
+    // Confirmação para ações importantes
+    $('.btn-danger').click(function(e) {
+        if (!confirm('Tem certeza que deseja realizar esta ação?')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}
