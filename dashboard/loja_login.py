@@ -36,7 +36,7 @@ def loja_login(request):
         
         if not username or not password:
             messages.error(request, 'Por favor, preencha todos os campos.')
-            return render(request, 'auth/loja_login_clean.html')
+            return render(request, 'auth/loja_login.html')
         
         try:
             logger.info(f"Tentativa de login da loja - Username/Email: {username}")
@@ -73,7 +73,7 @@ def loja_login(request):
                 if not user.is_active:
                     logger.warning(f"Tentativa de login da loja com usuário inativo: {user.username}")
                     messages.error(request, 'Esta conta está desativada. Entre em contato com o suporte.')
-                    return render(request, 'auth/loja_login_clean.html')
+                    return render(request, 'auth/loja_login.html')
                 
                 # Verificar se é uma senha provisória
                 try:
@@ -151,12 +151,12 @@ def loja_login(request):
                             # Fazer logout do usuário já que não pode acessar
                             from django.contrib.auth import logout
                             logout(request)
-                            return render(request, 'auth/loja_login_clean.html')
+                            return render(request, 'auth/loja_login.html')
                             
                 except Exception as e:
                     logger.error(f"Erro ao verificar acesso à loja após login para usuário {user.username}: {str(e)}")
                     messages.error(request, 'Erro interno ao verificar permissões. Tente novamente.')
-                    return render(request, 'auth/loja_login_clean.html')
+                    return render(request, 'auth/loja_login.html')
                     
             else:
                 logger.warning(f"Tentativa de login da loja falhada para username/email: {username}")
@@ -177,7 +177,7 @@ def loja_login(request):
             logger.error(f"Erro durante processo de login da loja: {str(e)}")
             messages.error(request, 'Erro interno durante o login. Tente novamente.')
     
-    return render(request, 'auth/loja_login_clean.html')
+    return render(request, 'auth/loja_login.html')
 
 
 @login_required
