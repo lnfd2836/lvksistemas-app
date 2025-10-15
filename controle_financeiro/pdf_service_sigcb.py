@@ -232,14 +232,14 @@ class BoletoPDFServiceSIGCB:
             drawing = createBarcodeDrawing(
                 'I2of5',
                 value=codigo_limpo,
-                barHeight=20*mm,   # Altura aumentada para melhor leitura (20mm)
-                barWidth=0.6*mm,   # Largura das barras aumentada para melhor contraste
+                barHeight=12*mm,   # Altura otimizada para celular (12mm)
+                barWidth=0.4*mm,   # Largura das barras otimizada (0.4mm)
                 humanReadable=0,   # Sem texto abaixo
                 checksum=0,
                 bearers=0,
                 quiet=1,           # Zona silenciosa
-                lquiet=8*mm,       # Margem esquerda aumentada (8mm)
-                rquiet=8*mm        # Margem direita aumentada (8mm)
+                lquiet=3*mm,       # Margem esquerda reduzida (3mm)
+                rquiet=3*mm        # Margem direita reduzida (3mm)
             )
             
             # O drawing já está posicionado corretamente pelo createBarcodeDrawing
@@ -271,17 +271,17 @@ class BoletoPDFServiceSIGCB:
                 I2of5 = get_barcode_class('i2of5')
                 barcode_generator = I2of5(codigo_limpo, writer=ImageWriter())
                 
-                # Configurações para melhor qualidade e legibilidade
+                # Configurações otimizadas para leitura em celular
                 options = {
-                    'module_width': 0.6,      # Largura das barras aumentada
-                    'module_height': 20.0,    # Altura das barras aumentada
-                    'quiet_zone': 5.0,        # Zona silenciosa aumentada
+                    'module_width': 0.4,      # Largura das barras otimizada
+                    'module_height': 12.0,    # Altura das barras otimizada
+                    'quiet_zone': 3.0,        # Zona silenciosa reduzida
                     'font_size': 0,           # Sem texto
                     'text_distance': 0.0,
                     'background': 'white',
                     'foreground': 'black',
                     'write_text': False,
-                    'dpi': 600                # Resolução muito alta para melhor qualidade
+                    'dpi': 300                # Resolução otimizada para celular
                 }
                 
                 # Gerar imagem em memória
@@ -289,8 +289,8 @@ class BoletoPDFServiceSIGCB:
                 barcode_generator.write(buffer, options=options)
                 buffer.seek(0)
                 
-                # Criar imagem para o PDF com dimensões otimizadas
-                barcode_image = ReportLabImage(buffer, width=18*cm, height=2.5*cm)
+                # Criar imagem para o PDF com dimensões otimizadas para celular
+                barcode_image = ReportLabImage(buffer, width=12*cm, height=1.8*cm)
                 
                 # Título explicativo
                 titulo_style = ParagraphStyle(
@@ -318,17 +318,17 @@ class BoletoPDFServiceSIGCB:
                     # Gerar código de barras Code128 (mais compatível)
                     barcode_generator = Code128(codigo_limpo, writer=ImageWriter())
                     
-                    # Configurações otimizadas para Code128
+                    # Configurações otimizadas para Code128 e celular
                     options = {
-                        'module_width': 0.5,      # Largura das barras
-                        'module_height': 18.0,    # Altura das barras
-                        'quiet_zone': 4.0,        # Zona silenciosa
+                        'module_width': 0.4,      # Largura das barras otimizada
+                        'module_height': 12.0,    # Altura das barras otimizada
+                        'quiet_zone': 3.0,        # Zona silenciosa reduzida
                         'font_size': 0,           # Sem texto
                         'text_distance': 0.0,
                         'background': 'white',
                         'foreground': 'black',
                         'write_text': False,
-                        'dpi': 600                # Alta resolução
+                        'dpi': 300                # Resolução otimizada para celular
                     }
                     
                     # Gerar imagem em memória
@@ -336,8 +336,8 @@ class BoletoPDFServiceSIGCB:
                     barcode_generator.write(buffer, options=options)
                     buffer.seek(0)
                     
-                    # Criar imagem para o PDF
-                    barcode_image = ReportLabImage(buffer, width=17*cm, height=2.2*cm)
+                    # Criar imagem para o PDF com dimensões otimizadas
+                    barcode_image = ReportLabImage(buffer, width=12*cm, height=1.8*cm)
                     
                     # Título explicativo
                     titulo_style = ParagraphStyle(
