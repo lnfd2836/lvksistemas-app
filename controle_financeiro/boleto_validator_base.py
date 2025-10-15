@@ -267,21 +267,26 @@ class DVCalculatorMixin:
             int: Dígito verificador calculado
         """
         
-        sequencia = "4329876543298765432987654329876543298765432"
         soma = 0
+        peso = 2
         
-        for i, digito in enumerate(reversed(codigo)):
+        # Multiplica cada dígito pela sequência de pesos (da direita para esquerda)
+        for digito in reversed(codigo):
             if digito.isdigit():
-                multiplicador = int(sequencia[i % len(sequencia)])
-                produto = int(digito) * multiplicador
-                soma += produto
+                soma += int(digito) * peso
+                peso += 1
+                if peso > 9:
+                    peso = 2
         
         resto = soma % 11
         
         if resto in [0, 10, 11]:
             return 1
         else:
-            return 11 - resto
+            dv = 11 - resto
+            if dv == 10:
+                return 0
+            return dv
     
     def calculate_dv_modulo11_caixa(self, codigo: str) -> int:
         """

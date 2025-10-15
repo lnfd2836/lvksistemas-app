@@ -112,20 +112,25 @@ class BoletoCaixaService:
     
     def _gerar_nosso_numero_caixa(self, configuracao):
         """
-        Gera nosso número para a Caixa
-        Formato: NNNNNNNNNN (10 dígitos) - APENAS NÚMEROS
-        Para a Caixa, o nosso número é sequencial sem DV no campo livre
+        Gera nosso número para a Caixa SIGCB
+        Formato: 14NNNNNNNNNNNNNNN (17 dígitos) - Padrão SIGCB
+        - Posição 1: 1 (Modalidade/Carteira de Cobrança - Registrada)
+        - Posição 2: 4 (Emissão do boleto - Beneficiário)
+        - Posições 3-17: Sequencial (15 dígitos)
         """
         
         # Gerar sequencial baseado em timestamp para garantir unicidade
         timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-        microseconds = str(timezone.now().microsecond).zfill(6)[:4]  # 4 dígitos dos microsegundos
+        microseconds = str(timezone.now().microsecond).zfill(6)[:3]  # 3 dígitos dos microsegundos
         
         # Combinar timestamp + microsegundos para criar sequencial único
         sequencial_completo = f"{timestamp}{microseconds}"
         
-        # Pegar os últimos 10 dígitos para formar o nosso número
-        nosso_numero = sequencial_completo[-10:].zfill(10)
+        # Pegar os últimos 15 dígitos para formar o sequencial
+        sequencial = sequencial_completo[-15:].zfill(15)
+        
+        # Montar nosso número no padrão SIGCB: 14 + 15 dígitos sequenciais
+        nosso_numero = f"14{sequencial}"
         
         # Garantir que seja apenas números
         nosso_numero = re.sub(r'[^0-9]', '0', nosso_numero)
@@ -214,9 +219,9 @@ class BoletoCaixaService:
         else:
             codigo_cedente = cedente_limpo.zfill(6)  # Preencher com zeros à esquerda
         
-        # Nosso número sem DV (10 dígitos) - Pegar os últimos 10 dígitos
+        # Nosso número completo (17 dígitos) - Padrão SIGCB
         nosso_numero_completo = re.sub(r'[^0-9]', '', str(nosso_numero))
-        nosso_numero_limpo = nosso_numero_completo[-10:].zfill(10)
+        nosso_numero_limpo = nosso_numero_completo.zfill(17)
         
         # Agência (4 dígitos) + primeiros 2 dígitos da conta
         agencia_completa = re.sub(r'[^0-9]', '', str(configuracao.agencia))[:4]
@@ -253,15 +258,18 @@ class BoletoCaixaService:
         # Validar tamanhos dos componentes antes de montar
         if len(codigo_cedente) != 6:
             raise ValueError(f"Código do cedente deve ter 6 dígitos: {codigo_cedente} ({len(codigo_cedente)})")
-        if len(nosso_numero_limpo) != 10:
-            raise ValueError(f"Nosso número deve ter 10 dígitos: {nosso_numero_limpo} ({len(nosso_numero_limpo)})")
+        if len(nosso_numero_limpo) != 17:
+            raise ValueError(f"Nosso número deve ter 17 dígitos: {nosso_numero_limpo} ({len(nosso_numero_limpo)})")
         if len(agencia_conta_campo) != 6:
             raise ValueError(f"Agência+complemento deve ter 6 dígitos: {agencia_conta_campo} ({len(agencia_conta_campo)})")
         if len(carteira_campo) != 3:
             raise ValueError(f"Carteira deve ter 3 dígitos: {carteira_campo} ({len(carteira_campo)})")
         
         # Montar campo livre: cedente(6) + nosso_numero(10) + agencia_conta(6) + carteira(3) = 25 dígitos
-        campo_livre = f"{codigo_cedente}{nosso_numero_limpo}{agencia_conta_campo}{carteira_campo}"
+        # Para SIGCB, usar apenas os últimos 10 dígitos do nosso número no campo livre
+        # O nosso número completo (17 dígitos) fica no número do boleto
+        nosso_numero_campo = nosso_numero_limpo[-10:]  # Últimos 10 dígitos do nosso número
+        campo_livre = f"{codigo_cedente}{nosso_numero_campo}{agencia_conta_campo}{carteira_campo}"
         
         # DEBUG: Log dos componentes do campo livre CORRIGIDO
         print(f"DEBUG SIGCB CORRIGIDO - Componentes do Campo Livre:")
@@ -370,19 +378,19 @@ class BoletoCaixaService:
     def _calcular_dv_codigo_barras(self, codigo):
         """
         Calcula dígito verificador do código de barras (Módulo 11 FEBRABAN)
-        Sequência de multiplicação: 4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2,9,8,7,6,5,4,3,2
+        Usa sequência de multiplicação padrão FEBRABAN: 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, ...
         """
         
-        # Sequência de multiplicação padrão FEBRABAN para módulo 11
-        sequencia = "4329876543298765432987654329876543298765432"
         soma = 0
+        peso = 2
         
-        # Multiplica cada dígito pela sequência correspondente (da direita para esquerda)
-        for i, digito in enumerate(reversed(codigo)):
+        # Multiplica cada dígito pela sequência de pesos (da direita para esquerda)
+        for digito in reversed(codigo):
             if digito.isdigit():
-                multiplicador = int(sequencia[i % len(sequencia)])
-                produto = int(digito) * multiplicador
-                soma += produto
+                soma += int(digito) * peso
+                peso += 1
+                if peso > 9:
+                    peso = 2
         
         resto = soma % 11
         

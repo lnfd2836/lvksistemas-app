@@ -30,12 +30,12 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Nome do Plano *</label>
-                                <input type="text" name="nome" class="form-control" required>
+                                <input type="text" name="nome" class="form-control" required value="{{ form_data.nome|default:'' }}">
                             </div>
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tipo do Plano *</label>
-                                <select name="tipo" class="form-control" required>
+                                <select name="tipo" class="form-select" required>
                                     {% for value, label in tipos_plano %}
                                     <option value="{{ value }}">{{ label }}</option>
                                     {% endfor %}
@@ -49,7 +49,7 @@
                             
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Status</label>
-                                <select name="status" class="form-control">
+                                <select name="status" class="form-select">
                                     {% for value, label in status_choices %}
                                     <option value="{{ value }}">{{ label }}</option>
                                     {% endfor %}

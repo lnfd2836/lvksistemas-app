@@ -65,12 +65,29 @@ def criar_plano(request):
         ordem_exibicao = int(request.POST.get('ordem_exibicao', 0))
         destaque = request.POST.get('destaque') == 'on'
         
+        # Validação básica
+        if not nome or not nome.strip():
+            messages.error(request, 'Nome do plano é obrigatório.')
+            return render(request, 'planos/criar.html', {
+                'titulo': 'Novo Plano Comercial',
+                'tipos_plano': PlanoComercial.TIPO_PLANO_CHOICES,
+                'status_choices': PlanoComercial.STATUS_CHOICES,
+            })
+        
+        if not tipo:
+            messages.error(request, 'Tipo do plano é obrigatório.')
+            return render(request, 'planos/criar.html', {
+                'titulo': 'Novo Plano Comercial',
+                'tipos_plano': PlanoComercial.TIPO_PLANO_CHOICES,
+                'status_choices': PlanoComercial.STATUS_CHOICES,
+            })
+        
         try:
             with transaction.atomic():
                 plano = PlanoComercial.objects.create(
-                    nome=nome,
+                    nome=nome.strip(),
                     tipo=tipo,
-                    descricao=descricao,
+                    descricao=descricao or '',
                     max_usuarios_simultaneos=max_usuarios,
                     max_pdvs=max_pdvs,
                     max_produtos=max_produtos,
@@ -89,10 +106,17 @@ def criar_plano(request):
                 )
                 
                 messages.success(request, f'Plano "{plano.nome}" criado com sucesso!')
-                return redirect('listar_planos')
+                return redirect('planos:listar_planos')
                 
         except Exception as e:
             messages.error(request, f'Erro ao criar plano: {str(e)}')
+            # Retornar o formulário com os dados preenchidos em caso de erro
+            return render(request, 'planos/criar.html', {
+                'titulo': 'Novo Plano Comercial',
+                'tipos_plano': PlanoComercial.TIPO_PLANO_CHOICES,
+                'status_choices': PlanoComercial.STATUS_CHOICES,
+                'form_data': request.POST,
+            })
     
     context = {
         'titulo': 'Novo Plano Comercial',
@@ -140,7 +164,7 @@ def editar_plano(request, plano_id):
         try:
             plano.save()
             messages.success(request, f'Plano "{plano.nome}" atualizado com sucesso!')
-            return redirect('listar_planos')
+            return redirect('planos:listar_planos')
             
         except Exception as e:
             messages.error(request, f'Erro ao atualizar plano: {str(e)}')

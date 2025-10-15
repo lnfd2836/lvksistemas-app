@@ -149,15 +149,18 @@ class BoletoGerado(models.Model):
     
     def save(self, *args, **kwargs):
         """Override do save para aplicar correção automática"""
-        # Se é um novo boleto ou a linha digitável foi alterada, validar e corrigir
-        if not self.pk or 'linha_digitavel' in kwargs.get('update_fields', []):
-            correction_result = self.validar_e_corrigir_codigo()
-            
-            # Se houve correção, não salvar ainda para evitar loop
-            if correction_result['corrected']:
-                # Salvar sem chamar validação novamente
-                super().save(*args, **kwargs)
-                return
+        # TEMPORARIAMENTE DESABILITADO: Correção automática estava removendo formatação da linha digitável
+        # TODO: Corrigir o BoletoSimpleCorrector para preservar formatação
+        
+        # # Se é um novo boleto ou a linha digitável foi alterada, validar e corrigir
+        # if not self.pk or 'linha_digitavel' in kwargs.get('update_fields', []):
+        #     correction_result = self.validar_e_corrigir_codigo()
+        #     
+        #     # Se houve correção, não salvar ainda para evitar loop
+        #     if correction_result['corrected']:
+        #         # Salvar sem chamar validação novamente
+        #         super().save(*args, **kwargs)
+        #         return
         
         super().save(*args, **kwargs)
     

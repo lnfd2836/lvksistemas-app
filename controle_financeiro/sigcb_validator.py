@@ -493,4 +493,4 @@ class SIGCBValidator(BoletoValidatorBase, DVCalculatorMixin, FormatNormalizerMix
         # Campo 5: Fator vencimento + valor
         campo5 = f"{vencimento}{valor}"
         
-        return f"{campo1}{campo2}{campo3}{campo4}{campo5}"
+        return f"{campo1} {campo2} {campo3} {campo4} {campo5}"

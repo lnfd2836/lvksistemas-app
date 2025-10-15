@@ -222,39 +222,27 @@ class BoletoPDFServiceSIGCB:
         if len(codigo_limpo) != 44:
             codigo_limpo = codigo_limpo.ljust(44, '0')[:44]
         
-        # Método 1: Tentar Code128 do ReportLab (mais confiável)
+        # Método 1: Tentar Interleaved 2 of 5 (conforme manual da Caixa)
         try:
-            from reportlab.graphics.barcode.code128 import Code128
+            from reportlab.graphics.barcode import createBarcodeDrawing
             from reportlab.graphics.shapes import Drawing, Rect
             
-            # Criar código de barras com configurações otimizadas
-            barcode = Code128(
-                codigo_limpo,
-                barHeight=15*mm,  # Altura maior para melhor visibilidade
+            # Criar código de barras Interleaved 2 of 5 conforme especificação da Caixa
+            # Usar createBarcodeDrawing que é mais confiável
+            drawing = createBarcodeDrawing(
+                'I2of5',
+                value=codigo_limpo,
+                barHeight=13*mm,   # Altura conforme manual (13mm)
                 barWidth=0.4*mm,   # Largura das barras otimizada
                 humanReadable=0,   # Sem texto abaixo
                 checksum=0,
                 bearers=0,
                 quiet=1,           # Zona silenciosa
-                lquiet=5*mm,       # Margem esquerda
+                lquiet=5*mm,       # Margem esquerda conforme manual (5mm)
                 rquiet=5*mm        # Margem direita
             )
             
-            # Drawing com dimensões adequadas
-            drawing = Drawing(19*cm, 2.5*cm)
-            
-            # Fundo branco sólido
-            fundo = Rect(0, 0, 19*cm, 2.5*cm, 
-                        fillColor=colors.white, 
-                        strokeColor=colors.white,
-                        strokeWidth=0)
-            drawing.add(fundo)
-            
-            # Centralizar código de barras
-            barcode.x = 1*cm
-            barcode.y = 0.5*cm
-            
-            drawing.add(barcode)
+            # O drawing já está posicionado corretamente pelo createBarcodeDrawing
             
             # Título explicativo
             titulo_style = ParagraphStyle(
