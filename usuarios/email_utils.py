@@ -262,7 +262,7 @@ def enviar_email_credenciais_loja(loja, senha_provisoria):
             'loja': loja,
             'senha_provisoria': senha_provisoria,
             'site_url': getattr(settings, 'SITE_URL', 'https://lvksistemas.com.br'),
-            'login_url': f"{getattr(settings, 'SITE_URL', 'https://lvksistemas.com.br')}/login/",
+            'login_url': f"{getattr(settings, 'SITE_URL', 'https://lvksistemas.com.br')}/loja/login/",
         }
         
         logger.debug(f"Renderizando templates de email para loja {nome_loja}")
