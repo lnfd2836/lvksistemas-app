@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import datetime, date, time, timedelta
 import json
@@ -42,7 +42,7 @@ def dashboard_estetica(request):
     servicos_populares = ServicoEstetica.objects.filter(
         agendamentos__data_agendamento__gte=inicio_mes
     ).annotate(
-        total_agendamentos=models.Count('agendamentos')
+        total_agendamentos=Count('agendamentos')
     ).order_by('-total_agendamentos')[:5]
     
     context = {
