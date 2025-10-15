@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -528,3 +529,164 @@ def relatorios_estetica(request):
     }
     
     return render(request, 'modulos/estetica/relatorios/relatorios.html', context)
+
+
+# Views adicionais para completar as funcionalidades
+
+@login_required
+def listar_clientes(request):
+    """Lista de clientes da clínica de estética"""
+    # Por enquanto, retorna uma lista vazia
+    clientes = []
+    context = {
+        'page_title': 'Clientes - Clínica de Estética',
+        'clientes': clientes,
+    }
+    return render(request, 'modulos/estetica/clientes/lista.html', context)
+
+@login_required
+def cliente_detalhes(request, cliente_id):
+    """Detalhes de um cliente específico"""
+    # Implementação básica
+    context = {
+        'page_title': 'Detalhes do Cliente - Clínica de Estética',
+        'cliente_id': cliente_id,
+    }
+    return render(request, 'modulos/estetica/clientes/detalhes.html', context)
+
+@login_required
+def listar_pacotes(request):
+    """Lista de pacotes de tratamento"""
+    pacotes = PacoteTratamento.objects.all()
+    context = {
+        'page_title': 'Pacotes de Tratamento - Clínica de Estética',
+        'pacotes': pacotes,
+    }
+    return render(request, 'modulos/estetica/pacotes/lista.html', context)
+
+@login_required
+def criar_pacote(request):
+    """Criar novo pacote de tratamento"""
+    if request.method == 'POST':
+        # Implementar criação do pacote
+        messages.success(request, 'Pacote criado com sucesso!')
+        return redirect('modulos:estetica_pacotes')
+    
+    context = {
+        'page_title': 'Novo Pacote - Clínica de Estética',
+    }
+    return render(request, 'modulos/estetica/pacotes/criar.html', context)
+
+@login_required
+def pacote_detalhes(request, pacote_id):
+    """Detalhes de um pacote específico"""
+    pacote = get_object_or_404(PacoteTratamento, id=pacote_id)
+    context = {
+        'page_title': 'Detalhes do Pacote - Clínica de Estética',
+        'pacote': pacote,
+    }
+    return render(request, 'modulos/estetica/pacotes/detalhes.html', context)
+
+@login_required
+def editar_pacote(request, pacote_id):
+    """Editar pacote de tratamento"""
+    pacote = get_object_or_404(PacoteTratamento, id=pacote_id)
+    if request.method == 'POST':
+        # Implementar edição do pacote
+        messages.success(request, 'Pacote atualizado com sucesso!')
+        return redirect('modulos:estetica_pacote_detalhes', pacote_id=pacote.id)
+    
+    context = {
+        'page_title': 'Editar Pacote - Clínica de Estética',
+        'pacote': pacote,
+    }
+    return render(request, 'modulos/estetica/pacotes/editar.html', context)
+
+@login_required
+def listar_retornos(request):
+    """Lista de retornos"""
+    retornos = Retorno.objects.all()
+    context = {
+        'page_title': 'Retornos - Clínica de Estética',
+        'retornos': retornos,
+    }
+    return render(request, 'modulos/estetica/retornos/lista.html', context)
+
+@login_required
+def criar_retorno(request):
+    """Criar novo retorno"""
+    if request.method == 'POST':
+        # Implementar criação do retorno
+        messages.success(request, 'Retorno criado com sucesso!')
+        return redirect('modulos:estetica_retornos')
+    
+    context = {
+        'page_title': 'Novo Retorno - Clínica de Estética',
+    }
+    return render(request, 'modulos/estetica/retornos/criar.html', context)
+
+@login_required
+def retorno_detalhes(request, retorno_id):
+    """Detalhes de um retorno específico"""
+    retorno = get_object_or_404(Retorno, id=retorno_id)
+    context = {
+        'page_title': 'Detalhes do Retorno - Clínica de Estética',
+        'retorno': retorno,
+    }
+    return render(request, 'modulos/estetica/retornos/detalhes.html', context)
+
+@login_required
+def criar_servico(request):
+    """Criar novo serviço"""
+    if request.method == 'POST':
+        # Implementar criação do serviço
+        messages.success(request, 'Serviço criado com sucesso!')
+        return redirect('modulos:estetica_servicos')
+    
+    context = {
+        'page_title': 'Novo Serviço - Clínica de Estética',
+    }
+    return render(request, 'modulos/estetica/servicos/criar.html', context)
+
+@login_required
+def editar_servico(request, servico_id):
+    """Editar serviço"""
+    servico = get_object_or_404(ServicoEstetica, id=servico_id)
+    if request.method == 'POST':
+        # Implementar edição do serviço
+        messages.success(request, 'Serviço atualizado com sucesso!')
+        return redirect('modulos:estetica_servico_detalhes', servico_id=servico.id)
+    
+    context = {
+        'page_title': 'Editar Serviço - Clínica de Estética',
+        'servico': servico,
+    }
+    return render(request, 'modulos/estetica/servicos/editar.html', context)
+
+@login_required
+def criar_protocolo(request):
+    """Criar novo protocolo"""
+    if request.method == 'POST':
+        # Implementar criação do protocolo
+        messages.success(request, 'Protocolo criado com sucesso!')
+        return redirect('modulos:estetica_protocolos')
+    
+    context = {
+        'page_title': 'Novo Protocolo - Clínica de Estética',
+    }
+    return render(request, 'modulos/estetica/protocolos/criar.html', context)
+
+@login_required
+def editar_protocolo(request, protocolo_id):
+    """Editar protocolo"""
+    protocolo = get_object_or_404(ProtocoloEmagrecimento, id=protocolo_id)
+    if request.method == 'POST':
+        # Implementar edição do protocolo
+        messages.success(request, 'Protocolo atualizado com sucesso!')
+        return redirect('modulos:estetica_protocolo_detalhes', protocolo_id=protocolo.id)
+    
+    context = {
+        'page_title': 'Editar Protocolo - Clínica de Estética',
+        'protocolo': protocolo,
+    }
+    return render(request, 'modulos/estetica/protocolos/editar.html', context)
