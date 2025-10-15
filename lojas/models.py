@@ -56,6 +56,15 @@ class Loja(models.Model):
         verbose_name="Tipo de Loja"
     )
     
+    # Plano comercial (não salvo no banco, apenas para criação)
+    plano_comercial = models.ForeignKey(
+        'planos.PlanoComercial',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Plano Comercial"
+    )
+    
     class Meta:
         verbose_name = "Loja"
         verbose_name_plural = "Lojas"
