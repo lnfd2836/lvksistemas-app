@@ -232,14 +232,14 @@ class BoletoPDFServiceSIGCB:
             drawing = createBarcodeDrawing(
                 'I2of5',
                 value=codigo_limpo,
-                barHeight=13*mm,   # Altura conforme manual (13mm)
-                barWidth=0.4*mm,   # Largura das barras otimizada
+                barHeight=20*mm,   # Altura aumentada para melhor leitura (20mm)
+                barWidth=0.6*mm,   # Largura das barras aumentada para melhor contraste
                 humanReadable=0,   # Sem texto abaixo
                 checksum=0,
                 bearers=0,
                 quiet=1,           # Zona silenciosa
-                lquiet=5*mm,       # Margem esquerda conforme manual (5mm)
-                rquiet=5*mm        # Margem direita
+                lquiet=8*mm,       # Margem esquerda aumentada (8mm)
+                rquiet=8*mm        # Margem direita aumentada (8mm)
             )
             
             # O drawing já está posicionado corretamente pelo createBarcodeDrawing
@@ -260,27 +260,28 @@ class BoletoPDFServiceSIGCB:
         except Exception as e1:
             print(f"Método 1 falhou: {e1}")
             
-            # Método 2: Tentar python-barcode com imagem
+            # Método 2: Tentar python-barcode com I2of5 (mais adequado para boletos)
             try:
-                from barcode import Code128 as BarcodeCode128
+                from barcode import get_barcode_class
                 from barcode.writer import ImageWriter
                 from reportlab.platypus import Image as ReportLabImage
                 import io
                 
-                # Gerar código de barras como imagem
-                barcode_generator = BarcodeCode128(codigo_limpo, writer=ImageWriter())
+                # Usar I2of5 que é o padrão para boletos bancários
+                I2of5 = get_barcode_class('i2of5')
+                barcode_generator = I2of5(codigo_limpo, writer=ImageWriter())
                 
-                # Configurações para melhor qualidade
+                # Configurações para melhor qualidade e legibilidade
                 options = {
-                    'module_width': 0.4,      # Largura das barras
-                    'module_height': 15.0,    # Altura das barras
-                    'quiet_zone': 3.0,        # Zona silenciosa
+                    'module_width': 0.6,      # Largura das barras aumentada
+                    'module_height': 20.0,    # Altura das barras aumentada
+                    'quiet_zone': 5.0,        # Zona silenciosa aumentada
                     'font_size': 0,           # Sem texto
                     'text_distance': 0.0,
                     'background': 'white',
                     'foreground': 'black',
                     'write_text': False,
-                    'dpi': 300                # Alta resolução
+                    'dpi': 600                # Resolução muito alta para melhor qualidade
                 }
                 
                 # Gerar imagem em memória
@@ -288,8 +289,8 @@ class BoletoPDFServiceSIGCB:
                 barcode_generator.write(buffer, options=options)
                 buffer.seek(0)
                 
-                # Criar imagem para o PDF
-                barcode_image = ReportLabImage(buffer, width=16*cm, height=2*cm)
+                # Criar imagem para o PDF com dimensões otimizadas
+                barcode_image = ReportLabImage(buffer, width=18*cm, height=2.5*cm)
                 
                 # Título explicativo
                 titulo_style = ParagraphStyle(
@@ -307,39 +308,86 @@ class BoletoPDFServiceSIGCB:
             except Exception as e2:
                 print(f"Método 2 falhou: {e2}")
                 
-                # Método 3: Fallback com código numérico formatado
+                # Método 3: Tentar Code128 como fallback (mais compatível com leitores)
                 try:
-                    codigo_formatado_style = ParagraphStyle(
-                        'CodigoFormatadoSIGCB',
-                        fontSize=8,
+                    from barcode import Code128
+                    from barcode.writer import ImageWriter
+                    from reportlab.platypus import Image as ReportLabImage
+                    import io
+                    
+                    # Gerar código de barras Code128 (mais compatível)
+                    barcode_generator = Code128(codigo_limpo, writer=ImageWriter())
+                    
+                    # Configurações otimizadas para Code128
+                    options = {
+                        'module_width': 0.5,      # Largura das barras
+                        'module_height': 18.0,    # Altura das barras
+                        'quiet_zone': 4.0,        # Zona silenciosa
+                        'font_size': 0,           # Sem texto
+                        'text_distance': 0.0,
+                        'background': 'white',
+                        'foreground': 'black',
+                        'write_text': False,
+                        'dpi': 600                # Alta resolução
+                    }
+                    
+                    # Gerar imagem em memória
+                    buffer = io.BytesIO()
+                    barcode_generator.write(buffer, options=options)
+                    buffer.seek(0)
+                    
+                    # Criar imagem para o PDF
+                    barcode_image = ReportLabImage(buffer, width=17*cm, height=2.2*cm)
+                    
+                    # Título explicativo
+                    titulo_style = ParagraphStyle(
+                        'TituloBarcodeSIGCB3',
+                        fontSize=9,
                         textColor=colors.black,
                         alignment=TA_CENTER,
-                        fontName='Courier-Bold',
-                        spaceAfter=5
+                        fontName='Helvetica-Bold'
                     )
                     
-                    # Formatar código em grupos de 4 dígitos
-                    codigo_formatado = ' '.join([codigo_limpo[i:i+4] for i in range(0, len(codigo_limpo), 4)])
-                    codigo_texto = Paragraph(f"<b>Código de Barras (44 dígitos):</b><br/>{codigo_formatado}", codigo_formatado_style)
+                    titulo = Paragraph("📱 <b>Código de Barras - Escaneie com leitor ou câmera do celular</b>", titulo_style)
                     
-                    # Aviso sobre código visual
-                    aviso_style = ParagraphStyle(
-                        'AvisoSIGCB',
-                        fontSize=9,
-                        textColor=colors.red,
-                        alignment=TA_CENTER,
-                        fontName='Helvetica'
-                    )
-                    
-                    aviso = Paragraph("⚠️ <b>Use a linha digitável acima para pagamento</b><br/>Código de barras visual não disponível", aviso_style)
-                    
-                    return [linha_digitavel, Spacer(1, 10), codigo_texto, Spacer(1, 5), aviso, Spacer(1, 10)]
+                    return [linha_digitavel, Spacer(1, 5), titulo, barcode_image, Spacer(1, 10)]
                     
                 except Exception as e3:
                     print(f"Método 3 falhou: {e3}")
                     
-                    # Último fallback - apenas linha digitável
-                    return [linha_digitavel, Spacer(1, 15)]
+                    # Método 4: Fallback com código numérico formatado
+                    try:
+                        codigo_formatado_style = ParagraphStyle(
+                            'CodigoFormatadoSIGCB',
+                            fontSize=8,
+                            textColor=colors.black,
+                            alignment=TA_CENTER,
+                            fontName='Courier-Bold',
+                            spaceAfter=5
+                        )
+                        
+                        # Formatar código em grupos de 4 dígitos
+                        codigo_formatado = ' '.join([codigo_limpo[i:i+4] for i in range(0, len(codigo_limpo), 4)])
+                        codigo_texto = Paragraph(f"<b>Código de Barras (44 dígitos):</b><br/>{codigo_formatado}", codigo_formatado_style)
+                        
+                        # Aviso sobre código visual
+                        aviso_style = ParagraphStyle(
+                            'AvisoSIGCB',
+                            fontSize=9,
+                            textColor=colors.red,
+                            alignment=TA_CENTER,
+                            fontName='Helvetica'
+                        )
+                        
+                        aviso = Paragraph("⚠️ <b>Use a linha digitável acima para pagamento</b><br/>Código de barras visual não disponível", aviso_style)
+                        
+                        return [linha_digitavel, Spacer(1, 10), codigo_texto, Spacer(1, 5), aviso, Spacer(1, 10)]
+                        
+                    except Exception as e4:
+                        print(f"Método 4 falhou: {e4}")
+                        
+                        # Último fallback - apenas linha digitável
+                        return [linha_digitavel, Spacer(1, 15)]
     
     def _criar_recibo_sacado_sigcb(self, boleto):
         """Cria recibo do sacado no padrão SIGCB"""
