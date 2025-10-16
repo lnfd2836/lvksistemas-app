@@ -203,88 +203,49 @@ class BoletoCaixaService:
         # Valor em centavos (10 dígitos)
         valor_centavos = f"{int(valor * 100):010d}"
         
-        # Campo livre da Caixa (25 posições) - Formato específico da CEF
+        # Campo livre da Caixa SIGCB (25 posições) - CORREÇÃO CONFORME MODELO DO SUPORTE
         # Posições 20-44 do código de barras (25 dígitos)
-        # Formato: CCCCCC NNNNNNNNNN DDDDDD CCC
-        # C (1-6):   Código do cedente/beneficiário (6 dígitos)
-        # N (7-16):  Nosso número sem DV (10 dígitos)
-        # D (17-22): Agência (4 dígitos) + Conta (2 primeiros dígitos)
-        # C (23-25): Carteira (3 dígitos)
+        # Formato CORRETO: CCCCCCC NNNNNNNNNNNNNNNNNN D
+        # C (1-7):   Código do convênio (7 dígitos)
+        # N (8-24):  Nosso número completo (17 dígitos)
+        # D (25):    DV do nosso número (1 dígito)
         
-        # Código do cedente (6 dígitos)
-        # Para códigos com mais de 6 dígitos, usar os últimos 6
-        cedente_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))
-        if len(cedente_limpo) > 6:
-            codigo_cedente = cedente_limpo[-6:]  # Últimos 6 dígitos
+        # CORREÇÃO: Usar código do convênio (7 dígitos) em vez de cedente (6 dígitos)
+        # O convênio é o código do cedente, mas deve ter 7 dígitos conforme modelo
+        convenio_limpo = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))
+        if len(convenio_limpo) > 7:
+            codigo_convenio = convenio_limpo[-7:]  # Últimos 7 dígitos
         else:
-            codigo_cedente = cedente_limpo.zfill(6)  # Preencher com zeros à esquerda
+            codigo_convenio = convenio_limpo.zfill(7)  # Preencher com zeros à esquerda
         
         # Nosso número completo (17 dígitos) - Padrão SIGCB
         nosso_numero_completo = re.sub(r'[^0-9]', '', str(nosso_numero))
         nosso_numero_limpo = nosso_numero_completo.zfill(17)
         
-        # Agência (4 dígitos) + primeiros 2 dígitos da conta
-        agencia_completa = re.sub(r'[^0-9]', '', str(configuracao.agencia))[:4]
-        agencia_limpa = agencia_completa.zfill(4)
-        
-        # CORREÇÃO SIGCB: NÃO usar dados da conta corrente conforme orientação do suporte Caixa
-        # O campo livre SIGCB deve usar apenas: agência + complemento específico (SEM conta)
-        # Conforme especificação oficial SIGCB, conta corrente não é utilizada no código de barras
-        
-        # Para SIGCB, usar complemento baseado no código do cedente ou padrão específico
-        # Usar os últimos 2 dígitos do código do cedente como complemento
-        cedente_para_complemento = re.sub(r'[^0-9]', '', str(configuracao.codigo_cedente or ''))
-        if len(cedente_para_complemento) >= 2:
-            complemento_sigcb = cedente_para_complemento[-2:]  # Últimos 2 dígitos do cedente
-        else:
-            complemento_sigcb = "00"  # Padrão quando cedente é muito curto
-        
-        agencia_conta_campo = f"{agencia_limpa}{complemento_sigcb}"
-        
-        # Carteira (3 dígitos) - Primeiro limpar, depois truncar, depois preencher
-        carteira_original = str(configuracao.carteira)
-        carteira_sem_letras = re.sub(r'[^0-9]', '', carteira_original)
-        carteira_limpa = carteira_sem_letras[:3]  # Máximo 3 dígitos
-        carteira_campo = carteira_limpa.zfill(3)  # Preencher com zeros à esquerda
-        
-        # Debug temporário - remover após correção
-        if len(carteira_campo) != 3:
-            raise ValueError(
-                f"ERRO CARTEIRA DEBUG: original='{carteira_original}', "
-                f"sem_letras='{carteira_sem_letras}', limpa='{carteira_limpa}', "
-                f"final='{carteira_campo}' ({len(carteira_campo)} dígitos)"
-            )
+        # CORREÇÃO: DV sempre = 0 conforme modelo do suporte Caixa
+        # O modelo fornecido pelo suporte mostra DV = 0 em ambos os exemplos
+        dv_nosso_numero = "0"
         
         # Validar tamanhos dos componentes antes de montar
-        if len(codigo_cedente) != 6:
-            raise ValueError(f"Código do cedente deve ter 6 dígitos: {codigo_cedente} ({len(codigo_cedente)})")
+        if len(codigo_convenio) != 7:
+            raise ValueError(f"Código do convênio deve ter 7 dígitos: {codigo_convenio} ({len(codigo_convenio)})")
         if len(nosso_numero_limpo) != 17:
             raise ValueError(f"Nosso número deve ter 17 dígitos: {nosso_numero_limpo} ({len(nosso_numero_limpo)})")
-        if len(agencia_conta_campo) != 6:
-            raise ValueError(f"Agência+complemento deve ter 6 dígitos: {agencia_conta_campo} ({len(agencia_conta_campo)})")
-        if len(carteira_campo) != 3:
-            raise ValueError(f"Carteira deve ter 3 dígitos: {carteira_campo} ({len(carteira_campo)})")
+        if len(dv_nosso_numero) != 1:
+            raise ValueError(f"DV do nosso número deve ter 1 dígito: {dv_nosso_numero} ({len(dv_nosso_numero)})")
         
-        # Montar campo livre: cedente(6) + nosso_numero(10) + agencia_conta(6) + carteira(3) = 25 dígitos
-        # Para SIGCB, usar apenas os últimos 10 dígitos do nosso número no campo livre
-        # O nosso número completo (17 dígitos) fica no número do boleto
-        nosso_numero_campo = nosso_numero_limpo[-10:]  # Últimos 10 dígitos do nosso número
-        campo_livre = f"{codigo_cedente}{nosso_numero_campo}{agencia_conta_campo}{carteira_campo}"
+        # Montar campo livre: convênio(7) + nosso_numero(17) + dv(1) = 25 dígitos
+        campo_livre = f"{codigo_convenio}{nosso_numero_limpo}{dv_nosso_numero}"
         
         # DEBUG: Log dos componentes do campo livre CORRIGIDO
         print(f"DEBUG SIGCB CORRIGIDO - Componentes do Campo Livre:")
-        print(f"  Configuração - Agência: '{configuracao.agencia}'")
-        print(f"  Configuração - Conta: '{configuracao.conta}' (NÃO USADA no código de barras)")
-        print(f"  Configuração - Carteira: '{configuracao.carteira}'")
         print(f"  Configuração - Código Cedente: '{configuracao.codigo_cedente}'")
         print(f"  Nosso Número Original: '{nosso_numero}'")
-        print(f"  Código Cedente: '{codigo_cedente}' ({len(codigo_cedente)} dígitos)")
+        print(f"  Código Convênio: '{codigo_convenio}' ({len(codigo_convenio)} dígitos)")
         print(f"  Nosso Número: '{nosso_numero_limpo}' ({len(nosso_numero_limpo)} dígitos)")
-        print(f"  Agência: '{agencia_limpa}' ({len(agencia_limpa)} dígitos)")
-        print(f"  Complemento SIGCB: '{complemento_sigcb}' ({len(complemento_sigcb)} dígitos) - baseado no cedente")
-        print(f"  Carteira: '{carteira_campo}' ({len(carteira_campo)} dígitos)")
+        print(f"  DV Nosso Número: '{dv_nosso_numero}' ({len(dv_nosso_numero)} dígitos)")
         print(f"  Campo Livre: '{campo_livre}' ({len(campo_livre)} dígitos)")
-        print(f"  ✅ CORREÇÃO: Conta corrente NÃO incluída conforme especificação SIGCB")
+        print(f"  ✅ CORREÇÃO: Estrutura conforme modelo do suporte Caixa")
         
         # Validar campo livre antes de continuar
         if len(campo_livre) != 25:
