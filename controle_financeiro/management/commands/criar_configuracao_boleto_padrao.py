@@ -3,20 +3,22 @@ from controle_financeiro.models import ConfiguracaoBoleto
 
 
 class Command(BaseCommand):
-    help = 'Cria uma configuração de boleto padrão para o sistema'
+    help = 'Cria uma configuração de boleto padrão Asaas para o sistema'
 
     def handle(self, *args, **options):
         configuracao, created = ConfiguracaoBoleto.objects.get_or_create(
-            nome_banco="Banco do Brasil",
+            nome_banco="Asaas I.P S.A",
             defaults={
-                'codigo_banco': '001',
-                'agencia': '1234',
-                'conta': '12345678',
-                'carteira': '17',
-                'nome_beneficiario': 'Sistema de Lojas - Empresa Exemplo',
-                'cnpj_beneficiario': '12.345.678/0001-90',
-                'endereco_beneficiario': 'Rua Exemplo, 123 - Centro - São Paulo/SP - CEP: 01234-567',
-                'instrucoes': 'Não receber após o vencimento. Em caso de dúvidas, entre em contato conosco.',
+                'codigo_banco': '461',
+                'agencia': '0001',
+                'conta': '194116-2',
+                'carteira': '1',
+                'codigo_cedente': 'ASAAS',
+                'convenio': 'ASAAS',
+                'nome_beneficiario': 'FELIX REPRESENTACOES E COMERCIO LTDA',
+                'cnpj_beneficiario': '41.449.198/0001-72',
+                'endereco_beneficiario': 'Endereço configurado no Asaas',
+                'instrucoes': 'Pagamento processado automaticamente via Asaas. Após o vencimento, multa de 2% + juros de 1% ao mês.',
                 'multa': 2.00,
                 'juros': 1.00,
                 'desconto': 0.00,
@@ -26,13 +28,13 @@ class Command(BaseCommand):
         
         if created:
             self.stdout.write(
-                self.style.SUCCESS(f'Configuração de boleto "{configuracao.nome_banco}" criada com sucesso!')
+                self.style.SUCCESS(f'Configuração Asaas "{configuracao.nome_banco}" criada com sucesso!')
             )
         else:
             self.stdout.write(
-                self.style.WARNING(f'Configuração de boleto "{configuracao.nome_banco}" já existe.')
+                self.style.WARNING(f'Configuração Asaas "{configuracao.nome_banco}" já existe.')
             )
 
         self.stdout.write(
-            self.style.SUCCESS('Configuração de boleto padrão configurada!')
+            self.style.SUCCESS('Configuração Asaas padrão configurada!')
         )

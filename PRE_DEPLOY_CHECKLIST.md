@@ -15,13 +15,12 @@
 - [x] `whitenoise` para arquivos estáticos
 - [x] `SECRET_KEY` via variável de ambiente
 
-### 3. **Correções Implementadas**
-- [x] ✅ **BoletoCaixaService** - Algoritmos DV corrigidos
-- [x] ✅ **BarcodeValidator** - Sistema de validação completo
-- [x] ✅ **Fator de vencimento** - Limitado a 4 dígitos (padrão FEBRABAN)
-- [x] ✅ **Campo livre** - Estrutura correta 25 dígitos
-- [x] ✅ **Templates** - Quebras de linha corrigidas
-- [x] ✅ **Configuração Caixa** - Nome e carteira corretos
+### 3. **Integrações Implementadas**
+- [x] ✅ **AsaasService** - Integração completa com API Asaas
+- [x] ✅ **Webhook** - Sistema de notificações automáticas
+- [x] ✅ **Boletos com PIX** - Geração automática
+- [x] ✅ **Templates** - Interface responsiva
+- [x] ✅ **Configuração Asaas** - Dados da conta configurados
 - [x] ✅ **Validação automática** - Integrada no fluxo de geração
 
 ### 4. **Variáveis de Ambiente Heroku**
