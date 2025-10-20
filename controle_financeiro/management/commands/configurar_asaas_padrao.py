@@ -55,26 +55,26 @@ class Command(BaseCommand):
         config.nome_banco = 'Asaas I.P S.A'
         config.codigo_banco = '461'
         config.agencia = '0001'
-        config.conta = 'Configurada automaticamente'
+        config.conta = 'Auto'  # Reduzido para caber no campo
         config.carteira = '1'  # Carteira padrão Asaas
-        config.codigo_cedente = 'Configurado no painel'
-        config.convenio = 'Configurado no painel'
+        config.codigo_cedente = 'ASAAS'  # Reduzido para caber no campo
+        config.convenio = 'ASAAS'  # Reduzido para caber no campo
 
         # Dados do beneficiário (opcionais via parâmetros)
         if options.get('nome_beneficiario'):
             config.nome_beneficiario = options['nome_beneficiario']
         elif not config.nome_beneficiario:
-            config.nome_beneficiario = 'Configurado no painel do Asaas'
+            config.nome_beneficiario = 'Asaas Config'
 
         if options.get('cnpj_beneficiario'):
             config.cnpj_beneficiario = options['cnpj_beneficiario']
         elif not config.cnpj_beneficiario:
-            config.cnpj_beneficiario = 'Configurado no painel do Asaas'
+            config.cnpj_beneficiario = '00.000.000/0001-00'
 
         if options.get('endereco_beneficiario'):
             config.endereco_beneficiario = options['endereco_beneficiario']
         elif not config.endereco_beneficiario:
-            config.endereco_beneficiario = 'Configurado no painel do Asaas'
+            config.endereco_beneficiario = 'Configurado no Asaas'
 
         # Configurações padrão
         config.instrucoes = (
