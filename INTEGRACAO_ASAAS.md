@@ -12,14 +12,17 @@ A integração permite:
 - ✅ Multa e juros automáticos
 - ✅ Interface administrativa completa
 
-## 🏦 Plataforma Asaas
+## 🏦 Dados da Conta Asaas
 
-**Configuração automática:**
+**Conta configurada no sistema:**
 - **Banco:** 461 - Asaas I.P S.A
-- **Tipo:** Conta de Pagamento Digital
-- **Configuração:** Automática via painel do Asaas
-- **Beneficiário:** Configurado no painel administrativo
-- **Dados bancários:** Gerados automaticamente pelo Asaas
+- **Agência:** 0001
+- **Conta:** 194116-2
+- **Tipo:** Conta de Pagamento
+- **Beneficiário:** FELIX REPRESENTACOES E COMERCIO LTDA
+- **CNPJ:** 41.449.198/0001-72
+- **Wallet ID:** 8bc96229-9853-40f4-b315-265090f1d524
+- **Chave PIX:** 0be79c1f-73f8-41d9-a795-3401856ce31b
 
 ## ⚙️ Configuração
 

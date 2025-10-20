@@ -35,14 +35,16 @@ class AsaasService:
             'User-Agent': 'LVK Sistemas - Sistema de Gestão'
         }
         
-        # Dados da conta Asaas (configuração padrão)
+        # Dados da conta Asaas (dados reais da conta)
         self.conta_dados = {
             'banco': '461',  # Asaas I.P S.A
             'agencia': '0001',
-            'conta': 'Configurada automaticamente pelo Asaas',
-            'tipo_conta': 'Conta de Pagamento Digital',
-            'nome_completo': 'Configurado no painel do Asaas',
-            'cnpj': 'Configurado no painel do Asaas'
+            'conta': '194116-2',
+            'tipo_conta': 'Conta de Pagamento',
+            'nome_completo': 'FELIX REPRESENTACOES E COMERCIO LTDA',
+            'cnpj': '41.449.198/0001-72',
+            'wallet_id': '8bc96229-9853-40f4-b315-265090f1d524',
+            'chave_pix': '0be79c1f-73f8-41d9-a795-3401856ce31b'
         }
     
     def validar_configuracao(self):

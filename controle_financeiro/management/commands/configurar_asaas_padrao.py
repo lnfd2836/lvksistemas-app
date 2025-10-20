@@ -55,7 +55,7 @@ class Command(BaseCommand):
         config.nome_banco = 'Asaas I.P S.A'
         config.codigo_banco = '461'
         config.agencia = '0001'
-        config.conta = 'Auto'  # Reduzido para caber no campo
+        config.conta = '194116-2'
         config.carteira = '1'  # Carteira padrão Asaas
         config.codigo_cedente = 'ASAAS'  # Reduzido para caber no campo
         config.convenio = 'ASAAS'  # Reduzido para caber no campo
@@ -64,17 +64,17 @@ class Command(BaseCommand):
         if options.get('nome_beneficiario'):
             config.nome_beneficiario = options['nome_beneficiario']
         elif not config.nome_beneficiario:
-            config.nome_beneficiario = 'Asaas Config'
+            config.nome_beneficiario = 'FELIX REPRESENTACOES E COMERCIO LTDA'
 
         if options.get('cnpj_beneficiario'):
             config.cnpj_beneficiario = options['cnpj_beneficiario']
         elif not config.cnpj_beneficiario:
-            config.cnpj_beneficiario = '00.000.000/0001-00'
+            config.cnpj_beneficiario = '41.449.198/0001-72'
 
         if options.get('endereco_beneficiario'):
             config.endereco_beneficiario = options['endereco_beneficiario']
         elif not config.endereco_beneficiario:
-            config.endereco_beneficiario = 'Configurado no Asaas'
+            config.endereco_beneficiario = 'Endereço configurado no Asaas'
 
         # Configurações padrão
         config.instrucoes = (
