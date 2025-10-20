@@ -177,7 +177,7 @@ ASAAS_ENVIRONMENT = env('ASAAS_ENVIRONMENT', default='sandbox')  # sandbox ou pr
 SITE_URL = env('SITE_URL', default='http://localhost:8000')
 
 # Dados da conta Asaas (para referência)
-ASAAS_WALLET_ID = '8bc96229-9853-40f4-b315-265090f1d524'
+ASAAS_WALLET_ID = '5193cd6d-899f-4219-b45a-a8a2012eae05'
 ASAAS_PIX_KEY = '0be79c1f-73f8-41d9-a795-3401856ce31b'
 
 # Configurações específicas para Heroku
