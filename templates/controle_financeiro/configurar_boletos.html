@@ -15,11 +15,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h4 class="mb-1">Banco Padrão para Recebimento</h4>
-                <p class="text-muted mb-0">Configure os dados da Caixa Econômica Federal para recebimento de pagamentos</p>
+                <p class="text-muted mb-0">Configure a integração com Asaas para geração de boletos com PIX</p>
             </div>
             <div>
-                <a href="{% url 'controle_financeiro:configurar_caixa' %}" class="btn btn-success me-2">
-                    <i class="fas fa-university"></i> Configurar Caixa
+                <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-success me-2">
+                    <i class="fas fa-credit-card"></i> Configurar Asaas
                 </a>
                 <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar
