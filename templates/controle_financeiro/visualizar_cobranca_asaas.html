@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Cobrança {{ cobranca.asaas_id }} - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-receipt"></i>
+                        Cobrança {{ cobranca.asaas_id }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="?atualizar=1" class="btn btn-info btn-sm">
+                            <i class="fas fa-sync-alt"></i> Atualizar Status
+                        </a>
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Status da Cobrança -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon 
+                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}bg-success
+                                    {% elif cobranca.status == 'OVERDUE' %}bg-danger
+                                    {% elif cobranca.status == 'PENDING' %}bg-warning
+                                    {% else %}bg-info{% endif %}">
+                                    <i class="fas fa-
+                                        {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}check-circle
+                                        {% elif cobranca.status == 'OVERDUE' %}exclamation-triangle
+                                        {% elif cobranca.status == 'PENDING' %}clock
+                                        {% else %}info-circle{% endif %}"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Status</span>
+                                    <span class="info-box-number">{{ cobranca.get_status_display }}</span>
+                                    <small>{{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Valor</span>
+                                    <span class="info-box-number">R$ {{ cobranca.valor|floatformat:2 }}</span>
+                                    <small>{{ cobranca.descricao|truncatechars:30 }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon {% if cobranca.esta_vencida %}bg-danger{% else %}bg-success{% endif %}">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Vencimento</span>
+                                    <span class="info-box-number">{{ cobranca.data_vencimento|date:"d/m/Y" }}</span>
+                                    <small>
+                                        {% if cobranca.dias_para_vencimento > 0 %}
+                                            {{ cobranca.dias_para_vencimento }} dias restantes
+                                        {% elif cobranca.dias_para_vencimento == 0 %}
+                                            Vence hoje
+                                        {% else %}
+                                            Vencido há {{ cobranca.dias_para_vencimento|add:"-1" }} dias
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações da Loja -->
+                    <div class="card card-outline card-info">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-store"></i>
+                                Informações da Loja
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Nome:</strong> {{ loja.nome }}<br>
+                                    <strong>CNPJ:</strong> {{ loja.cnpj }}<br>
+                                    <strong>Email:</strong> {{ loja.email }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Telefone:</strong> {{ loja.telefone }}<br>
+                                    <strong>Cidade:</strong> {{ loja.cidade }}/{{ loja.estado }}<br>
+                                    <strong>Plano:</strong> {{ controle.plano.nome }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formas de Pagamento -->
+                    <div class="row">
+                        <!-- Boleto Bancário -->
+                        <div class="col-md-6">
+                            <div class="card card-outline card-primary">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-barcode"></i>
+                                        Boleto Bancário
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if cobranca.bank_slip_url %}
+                                        <div class="text-center mb-3">
+                                            <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-primary btn-lg">
+                                                <i class="fas fa-download"></i>
+                                                Baixar Boleto PDF
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if cobranca.invoice_number %}
+                                        <p><strong>Número da Fatura:</strong> {{ cobranca.invoice_number }}</p>
+                                    {% endif %}
+                                    
+                                    {% if cobranca.invoice_url %}
+                                        <p>
+                                            <strong>Visualizar Online:</strong>
+                                            <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-external-link-alt"></i> Abrir
+                                            </a>
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <i class="fas fa-info-circle"></i>
+                                            O boleto pode ser pago em qualquer banco, lotérica ou internet banking.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PIX -->
+                        <div class="col-md-6">
+                            <div class="card card-outline card-success">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-qrcode"></i>
+                                        PIX - Pagamento Instantâneo
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if cobranca.pix_qr_code %}
+                                        <div class="text-center mb-3">
+                                            <img src="data:image/png;base64,{{ cobranca.pix_qr_code }}" 
+                                                 alt="QR Code PIX" 
+                                                 class="img-fluid" 
+                                                 style="max-width: 200px;">
+                                        </div>
+                                        
+                                        {% if cobranca.pix_expires_date %}
+                                            <div class="alert alert-warning">
+                                                <small>
+                                                    <i class="fas fa-clock"></i>
+                                                    PIX válido até: {{ cobranca.pix_expires_date|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if cobranca.pix_copy_paste %}
+                                        <div class="form-group">
+                                            <label><strong>PIX Copia e Cola:</strong></label>
+                                            <div class="input-group">
+                                                <textarea class="form-control" 
+                                                          id="pixCopyPaste" 
+                                                          rows="3" 
+                                                          readonly>{{ cobranca.pix_copy_paste }}</textarea>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-success" 
+                                                            type="button" 
+                                                            onclick="copyPixCode()">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Copie este código e cole no seu app do banco
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="alert alert-success">
+                                        <small>
+                                            <i class="fas fa-zap"></i>
+                                            Pagamento instantâneo 24h por dia, 7 dias por semana.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalhes Técnicos -->
+                    <div class="card card-outline card-secondary">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-cogs"></i>
+                                Detalhes Técnicos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>ID Asaas:</strong> {{ cobranca.asaas_id }}</p>
+                                    <p><strong>ID Cliente:</strong> {{ cobranca.customer_id }}</p>
+                                    <p><strong>Referência Externa:</strong> {{ cobranca.external_reference }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Data de Criação:</strong> {{ cobranca.data_criacao|date:"d/m/Y H:i" }}</p>
+                                    {% if cobranca.data_pagamento %}
+                                        <p><strong>Data de Pagamento:</strong> {{ cobranca.data_pagamento|date:"d/m/Y H:i" }}</p>
+                                    {% endif %}
+                                    <p><strong>Última Atualização:</strong> {{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if cobranca.observacoes %}
+                                <hr>
+                                <p><strong>Observações:</strong></p>
+                                <p>{{ cobranca.observacoes|linebreaks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPixCode() {
+    const pixCode = document.getElementById('pixCopyPaste');
+    pixCode.select();
+    pixCode.setSelectionRange(0, 99999); // Para dispositivos móveis
+    
+    try {
+        document.execCommand('copy');
+        
+        // Feedback visual
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-success');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+        }, 2000);
+        
+        // Mostrar toast ou alert
+        alert('Código PIX copiado para a área de transferência!');
+    } catch (err) {
+        alert('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.');
+    }
+}
+</script>
+{% endblock %}

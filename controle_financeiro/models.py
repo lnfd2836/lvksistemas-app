@@ -352,6 +352,111 @@ class Pagamento(models.Model):
         return True
 
 
+class CobrancaAsaas(models.Model):
+    """Cobranças geradas via API do Asaas"""
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendente'),
+        ('RECEIVED', 'Recebido'),
+        ('CONFIRMED', 'Confirmado'),
+        ('OVERDUE', 'Vencido'),
+        ('REFUNDED', 'Estornado'),
+        ('RECEIVED_IN_CASH', 'Recebido em Dinheiro'),
+        ('REFUND_REQUESTED', 'Estorno Solicitado'),
+        ('CHARGEBACK_REQUESTED', 'Chargeback Solicitado'),
+        ('CHARGEBACK_DISPUTE', 'Disputa de Chargeback'),
+        ('AWAITING_CHARGEBACK_REVERSAL', 'Aguardando Reversão'),
+        ('DUNNING_REQUESTED', 'Cobrança Solicitada'),
+        ('DUNNING_RECEIVED', 'Cobrança Recebida'),
+        ('AWAITING_RISK_ANALYSIS', 'Aguardando Análise'),
+    ]
+    
+    # Identificadores
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    asaas_id = models.CharField(max_length=100, unique=True, verbose_name="ID no Asaas")
+    controle_financeiro = models.ForeignKey(ControleFinanceiro, on_delete=models.CASCADE, verbose_name="Controle Financeiro")
+    
+    # Dados da cobrança
+    customer_id = models.CharField(max_length=100, verbose_name="ID do Cliente no Asaas")
+    valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
+    data_vencimento = models.DateTimeField(verbose_name="Data de Vencimento")
+    descricao = models.TextField(verbose_name="Descrição")
+    
+    # Status e controle
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='PENDING', verbose_name="Status")
+    data_pagamento = models.DateTimeField(null=True, blank=True, verbose_name="Data de Pagamento")
+    
+    # URLs e dados do boleto
+    invoice_url = models.URLField(blank=True, verbose_name="URL do Boleto")
+    bank_slip_url = models.URLField(blank=True, verbose_name="URL do PDF")
+    invoice_number = models.CharField(max_length=100, blank=True, verbose_name="Número da Fatura")
+    
+    # Dados do PIX
+    pix_qr_code = models.TextField(blank=True, verbose_name="QR Code PIX")
+    pix_copy_paste = models.TextField(blank=True, verbose_name="PIX Copia e Cola")
+    pix_expires_date = models.DateTimeField(null=True, blank=True, verbose_name="Data de Expiração do PIX")
+    
+    # Dados de resposta da API
+    api_response = models.JSONField(default=dict, verbose_name="Resposta da API")
+    
+    # Metadados
+    external_reference = models.CharField(max_length=200, blank=True, verbose_name="Referência Externa")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Cobrança Asaas"
+        verbose_name_plural = "Cobranças Asaas"
+        ordering = ['-data_criacao']
+    
+    def __str__(self):
+        return f"Cobrança {self.asaas_id} - {self.controle_financeiro.loja.nome} - R$ {self.valor}"
+    
+    @property
+    def dias_para_vencimento(self):
+        """Retorna quantos dias faltam para o vencimento"""
+        if self.data_vencimento:
+            delta = self.data_vencimento - timezone.now()
+            return delta.days
+        return 0
+    
+    @property
+    def esta_vencida(self):
+        """Verifica se a cobrança está vencida"""
+        return self.data_vencimento < timezone.now() and self.status == 'PENDING'
+    
+    def marcar_como_paga(self, data_pagamento=None):
+        """Marca a cobrança como paga"""
+        self.status = 'RECEIVED'
+        self.data_pagamento = data_pagamento or timezone.now()
+        self.save()
+        
+        # Processar pagamento no controle financeiro
+        self.controle_financeiro.processar_pagamento(
+            self.valor,
+            f"Pagamento via Asaas - Cobrança {self.asaas_id}"
+        )
+    
+    def atualizar_dados_asaas(self, dados_asaas):
+        """Atualiza dados com resposta da API do Asaas"""
+        self.status = dados_asaas.get('status', self.status)
+        self.invoice_url = dados_asaas.get('invoiceUrl', self.invoice_url)
+        self.bank_slip_url = dados_asaas.get('bankSlipUrl', self.bank_slip_url)
+        self.invoice_number = dados_asaas.get('invoiceNumber', self.invoice_number)
+        
+        # Atualizar dados do PIX se disponível
+        if 'pix' in dados_asaas:
+            pix_data = dados_asaas['pix']
+            self.pix_qr_code = pix_data.get('qrCode', self.pix_qr_code)
+            self.pix_copy_paste = pix_data.get('payload', self.pix_copy_paste)
+            if pix_data.get('expirationDate'):
+                self.pix_expires_date = datetime.fromisoformat(pix_data['expirationDate'].replace('Z', '+00:00'))
+        
+        # Salvar resposta completa da API
+        self.api_response = dados_asaas
+        self.save()
+
+
 class NotificacaoFinanceira(models.Model):
     """Notificações financeiras para as lojas"""
     TIPO_CHOICES = [

@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Cobranças Asaas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-credit-card"></i>
+                        Cobranças Asaas
+                    </h3>
+                    <div class="card-tools">
+                        {% if user.is_superuser %}
+                            <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-cog"></i> Configurar
+                            </a>
+                            <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-vial"></i> Testar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="status">Status:</label>
+                                    <select name="status" id="status" class="form-control">
+                                        <option value="">Todos</option>
+                                        {% for value, label in status_choices %}
+                                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {% if user.is_superuser %}
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="loja">Loja:</label>
+                                        <select name="loja" id="loja" class="form-control">
+                                            <option value="">Todas</option>
+                                            <!-- Adicionar opções de lojas aqui -->
+                                        </select>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Filtrar
+                                        </button>
+                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary">
+                                            <i class="fas fa-times"></i> Limpar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Estatísticas Rápidas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ cobrancas|length }}</h3>
+                                    <p>Total de Cobranças</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ cobrancas|length }}</h3>
+                                    <p>Pendentes</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>0</h3>
+                                    <p>Pagas</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>0</h3>
+                                    <p>Vencidas</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Cobranças -->
+                    {% if cobrancas %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Loja</th>
+                                        <th>Valor</th>
+                                        <th>Vencimento</th>
+                                        <th>Status</th>
+                                        <th>Criação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cobranca in cobrancas %}
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted">{{ cobranca.asaas_id|truncatechars:10 }}</small>
+                                            </td>
+                                            <td>
+                                                <strong>{{ cobranca.controle_financeiro.loja.nome }}</strong><br>
+                                                <small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj }}</small>
+                                            </td>
+                                            <td>
+                                                <strong>R$ {{ cobranca.valor|floatformat:2 }}</strong>
+                                            </td>
+                                            <td>
+                                                {{ cobranca.data_vencimento|date:"d/m/Y" }}<br>
+                                                <small class="
+                                                    {% if cobranca.dias_para_vencimento > 5 %}text-success
+                                                    {% elif cobranca.dias_para_vencimento > 0 %}text-warning
+                                                    {% else %}text-danger{% endif %}">
+                                                    {% if cobranca.dias_para_vencimento > 0 %}
+                                                        {{ cobranca.dias_para_vencimento }} dias
+                                                    {% elif cobranca.dias_para_vencimento == 0 %}
+                                                        Vence hoje
+                                                    {% else %}
+                                                        Vencido
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-
+                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
+                                                    {% elif cobranca.status == 'OVERDUE' %}danger
+                                                    {% elif cobranca.status == 'PENDING' %}warning
+                                                    {% else %}info{% endif %}">
+                                                    {{ cobranca.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {{ cobranca.data_criacao|date:"d/m/Y H:i" }}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' cobranca.id %}" 
+                                                       class="btn btn-sm btn-primary" 
+                                                       title="Visualizar">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    
+                                                    {% if cobranca.bank_slip_url %}
+                                                        <a href="{{ cobranca.bank_slip_url }}" 
+                                                           target="_blank" 
+                                                           class="btn btn-sm btn-info" 
+                                                           title="Baixar Boleto">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    
+                                                    {% if cobranca.pix_qr_code %}
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-success" 
+                                                                title="Ver PIX"
+                                                                onclick="showPixModal('{{ cobranca.id }}', '{{ cobranca.pix_copy_paste }}')">
+                                                            <i class="fas fa-qrcode"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Navegação de páginas">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">Primeira</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <h4><i class="fas fa-info-circle"></i> Nenhuma cobrança encontrada</h4>
+                            <p>Não há cobranças cadastradas no sistema ainda.</p>
+                            {% if user.is_superuser %}
+                                <a href="{% url 'controle_financeiro:listar_controles' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Gerar Nova Cobrança
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal PIX -->
+<div class="modal fade" id="pixModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-qrcode"></i> PIX - Pagamento Instantâneo
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="form-group">
+                    <label><strong>PIX Copia e Cola:</strong></label>
+                    <div class="input-group">
+                        <textarea class="form-control" id="modalPixCode" rows="3" readonly></textarea>
+                        <div class="input-group-append">
+                            <button class="btn btn-success" type="button" onclick="copyModalPixCode()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPixModal(cobrancaId, pixCode) {
+    document.getElementById('modalPixCode').value = pixCode;
+    $('#pixModal').modal('show');
+}
+
+function copyModalPixCode() {
+    const pixCode = document.getElementById('modalPixCode');
+    pixCode.select();
+    pixCode.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        alert('Código PIX copiado para a área de transferência!');
+    } catch (err) {
+        alert('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.');
+    }
+}
+</script>
+{% endblock %}

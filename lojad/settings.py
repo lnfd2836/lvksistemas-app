@@ -171,6 +171,62 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Configurações da API Asaas
+ASAAS_API_KEY = env('ASAAS_API_KEY', default='')
+ASAAS_ENVIRONMENT = env('ASAAS_ENVIRONMENT', default='sandbox')  # sandbox ou production
+SITE_URL = env('SITE_URL', default='http://localhost:8000')
+
+# Configurações específicas para Heroku
+if 'DYNO' in os.environ:
+    # Estamos no Heroku - configurações de produção
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Forçar HTTPS para URLs do Asaas em produção
+    if ASAAS_ENVIRONMENT == 'production':
+        SITE_URL = SITE_URL.replace('http://', 'https://')
+    
+    # Logging otimizado para Heroku
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'loggers': {
+            'controle_financeiro.asaas_service': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'controle_financeiro.asaas_views': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
+
 # Logging Configuration
 LOGGING = {
     'version': 1,

@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Gerar Cobrança Asaas - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-credit-card"></i>
+                        Gerar Cobrança Asaas - {{ loja.nome }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Informações da Loja -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-store"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Loja</span>
+                                    <span class="info-box-number">{{ loja.nome }}</span>
+                                    <small>{{ loja.cnpj }} | {{ loja.email }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Plano</span>
+                                    <span class="info-box-number">{{ plano.nome }}</span>
+                                    <small>R$ {{ controle.valor_mensal|floatformat:2 }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Atual -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Status Atual</h5>
+                        <p><strong>Status:</strong> 
+                            <span class="badge badge-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %}">
+                                {{ controle.get_status_display }}
+                            </span>
+                        </p>
+                        <p><strong>Vencimento:</strong> {{ controle.data_vencimento|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Valor Pendente:</strong> R$ {{ controle.valor_pendente|floatformat:2 }}</p>
+                    </div>
+
+                    <!-- Formulário de Geração -->
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="dias_vencimento">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Dias para Vencimento
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="dias_vencimento" 
+                                           name="dias_vencimento" 
+                                           value="30" 
+                                           min="1" 
+                                           max="365" 
+                                           required>
+                                    <small class="form-text text-muted">
+                                        Número de dias a partir de hoje para o vencimento
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="valor_cobranca">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        Valor da Cobrança
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="valor_cobranca" 
+                                           value="R$ {{ controle.valor_mensal|floatformat:2 }}" 
+                                           readonly>
+                                    <small class="form-text text-muted">
+                                        Valor baseado no plano da loja
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">
+                                <i class="fas fa-edit"></i>
+                                Descrição da Cobrança
+                            </label>
+                            <textarea class="form-control" 
+                                      id="descricao" 
+                                      name="descricao" 
+                                      rows="3" 
+                                      placeholder="Descrição personalizada (opcional)">Mensalidade {{ plano.nome }} - {{ loja.nome }}</textarea>
+                            <small class="form-text text-muted">
+                                Esta descrição aparecerá no boleto e PIX
+                            </small>
+                        </div>
+
+                        <!-- Informações do Asaas -->
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h5 class="card-title">
+                                    <i class="fas fa-university"></i>
+                                    Plataforma de Pagamento Asaas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Banco:</strong><br>
+                                        461 - Asaas I.P S.A
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Tipo:</strong><br>
+                                        Conta de Pagamento Digital
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Ambiente:</strong><br>
+                                        Sandbox (Testes)
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Sobre o Asaas:</strong> Plataforma completa de pagamentos que gera automaticamente os dados bancários necessários para boletos e PIX. Todos os dados do beneficiário são configurados no painel administrativo do Asaas.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Funcionalidades -->
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> O que será gerado:</h5>
+                            <ul class="mb-0">
+                                <li><strong>Boleto Bancário:</strong> Código de barras e linha digitável para pagamento</li>
+                                <li><strong>PIX:</strong> QR Code e código copia e cola para pagamento instantâneo</li>
+                                <li><strong>Notificações:</strong> Atualizações automáticas de status via webhook</li>
+                                <li><strong>Multa e Juros:</strong> 2% de multa + 1% ao mês de juros após vencimento</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle"></i>
+                                Gerar Cobrança com PIX
+                            </button>
+                            <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-lg ml-2">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validação do formulário
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

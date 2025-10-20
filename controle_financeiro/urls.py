@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import asaas_views
 
 app_name = 'controle_financeiro'
 
@@ -47,4 +48,13 @@ urlpatterns = [
         
         # PDF e pagamento
         path('boletos/<int:boleto_id>/pdf/', views.imprimir_boleto_pdf, name='imprimir_boleto_pdf'),
+        
+        # Integração Asaas
+        path('asaas/gerar/<int:controle_id>/', asaas_views.gerar_cobranca_asaas, name='gerar_cobranca_asaas'),
+        path('asaas/cobrancas/', asaas_views.listar_cobrancas_asaas, name='listar_cobrancas_asaas'),
+        path('asaas/cobrancas/<uuid:cobranca_id>/', asaas_views.visualizar_cobranca_asaas, name='visualizar_cobranca_asaas'),
+        path('asaas/webhook/', asaas_views.webhook_asaas, name='webhook_asaas'),
+        path('asaas/callback/success/', asaas_views.callback_success_asaas, name='callback_success_asaas'),
+        path('asaas/configurar/', asaas_views.configurar_asaas, name='configurar_asaas'),
+        path('asaas/testar/', asaas_views.testar_asaas, name='testar_asaas'),
     ]
