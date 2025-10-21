@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 import json
 
@@ -479,56 +479,63 @@ def gerar_boleto(request, controle_id):
         config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
         
         try:
-            # Forçar uso da Caixa se disponível
-            config_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco="104", ativo=True).first()
-            if config_caixa:
-                config = config_caixa
-            
-            # Verificar se é Caixa Econômica Federal
-            if config.codigo_banco == "104":
-                # Usar serviço específico da Caixa
-                from .boleto_caixa_service import BoletoCaixaService
+            # Verificar se é Asaas
+            if config.codigo_banco == "461":
+                # Usar serviço específico do Asaas
+                from .asaas_service import AsaasService
                 
-                caixa_service = BoletoCaixaService()
-                dados_boleto = caixa_service.gerar_boleto_caixa(controle, config, dias_vencimento=30)
+                asaas_service = AsaasService()
                 
-                # Verificar se o boleto foi validado com sucesso
-                if not dados_boleto.get('is_valid', False):
-                    validation_errors = dados_boleto.get('validation_result', {}).get('errors', [])
-                    error_msg = '; '.join(validation_errors) if validation_errors else 'Erro de validação desconhecido'
-                    raise ValueError(f"Boleto gerado é inválido: {error_msg}")
+                # Verificar se a configuração da API está válida
+                if not asaas_service.validar_configuracao():
+                    messages.error(request, '❌ Configuração da API Asaas inválida. Verifique a API key.')
+                    return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
                 
-                # Criar boleto com dados válidos da Caixa
+                dados_boleto = asaas_service.gerar_cobranca_com_pix(controle, dias_vencimento=30)
+                
+                # Verificar se o boleto foi gerado com sucesso
+                if not dados_boleto.get('success', False):
+                    error_msg = dados_boleto.get('error', 'Erro desconhecido ao gerar boleto')
+                    messages.error(request, f'❌ Erro ao gerar boleto Asaas: {error_msg}')
+                    return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
+                
+                # Extrair dados da cobrança
+                cobranca = dados_boleto['cobranca']
+                pix_data = dados_boleto.get('pix', {})
+                
+                # Criar boleto com dados do Asaas
                 boleto = BoletoGerado.objects.create(
                     controle_financeiro=controle,
                     configuracao=config,
-                    numero_boleto=dados_boleto['numero_boleto'],
-                    linha_digitavel=dados_boleto['linha_digitavel'],
-                    codigo_barras=dados_boleto['codigo_barras'],
-                    valor=dados_boleto['valor'],
-                    data_vencimento=dados_boleto['data_vencimento']
+                    numero_boleto=cobranca['id'],
+                    linha_digitavel=cobranca.get('bankSlipUrl', ''),
+                    codigo_barras=cobranca.get('bankSlipUrl', ''),
+                    valor=Decimal(str(cobranca['value'])),
+                    data_vencimento=datetime.strptime(cobranca['dueDate'], '%Y-%m-%d').date()
                 )
                 
-                # Mensagem de sucesso com informações de validação
-                success_msg = f'✅ Boleto da Caixa {dados_boleto["numero_boleto"]} gerado e validado com sucesso!'
-                
-                # Adicionar avisos se houver
-                warnings = dados_boleto.get('validation_warnings', [])
-                if warnings:
-                    warning_msg = ' Avisos: ' + '; '.join(warnings)
-                    success_msg += warning_msg
-                
-                messages.success(request, success_msg)
-                
-                # Aviso importante sobre ativação do convênio
-                if not config.convenio:
-                    messages.warning(
-                        request, 
-                        '⚠️ IMPORTANTE: Para que os boletos funcionem nos sistemas bancários, '
-                        'o convênio deve ser ativado pela Caixa Econômica Federal. '
-                        'Entre em contato com seu gerente para ativar o convênio de cobrança.'
+                # Salvar dados do PIX se disponível
+                if pix_data:
+                    from .models import CobrancaAsaas
+                    CobrancaAsaas.objects.create(
+                        asaas_id=cobranca['id'],
+                        controle_financeiro=controle,
+                        customer_id=cobranca.get('customer', ''),
+                        valor=Decimal(str(cobranca['value'])),
+                        data_vencimento=datetime.strptime(cobranca['dueDate'], '%Y-%m-%d'),
+                        descricao=cobranca.get('description', ''),
+                        status=cobranca['status'],
+                        invoice_url=cobranca.get('invoiceUrl', ''),
+                        bank_slip_url=cobranca.get('bankSlipUrl', ''),
+                        invoice_number=cobranca.get('invoiceNumber', ''),
+                        pix_qr_code=pix_data.get('encodedImage', ''),
+                        pix_copy_paste=pix_data.get('payload', ''),
+                        external_reference=cobranca.get('externalReference', ''),
+                        api_response=cobranca
                     )
-                numero_boleto = dados_boleto['numero_boleto']  # Para usar no redirect
+                
+                messages.success(request, f'✅ Boleto Asaas {cobranca["id"]} gerado com sucesso!')
+                numero_boleto = cobranca['id']
                 
             else:
                 # Gera número do boleto (simulado para outros bancos)
@@ -555,16 +562,16 @@ def gerar_boleto(request, controle_id):
         
         return redirect('controle_financeiro:detalhar_controle', controle_id=controle_id)
     
-    # Lista configurações ativas - forçar Caixa se disponível
+    # Lista configurações ativas - priorizar Asaas
     configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
     
-    # Debug: garantir que a Caixa apareça
+    # Debug: garantir que o Asaas apareça
     if not configuracoes.exists():
-        # Se não há configurações ativas, ativar a Caixa
-        config_caixa = ConfiguracaoBoleto.objects.filter(codigo_banco="104").first()
-        if config_caixa:
-            config_caixa.ativo = True
-            config_caixa.save()
+        # Se não há configurações ativas, ativar o Asaas
+        config_asaas = ConfiguracaoBoleto.objects.filter(codigo_banco="461").first()
+        if config_asaas:
+            config_asaas.ativo = True
+            config_asaas.save()
             configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
     
     # Logs removidos para produção
@@ -870,18 +877,12 @@ def imprimir_boleto_pdf(request, boleto_id):
             return redirect('dashboard:principal')
     
     try:
-        # Verificar se é boleto da Caixa para usar layout SIGCB
-        if boleto.configuracao.codigo_banco == "104":
-            from .pdf_service_sigcb import BoletoPDFServiceSIGCB
-            
-            pdf_service = BoletoPDFServiceSIGCB()
-            return pdf_service.gerar_pdf_boleto_sigcb(boleto)
-        elif boleto.configuracao.codigo_banco == "461":  # Asaas
-            # Usar layout padrão temporariamente até resolver problema de deploy
+        # Usar serviço específico para Asaas
+        if boleto.configuracao.codigo_banco == "461":  # Asaas
             from .pdf_service import BoletoPDFService
             
             pdf_service = BoletoPDFService()
-            return pdf_service.gerar_pdf_boleto(boleto)
+            return pdf_service.gerar_pdf_boleto_asaas(boleto)
         else:
             # Usar layout padrão para outros bancos
             from .pdf_service import BoletoPDFService

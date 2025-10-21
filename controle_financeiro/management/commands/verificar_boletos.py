@@ -4,7 +4,7 @@ Comando para verificar e corrigir boletos existentes
 
 from django.core.management.base import BaseCommand
 from controle_financeiro.models import BoletoGerado, ConfiguracaoBoleto
-from controle_financeiro.boleto_caixa_service import BoletoCaixaService
+from controle_financeiro.asaas_service import AsaasService
 
 
 class Command(BaseCommand):
@@ -54,22 +54,27 @@ class Command(BaseCommand):
             self.stdout.write(f'Cedente: {config.codigo_cedente}')
             self.stdout.write(f'Convênio: {config.convenio}')
             
-            # Verificar se é da Caixa e tem problemas
+            # Verificar se é do Asaas e tem problemas
             tem_problema = False
             
-            if config.codigo_banco == "104":
+            if config.codigo_banco == "461":
                 if not config.nome_banco or config.nome_banco.strip() == "":
                     self.stdout.write(self.style.ERROR('❌ Nome do banco vazio'))
                     tem_problema = True
                     
                     if options['fix']:
-                        config.nome_banco = "Caixa Econômica Federal"
+                        config.nome_banco = "Asaas I.P S.A"
                         config.save()
                         self.stdout.write(self.style.SUCCESS('✅ Nome do banco corrigido'))
                 
                 if not config.codigo_cedente:
                     self.stdout.write(self.style.ERROR('❌ Código do cedente vazio'))
                     tem_problema = True
+                    
+                    if options['fix']:
+                        config.codigo_cedente = "ASAAS001"
+                        config.save()
+                        self.stdout.write(self.style.SUCCESS('✅ Código do cedente corrigido'))
                 
                 if not config.convenio:
                     self.stdout.write(self.style.WARNING('⚠️ Convênio não informado'))
@@ -77,7 +82,7 @@ class Command(BaseCommand):
             # Validar código de barras se solicitado
             if options['validate'] and boleto.codigo_barras:
                 try:
-                    service = BoletoCaixaService()
+                    service = AsaasService()
                     validation_result = service.validar_boleto_existente(
                         boleto.codigo_barras, 
                         boleto.linha_digitavel

@@ -71,12 +71,12 @@ class BoletoEmailService:
             # Anexar PDF se solicitado
             if incluir_pdf:
                 try:
-                    # Usar layout SIGCB para boletos da Caixa
-                    if boleto.configuracao.codigo_banco == "104":
-                        from .pdf_service_sigcb import BoletoPDFServiceSIGCB
+                    # Usar layout específico para boletos do Asaas
+                    if boleto.configuracao.codigo_banco == "461":
+                        from .pdf_service import BoletoPDFService
                         
-                        pdf_service = BoletoPDFServiceSIGCB()
-                        pdf_response = pdf_service.gerar_pdf_boleto_sigcb(boleto)
+                        pdf_service = BoletoPDFService()
+                        pdf_response = pdf_service.gerar_pdf_boleto_asaas(boleto)
                     else:
                         from .pdf_service import BoletoPDFService
                         

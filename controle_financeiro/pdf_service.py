@@ -101,6 +101,67 @@ class BoletoPDFService:
         
         return response
     
+    def gerar_pdf_boleto_asaas(self, boleto):
+        """
+        Gera PDF do boleto do Asaas com PIX
+        
+        Args:
+            boleto: Instância do BoletoGerado
+            
+        Returns:
+            HttpResponse: PDF do boleto
+        """
+        
+        # Criar buffer para o PDF
+        buffer = BytesIO()
+        
+        # Criar documento PDF
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=self.margin,
+            leftMargin=self.margin,
+            topMargin=self.margin,
+            bottomMargin=self.margin
+        )
+        
+        # Criar conteúdo do boleto
+        story = []
+        
+        # Adicionar cabeçalho específico do Asaas
+        story.extend(self._criar_cabecalho_asaas(boleto))
+        
+        # Adicionar dados do beneficiário
+        story.extend(self._criar_dados_beneficiario(boleto))
+        
+        # Adicionar dados do pagador
+        story.extend(self._criar_dados_pagador(boleto))
+        
+        # Adicionar informações do boleto
+        story.extend(self._criar_informacoes_boleto(boleto))
+        
+        # Adicionar PIX QR Code (específico do Asaas)
+        story.extend(self._criar_pix_qrcode(boleto))
+        
+        # Adicionar código de barras específico do Asaas
+        story.extend(self._criar_codigo_barras_asaas(boleto))
+        
+        # Adicionar instruções específicas do Asaas
+        story.extend(self._criar_instrucoes_asaas(boleto))
+        
+        # Adicionar recibo do sacado (canhoto)
+        story.extend(self._criar_recibo_sacado(boleto))
+        
+        # Gerar PDF
+        doc.build(story)
+        
+        # Preparar resposta HTTP
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="boleto_asaas_{boleto.numero_boleto}.pdf"'
+        
+        return response
+    
     def _criar_cabecalho(self, boleto):
         """Cria o cabeçalho do boleto"""
         styles = getSampleStyleSheet()
@@ -149,6 +210,76 @@ class BoletoPDFService:
         banco_table.setStyle(TableStyle([
             # Estilo da primeira linha (cabeçalho)
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            
+            # Estilo da segunda linha (valores)
+            ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, 1), colors.black),
+            ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 1), (-1, 1), 10),
+            
+            # Alinhamento
+            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Bordas
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('LINEBELOW', (0, 0), (-1, 0), 2, colors.black),
+        ]))
+        
+        return [titulo, Spacer(1, 5), linha, Spacer(1, 10), banco_table, Spacer(1, 20)]
+    
+    def _criar_cabecalho_asaas(self, boleto):
+        """Cria o cabeçalho específico do boleto do Asaas"""
+        styles = getSampleStyleSheet()
+        
+        # Título específico do Asaas
+        titulo_style = ParagraphStyle(
+            'TituloBoletoAsaas',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.darkblue,
+            alignment=TA_CENTER,
+            spaceAfter=15
+        )
+        
+        titulo = Paragraph("<b>BOLETO ASAAS COM PIX</b>", titulo_style)
+        
+        # Linha separadora
+        linha_style = ParagraphStyle(
+            'Linha',
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=TA_CENTER
+        )
+        
+        linha = Paragraph("─" * 100, linha_style)
+        
+        # Informações principais do Asaas
+        banco_data = [
+            # Primeira linha - Banco e código
+            [
+                f"{boleto.configuracao.codigo_banco}-X", 
+                "ASAAS I.P S.A", 
+                "VENCIMENTO", 
+                boleto.data_vencimento.strftime("%d/%m/%Y")
+            ],
+            # Segunda linha - Espaço e valor
+            [
+                "", 
+                "", 
+                "VALOR DO DOCUMENTO", 
+                f"R$ {boleto.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            ]
+        ]
+        
+        banco_table = Table(banco_data, colWidths=[2.5*cm, 9*cm, 3.5*cm, 3*cm])
+        banco_table.setStyle(TableStyle([
+            # Estilo da primeira linha (cabeçalho)
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 11),
@@ -312,7 +443,10 @@ class BoletoPDFService:
         titulo = Paragraph("📄 INFORMAÇÕES DO BOLETO", titulo_style)
         
         # Calcular dias para vencimento
-        dias_vencimento = (boleto.data_vencimento.date() - timezone.now().date()).days
+        if hasattr(boleto.data_vencimento, 'date'):
+            dias_vencimento = (boleto.data_vencimento.date() - timezone.now().date()).days
+        else:
+            dias_vencimento = (boleto.data_vencimento - timezone.now().date()).days
         status_vencimento = "No prazo"
         if dias_vencimento < 0:
             status_vencimento = f"Vencido há {abs(dias_vencimento)} dias"
@@ -392,6 +526,77 @@ class BoletoPDFService:
         ]))
         
         return [titulo, info_table, Spacer(1, 20)]
+    
+    def _criar_pix_qrcode(self, boleto):
+        """Cria a seção do PIX QR Code para boletos Asaas"""
+        styles = getSampleStyleSheet()
+        
+        titulo_style = ParagraphStyle(
+            'TituloPix',
+            fontSize=12,
+            textColor=colors.blue,
+            alignment=TA_LEFT,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
+        )
+        
+        titulo = Paragraph("✨ PAGAMENTO VIA PIX", titulo_style)
+        
+        # Buscar dados de PIX do Asaas
+        from .models import CobrancaAsaas
+        cobranca_asaas = CobrancaAsaas.objects.filter(controle_financeiro=boleto.controle_financeiro).first()
+        
+        if not cobranca_asaas:
+            return [
+                titulo,
+                Paragraph("<i>Informações PIX não disponíveis para este boleto.</i>", styles['Normal']),
+                Spacer(1, 20)
+            ]
+
+        try:
+            # Verificar se há QR Code base64
+            if not cobranca_asaas.pix_qr_code:
+                return [
+                    titulo,
+                    Paragraph("<i>QR Code PIX não disponível para este boleto.</i>", styles['Normal']),
+                    Spacer(1, 20)
+                ]
+            
+            # Decodificar a imagem base64 do QR Code
+            import base64
+            qr_code_data = base64.b64decode(cobranca_asaas.pix_qr_code)
+            
+            # Criar imagem para o PDF
+            from reportlab.platypus import Image as ReportLabImage
+            qr_image = ReportLabImage(BytesIO(qr_code_data), width=4*cm, height=4*cm)
+            
+            # Tabela para organizar QR Code e linha copiável
+            pix_data = [
+                [qr_image, Paragraph(f"<b>Chave PIX (Copia e Cola):</b><br/><font size=9>{cobranca_asaas.pix_copy_paste}</font>", styles['Normal'])]
+            ]
+            
+            pix_table = Table(pix_data, colWidths=[5*cm, 12*cm])
+            pix_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            
+            return [
+                titulo,
+                Paragraph("Escaneie o QR Code ou use a chave Copia e Cola para pagar via PIX.", styles['Normal']),
+                Spacer(1, 5),
+                pix_table,
+                Spacer(1, 20)
+            ]
+        except Exception as e:
+            return [
+                titulo,
+                Paragraph(f"<i>Erro ao gerar QR Code PIX: {str(e)}</i>", styles['Normal']),
+                Spacer(1, 20)
+            ]
     
     def _criar_codigo_barras(self, boleto):
         """Cria código de barras do boleto"""
@@ -687,3 +892,134 @@ class BoletoPDFService:
             Spacer(1, 15),
             assinatura
         ]
+    
+    def _criar_codigo_barras_asaas(self, boleto):
+        """Cria código de barras específico do Asaas"""
+        
+        # Linha digitável
+        linha_style = ParagraphStyle(
+            'LinhaDigitavel',
+            fontSize=12,
+            textColor=colors.black,
+            alignment=TA_CENTER,
+            fontName='Courier-Bold',
+            spaceAfter=10
+        )
+        
+        linha_digitavel = Paragraph(f"<b>{boleto.linha_digitavel}</b>", linha_style)
+        
+        # Código de barras visual para leitura com câmera
+        try:
+            # Preparar código de barras - usar apenas números
+            barcode_value = ''.join(filter(str.isdigit, boleto.codigo_barras))
+            
+            # Garantir que tenha pelo menos 20 dígitos e no máximo 44
+            if len(barcode_value) < 20:
+                barcode_value = barcode_value.ljust(44, '0')
+            elif len(barcode_value) > 44:
+                barcode_value = barcode_value[:44]
+            
+            # Usar reportlab Code128
+            from reportlab.graphics.barcode.code128 import Code128
+            from reportlab.graphics.shapes import Drawing
+            
+            # Criar código de barras
+            barcode = Code128(
+                barcode_value,
+                barHeight=15*mm,
+                barWidth=0.4*mm,
+                humanReadable=0,
+                checksum=0,
+                bearers=0
+            )
+            
+            # Criar drawing com fundo branco
+            drawing = Drawing(18*cm, 3*cm)
+            
+            # Adicionar fundo branco
+            from reportlab.graphics.shapes import Rect
+            fundo = Rect(0, 0, 18*cm, 3*cm, fillColor=colors.white, strokeColor=colors.white)
+            drawing.add(fundo)
+            
+            # Centralizar o código de barras
+            barcode.x = 1*cm
+            barcode.y = 0.5*cm
+            
+            # Adicionar código de barras
+            drawing.add(barcode)
+            
+            # Adicionar título
+            titulo_style = ParagraphStyle(
+                'TituloCodigoBarras',
+                fontSize=10,
+                textColor=colors.black,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold',
+                spaceAfter=5
+            )
+            
+            titulo = Paragraph("<b>CÓDIGO DE BARRAS PARA PAGAMENTO</b>", titulo_style)
+            
+            return [
+                titulo,
+                linha_digitavel,
+                Spacer(1, 10),
+                drawing,
+                Spacer(1, 20)
+            ]
+            
+        except Exception as e:
+            print(f"Erro ao gerar código de barras: {e}")
+            # Fallback: apenas linha digitável
+            return [
+                linha_digitavel,
+                Spacer(1, 20)
+            ]
+    
+    def _criar_instrucoes_asaas(self, boleto):
+        """Cria instruções específicas do Asaas"""
+        styles = getSampleStyleSheet()
+        
+        titulo_style = ParagraphStyle(
+            'TituloInstrucoes',
+            fontSize=12,
+            textColor=colors.darkred,
+            alignment=TA_LEFT,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
+        )
+        
+        titulo = Paragraph("📋 INSTRUÇÕES DE PAGAMENTO - ASAAS", titulo_style)
+        
+        instrucoes_texto = f"""
+        <b>INSTRUÇÕES PARA PAGAMENTO:</b><br/><br/>
+        
+        1. <b>PIX:</b> Escaneie o código QR ou use a chave Copia e Cola para pagamento via PIX<br/>
+        2. <b>Boleto Bancário:</b> Pague em qualquer banco, casa lotérica ou internet banking<br/>
+        3. <b>Vencimento:</b> {boleto.data_vencimento.strftime("%d/%m/%Y")}<br/>
+        4. <b>Valor:</b> R$ {boleto.valor:,.2f}<br/><br/>
+        
+        <b>IMPORTANT:</b><br/>
+        • Este boleto é válido apenas para pagamento via Asaas<br/>
+        • Após o vencimento, serão cobrados juros e multa conforme legislação<br/>
+        • Em caso de dúvidas, entre em contato com o suporte<br/><br/>
+        
+        <b>DADOS PARA PIX:</b><br/>
+        • Chave PIX: {boleto.linha_digitavel}<br/>
+        • Valor: R$ {boleto.valor:,.2f}<br/>
+        • Vencimento: {boleto.data_vencimento.strftime("%d/%m/%Y")}
+        """
+        
+        instrucoes_style = ParagraphStyle(
+            'InstrucoesTexto',
+            fontSize=9,
+            textColor=colors.black,
+            alignment=TA_LEFT,
+            fontName='Helvetica',
+            spaceAfter=10,
+            leftIndent=20
+        )
+        
+        instrucoes = Paragraph(instrucoes_texto, instrucoes_style)
+        
+        return [titulo, instrucoes, Spacer(1, 20)]
