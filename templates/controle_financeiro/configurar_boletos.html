@@ -79,13 +79,15 @@
                             <div class="col-md-6 mb-3">
                                 <label for="nome_banco" class="form-label">Nome do Banco</label>
                                 <input type="text" class="form-control" id="nome_banco" name="nome_banco"
-                                    value="Banco Padrão" readonly>
+                                    value="{% if configuracao_ativa %}{{ configuracao_ativa.nome_banco }}{% else %}Asaas{% endif %}"
+                                    placeholder="Nome do banco" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="codigo_banco" class="form-label">Código do Banco</label>
                                 <input type="text" class="form-control" id="codigo_banco" name="codigo_banco"
-                                    value="104" readonly>
+                                    value="{% if configuracao_ativa %}{{ configuracao_ativa.codigo_banco }}{% else %}461{% endif %}"
+                                    placeholder="Código do banco" required>
                             </div>
                         </div>
 
@@ -94,16 +96,16 @@
                                 <label for="agencia" class="form-label">Agência <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="agencia" name="agencia"
                                     value="{% if configuracao_ativa %}{{ configuracao_ativa.agencia }}{% endif %}"
-                                    placeholder="1234" maxlength="4" required>
-                                <div class="form-text">Exatamente 4 dígitos</div>
+                                    placeholder="0001" maxlength="4" required>
+                                <div class="form-text">Agência do Asaas (ex: 0001)</div>
                             </div>
 
                             <div class="col-md-4 mb-3">
                                 <label for="conta" class="form-label">Conta <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="conta" name="conta"
                                     value="{% if configuracao_ativa %}{{ configuracao_ativa.conta }}{% endif %}"
-                                    placeholder="12345678" required>
-                                <div class="form-text">Número da sua conta no banco</div>
+                                    placeholder="194116-2" required>
+                                <div class="form-text">Número da conta no Asaas (ex: 194116-2)</div>
                             </div>
 
                             <div class="col-md-4 mb-3">
@@ -114,8 +116,9 @@
                                     <option value="2" {% if configuracao_ativa.carteira == '2' %}selected{% endif %}>2 - Cobrança Vinculada</option>
                                     <option value="14" {% if configuracao_ativa.carteira == '14' %}selected{% endif %}>14 - Cobrança sem Registro</option>
                                     <option value="24" {% if configuracao_ativa.carteira == '24' %}selected{% endif %}>24 - Cobrança com Registro</option>
+                                    <option value="SR" {% if configuracao_ativa.carteira == 'SR' %}selected{% endif %}>SR - Cobrança Asaas</option>
                                 </select>
-                                <div class="form-text">Confirme com seu gerente bancário</div>
+                                <div class="form-text">Carteira padrão do Asaas</div>
                             </div>
                         </div>
 
