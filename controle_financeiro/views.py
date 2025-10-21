@@ -876,6 +876,12 @@ def imprimir_boleto_pdf(request, boleto_id):
             
             pdf_service = BoletoPDFServiceSIGCB()
             return pdf_service.gerar_pdf_boleto_sigcb(boleto)
+        elif boleto.configuracao.codigo_banco == "461":  # Asaas
+            # Usar layout específico para Asaas
+            from .pdf_service_asaas import BoletoPDFServiceAsaas
+            
+            pdf_service = BoletoPDFServiceAsaas()
+            return pdf_service.gerar_pdf_boleto_asaas(boleto)
         else:
             # Usar layout padrão para outros bancos
             from .pdf_service import BoletoPDFService
