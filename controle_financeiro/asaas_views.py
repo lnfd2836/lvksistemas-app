@@ -180,6 +180,29 @@ def listar_cobrancas_asaas(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def webhook_test(request):
+    """
+    Webhook de teste simples para debug
+    """
+    try:
+        # Parsear dados do webhook
+        webhook_data = json.loads(request.body.decode('utf-8'))
+        
+        logger.info(f"Webhook de teste recebido: {webhook_data}")
+        
+        return HttpResponse("OK - Webhook funcionando!", status=200)
+        
+    except json.JSONDecodeError:
+        logger.error("Webhook com JSON inválido")
+        return HttpResponse("Invalid JSON", status=400)
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook de teste: {str(e)}")
+        return HttpResponse("Internal Error", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def webhook_asaas(request):
     """
     Webhook para receber notificações do Asaas
