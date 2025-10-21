@@ -29,6 +29,7 @@ class ImprovedAuthenticationMiddleware:
             '/logout/',
             '/loja/login/',
             '/loja/logout/',
+            '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
             '/static/',
             '/media/',
             '/favicon.ico',

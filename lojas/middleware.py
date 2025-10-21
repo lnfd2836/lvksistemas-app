@@ -22,6 +22,7 @@ class LojaMiddleware:
             '/dashboard/loja/dashboard/',
             '/lojas/criar/',
             '/loja/login/',  # Adiciona login específico da loja
+            '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
             '/static/',
             '/media/',
         ]
