@@ -31,6 +31,7 @@ class ControleFinanceiroMiddleware:
                     urls_permitidas = [
                         '/financeiro/pagamento/',
                         '/financeiro/boletos-cliente/',
+                        '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de verificação
                         '/logout/',
                         '/loja/login/',
                     ]
