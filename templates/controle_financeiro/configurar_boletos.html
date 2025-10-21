@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Configurar Boletos{% endblock %}
-{% block page_title %}Configuração da Caixa Econômica Federal{% endblock %}
+{% block page_title %}Configuração de Boletos{% endblock %}
 
 {% load static %}
 
@@ -51,7 +51,7 @@
     <div class="col-12">
         <div class="alert alert-info">
             <h6 class="mb-1"><i class="fas fa-info-circle"></i> Configure os Dados Bancários</h6>
-            <p class="mb-0">Preencha os dados abaixo para configurar a Caixa Econômica Federal como banco padrão para recebimento de pagamentos.</p>
+            <p class="mb-0">Preencha os dados abaixo para configurar o banco padrão para recebimento de pagamentos via boletos.</p>
         </div>
     </div>
 </div>
@@ -65,7 +65,7 @@
                 <div class="card-header py-3">
                     <h5 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-university"></i>
-                        Dados Bancários - Caixa Econômica Federal
+                        Dados Bancários
                     </h5>
                 </div>
                 <div class="card-body">
@@ -80,7 +80,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="nome_banco" class="form-label">Nome do Banco</label>
                                 <input type="text" class="form-control" id="nome_banco" name="nome_banco"
-                                    value="Caixa Econômica Federal" readonly>
+                                    value="Banco Padrão" readonly>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -104,7 +104,7 @@
                                 <input type="text" class="form-control" id="conta" name="conta"
                                     value="{% if configuracao_ativa %}{{ configuracao_ativa.conta }}{% endif %}"
                                     placeholder="12345678" required>
-                                <div class="form-text">Número da sua conta na Caixa</div>
+                                <div class="form-text">Número da sua conta no banco</div>
                             </div>
 
                             <div class="col-md-4 mb-3">
@@ -116,7 +116,7 @@
                                     <option value="14" {% if configuracao_ativa.carteira == '14' %}selected{% endif %}>14 - Cobrança sem Registro</option>
                                     <option value="24" {% if configuracao_ativa.carteira == '24' %}selected{% endif %}>24 - Cobrança com Registro</option>
                                 </select>
-                                <div class="form-text">Confirme com seu gerente da Caixa</div>
+                                <div class="form-text">Confirme com seu gerente bancário</div>
                             </div>
                         </div>
 
@@ -127,7 +127,7 @@
                                     value="{% if configuracao_ativa %}{{ configuracao_ativa.codigo_cedente }}{% endif %}"
                                     placeholder="123456" required>
                                 <div class="form-text">
-                                    <strong>Fornecido pela Caixa</strong> para identificação do beneficiário
+                                    <strong>Fornecido pelo banco</strong> para identificação do beneficiário
                                 </div>
                             </div>
 
@@ -137,7 +137,7 @@
                                     value="{% if configuracao_ativa %}{{ configuracao_ativa.convenio }}{% endif %}"
                                     placeholder="1234567">
                                 <div class="form-text">
-                                    <strong>Número do convênio</strong> de cobrança da Caixa
+                                    <strong>Número do convênio</strong> de cobrança do banco
                                 </div>
                             </div>
                         </div>
