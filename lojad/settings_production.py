@@ -60,6 +60,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+# Configurações do Asaas
+ASAAS_API_KEY = os.environ.get('ASAAS_API_KEY', '')
+ASAAS_ENVIRONMENT = os.environ.get('ASAAS_ENVIRONMENT', 'production')
+
 # Logging para produção
 LOGGING = {
     'version': 1,
