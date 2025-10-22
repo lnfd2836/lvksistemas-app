@@ -901,14 +901,40 @@ def imprimir_boleto_pdf(request, boleto_id):
         # Verificar se existe cobrança do Asaas associada
         try:
             from .models import CobrancaAsaas
-            cobranca_asaas = CobrancaAsaas.objects.get(controle_financeiro=boleto.controle_financeiro)
+            
+            # Tentar buscar por controle financeiro
+            cobranca_asaas = CobrancaAsaas.objects.filter(
+                controle_financeiro=boleto.controle_financeiro
+            ).first()
+            
+            # Se não encontrou, tentar buscar pela loja (caso mais recente)
+            if not cobranca_asaas:
+                cobranca_asaas = CobrancaAsaas.objects.filter(
+                    controle_financeiro__loja=boleto.controle_financeiro.loja
+                ).order_by('-data_criacao').first()
             
             # Se existe cobrança do Asaas e tem URL do PDF, redirecionar
-            if cobranca_asaas.bank_slip_url:
+            if cobranca_asaas and cobranca_asaas.bank_slip_url:
                 return redirect(cobranca_asaas.bank_slip_url)
+            
+            # Se é um boleto do Asaas mas não tem cobrança salva, tentar extrair ID das observações
+            if boleto.configuracao.codigo_banco == "461":  # Asaas
+                # Verificar se há ID do Asaas nas observações ou outros campos
+                observacoes = getattr(boleto, 'observacoes', '') or ''
                 
-        except CobrancaAsaas.DoesNotExist:
-            # Não há cobrança do Asaas, continuar com PDF local
+                # Procurar padrão de ID do Asaas nas observações
+                import re
+                asaas_id_match = re.search(r'pay_[a-zA-Z0-9]+|[a-zA-Z0-9]{16,20}', observacoes)
+                
+                if asaas_id_match:
+                    asaas_id = asaas_id_match.group()
+                    pdf_url = f"https://www.asaas.com/b/pdf/{asaas_id}"
+                    logger.info(f"ID Asaas extraído das observações: {asaas_id}")
+                    return redirect(pdf_url)
+                
+        except Exception as e:
+            # Log do erro mas continuar com PDF local
+            logger.warning(f"Erro ao buscar cobrança Asaas: {str(e)}")
             pass
         
         # Usar serviço específico para Asaas (PDF local)
@@ -949,6 +975,24 @@ def pdf_asaas_redirect(request, cobranca_id):
         else:
             messages.error(request, 'PDF do boleto não disponível.')
             return redirect('controle_financeiro:listar_cobrancas_asaas')
+
+
+@login_required
+def pdf_asaas_direto(request, asaas_id):
+    """Redireciona diretamente para o PDF do Asaas usando o ID"""
+    
+    # Verificar permissão básica (usuário logado)
+    if not request.user.is_authenticated:
+        messages.error(request, 'Você precisa estar logado para acessar este recurso.')
+        return redirect('login')
+    
+    # Construir URL do PDF do Asaas
+    pdf_url = f"https://www.asaas.com/b/pdf/{asaas_id}"
+    
+    # Log da ação
+    logger.info(f"Redirecionamento direto para PDF Asaas: {asaas_id} por usuário {request.user.username}")
+    
+    return redirect(pdf_url)
             
     except Exception as e:
         messages.error(request, f'Erro ao acessar PDF: {str(e)}')
