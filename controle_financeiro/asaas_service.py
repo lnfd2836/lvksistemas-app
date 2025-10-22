@@ -35,6 +35,13 @@ class AsaasService:
             'User-Agent': 'LVK Sistemas - Sistema de Gestão'
         }
         
+        # Formato alternativo para teste (alguns endpoints podem usar Authorization)
+        self.headers_alt = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json',
+            'User-Agent': 'LVK Sistemas - Sistema de Gestão'
+        }
+        
         # Dados da conta Asaas (dados reais da conta)
         self.conta_dados = {
             'banco': '461',  # Asaas I.P S.A
@@ -53,7 +60,7 @@ class AsaasService:
             raise ValueError("ASAAS_API_KEY não configurada nas settings")
         
         try:
-            # Testar conexão com a API
+            # Testar primeiro formato de header (access_token)
             response = requests.get(
                 f"{self.base_url}/myAccount",
                 headers=self.headers,
@@ -62,10 +69,25 @@ class AsaasService:
             
             if response.status_code == 200:
                 account_data = response.json()
-                logger.info(f"Conexão com Asaas estabelecida. Conta: {account_data.get('name', 'N/A')}")
+                logger.info(f"Conexão com Asaas estabelecida (access_token). Conta: {account_data.get('name', 'N/A')}")
+                return True
+            
+            # Se falhou, testar formato alternativo (Authorization Bearer)
+            logger.info("Testando formato alternativo de header (Authorization Bearer)")
+            response = requests.get(
+                f"{self.base_url}/myAccount",
+                headers=self.headers_alt,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                account_data = response.json()
+                logger.info(f"Conexão com Asaas estabelecida (Bearer). Conta: {account_data.get('name', 'N/A')}")
+                # Usar headers alternativos daqui em diante
+                self.headers = self.headers_alt
                 return True
             else:
-                logger.error(f"Erro na validação da API Asaas: {response.status_code} - {response.text}")
+                logger.error(f"Erro na validação da API Asaas (ambos formatos): {response.status_code} - {response.text}")
                 return False
                 
         except Exception as e:
