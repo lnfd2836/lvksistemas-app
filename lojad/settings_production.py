@@ -7,7 +7,21 @@ from .settings import *
 DEBUG = False
 
 # Hosts permitidos
-ALLOWED_HOSTS = ['seu-dominio.com', 'www.seu-dominio.com']
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '0.0.0.0', 
+    'testserver', 
+    'lvksistemas.herokuapp.com', 
+    'lvksistemas-app-4f6fa281e217.herokuapp.com',
+    'lvksistemas.com.br', 
+    'www.lvksistemas.com.br', 
+    'crmvendas.net.br', 
+    'www.crmvendas.net.br', 
+    'loja-conveniencia-pdv-7fed430df60a.herokuapp.com',
+    '.herokuapp.com',  # Permite todos os subdomínios do Heroku
+    '.asaas.com'  # Permite webhooks do Asaas
+]
 
 # Configurações de segurança
 SECURE_BROWSER_XSS_FILTER = True
