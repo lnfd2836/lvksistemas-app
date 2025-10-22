@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
     'controle_financeiro.webhook_middleware.WebhookMiddleware',  # Intercepta webhooks antes de tudo
     'django.middleware.security.SecurityMiddleware',
     'dashboard.middleware.error_capture.ErrorCaptureMiddleware',  # Captura de erros deve ser primeiro

@@ -13,6 +13,7 @@ from dashboard.views import redirect_to_appropriate_dashboard
 from dashboard.loja_login import loja_login
 from dashboard.simple_login import simple_login
 from controle_financeiro.webhook_raw import webhook_asaas_raw
+from controle_financeiro.webhook_final import webhook_asaas_final
 import json
 import logging
 
@@ -77,6 +78,9 @@ def webhook_asaas_bypass(request):
         return HttpResponse("Internal Error", status=500)
 
 urlpatterns = [
+    # WEBHOOK FINAL COM VALIDAÇÃO DE IP - PRIMEIRA URL
+    path('webhook/asaas/', webhook_asaas_final, name='webhook_asaas_final'),
+    
     # WEBHOOK FINAL - URL completamente diferente
     path('api/v1/webhook/asaas/', webhook_asaas_raw, name='webhook_asaas_final'),
     
