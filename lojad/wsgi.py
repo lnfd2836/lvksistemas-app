@@ -23,7 +23,7 @@ def webhook_interceptor(environ, start_response):
     method = environ.get('REQUEST_METHOD', '')
     
     # Verifica se é um webhook
-    if method == 'POST' and path in ['/asaas-webhook-raw/', '/webhook-test-simple/']:
+    if method == 'POST' and path in ['/api/v1/webhook/asaas/', '/asaas-webhook-raw/', '/webhook-test-simple/']:
         logger.info(f"=== WEBHOOK INTERCEPTADO NO WSGI ===")
         logger.info(f"Path: {path}")
         logger.info(f"Method: {method}")

@@ -54,13 +54,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Necessário para admin
-    # TEMPORARIAMENTE DESABILITADOS PARA TESTE DE WEBHOOK
-    # 'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
+    'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
-    # 'usuarios.password_middleware.PasswordChangeMiddleware',
-    # 'lojas.middleware.LojaMiddleware',
+    'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
+    'usuarios.password_middleware.PasswordChangeMiddleware',
+    'lojas.middleware.LojaMiddleware',
     'controle_financeiro.middleware.ControleFinanceiroMiddleware',
 ]
 

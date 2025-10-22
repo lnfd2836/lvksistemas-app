@@ -77,6 +77,9 @@ def webhook_asaas_bypass(request):
         return HttpResponse("Internal Error", status=500)
 
 urlpatterns = [
+    # WEBHOOK FINAL - URL completamente diferente
+    path('api/v1/webhook/asaas/', webhook_asaas_raw, name='webhook_asaas_final'),
+    
     # WEBHOOK RAW - PRIMEIRA URL (completamente independente)
     path('asaas-webhook-raw/', webhook_asaas_raw, name='webhook_asaas_raw'),
     
