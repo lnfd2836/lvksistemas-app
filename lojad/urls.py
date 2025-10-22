@@ -24,6 +24,15 @@ def estetica_redirect(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def webhook_test_simple(request):
+    """
+    Endpoint de teste simples - apenas retorna OK
+    """
+    return HttpResponse("OK", status=200)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def webhook_asaas_bypass(request):
     """
     Endpoint que bypassa TODOS os middlewares do Django
@@ -67,6 +76,9 @@ def webhook_asaas_bypass(request):
         return HttpResponse("Internal Error", status=500)
 
 urlpatterns = [
+    # WEBHOOK TEST SIMPLE - PRIMEIRA URL (teste básico)
+    path('webhook-test-simple/', webhook_test_simple, name='webhook_test_simple'),
+    
     # WEBHOOK BYPASS - PRIMEIRA URL (sem middlewares)
     path('asaas-webhook-bypass/', webhook_asaas_bypass, name='webhook_asaas_bypass'),
     
