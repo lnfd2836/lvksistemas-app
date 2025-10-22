@@ -975,6 +975,10 @@ def pdf_asaas_redirect(request, cobranca_id):
         else:
             messages.error(request, 'PDF do boleto não disponível.')
             return redirect('controle_financeiro:listar_cobrancas_asaas')
+            
+    except Exception as e:
+        messages.error(request, f'Erro ao acessar PDF: {str(e)}')
+        return redirect('controle_financeiro:listar_cobrancas_asaas')
 
 
 @login_required
