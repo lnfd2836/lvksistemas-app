@@ -15,8 +15,10 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Read .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# Read .env file (apenas se existir - no Heroku não existe)
+env_file = os.path.join(BASE_DIR, '.env')
+if os.path.exists(env_file):
+    environ.Env.read_env(env_file)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-this-in-production')
@@ -201,9 +203,9 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Configurações da API Asaas
-ASAAS_API_KEY = env('ASAAS_API_KEY', default='')
-ASAAS_ENVIRONMENT = env('ASAAS_ENVIRONMENT', default='sandbox')  # sandbox ou production
-SITE_URL = env('SITE_URL', default='http://localhost:8000')
+ASAAS_API_KEY = os.environ.get('ASAAS_API_KEY') or env('ASAAS_API_KEY', default='')
+ASAAS_ENVIRONMENT = os.environ.get('ASAAS_ENVIRONMENT') or env('ASAAS_ENVIRONMENT', default='sandbox')  # sandbox ou production
+SITE_URL = os.environ.get('SITE_URL') or env('SITE_URL', default='http://localhost:8000')
 
 # Dados da conta Asaas (para referência)
 ASAAS_WALLET_ID = '5193cd6d-899f-4219-b45a-a8a2012eae05'

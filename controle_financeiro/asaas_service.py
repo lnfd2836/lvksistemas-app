@@ -303,11 +303,11 @@ class AsaasService:
             # Configurações de notificação
             'postalService': False,  # Não enviar pelos correios
             
-            # Callback/Webhook
-            'callback': {
-                'successUrl': f"{getattr(settings, 'SITE_URL', '')}/financeiro/asaas/callback/success/",
-                'autoRedirect': True
-            }
+            # Callback/Webhook - TEMPORARIAMENTE DESABILITADO
+            # 'callback': {
+            #     'successUrl': f"{getattr(settings, 'SITE_URL', '')}/financeiro/asaas/callback/success/",
+            #     'autoRedirect': True
+            # }
         }
         
         try:
