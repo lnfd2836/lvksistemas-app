@@ -117,19 +117,53 @@ def visualizar_cobranca_asaas(request, cobranca_id):
             dados_atualizados = asaas_service.consultar_cobranca(cobranca.asaas_id)
             
             if dados_atualizados:
+                # Log para debug do PDF
+                logger.info(f"Atualizando cobrança {cobranca.asaas_id}")
+                logger.info(f"Bank slip URL: {dados_atualizados.get('bankSlipUrl', 'N/A')}")
+                logger.info(f"Invoice URL: {dados_atualizados.get('invoiceUrl', 'N/A')}")
+                
                 cobranca.atualizar_dados_asaas(dados_atualizados)
-                messages.success(request, "Status da cobrança atualizado com sucesso!")
+                
+                # Verificar se PDF foi gerado
+                if dados_atualizados.get('bankSlipUrl'):
+                    messages.success(request, "Status atualizado! PDF do boleto está disponível.")
+                elif cobranca.status == 'PENDING':
+                    messages.info(request, "Status atualizado. PDF do boleto ainda está sendo gerado pelo Asaas.")
+                else:
+                    messages.success(request, "Status da cobrança atualizado com sucesso!")
             else:
                 messages.warning(request, "Não foi possível atualizar o status da cobrança.")
+                logger.warning(f"Dados não retornados para cobrança {cobranca.asaas_id}")
                 
         except Exception as e:
-            logger.error(f"Erro ao atualizar cobrança: {str(e)}")
+            logger.error(f"Erro ao atualizar cobrança {cobranca.asaas_id}: {str(e)}")
             messages.error(request, f"Erro ao atualizar: {str(e)}")
+    
+    # Log para debug se PDF não estiver disponível
+    if not cobranca.bank_slip_url:
+        logger.warning(f"PDF não disponível para cobrança {cobranca.asaas_id} - Status: {cobranca.status}")
+        logger.info(f"Cobrança criada em: {cobranca.data_criacao}")
+        logger.info(f"Última atualização: {cobranca.data_atualizacao}")
+    
+    # Verificar se precisa forçar atualização automática
+    auto_refresh = False
+    if not cobranca.bank_slip_url and cobranca.status == 'PENDING':
+        # Se a cobrança foi criada há menos de 10 minutos e não tem PDF, auto-refresh
+        from datetime import timedelta
+        if cobranca.data_criacao > timezone.now() - timedelta(minutes=10):
+            auto_refresh = True
     
     context = {
         'cobranca': cobranca,
         'controle': cobranca.controle_financeiro,
         'loja': cobranca.controle_financeiro.loja,
+        'auto_refresh': auto_refresh,
+        'pdf_debug_info': {
+            'bank_slip_url': cobranca.bank_slip_url,
+            'invoice_url': cobranca.invoice_url,
+            'status': cobranca.status,
+            'created_minutes_ago': int((timezone.now() - cobranca.data_criacao).total_seconds() / 60),
+        }
     }
     
     return render(request, 'controle_financeiro/visualizar_cobranca_asaas.html', context)
@@ -359,6 +393,46 @@ def testar_asaas(request):
     if not request.user.is_superuser:
         messages.error(request, "Apenas super administradores podem testar a integração.")
         return redirect('dashboard:index')
+    
+    resultado_teste = None
+    
+    if request.method == 'POST':
+        try:
+            asaas_service = AsaasService()
+            
+            # Testar conexão
+            if asaas_service.validar_configuracao():
+                resultado_teste = {
+                    'success': True,
+                    'message': 'Conexão com Asaas estabelecida com sucesso!',
+                    'environment': asaas_service.environment,
+                    'base_url': asaas_service.base_url,
+                    'conta_dados': asaas_service.conta_dados
+                }
+            else:
+                resultado_teste = {
+                    'success': False,
+                    'message': 'Falha na conexão com Asaas. Verifique as configurações.'
+                }
+                
+        except Exception as e:
+            resultado_teste = {
+                'success': False,
+                'message': f'Erro ao testar conexão: {str(e)}'
+            }
+    
+    # Obter configurações atuais
+    from django.conf import settings as django_settings
+    
+    context = {
+        'resultado_teste': resultado_teste,
+        'settings': {
+            'ASAAS_API_KEY': getattr(django_settings, 'ASAAS_API_KEY', ''),
+            'ASAAS_ENVIRONMENT': getattr(django_settings, 'ASAAS_ENVIRONMENT', 'sandbox'),
+        }
+    }
+    
+    return render(request, 'controle_financeiro/testar_asaas.html', context)
     
     resultado_teste = None
     
