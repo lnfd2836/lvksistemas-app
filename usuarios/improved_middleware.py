@@ -52,6 +52,13 @@ class ImprovedAuthenticationMiddleware:
         Processa a requisição com verificação de autenticação aprimorada.
         """
         try:
+            # Log de debug para webhook
+            if '/asaas/webhook' in request.path:
+                logger.info(f"=== IMPROVED MIDDLEWARE DEBUG ===")
+                logger.info(f"Path: {request.path}")
+                logger.info(f"Excluded paths: {self.excluded_paths}")
+                logger.info(f"Is excluded: {self.is_excluded_path(request.path)}")
+            
             # Verifica se a URL atual está nas exceções
             if self.is_excluded_path(request.path):
                 return self.get_response(request)
