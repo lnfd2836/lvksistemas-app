@@ -107,7 +107,8 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Receita Pendente
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_pendente|floatformat:2 }}</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_pendente|floatformat:2 }}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -141,18 +142,19 @@
                                 </p>
                             </div>
                             <div class="flex-shrink-0">
-                                <form method="post" action="{% url 'controle_financeiro:gerar_boletos_automaticos' %}" style="display: inline;">
+                                <form method="post" action="{% url 'controle_financeiro:gerar_boletos_automaticos' %}"
+                                    style="display: inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="dias_antecedencia" value="10">
-                                    <button type="submit" class="btn btn-primary btn-sm" 
-                                            onclick="return confirm('Gerar boletos automáticos para lojas que vencem em 10 dias?')">
+                                    <button type="submit" class="btn btn-primary btn-sm"
+                                        onclick="return confirm('Gerar boletos automáticos para lojas que vencem em 10 dias?')">
                                         <i class="fas fa-play"></i> Executar
                                     </button>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="d-flex align-items-center mb-3">
                             <div class="flex-shrink-0">
@@ -165,10 +167,12 @@
                                 </p>
                             </div>
                             <div class="flex-shrink-0">
-                                <form method="post" action="{% url 'controle_financeiro:executar_rotinas_financeiras' %}" style="display: inline;">
+                                <form method="post"
+                                    action="{% url 'controle_financeiro:executar_rotinas_financeiras' %}"
+                                    style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-success btn-sm" 
-                                            onclick="return confirm('Executar todas as rotinas financeiras?')">
+                                    <button type="submit" class="btn btn-success btn-sm"
+                                        onclick="return confirm('Executar todas as rotinas financeiras?')">
                                         <i class="fas fa-play-circle"></i> Executar Tudo
                                     </button>
                                 </form>
@@ -176,24 +180,26 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-info mt-3">
                     <h6 class="alert-heading">
                         <i class="fas fa-info-circle"></i> Automação Configurada
                     </h6>
                     <p class="mb-0">
-                        <strong>Regra:</strong> Os boletos são gerados automaticamente apenas 10 dias antes do vencimento da loja. 
+                        <strong>Regra:</strong> Os boletos são gerados automaticamente apenas 10 dias antes do
+                        vencimento da loja.
                         Isso evita gerar boletos muito cedo e garante que as lojas recebam o boleto no momento adequado.
                     </p>
                 </div>
-                
+
                 <!-- Configuração de Boletos -->
                 <div class="alert alert-warning mt-3">
                     <h6 class="alert-heading">
                         <i class="fas fa-university"></i> Configuração de Boletos
                     </h6>
                     <p class="mb-2">
-                        <strong>Boletos com PIX:</strong> Configure sua integração com Asaas para gerar boletos válidos com PIX integrado.
+                        <strong>Boletos com PIX:</strong> Configure sua integração com Asaas para gerar boletos válidos
+                        com PIX integrado.
                     </p>
                     <div class="btn-group" role="group">
                         <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-primary btn-sm">
@@ -205,7 +211,8 @@
                         <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-outline-info btn-sm">
                             <i class="fas fa-cog"></i> Configurar
                         </a>
-                        <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{% url 'controle_financeiro:configurar_boletos' %}"
+                            class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-list"></i> Configurações
                         </a>
                     </div>
@@ -224,7 +231,8 @@
                     <i class="fas fa-barcode"></i> Boletos Gerados
                 </h6>
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#criarBoletoModal">
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#criarBoletoModal">
                         <i class="fas fa-plus"></i> Criar Boleto
                     </button>
                     <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-outline-primary btn-sm">
@@ -234,75 +242,82 @@
             </div>
             <div class="card-body">
                 {% if boletos_recentes %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Loja</th>
-                                    <th>Boleto</th>
-                                    <th>Valor</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for boleto in boletos_recentes %}
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold">{{ boleto.controle_financeiro.loja.nome }}</div>
-                                        <small class="text-muted">{{ boleto.controle_financeiro.loja.cnpj }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold">{{ boleto.numero_boleto }}</div>
-                                        <small class="text-muted">{{ boleto.linha_digitavel|truncatechars:20 }}</small>
-                                    </td>
-                                    <td>R$ {{ boleto.valor|floatformat:2 }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
-                                            {{ boleto.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}" 
-                                               class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            
-                                            <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}" 
-                                               class="btn btn-sm btn-outline-secondary" title="Imprimir PDF" target="_blank">
-                                                <i class="bi bi-printer"></i>
-                                            </a>
-                                            
-                                            {% if boleto.status == 'pendente' %}
-                                            <form method="post" action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" style="display: inline;">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="next" value="{% url 'controle_financeiro:dashboard_financeiro' %}">
-                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como Pago"
-                                                        onclick="return confirm('Confirma que este boleto foi pago?')">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                            </form>
-                                            {% endif %}
-                                            
-                                            {% if boleto.status != 'pago' %}
-                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir Boleto"
-                                                    data-bs-toggle="modal" data-bs-target="#modalExcluirDash{{ boleto.id }}">
-                                                <i class="bi bi-trash"></i>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Loja</th>
+                                <th>Boleto</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for boleto in boletos_recentes %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ boleto.controle_financeiro.loja.nome }}</div>
+                                    <small class="text-muted">{{ boleto.controle_financeiro.loja.cnpj }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ boleto.numero_boleto }}</div>
+                                    <small class="text-muted">{{ boleto.linha_digitavel|truncatechars:20 }}</small>
+                                </td>
+                                <td>R$ {{ boleto.valor|floatformat:2 }}</td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
+                                        {{ boleto.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}"
+                                            class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}"
+                                            class="btn btn-sm btn-outline-secondary" title="Imprimir PDF"
+                                            target="_blank">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+
+                                        {% if boleto.status == 'pendente' %}
+                                        <form method="post"
+                                            action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}"
+                                            style="display: inline;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next"
+                                                value="{% url 'controle_financeiro:dashboard_financeiro' %}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                                title="Marcar como Pago"
+                                                onclick="return confirm('Confirma que este boleto foi pago?')">
+                                                <i class="bi bi-check-circle"></i>
                                             </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </form>
+                                        {% endif %}
+
+                                        {% if boleto.status != 'pago' %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            title="Excluir Boleto" data-bs-toggle="modal"
+                                            data-bs-target="#modalExcluirDash{{ boleto.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Nenhum boleto gerado</p>
-                    </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum boleto gerado</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -321,7 +336,8 @@
                     <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
                         <i class="fas fa-plus"></i> Nova Cobrança
                     </a>
-                    <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-outline-success btn-sm">
+                    <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}"
+                        class="btn btn-outline-success btn-sm">
                         <i class="fas fa-list"></i> Ver Todas
                     </a>
                 </div>
@@ -350,13 +366,14 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-info mt-3 mb-0">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-info-circle fa-lg me-3"></i>
                         <div>
                             <strong>Sistema Integrado Asaas</strong><br>
-                            <small>Gere boletos com PIX integrado, receba notificações automáticas de pagamento e tenha controle total das suas cobranças.</small>
+                            <small>Gere boletos com PIX integrado, receba notificações automáticas de pagamento e tenha
+                                controle total das suas cobranças.</small>
                         </div>
                     </div>
                 </div>
@@ -384,131 +401,134 @@
             </div>
             <div class="card-body p-4">
                 {% if controles_recentes %}
-                    <div class="row g-4">
-                                {% for controle in controles_recentes %}
-                        <div class="col-xl-4 col-lg-6 col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-card" style="transition: all 0.3s ease;">
-                                <div class="card-body p-4">
-                                    <!-- Header da Loja -->
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title text-dark font-weight-bold mb-1">
-                                                {{ controle.loja.nome }}
-                                            </h6>
-                                            <p class="text-muted small mb-2">{{ controle.loja.cnpj }}</p>
-                                            <span class="badge bg-light text-dark border">{{ controle.plano.nome }}</span>
-                                        </div>
-                                        <div class="text-end">
-                                            <span class="badge badge-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} fs-6 px-3 py-2">
+                <div class="row g-4">
+                    {% for controle in controles_recentes %}
+                    <div class="col-xl-4 col-lg-6 col-md-6">
+                        <div class="card h-100 border-0 shadow-sm hover-card" style="transition: all 0.3s ease;">
+                            <div class="card-body p-4">
+                                <!-- Header da Loja -->
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title text-dark font-weight-bold mb-1">
+                                            {{ controle.loja.nome }}
+                                        </h6>
+                                        <p class="text-muted small mb-2">{{ controle.loja.cnpj }}</p>
+                                        <span class="badge bg-light text-dark border">{{ controle.plano.nome }}</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <span
+                                            class="badge badge-{% if controle.status == 'ativa' %}success{% elif controle.status == 'vencida' %}warning{% else %}danger{% endif %} fs-6 px-3 py-2">
                                             {{ controle.get_status_display }}
                                         </span>
-                                            {% if controle.bloqueada %}
-                                            <span class="badge bg-danger fs-6 px-3 py-2 mt-1 d-block">Bloqueada</span>
-                                            {% endif %}
+                                        {% if controle.bloqueada %}
+                                        <span class="badge bg-danger fs-6 px-3 py-2 mt-1 d-block">Bloqueada</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Informações Financeiras -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <div class="bg-light rounded p-3 text-center">
+                                            <div class="text-muted small">Valor Mensal</div>
+                                            <div class="h6 text-success font-weight-bold mb-0">R$ {{
+                                                controle.valor_mensal|floatformat:2 }}</div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Informações Financeiras -->
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-6">
-                                            <div class="bg-light rounded p-3 text-center">
-                                                <div class="text-muted small">Valor Mensal</div>
-                                                <div class="h6 text-success font-weight-bold mb-0">R$ {{ controle.valor_mensal|floatformat:2 }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="bg-light rounded p-3 text-center">
-                                                <div class="text-muted small">Vencimento</div>
-                                                <div class="h6 text-dark font-weight-bold mb-0">{{ controle.data_vencimento|date:"d/m/Y" }}</div>
-                                            </div>
+                                    <div class="col-6">
+                                        <div class="bg-light rounded p-3 text-center">
+                                            <div class="text-muted small">Vencimento</div>
+                                            <div class="h6 text-dark font-weight-bold mb-0">{{
+                                                controle.data_vencimento|date:"d/m/Y" }}</div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Alertas -->
-                                    {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento > 0 %}
+                                </div>
+
+                                <!-- Alertas -->
+                                {% if controle.dias_para_vencimento <= 5 and controle.dias_para_vencimento> 0 %}
                                     <div class="alert alert-warning alert-sm d-flex align-items-center mb-3">
                                         <i class="fas fa-exclamation-triangle me-2"></i>
                                         <small>{{ controle.dias_para_vencimento }} dias para vencer</small>
                                     </div>
-                                    {% elif controle.dias_para_vencimento <= 0 %}
-                                    <div class="alert alert-danger alert-sm d-flex align-items-center mb-3">
+                                    {% elif controle.dias_para_vencimento <= 0 %} <div
+                                        class="alert alert-danger alert-sm d-flex align-items-center mb-3">
                                         <i class="fas fa-exclamation-circle me-2"></i>
                                         <small>{{ controle.dias_atraso }} dias em atraso</small>
-                                    </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Ações -->
+                            <div class="d-grid gap-2">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}"
+                                        class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i> Ver
+                                    </a>
+
+                                    {% if controle.status == 'ativa' %}
+                                    <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}"
+                                        class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-barcode me-1"></i> Boleto
+                                    </a>
                                     {% endif %}
-                                    
-                                    <!-- Ações -->
-                                    <div class="d-grid gap-2">
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'controle_financeiro:detalhar_controle' controle.id %}" 
-                                               class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-eye me-1"></i> Ver
-                                            </a>
-                                            
-                                            {% if controle.status == 'ativa' %}
-                                            <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" 
-                                               class="btn btn-outline-success btn-sm">
-                                                <i class="fas fa-barcode me-1"></i> Boleto
-                                            </a>
-                                            {% endif %}
-                                            
-                                            {% if controle.bloqueada %}
-                                            <a href="{% url 'controle_financeiro:desbloquear_loja' controle.id %}" 
-                                               class="btn btn-success btn-sm"
-                                               onclick="return confirm('Desbloquear esta loja?')">
-                                                <i class="fas fa-unlock me-1"></i> Desbloquear
-                                            </a>
-                                            {% else %}
-                                            <a href="{% url 'controle_financeiro:bloquear_loja' controle.id %}" 
-                                               class="btn btn-outline-danger btn-sm"
-                                               onclick="return confirm('Bloquear esta loja?')">
-                                                <i class="fas fa-ban me-1"></i> Bloquear
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+
+                                    {% if controle.bloqueada %}
+                                    <a href="{% url 'controle_financeiro:desbloquear_loja' controle.id %}"
+                                        class="btn btn-success btn-sm"
+                                        onclick="return confirm('Desbloquear esta loja?')">
+                                        <i class="fas fa-unlock me-1"></i> Desbloquear
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'controle_financeiro:bloquear_loja' controle.id %}"
+                                        class="btn btn-outline-danger btn-sm"
+                                        onclick="return confirm('Bloquear esta loja?')">
+                                        <i class="fas fa-ban me-1"></i> Bloquear
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
-                                {% endfor %}
                     </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <div class="mb-4">
-                            <i class="fas fa-store text-muted" style="font-size: 4rem;"></i>
-                        </div>
-                        <h5 class="text-muted">Nenhuma loja encontrada</h5>
-                        <p class="text-muted">Não há lojas cadastradas no sistema ainda.</p>
-                    </div>
-                {% endif %}
+                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-store text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="text-muted">Nenhuma loja encontrada</h5>
+                <p class="text-muted">Não há lojas cadastradas no sistema ainda.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+</div>
 
 <style>
-.hover-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-}
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+    }
 
-.badge-success {
-    background-color: #28a745 !important;
-}
+    .badge-success {
+        background-color: #28a745 !important;
+    }
 
-.badge-warning {
-    background-color: #ffc107 !important;
-    color: #212529 !important;
-}
+    .badge-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
 
-.badge-danger {
-    background-color: #dc3545 !important;
-}
+    .badge-danger {
+        background-color: #dc3545 !important;
+    }
 
-.alert-sm {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-}
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
 </style>
 
 <!-- Modal para Criar Boleto -->
@@ -524,7 +544,7 @@
             <form method="post" action="{% url 'controle_financeiro:criar_boleto_manual' %}">
                 <div class="modal-body">
                     {% csrf_token %}
-                    
+
                     <div class="row">
                         <div class="col-md-12 mb-3">
                             <label for="loja_select" class="form-label">Selecionar Loja</label>
@@ -532,37 +552,37 @@
                                 <option value="">Escolha uma loja...</option>
                                 {% for controle in controles_recentes %}
                                 <option value="{{ controle.id }}">
-                                    {{ controle.loja.nome }} - {{ controle.loja.cnpj }} 
+                                    {{ controle.loja.nome }} - {{ controle.loja.cnpj }}
                                     (Vence: {{ controle.data_vencimento|date:"d/m/Y" }})
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="valor_boleto" class="form-label">Valor do Boleto</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
-                                <input type="number" class="form-control" id="valor_boleto" name="valor" 
-                                       step="0.01" min="0.01" placeholder="0,00" required>
+                                <input type="number" class="form-control" id="valor_boleto" name="valor" step="0.01"
+                                    min="0.01" placeholder="0,00" required>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="dias_vencimento" class="form-label">Dias para Vencimento</label>
-                            <input type="number" class="form-control" id="dias_vencimento" name="dias_vencimento" 
-                                   value="30" min="1" max="365" required>
+                            <input type="number" class="form-control" id="dias_vencimento" name="dias_vencimento"
+                                value="30" min="1" max="365" required>
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="observacoes_boleto" class="form-label">Observações (Opcional)</label>
-                        <textarea class="form-control" id="observacoes_boleto" name="observacoes" rows="3" 
-                                  placeholder="Observações adicionais para o boleto..."></textarea>
+                        <textarea class="form-control" id="observacoes_boleto" name="observacoes" rows="3"
+                            placeholder="Observações adicionais para o boleto..."></textarea>
                     </div>
-                    
+
                     <div class="alert alert-info">
                         <h6 class="alert-heading">
                             <i class="fas fa-info-circle"></i> Informações
@@ -588,21 +608,22 @@
 </div>
 
 <script>
-// Auto-preencher valor quando selecionar loja
-document.getElementById('loja_select').addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value) {
-        // Aqui você pode adicionar lógica para buscar o valor via AJAX
-        // Por enquanto, vamos deixar o usuário definir manualmente
-        document.getElementById('valor_boleto').focus();
-    }
-});
+    // Auto-preencher valor quando selecionar loja
+    document.getElementById('loja_select').addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            // Aqui você pode adicionar lógica para buscar o valor via AJAX
+            // Por enquanto, vamos deixar o usuário definir manualmente
+            document.getElementById('valor_boleto').focus();
+        }
+    });
 </script>
 
 <!-- Modais de confirmação para exclusão de boletos -->
 {% for boleto in boletos_recentes %}
 {% if boleto.status != 'pago' %}
-<div class="modal fade" id="modalExcluirDash{{ boleto.id }}" tabindex="-1" aria-labelledby="modalExcluirDash{{ boleto.id }}Label" aria-hidden="true">
+<div class="modal fade" id="modalExcluirDash{{ boleto.id }}" tabindex="-1"
+    aria-labelledby="modalExcluirDash{{ boleto.id }}Label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

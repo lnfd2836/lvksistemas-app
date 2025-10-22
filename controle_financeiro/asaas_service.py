@@ -579,4 +579,42 @@ class AsaasService:
             return ''
         import re
         numeros = re.findall(r'\d+', endereco)
-        return numeros[0] if numeros else 'S/N'
+        return numeros[0] if numeros else 'S/N'    
+def _fazer_requisicao(self, method, endpoint, **kwargs):
+        """
+        Método helper para fazer requisições à API do Asaas
+        
+        Args:
+            method: Método HTTP (GET, POST, etc.)
+            endpoint: Endpoint da API (ex: '/payments')
+            **kwargs: Parâmetros adicionais para requests
+            
+        Returns:
+            dict: Resposta da API ou None em caso de erro
+        """
+        import requests
+        
+        url = f"{self.base_url}{endpoint}"
+        
+        try:
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, timeout=60, **kwargs)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, timeout=60, **kwargs)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, timeout=60, **kwargs)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=60, **kwargs)
+            else:
+                logger.error(f"Método HTTP não suportado: {method}")
+                return None
+                
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Erro na API {method} {endpoint}: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Erro na requisição {method} {endpoint}: {str(e)}")
+            return None
