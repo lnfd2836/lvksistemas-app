@@ -47,6 +47,7 @@ urlpatterns = [
         
         # PDF e pagamento
         path('boletos/<int:boleto_id>/pdf/', views.imprimir_boleto_pdf, name='imprimir_boleto_pdf'),
+        path('asaas/pdf/<str:cobranca_id>/', views.pdf_asaas_redirect, name='pdf_asaas_redirect'),
         
         # Integração Asaas
         path('asaas/gerar/<int:controle_id>/', asaas_views.gerar_cobranca_asaas, name='gerar_cobranca_asaas'),

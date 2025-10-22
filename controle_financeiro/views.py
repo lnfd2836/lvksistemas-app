@@ -898,7 +898,20 @@ def imprimir_boleto_pdf(request, boleto_id):
             return redirect('dashboard:principal')
     
     try:
-        # Usar serviço específico para Asaas
+        # Verificar se existe cobrança do Asaas associada
+        try:
+            from .models import CobrancaAsaas
+            cobranca_asaas = CobrancaAsaas.objects.get(controle_financeiro=boleto.controle_financeiro)
+            
+            # Se existe cobrança do Asaas e tem URL do PDF, redirecionar
+            if cobranca_asaas.bank_slip_url:
+                return redirect(cobranca_asaas.bank_slip_url)
+                
+        except CobrancaAsaas.DoesNotExist:
+            # Não há cobrança do Asaas, continuar com PDF local
+            pass
+        
+        # Usar serviço específico para Asaas (PDF local)
         if boleto.configuracao.codigo_banco == "461":  # Asaas
             from .pdf_service import BoletoPDFService
             
@@ -914,6 +927,32 @@ def imprimir_boleto_pdf(request, boleto_id):
     except Exception as e:
         messages.error(request, f'Erro ao gerar PDF do boleto: {str(e)}')
         return redirect('controle_financeiro:detalhar_boleto', boleto_id=boleto_id)
+
+
+@login_required
+def pdf_asaas_redirect(request, cobranca_id):
+    """Redireciona para o PDF oficial do Asaas"""
+    
+    try:
+        from .models import CobrancaAsaas
+        cobranca = get_object_or_404(CobrancaAsaas, asaas_id=cobranca_id)
+        
+        # Verifica permissão
+        if not request.user.is_superuser:
+            if cobranca.controle_financeiro.loja.admin_user != request.user:
+                messages.error(request, 'Você não tem permissão para visualizar este boleto.')
+                return redirect('dashboard:principal')
+        
+        # Redirecionar para PDF oficial do Asaas
+        if cobranca.bank_slip_url:
+            return redirect(cobranca.bank_slip_url)
+        else:
+            messages.error(request, 'PDF do boleto não disponível.')
+            return redirect('controle_financeiro:listar_cobrancas_asaas')
+            
+    except Exception as e:
+        messages.error(request, f'Erro ao acessar PDF: {str(e)}')
+        return redirect('controle_financeiro:listar_cobrancas_asaas')
 
 
 
