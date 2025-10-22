@@ -30,34 +30,34 @@ def webhook_asaas_final(request):
     #     return HttpResponse("Unauthorized", status=401)
     
     logger.info(f"IP do webhook: {get_client_ip(request)}")
+    
+    # Parsear dados
+    try:
+        webhook_data = json.loads(request.body.decode('utf-8'))
+        logger.info(f"Webhook recebido: {webhook_data}")
+    except json.JSONDecodeError:
+        logger.error("Webhook com JSON inválido")
+        return HttpResponse("Invalid JSON", status=400)
+    
+    # Processar webhook usando serviço existente
+    try:
+        from controle_financeiro.asaas_service import AsaasService
+        asaas_service = AsaasService()
+        resultado = asaas_service.processar_webhook(webhook_data)
         
-        # Parsear dados
-        try:
-            webhook_data = json.loads(request.body.decode('utf-8'))
-            logger.info(f"Webhook recebido: {webhook_data}")
-        except json.JSONDecodeError:
-            logger.error("Webhook com JSON inválido")
-            return HttpResponse("Invalid JSON", status=400)
-        
-        # Processar webhook usando serviço existente
-        try:
-            from controle_financeiro.asaas_service import AsaasService
-            asaas_service = AsaasService()
-            resultado = asaas_service.processar_webhook(webhook_data)
-            
-            if resultado.get('success'):
-                logger.info(f"Webhook processado com sucesso: {resultado.get('message')}")
-                return HttpResponse("OK", status=200)
-            else:
-                logger.error(f"Erro ao processar webhook: {resultado.get('error')}")
-                return HttpResponse("Error", status=400)
-        except Exception as e:
-            logger.error(f"Erro ao processar webhook: {str(e)}")
-            return HttpResponse("Processing Error", status=500)
-            
+        if resultado.get('success'):
+            logger.info(f"Webhook processado com sucesso: {resultado.get('message')}")
+            return HttpResponse("OK", status=200)
+        else:
+            logger.error(f"Erro ao processar webhook: {resultado.get('error')}")
+            return HttpResponse("Error", status=400)
     except Exception as e:
-        logger.error(f"Erro no webhook final: {str(e)}")
-        return HttpResponse("Internal Error", status=500)
+        logger.error(f"Erro ao processar webhook: {str(e)}")
+        return HttpResponse("Processing Error", status=500)
+        
+except Exception as e:
+    logger.error(f"Erro no webhook final: {str(e)}")
+    return HttpResponse("Internal Error", status=500)
 
 
 def get_client_ip(request):
