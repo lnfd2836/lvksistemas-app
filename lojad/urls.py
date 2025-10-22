@@ -15,6 +15,9 @@ def estetica_redirect(request):
     return redirect('/modulos/estetica/')
 
 urlpatterns = [
+    # URLs de webhook direto - SEM MIDDLEWARES
+    path('asaas-webhook-direct/', include('controle_financeiro.webhook_urls')),
+    
     path('admin/', admin.site.urls),
     # Root URL redireciona inteligentemente baseado no usuário
     path('', redirect_to_appropriate_dashboard, name='root_redirect'),
