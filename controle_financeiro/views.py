@@ -470,118 +470,52 @@ def editar_configuracao_boleto(request, config_id):
 @login_required
 @user_passes_test(is_superuser)
 def gerar_boleto(request, controle_id):
-    """Gera um boleto para uma loja"""
+    """Gera um boleto SEMPRE via API do Asaas"""
     
     controle = get_object_or_404(ControleFinanceiro, id=controle_id)
     
     if request.method == 'POST':
-        config_id = request.POST.get('configuracao')
-        config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
-        
         try:
-            # Verificar se é Asaas
-            if config.codigo_banco == "461":
-                # Tentar usar API do Asaas primeiro
-                from .asaas_service import AsaasService
-                
-                asaas_service = AsaasService()
-                api_funcionando = asaas_service.validar_configuracao()
-                
-                if api_funcionando:
-                    # Usar API do Asaas
-                    dados_boleto = asaas_service.gerar_cobranca_com_pix(controle, dias_vencimento=30)
-                    
-                    if dados_boleto.get('success', False):
-                        # Processar dados da API
-                        cobranca = dados_boleto['cobranca']
-                        pix_data = dados_boleto.get('pix', {})
-                        
-                        # Criar boleto com dados do Asaas
-                        boleto = BoletoGerado.objects.create(
-                            controle_financeiro=controle,
-                            configuracao=config,
-                            numero_boleto=cobranca['id'],
-                            linha_digitavel=cobranca.get('bankSlipUrl', ''),
-                            codigo_barras=cobranca.get('bankSlipUrl', ''),
-                            valor=Decimal(str(cobranca['value'])),
-                            data_vencimento=datetime.strptime(cobranca['dueDate'], '%Y-%m-%d').date()
-                        )
-                        
-                        messages.success(request, f'✅ Boleto Asaas API {cobranca["id"]} gerado com sucesso!')
-                        numero_boleto = cobranca['id']
-                    else:
-                        api_funcionando = False
-                
-                if not api_funcionando:
-                    # Usar geração local com PIX
-                    messages.warning(request, '⚠️ API Asaas indisponível. Gerando boleto local com PIX...')
-                    
-                    from .boleto_asaas_local import BoletoAsaasLocal
-                    
-                    boleto_local = BoletoAsaasLocal()
-                    dados_boleto = boleto_local.gerar_boleto_com_pix(controle, dias_vencimento=30)
-                    
-                    if dados_boleto.get('success', False):
-                        # Criar boleto com dados locais
-                        boleto = BoletoGerado.objects.create(
-                            controle_financeiro=controle,
-                            configuracao=config,
-                            numero_boleto=dados_boleto['boleto_id'],
-                            linha_digitavel=dados_boleto['linha_digitavel'],
-                            codigo_barras=dados_boleto['codigo_barras'],
-                            valor=Decimal(str(dados_boleto['valor'])),
-                            data_vencimento=dados_boleto['data_vencimento']
-                        )
-                        
-                        # Criar CobrancaAsaas local para compatibilidade
-                        from .models import CobrancaAsaas
-                        CobrancaAsaas.objects.create(
-                            asaas_id=dados_boleto['boleto_id'],
-                            controle_financeiro=controle,
-                            customer_id=f"local_{controle.loja.id}",
-                            valor=Decimal(str(dados_boleto['valor'])),
-                            data_vencimento=dados_boleto['data_vencimento'],
-                            descricao=dados_boleto['descricao'],
-                            status='PENDING',
-                            invoice_url=dados_boleto['invoice_url'],
-                            bank_slip_url=dados_boleto['bank_slip_url'],
-                            pix_qr_code=dados_boleto['pix']['qr_code_base64'],
-                            pix_copy_paste=dados_boleto['pix']['copia_cola'],
-                            external_reference=f"LOCAL_{controle.id}_{timezone.now().strftime('%Y%m%d')}",
-                            api_response=dados_boleto
-                        )
-                        
-                        messages.success(request, f'✅ Boleto Asaas Local {dados_boleto["boleto_id"]} gerado com PIX!')
-                        numero_boleto = dados_boleto['boleto_id']
-                    else:
-                        error_msg = dados_boleto.get('error', 'Erro desconhecido')
-                        messages.error(request, f'❌ Erro ao gerar boleto local: {error_msg}')
-                        return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
-                
-            else:
-                # Gera número do boleto (simulado para outros bancos)
-                numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
-                linha_digitavel = f"23791{config.agencia.zfill(4)}{config.conta.zfill(8)}{numero_boleto.zfill(10)}"
-                codigo_barras = linha_digitavel.replace(' ', '')
-                
-                # Cria o boleto
-                boleto = BoletoGerado.objects.create(
-                    controle_financeiro=controle,
-                    configuracao=config,
-                    numero_boleto=numero_boleto,
-                    linha_digitavel=linha_digitavel,
-                    codigo_barras=codigo_barras,
-                    valor=controle.valor_mensal,
-                    data_vencimento=timezone.now() + timedelta(days=7)  # 7 dias para vencimento
+            # SEMPRE usar API do Asaas - não mais boletos locais
+            from .asaas_service import AsaasService
+            
+            asaas_service = AsaasService()
+            
+            # Validar configuração da API
+            if not asaas_service.validar_configuracao():
+                messages.error(request, 
+                    '❌ API do Asaas não está configurada corretamente. '
+                    'Verifique as configurações de API Key e conectividade.'
+                )
+                return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
+            
+            # Gerar cobrança via API do Asaas
+            resultado = asaas_service.gerar_cobranca_com_pix(controle, dias_vencimento=30)
+            
+            if resultado.get('success'):
+                messages.success(request, 
+                    f'✅ Cobrança Asaas {resultado["cobranca"]["id"]} gerada com sucesso! '
+                    'Boleto e PIX disponíveis.'
                 )
                 
-                messages.success(request, f'Boleto {numero_boleto} gerado com sucesso!')
+                # Redirecionar para visualizar a cobrança criada
+                from .models import CobrancaAsaas
+                cobranca = CobrancaAsaas.objects.filter(
+                    controle_financeiro=controle
+                ).order_by('-data_criacao').first()
+                
+                if cobranca:
+                    return redirect('controle_financeiro:visualizar_cobranca_asaas', cobranca_id=cobranca.id)
+                else:
+                    return redirect('controle_financeiro:listar_cobrancas_asaas')
+            else:
+                error_msg = resultado.get('error', 'Erro desconhecido')
+                messages.error(request, f'❌ Erro ao gerar cobrança via API Asaas: {error_msg}')
+                return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
                 
         except Exception as e:
-            messages.error(request, f'Erro ao gerar boleto: {str(e)}')
+            messages.error(request, f'❌ Erro interno ao gerar cobrança: {str(e)}')
             return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
-        
-        return redirect('controle_financeiro:detalhar_controle', controle_id=controle_id)
     
     # Lista configurações ativas - priorizar Asaas
     configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
@@ -704,28 +638,65 @@ def boletos_cliente(request):
 @login_required
 @user_passes_test(is_superuser)
 def gerar_boletos_automaticos(request):
-    """Gera boletos automaticamente para lojas que vencem em 10 dias"""
+    """Gera cobranças automaticamente via API do Asaas para lojas que vencem em 10 dias"""
     
     if request.method == 'POST':
         try:
-            from .services import BoletoService
+            from .asaas_service import AsaasService
+            from .models import CobrancaAsaas
+            from datetime import timedelta
             
             dias_antecedencia = int(request.POST.get('dias_antecedencia', 10))
-            boleto_service = BoletoService()
-            resultado = boleto_service.gerar_boletos_automaticos(dias_antecedencia)
+            
+            # Buscar controles que vencem nos próximos X dias e não têm cobrança
+            data_limite = timezone.now() + timedelta(days=dias_antecedencia)
+            
+            controles_sem_cobranca = ControleFinanceiro.objects.filter(
+                data_vencimento__lte=data_limite,
+                status__in=['ativo', 'vencida']
+            ).exclude(
+                id__in=CobrancaAsaas.objects.values_list('controle_financeiro_id', flat=True)
+            )
+            
+            asaas_service = AsaasService()
+            
+            # Verificar se API está funcionando
+            if not asaas_service.validar_configuracao():
+                messages.error(request, '❌ API do Asaas não está configurada. Verifique as configurações.')
+                return redirect('controle_financeiro:dashboard_financeiro')
+            
+            cobrancas_geradas = 0
+            erros = []
+            
+            for controle in controles_sem_cobranca:
+                try:
+                    resultado = asaas_service.gerar_cobranca_com_pix(
+                        controle, 
+                        dias_vencimento=30,
+                        descricao=f"Mensalidade automática - {controle.loja.nome}"
+                    )
+                    
+                    if resultado.get('success'):
+                        cobrancas_geradas += 1
+                        logger.info(f"Cobrança automática gerada para {controle.loja.nome}")
+                    else:
+                        error_msg = resultado.get('error', 'Erro desconhecido')
+                        erros.append({'loja': controle.loja.nome, 'erro': error_msg})
+                        
+                except Exception as e:
+                    erros.append({'loja': controle.loja.nome, 'erro': str(e)})
             
             messages.success(
                 request, 
-                f'Processo concluído! {resultado["boletos_gerados"]} boletos gerados, '
-                f'{resultado["boletos_ja_existentes"]} já existiam.'
+                f'✅ Processo concluído! {cobrancas_geradas} cobranças Asaas geradas automaticamente.'
             )
             
-            if resultado['erros']:
-                for erro in resultado['erros']:
-                    messages.warning(request, f'Erro na loja {erro["loja"]}: {erro["erro"]}')
+            if erros:
+                for erro in erros:
+                    messages.warning(request, f'⚠️ Erro na loja {erro["loja"]}: {erro["erro"]}')
             
         except Exception as e:
-            messages.error(request, f'Erro ao gerar boletos automáticos: {str(e)}')
+            messages.error(request, f'❌ Erro ao gerar cobranças automáticas: {str(e)}')
         
         return redirect('controle_financeiro:dashboard_financeiro')
     
@@ -946,14 +917,15 @@ def imprimir_boleto_pdf(request, boleto_id):
             logger.warning(f"Erro ao buscar cobrança Asaas: {str(e)}")
             pass
         
-        # Usar serviço específico para Asaas (PDF local)
+        # NUNCA MAIS GERAR PDF LOCAL - sempre redirecionar para Asaas
         if boleto.configuracao.codigo_banco == "461":  # Asaas
-            from .pdf_service import BoletoPDFService
-            
-            pdf_service = BoletoPDFService()
-            return pdf_service.gerar_pdf_boleto_asaas(boleto)
+            messages.warning(request, 
+                '⚠️ Este é um boleto antigo. O sistema agora usa apenas cobranças oficiais do Asaas. '
+                'Clique no botão abaixo para gerar uma nova cobrança oficial.'
+            )
+            return redirect('controle_financeiro:gerar_cobranca_asaas', controle_id=boleto.controle_financeiro.id)
         else:
-            # Usar layout padrão para outros bancos
+            # Para outros bancos (se houver), manter PDF local
             from .pdf_service import BoletoPDFService
             
             pdf_service = BoletoPDFService()
