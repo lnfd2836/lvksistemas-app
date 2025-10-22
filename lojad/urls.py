@@ -14,6 +14,8 @@ from dashboard.loja_login import loja_login
 from dashboard.simple_login import simple_login
 from controle_financeiro.webhook_raw import webhook_asaas_raw
 from controle_financeiro.webhook_final import webhook_asaas_final
+from controle_financeiro.webhook_simple import webhook_asaas_simple, webhook_asaas_debug_only
+from controle_financeiro.webhook_heroku import webhook_asaas_heroku, webhook_asaas_test_heroku
 import json
 import logging
 
@@ -78,8 +80,20 @@ def webhook_asaas_bypass(request):
         return HttpResponse("Internal Error", status=500)
 
 urlpatterns = [
-    # WEBHOOK FINAL COM VALIDAÇÃO DE IP - PRIMEIRA URL
-    path('webhook/asaas/', webhook_asaas_final, name='webhook_asaas_final'),
+    # WEBHOOK HEROKU - PRIMEIRA URL (específico para produção)
+    path('webhook/asaas/', webhook_asaas_heroku, name='webhook_asaas_heroku'),
+    
+    # WEBHOOK TEST HEROKU - URL de teste
+    path('webhook/asaas/test/', webhook_asaas_test_heroku, name='webhook_asaas_test_heroku'),
+    
+    # WEBHOOK SIMPLES - TERCEIRA URL (fallback)
+    path('webhook/asaas/simple/', webhook_asaas_simple, name='webhook_asaas_simple'),
+    
+    # WEBHOOK DEBUG - SEGUNDA URL (apenas para debug)
+    path('webhook/asaas/debug/', webhook_asaas_debug_only, name='webhook_asaas_debug'),
+    
+    # WEBHOOK FINAL COM VALIDAÇÃO DE IP - TERCEIRA URL
+    path('webhook/asaas/final/', webhook_asaas_final, name='webhook_asaas_final'),
     
     # WEBHOOK FINAL - URL completamente diferente
     path('api/v1/webhook/asaas/', webhook_asaas_raw, name='webhook_asaas_final'),

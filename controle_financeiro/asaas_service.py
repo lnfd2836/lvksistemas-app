@@ -324,59 +324,104 @@ class AsaasService:
             dict: Resultado do processamento
         """
         try:
+            logger.info(f"Iniciando processamento do webhook: {webhook_data}")
+            
             event = webhook_data.get('event')
             payment = webhook_data.get('payment', {})
             payment_id = payment.get('id')
             
+            logger.info(f"Event: {event}, Payment ID: {payment_id}")
+            
             if not payment_id:
+                logger.error("Payment ID não encontrado no webhook")
                 return {'success': False, 'error': 'Payment ID não encontrado'}
             
-            # Consultar dados completos da cobrança
-            cobranca_completa = self.consultar_cobranca(payment_id)
-            
-            if not cobranca_completa:
-                return {'success': False, 'error': 'Erro ao consultar cobrança'}
-            
-            # Processar diferentes tipos de eventos
-            if event == 'PAYMENT_RECEIVED':
-                return self._processar_pagamento_recebido(cobranca_completa)
-            elif event == 'PAYMENT_OVERDUE':
-                return self._processar_pagamento_vencido(cobranca_completa)
-            elif event == 'PAYMENT_DELETED':
-                return self._processar_pagamento_cancelado(cobranca_completa)
+            # Para eventos de criação, usar dados do próprio webhook
+            if event in ['PAYMENT_CREATED', 'PAYMENT_RECEIVED']:
+                logger.info(f"Processando evento {event} com dados do webhook")
+                
+                # Processar diferentes tipos de eventos
+                if event == 'PAYMENT_RECEIVED':
+                    return self._processar_pagamento_recebido(payment)
+                elif event == 'PAYMENT_CREATED':
+                    logger.info(f"Pagamento criado: {payment_id}")
+                    return {'success': True, 'message': f'Pagamento {payment_id} criado'}
+                    
+            # Para outros eventos, consultar dados completos
             else:
-                logger.info(f"Evento não processado: {event}")
-                return {'success': True, 'message': f'Evento {event} registrado'}
+                logger.info(f"Consultando dados completos para evento {event}")
+                cobranca_completa = self.consultar_cobranca(payment_id)
+                
+                if not cobranca_completa:
+                    logger.warning(f"Não foi possível consultar cobrança {payment_id}, usando dados do webhook")
+                    cobranca_completa = payment
+                
+                # Processar diferentes tipos de eventos
+                if event == 'PAYMENT_OVERDUE':
+                    return self._processar_pagamento_vencido(cobranca_completa)
+                elif event == 'PAYMENT_DELETED':
+                    return self._processar_pagamento_cancelado(cobranca_completa)
+            
+            # Evento não específico - apenas registrar
+            logger.info(f"Evento {event} registrado mas não processado especificamente")
+            return {'success': True, 'message': f'Evento {event} registrado'}
                 
         except Exception as e:
             logger.error(f"Erro ao processar webhook: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {'success': False, 'error': str(e)}
     
     def _processar_pagamento_recebido(self, cobranca):
         """Processa pagamento recebido"""
         try:
-            # Buscar controle financeiro pela referência externa
+            logger.info(f"Processando pagamento recebido: {cobranca}")
+            
+            payment_id = cobranca.get('id')
+            valor_pago = Decimal(str(cobranca.get('value', 0)))
+            
+            # Tentar buscar pela CobrancaAsaas primeiro
+            try:
+                from .models import CobrancaAsaas
+                cobranca_asaas = CobrancaAsaas.objects.get(asaas_id=payment_id)
+                
+                # Marcar como paga
+                cobranca_asaas.marcar_como_paga()
+                
+                logger.info(f"Pagamento processado via CobrancaAsaas: {cobranca_asaas.controle_financeiro.loja.nome} - R$ {valor_pago}")
+                return {'success': True, 'message': 'Pagamento processado via CobrancaAsaas'}
+                
+            except CobrancaAsaas.DoesNotExist:
+                logger.info(f"CobrancaAsaas não encontrada para {payment_id}, tentando por referência externa")
+            
+            # Fallback: buscar por referência externa
             external_ref = cobranca.get('externalReference', '')
-            if external_ref.startswith('CF_'):
+            logger.info(f"Referência externa: {external_ref}")
+            
+            if external_ref and external_ref.startswith('CF_'):
                 cf_id = external_ref.split('_')[1]
+                logger.info(f"Extraído CF ID: {cf_id}")
                 
                 from .models import ControleFinanceiro
                 controle = ControleFinanceiro.objects.get(id=cf_id)
                 
                 # Processar pagamento
-                valor_pago = Decimal(str(cobranca.get('value', 0)))
                 controle.processar_pagamento(
                     valor_pago,
-                    f"Pagamento via Asaas - ID: {cobranca['id']}"
+                    f"Pagamento via Asaas - ID: {payment_id}"
                 )
                 
-                logger.info(f"Pagamento processado: {controle.loja.nome} - R$ {valor_pago}")
-                return {'success': True, 'message': 'Pagamento processado com sucesso'}
+                logger.info(f"Pagamento processado via referência externa: {controle.loja.nome} - R$ {valor_pago}")
+                return {'success': True, 'message': 'Pagamento processado via referência externa'}
             
-            return {'success': False, 'error': 'Referência externa inválida'}
+            # Se não encontrou nenhuma forma de processar
+            logger.warning(f"Não foi possível processar pagamento {payment_id} - sem referência válida")
+            return {'success': True, 'message': f'Pagamento {payment_id} registrado mas não processado (sem referência)'}
             
         except Exception as e:
             logger.error(f"Erro ao processar pagamento recebido: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {'success': False, 'error': str(e)}
     
     def _processar_pagamento_vencido(self, cobranca):

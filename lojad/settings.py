@@ -47,7 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
-    'controle_financeiro.webhook_middleware.WebhookMiddleware',  # Intercepta webhooks antes de tudo
+    'controle_financeiro.webhook_middleware.WebhookBypassMiddleware',  # Detecta webhooks primeiro
     'django.middleware.security.SecurityMiddleware',
     'dashboard.middleware.error_capture.ErrorCaptureMiddleware',  # Captura de erros deve ser primeiro
     'dashboard.middleware.middleware_profiler.MiddlewareProfiler',  # Profiling de middleware
@@ -203,6 +203,13 @@ if 'DYNO' in os.environ:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Configurações específicas para webhooks no Heroku
+    ALLOWED_HOSTS.extend([
+        'lvksistemas-app-4f6fa281e217.herokuapp.com',
+        '.herokuapp.com',
+        '.asaas.com'
+    ])
     
     # Forçar HTTPS para URLs do Asaas em produção
     if ASAAS_ENVIRONMENT == 'production':

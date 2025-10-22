@@ -30,6 +30,9 @@ class MandatoryPasswordChangeMiddleware:
             '/media/',
             '/admin/logout/',
             '/favicon.ico',
+            '/webhook/',  # Todos os webhooks
+            '/api/',  # Todas as APIs
+            '/asaas-webhook',  # Webhooks do Asaas
             '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
             # URLs de reset de senha
             '/usuarios/password-reset/',
@@ -41,6 +44,9 @@ class MandatoryPasswordChangeMiddleware:
         self.exempt_prefixes = [
             '/static/',
             '/media/',
+            '/webhook/',  # Todos os webhooks
+            '/api/',  # Todas as APIs
+            '/asaas-webhook',  # Webhooks do Asaas
             '/usuarios/reset/',  # Para URLs de reset com tokens
         ]
     

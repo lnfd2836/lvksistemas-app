@@ -12,6 +12,11 @@ class ControleFinanceiroMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Excluir webhooks e APIs de qualquer verificação
+        webhook_paths = ['/webhook/', '/api/', '/asaas-webhook', '/financeiro/asaas/webhook']
+        if any(request.path.startswith(path) for path in webhook_paths):
+            return self.get_response(request)
+        
         # Verifica se o usuário está logado e não é super admin
         if (request.user.is_authenticated and 
             not request.user.is_superuser and 
@@ -32,6 +37,8 @@ class ControleFinanceiroMiddleware:
                         '/financeiro/pagamento/',
                         '/financeiro/boletos-cliente/',
                         '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de verificação
+                        '/webhook/',  # Todos os webhooks
+                        '/api/',  # APIs
                         '/logout/',
                         '/loja/login/',
                     ]

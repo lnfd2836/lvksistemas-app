@@ -30,6 +30,9 @@ class ImprovedAuthenticationMiddleware:
             '/logout/',
             '/loja/login/',
             '/loja/logout/',
+            '/webhook/',  # Todos os webhooks
+            '/api/',  # Todas as APIs
+            '/asaas-webhook',  # Webhooks do Asaas
             '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
             '/financeiro/asaas/webhook-debug/',  # Webhook debug do Asaas
             '/static/',

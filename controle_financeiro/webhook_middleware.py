@@ -1,29 +1,59 @@
 """
-Middleware específico para webhooks do Asaas
+Middleware específico para webhooks - bypassa todos os outros middlewares
 """
-from django.http import HttpResponse
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class WebhookMiddleware:
+class WebhookBypassMiddleware:
     """
-    Middleware que intercepta webhooks do Asaas antes de qualquer verificação de autenticação
+    Middleware que identifica webhooks e marca a request para bypass
     """
     
     def __init__(self, get_response):
         self.get_response = get_response
+        
+        # Paths que são webhooks
+        self.webhook_paths = [
+            '/webhook/',
+            '/api/webhook/',
+            '/asaas-webhook',
+            '/financeiro/asaas/webhook',
+        ]
     
     def __call__(self, request):
-        # Verifica se é um webhook do Asaas
-        if '/asaas/webhook' in request.path:
-            logger.info(f"Webhook interceptado: {request.path}")
-            # Marca a requisição como webhook para outros middlewares
+        # Marcar se é webhook
+        if self.is_webhook_request(request):
             request.is_webhook = True
-            # Processa a requisição normalmente
-            response = self.get_response(request)
-            return response
+            logger.info(f"Webhook detectado: {request.path}")
+        else:
+            request.is_webhook = False
         
-        # Para outras requisições, processa normalmente
-        return self.get_response(request)
+        response = self.get_response(request)
+        return response
+    
+    def is_webhook_request(self, request):
+        """
+        Verifica se a request é um webhook
+        """
+        # Verifica pelo path
+        for webhook_path in self.webhook_paths:
+            if request.path.startswith(webhook_path):
+                return True
+        
+        # Verifica pelo User-Agent
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        webhook_agents = ['asaas', 'webhook', 'bot', 'curl']
+        
+        for agent in webhook_agents:
+            if agent in user_agent:
+                return True
+        
+        # Verifica pelo Content-Type
+        content_type = request.META.get('CONTENT_TYPE', '').lower()
+        if 'application/json' in content_type and request.method == 'POST':
+            # Pode ser um webhook
+            return True
+        
+        return False
