@@ -31,6 +31,7 @@ class PasswordChangeMiddleware(MiddlewareMixin):
             '/usuarios/alterar-senha/',
             '/usuarios/alterar-senha-normal/',
             '/api/',
+            '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
         ]
         
         # Verifica se a URL atual está na lista de exceções
