@@ -3,465 +3,798 @@
 
 {% block title %}Cobrança {{ cobranca.asaas_id }} - {{ loja.nome }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .payment-card {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        border-radius: 15px;
+    }
+
+    .payment-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .payment-card.boleto-card {
+        border-color: #007bff;
+    }
+
+    .payment-card.pix-card {
+        border-color: #28a745;
+    }
+
+    .status-badge {
+        font-size: 1.1em;
+        padding: 8px 16px;
+        border-radius: 25px;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .payment-method-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 15px;
+        margin: -1px -1px 0 -1px;
+    }
+
+    .qr-code-container {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin: 20px 0;
+    }
+
+    .copy-button {
+        transition: all 0.3s ease;
+    }
+
+    .copy-button:hover {
+        transform: scale(1.05);
+    }
+
+    .floating-action {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+
+    .status-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .status-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -23px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-receipt"></i>
-                        Cobrança {{ cobranca.asaas_id }}
-                    </h3>
-                    <div class="card-tools">
-                        <a href="?atualizar=1" class="btn btn-info btn-sm">
-                            <i class="fas fa-sync-alt"></i> Atualizar Status
-                        </a>
-                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </a>
-                    </div>
+    <!-- Header com informações principais -->
+    <div class="info-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-receipt"></i>
+                    Cobrança #{{ cobranca.asaas_id|truncatechars:8 }}
+                </h2>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-store"></i> {{ loja.nome }} •
+                    <i class="fas fa-calendar"></i> {{ cobranca.data_criacao|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+            <div class="col-md-4 text-right">
+                <div class="mb-2">
+                    <span class="status-badge badge badge-
+                        {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
+                        {% elif cobranca.status == 'OVERDUE' %}danger
+                        {% elif cobranca.status == 'PENDING' %}warning
+                        {% else %}info{% endif %}">
+                        {{ cobranca.get_status_display }}
+                    </span>
                 </div>
+                <h3 class="mb-0">R$ {{ cobranca.valor|floatformat:2 }}</h3>
+            </div>
+        </div>
 
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="?atualizar=1" class="btn btn-light btn-sm">
+                        <i class="fas fa-sync-alt"></i> Atualizar Status
+                    </a>
+                    <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}"
+                        class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações Resumidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center h-100">
                 <div class="card-body">
-                    <!-- Status da Cobrança -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon 
-                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}bg-success
-                                    {% elif cobranca.status == 'OVERDUE' %}bg-danger
-                                    {% elif cobranca.status == 'PENDING' %}bg-warning
-                                    {% else %}bg-info{% endif %}">
-                                    <i class="fas fa-
-                                        {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}check-circle
-                                        {% elif cobranca.status == 'OVERDUE' %}exclamation-triangle
-                                        {% elif cobranca.status == 'PENDING' %}clock
-                                        {% else %}info-circle{% endif %}"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Status</span>
-                                    <span class="info-box-number">{{ cobranca.get_status_display }}</span>
-                                    <small>{{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-primary">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Valor</span>
-                                    <span class="info-box-number">R$ {{ cobranca.valor|floatformat:2 }}</span>
-                                    <small>{{ cobranca.descricao|truncatechars:30 }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon {% if cobranca.esta_vencida %}bg-danger{% else %}bg-success{% endif %}">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Vencimento</span>
-                                    <span class="info-box-number">{{ cobranca.data_vencimento|date:"d/m/Y" }}</span>
-                                    <small>
-                                        {% if cobranca.dias_para_vencimento > 0 %}
-                                            {{ cobranca.dias_para_vencimento }} dias restantes
-                                        {% elif cobranca.dias_para_vencimento == 0 %}
-                                            Vence hoje
-                                        {% else %}
-                                            Vencido há {{ cobranca.dias_para_vencimento|add:"-1" }} dias
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-info">
-                                    <i class="fas fa-file-invoice"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Boleto PDF</span>
-                                    <span class="info-box-number">
-                                        {% if cobranca.bank_slip_url %}
-                                            <i class="fas fa-check text-success"></i> Disponível
-                                        {% else %}
-                                            <i class="fas fa-clock text-warning"></i> Gerando...
-                                        {% endif %}
-                                    </span>
-                                    <small>
-                                        {% if cobranca.bank_slip_url %}
-                                            Pronto para download
-                                        {% else %}
-                                            Aguarde alguns instantes
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
                     </div>
-
-                    <!-- Informações da Loja -->
-                    <div class="card card-outline card-info">
-                        <div class="card-header">
-                            <h5 class="card-title">
-                                <i class="fas fa-store"></i>
-                                Informações da Loja
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <strong>Nome:</strong> {{ loja.nome }}<br>
-                                    <strong>CNPJ:</strong> {{ loja.cnpj }}<br>
-                                    <strong>Email:</strong> {{ loja.email }}
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>Telefone:</strong> {{ loja.telefone }}<br>
-                                    <strong>Cidade:</strong> {{ loja.cidade }}/{{ loja.estado }}<br>
-                                    <strong>Plano:</strong> {{ controle.plano.nome }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Formas de Pagamento -->
-                    <div class="row">
-                        <!-- Boleto Bancário -->
-                        <div class="col-md-6">
-                            <div class="card card-outline card-primary">
-                                <div class="card-header">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-barcode"></i>
-                                        Boleto Bancário
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    {% if cobranca.bank_slip_url %}
-                                        <div class="text-center mb-3">
-                                            <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-primary btn-lg">
-                                                <i class="fas fa-download"></i>
-                                                Baixar Boleto PDF
-                                            </a>
-                                            <br><br>
-                                            <div class="btn-group" role="group">
-                                                <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-outline-primary">
-                                                    <i class="fas fa-eye"></i> Visualizar
-                                                </a>
-                                                <button type="button" class="btn btn-outline-info" onclick="copyBoletoUrl()">
-                                                    <i class="fas fa-link"></i> Copiar Link
-                                                </button>
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <div class="alert alert-warning text-center">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            <strong>PDF do boleto não disponível</strong><br>
-                                            <small>O PDF pode estar sendo gerado. Tente atualizar a página em alguns instantes.</small>
-                                            <br><br>
-                                            <a href="?atualizar=1" class="btn btn-warning btn-sm">
-                                                <i class="fas fa-sync-alt"></i> Atualizar Agora
-                                            </a>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    {% if cobranca.invoice_number %}
-                                        <p><strong>Número da Fatura:</strong> {{ cobranca.invoice_number }}</p>
-                                    {% endif %}
-                                    
-                                    {% if cobranca.invoice_url %}
-                                        <p>
-                                            <strong>Visualizar Online:</strong>
-                                            <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-external-link-alt"></i> Abrir
-                                            </a>
-                                        </p>
-                                    {% endif %}
-                                    
-                                    <div class="alert alert-info">
-                                        <small>
-                                            <i class="fas fa-info-circle"></i>
-                                            O boleto pode ser pago em qualquer banco, lotérica ou internet banking.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PIX -->
-                        <div class="col-md-6">
-                            <div class="card card-outline card-success">
-                                <div class="card-header">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-qrcode"></i>
-                                        PIX - Pagamento Instantâneo
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    {% if cobranca.pix_qr_code %}
-                                        <div class="text-center mb-3">
-                                            <img src="data:image/png;base64,{{ cobranca.pix_qr_code }}" 
-                                                 alt="QR Code PIX" 
-                                                 class="img-fluid" 
-                                                 style="max-width: 200px;">
-                                        </div>
-                                        
-                                        {% if cobranca.pix_expires_date %}
-                                            <div class="alert alert-warning">
-                                                <small>
-                                                    <i class="fas fa-clock"></i>
-                                                    PIX válido até: {{ cobranca.pix_expires_date|date:"d/m/Y H:i" }}
-                                                </small>
-                                            </div>
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    {% if cobranca.pix_copy_paste %}
-                                        <div class="form-group">
-                                            <label><strong>PIX Copia e Cola:</strong></label>
-                                            <div class="input-group">
-                                                <textarea class="form-control" 
-                                                          id="pixCopyPaste" 
-                                                          rows="3" 
-                                                          readonly>{{ cobranca.pix_copy_paste }}</textarea>
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-success" 
-                                                            type="button" 
-                                                            onclick="copyPixCode()">
-                                                        <i class="fas fa-copy"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <small class="form-text text-muted">
-                                                Copie este código e cole no seu app do banco
-                                            </small>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <div class="alert alert-success">
-                                        <small>
-                                            <i class="fas fa-zap"></i>
-                                            Pagamento instantâneo 24h por dia, 7 dias por semana.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ajuda e Solução de Problemas -->
-                    {% if not cobranca.bank_slip_url %}
-                    <div class="card card-outline card-warning">
-                        <div class="card-header">
-                            <h5 class="card-title">
-                                <i class="fas fa-question-circle"></i>
-                                Problemas com o PDF do Boleto?
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-info">
-                                <h6><i class="fas fa-info-circle"></i> O que fazer se o PDF não aparecer:</h6>
-                                <ul class="mb-0">
-                                    <li><strong>Aguarde:</strong> O PDF pode levar alguns minutos para ser gerado pelo Asaas</li>
-                                    <li><strong>Atualize:</strong> Clique no botão "Atualizar Status" acima</li>
-                                    <li><strong>Use o PIX:</strong> O pagamento via PIX é instantâneo e sempre disponível</li>
-                                    <li><strong>Contate o suporte:</strong> Se o problema persistir após 10 minutos</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="text-center">
-                                <a href="?atualizar=1" class="btn btn-warning">
-                                    <i class="fas fa-sync-alt"></i> Tentar Novamente
-                                </a>
-                                <button type="button" class="btn btn-info" onclick="window.location.reload()">
-                                    <i class="fas fa-redo"></i> Recarregar Página
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Detalhes Técnicos -->
-                    <div class="card card-outline card-secondary">
-                        <div class="card-header">
-                            <h5 class="card-title">
-                                <i class="fas fa-cogs"></i>
-                                Detalhes Técnicos
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>ID Asaas:</strong> {{ cobranca.asaas_id }}</p>
-                                    <p><strong>ID Cliente:</strong> {{ cobranca.customer_id }}</p>
-                                    <p><strong>Referência Externa:</strong> {{ cobranca.external_reference }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Data de Criação:</strong> {{ cobranca.data_criacao|date:"d/m/Y H:i" }}</p>
-                                    {% if cobranca.data_pagamento %}
-                                        <p><strong>Data de Pagamento:</strong> {{ cobranca.data_pagamento|date:"d/m/Y H:i" }}</p>
-                                    {% endif %}
-                                    <p><strong>Última Atualização:</strong> {{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</p>
-                                </div>
-                            </div>
-                            
-                            {% if cobranca.observacoes %}
-                                <hr>
-                                <p><strong>Observações:</strong></p>
-                                <p>{{ cobranca.observacoes|linebreaks }}</p>
+                    <h5 class="card-title">Vencimento</h5>
+                    <p class="card-text">
+                        <strong>{{ cobranca.data_vencimento|date:"d/m/Y" }}</strong><br>
+                        <small class="
+                            {% if cobranca.dias_para_vencimento > 5 %}text-success
+                            {% elif cobranca.dias_para_vencimento > 0 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {% if cobranca.dias_para_vencimento > 0 %}
+                            {{ cobranca.dias_para_vencimento }} dias restantes
+                            {% elif cobranca.dias_para_vencimento == 0 %}
+                            Vence hoje
+                            {% else %}
+                            Vencido há {{ cobranca.dias_para_vencimento|add:"-1" }} dias
                             {% endif %}
-                            
-                            <!-- Debug Info para PDF -->
-                            {% if user.is_superuser and not cobranca.bank_slip_url %}
-                                <hr>
-                                <div class="alert alert-secondary">
-                                    <h6><i class="fas fa-bug"></i> Debug Info (Admin):</h6>
-                                    <small>
-                                        <strong>Status:</strong> {{ pdf_debug_info.status }}<br>
-                                        <strong>Criado há:</strong> {{ pdf_debug_info.created_minutes_ago }} minutos<br>
-                                        <strong>Bank Slip URL:</strong> {{ pdf_debug_info.bank_slip_url|default:"Não disponível" }}<br>
-                                        <strong>Invoice URL:</strong> {{ pdf_debug_info.invoice_url|default:"Não disponível" }}
-                                    </small>
-                                </div>
-                            {% endif %}
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-file-pdf fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Boleto PDF</h5>
+                    <p class="card-text">
+                        {% if cobranca.bank_slip_url %}
+                        <span class="text-success"><i class="fas fa-check-circle"></i> Disponível</span><br>
+                        <small>Pronto para download</small>
+                        {% else %}
+                        <span class="text-warning"><i class="fas fa-clock"></i> Gerando...</span><br>
+                        <small>Aguarde alguns instantes</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-qrcode fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">PIX</h5>
+                    <p class="card-text">
+                        {% if cobranca.pix_qr_code %}
+                        <span class="text-success"><i class="fas fa-check-circle"></i> Disponível</span><br>
+                        <small>Pagamento instantâneo</small>
+                        {% else %}
+                        <span class="text-muted"><i class="fas fa-times-circle"></i> Indisponível</span><br>
+                        <small>Não configurado</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="text-secondary mb-2">
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Loja</h5>
+                    <p class="card-text">
+                        <strong>{{ loja.nome|truncatechars:20 }}</strong><br>
+                        <small>{{ controle.plano.nome }}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações da Loja -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-store text-primary"></i>
+                Informações da Cobrança
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="text-muted">DADOS DA LOJA</h6>
+                    <p class="mb-1"><strong>{{ loja.nome }}</strong></p>
+                    <p class="mb-1"><small>CNPJ: {{ loja.cnpj }}</small></p>
+                    <p class="mb-1"><small>{{ loja.cidade }}/{{ loja.estado }}</small></p>
+                    <p class="mb-0"><small><i class="fas fa-envelope"></i> {{ loja.email }}</small></p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">DETALHES DA COBRANÇA</h6>
+                    <p class="mb-1"><strong>Descrição:</strong> {{ cobranca.descricao|truncatechars:40 }}</p>
+                    <p class="mb-1"><strong>Plano:</strong> {{ controle.plano.nome }}</p>
+                    <p class="mb-1"><strong>ID Asaas:</strong> <code>{{ cobranca.asaas_id }}</code></p>
+                    <p class="mb-0"><strong>Referência:</strong> {{ cobranca.external_reference|default:"N/A" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">TIMELINE</h6>
+                    <div class="status-timeline">
+                        <div class="timeline-item">
+                            <small><strong>Criada:</strong> {{ cobranca.data_criacao|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        {% if cobranca.data_pagamento %}
+                        <div class="timeline-item">
+                            <small><strong>Paga:</strong> {{ cobranca.data_pagamento|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        {% endif %}
+                        <div class="timeline-item">
+                            <small><strong>Atualizada:</strong> {{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Formas de Pagamento -->
+    <div class="row">
+        <!-- Boleto Bancário -->
+        <div class="col-lg-6 mb-4">
+            <div class="card payment-card boleto-card h-100">
+                <div class="payment-method-header text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-barcode fa-lg"></i>
+                        Boleto Bancário
+                    </h4>
+                    <small>Pague em qualquer banco ou lotérica</small>
+                </div>
+                <div class="card-body text-center">
+                    {% if cobranca.bank_slip_url %}
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5 class="text-success">PDF Disponível!</h5>
+                        <p class="text-muted">Seu boleto está pronto para download</p>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-primary btn-lg">
+                            <i class="fas fa-download"></i>
+                            Baixar Boleto PDF
+                        </a>
+                    </div>
+
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </a>
+                        <button type="button" class="btn btn-outline-info copy-button" onclick="copyBoletoUrl()">
+                            <i class="fas fa-link"></i> Copiar Link
+                        </button>
+                    </div>
+
+                    {% if cobranca.invoice_url %}
+                    <div class="mt-3">
+                        <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-external-link-alt"></i> Ver Online
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-clock text-warning fa-3x mb-3"></i>
+                        <h5 class="text-warning">Gerando PDF...</h5>
+                        <p class="text-muted">O boleto está sendo processado pelo Asaas</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Aguarde alguns instantes</strong><br>
+                        <small>O PDF pode levar até 5 minutos para ficar disponível</small>
+                    </div>
+
+                    <a href="?atualizar=1" class="btn btn-warning">
+                        <i class="fas fa-sync-alt"></i> Verificar Novamente
+                    </a>
+                    {% endif %}
+
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Válido para pagamento em bancos, lotéricas e internet banking
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PIX -->
+        <div class="col-lg-6 mb-4">
+            <div class="card payment-card pix-card h-100">
+                <div class="payment-method-header text-center"
+                    style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode fa-lg"></i>
+                        PIX Instantâneo
+                    </h4>
+                    <small>Pagamento em segundos, 24h por dia</small>
+                </div>
+                <div class="card-body text-center">
+                    {% if cobranca.pix_qr_code %}
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5 class="text-success">PIX Disponível!</h5>
+                        <p class="text-muted">Escaneie o QR Code ou copie o código</p>
+                    </div>
+
+                    <div class="qr-code-container">
+                        <img src="data:image/png;base64,{{ cobranca.pix_qr_code }}" alt="QR Code PIX" class="img-fluid"
+                            style="max-width: 200px;">
+                    </div>
+
+                    {% if cobranca.pix_expires_date %}
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <i class="fas fa-clock"></i>
+                            <strong>Válido até:</strong> {{ cobranca.pix_expires_date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    {% if cobranca.pix_copy_paste %}
+                    <div class="mt-4">
+                        <label class="form-label"><strong>PIX Copia e Cola:</strong></label>
+                        <div class="input-group">
+                            <textarea class="form-control" id="pixCopyPaste" rows="2"
+                                readonly>{{ cobranca.pix_copy_paste }}</textarea>
+                            <button class="btn btn-success copy-button" type="button" onclick="copyPixCode()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            Cole este código no seu app do banco
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-times-circle text-muted fa-3x mb-3"></i>
+                        <h5 class="text-muted">PIX Indisponível</h5>
+                        <p class="text-muted">Esta cobrança não possui PIX configurado</p>
+                    </div>
+
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-info-circle"></i>
+                        Use o boleto bancário para realizar o pagamento
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="fas fa-zap"></i>
+                            Pagamento instantâneo e disponível 24/7
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ajuda e Solução de Problemas -->
+    {% if not cobranca.bank_slip_url %}
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-question-circle"></i>
+                Problemas com o PDF do Boleto?
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><i class="fas fa-lightbulb text-warning"></i> Soluções rápidas:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-info"></i>
+                                    <strong>Aguarde:</strong> PDF pode levar até 5 minutos
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-sync-alt text-primary"></i>
+                                    <strong>Atualize:</strong> Clique em "Atualizar Status"
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-qrcode text-success"></i>
+                                    <strong>Use PIX:</strong> Pagamento instantâneo
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-headset text-secondary"></i>
+                                    <strong>Suporte:</strong> Se persistir após 10min
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="d-grid gap-2">
+                        <a href="?atualizar=1" class="btn btn-warning">
+                            <i class="fas fa-sync-alt"></i> Tentar Novamente
+                        </a>
+                        <button type="button" class="btn btn-outline-info" onclick="window.location.reload()">
+                            <i class="fas fa-redo"></i> Recarregar Página
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detalhes Técnicos -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-cogs text-secondary"></i>
+                Detalhes Técnicos
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="text-muted">IDENTIFICADORES</h6>
+                    <p class="mb-1"><strong>ID Asaas:</strong> <code>{{ cobranca.asaas_id }}</code></p>
+                    <p class="mb-1"><strong>ID Cliente:</strong> <code>{{ cobranca.customer_id|default:"N/A" }}</code>
+                    </p>
+                    <p class="mb-0"><strong>Referência:</strong>
+                        <code>{{ cobranca.external_reference|default:"N/A" }}</code></p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">DATAS</h6>
+                    <p class="mb-1"><strong>Criação:</strong> {{ cobranca.data_criacao|date:"d/m/Y H:i" }}</p>
+                    {% if cobranca.data_pagamento %}
+                    <p class="mb-1"><strong>Pagamento:</strong> {{ cobranca.data_pagamento|date:"d/m/Y H:i" }}</p>
+                    {% endif %}
+                    <p class="mb-0"><strong>Atualização:</strong> {{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">URLS</h6>
+                    <p class="mb-1">
+                        <strong>Boleto:</strong>
+                        {% if cobranca.bank_slip_url %}
+                        <span class="text-success"><i class="fas fa-check"></i> Disponível</span>
+                        {% else %}
+                        <span class="text-warning"><i class="fas fa-clock"></i> Gerando</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Invoice:</strong>
+                        {% if cobranca.invoice_url %}
+                        <span class="text-success"><i class="fas fa-check"></i> Disponível</span>
+                        {% else %}
+                        <span class="text-muted"><i class="fas fa-times"></i> N/A</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if cobranca.observacoes %}
+            <hr>
+            <h6 class="text-muted">OBSERVAÇÕES</h6>
+            <div class="alert alert-light">
+                {{ cobranca.observacoes|linebreaks }}
+            </div>
+            {% endif %}
+
+            <!-- Debug Info para PDF -->
+            {% if user.is_superuser and not cobranca.bank_slip_url %}
+            <hr>
+            <div class="alert alert-secondary">
+                <h6><i class="fas fa-bug"></i> Debug Info (Admin)</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small>
+                            <strong>Status:</strong> {{ pdf_debug_info.status }}<br>
+                            <strong>Criado há:</strong> {{ pdf_debug_info.created_minutes_ago }} minutos
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small>
+                            <strong>Bank Slip URL:</strong> {{ pdf_debug_info.bank_slip_url|default:"Não disponível"
+                            }}<br>
+                            <strong>Invoice URL:</strong> {{ pdf_debug_info.invoice_url|default:"Não disponível" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-action">
+        <div class="btn-group-vertical" role="group">
+            <a href="?atualizar=1" class="btn btn-info btn-sm" title="Atualizar Status">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+            <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-sm"
+                title="Voltar">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+    </div>
 </div>
 
 <script>
-function copyPixCode() {
-    const pixCode = document.getElementById('pixCopyPaste');
-    pixCode.select();
-    pixCode.setSelectionRange(0, 99999); // Para dispositivos móveis
-    
-    try {
-        document.execCommand('copy');
-        
-        // Feedback visual
-        const button = event.target.closest('button');
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.classList.remove('btn-success');
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-        }, 2000);
-        
-        // Mostrar toast ou alert
-        showToast('Código PIX copiado para a área de transferência!', 'success');
-    } catch (err) {
-        showToast('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.', 'error');
-    }
-}
+    function copyPixCode() {
+        var pixCode = document.getElementById('pixCopyPaste');
+        var button = event.target.closest('button');
+        var originalHTML = button.innerHTML;
 
-function copyBoletoUrl() {
-    const boletoUrl = '{{ cobranca.bank_slip_url }}';
-    
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(boletoUrl).then(() => {
-            showToast('Link do boleto copiado!', 'success');
-        }).catch(() => {
-            fallbackCopyTextToClipboard(boletoUrl);
-        });
-    } else {
-        fallbackCopyTextToClipboard(boletoUrl);
-    }
-}
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
 
-function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        document.execCommand('copy');
-        showToast('Link copiado!', 'success');
-    } catch (err) {
-        showToast('Erro ao copiar link', 'error');
-    }
-    
-    document.body.removeChild(textArea);
-}
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(pixCode.value).then(function () {
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                showToast('✅ Código PIX copiado com sucesso!', 'success');
 
-function showToast(message, type) {
-    // Criar toast element
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    toast.style.position = 'fixed';
-    toast.style.top = '20px';
-    toast.style.right = '20px';
-    toast.style.zIndex = '9999';
-    toast.style.minWidth = '300px';
-    
-    toast.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        ${message}
-        <button type="button" class="close" data-dismiss="alert">
-            <span>&times;</span>
-        </button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
+                setTimeout(function () {
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                }, 2000);
+            }).catch(function () {
+                fallbackCopyPix(pixCode, button, originalHTML);
+            });
+        } else {
+            fallbackCopyPix(pixCode, button, originalHTML);
         }
-    }, 3000);
-}
-
-// Auto-refresh inteligente para verificar se PDF foi gerado
-{% if auto_refresh %}
-let refreshCount = 0;
-const maxRefreshes = 10; // Máximo 10 tentativas (5 minutos)
-
-function autoRefresh() {
-    if (refreshCount < maxRefreshes && !document.hidden) {
-        refreshCount++;
-        console.log(`Auto-refresh ${refreshCount}/${maxRefreshes} - Verificando PDF...`);
-        
-        // Mostrar indicador de carregamento
-        const refreshIndicator = document.createElement('div');
-        refreshIndicator.className = 'alert alert-info';
-        refreshIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando se PDF foi gerado...';
-        refreshIndicator.style.position = 'fixed';
-        refreshIndicator.style.top = '20px';
-        refreshIndicator.style.right = '20px';
-        refreshIndicator.style.zIndex = '9999';
-        document.body.appendChild(refreshIndicator);
-        
-        setTimeout(() => {
-            window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'atualizar=1';
-        }, 1000);
-    } else if (refreshCount >= maxRefreshes) {
-        showToast('PDF ainda não disponível. Tente atualizar manualmente.', 'warning');
     }
-}
 
-// Primeira tentativa após 15 segundos
-setTimeout(autoRefresh, 15000);
+    function fallbackCopyPix(pixCode, button, originalHTML) {
+        try {
+            pixCode.select();
+            pixCode.setSelectionRange(0, 99999);
+            document.execCommand('copy');
 
-// Tentativas subsequentes a cada 30 segundos
-setInterval(() => {
-    if (refreshCount > 0 && refreshCount < maxRefreshes) {
-        autoRefresh();
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            showToast('✅ Código PIX copiado!', 'success');
+
+            setTimeout(function () {
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }, 2000);
+        } catch (err) {
+            button.innerHTML = '<i class="fas fa-times"></i>';
+            showToast('❌ Erro ao copiar. Tente selecionar e copiar manualmente.', 'error');
+
+            setTimeout(function () {
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }, 2000);
+        }
     }
-}, 30000);
-{% endif %}
+
+    function copyBoletoUrl() {
+        var boletoUrl = '{{ cobranca.bank_slip_url }}';
+        var button = event.target.closest('button');
+        var originalHTML = button.innerHTML;
+
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(boletoUrl).then(function () {
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                showToast('🔗 Link do boleto copiado!', 'success');
+
+                setTimeout(function () {
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                }, 2000);
+            }).catch(function () {
+                fallbackCopyTextToClipboard(boletoUrl, button, originalHTML);
+            });
+        } else {
+            fallbackCopyTextToClipboard(boletoUrl, button, originalHTML);
+        }
+    }
+
+    function fallbackCopyTextToClipboard(text, button, originalHTML) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            showToast('🔗 Link copiado!', 'success');
+        } catch (err) {
+            button.innerHTML = '<i class="fas fa-times"></i>';
+            showToast('❌ Erro ao copiar link', 'error');
+        }
+
+        document.body.removeChild(textArea);
+
+        setTimeout(function () {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }, 2000);
+    }
+
+    function showToast(message, type) {
+        var existingToasts = document.querySelectorAll('.custom-toast');
+        existingToasts.forEach(function (toast) { toast.remove(); });
+
+        var toast = document.createElement('div');
+        toast.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' alert-dismissible fade show custom-toast';
+        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 320px; max-width: 400px; border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: none; animation: slideInRight 0.3s ease-out;';
+
+        toast.innerHTML = '<div class="d-flex align-items-center"><i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + ' fa-lg me-2"></i><div class="flex-grow-1">' + message + '</div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+
+        document.body.appendChild(toast);
+
+        setTimeout(function () {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(function () {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }
+        }, 4000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var actionButtons = document.querySelectorAll('a[href*="atualizar=1"]');
+        actionButtons.forEach(function (button) {
+            button.addEventListener('click', function (e) {
+                var originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+                this.classList.add('disabled');
+
+                setTimeout(function () {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('disabled');
+                }, 10000);
+            });
+        });
+
+        var paymentCards = document.querySelectorAll('.payment-card');
+        paymentCards.forEach(function (card) {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-5px)';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
 </script>
+
+{% if auto_refresh %}
+<script>
+    (function () {
+        var refreshCount = 0;
+        var maxRefreshes = 8;
+        var refreshTimer = null;
+
+        function autoRefresh() {
+            if (refreshCount < maxRefreshes && !document.hidden) {
+                refreshCount++;
+                console.log('Auto-refresh ' + refreshCount + '/' + maxRefreshes + ' - Verificando PDF...');
+
+                if (typeof showToast === 'function') {
+                    showToast('🔄 Verificando PDF... (' + refreshCount + '/' + maxRefreshes + ')', 'info');
+                }
+
+                setTimeout(function () {
+                    var currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('atualizar', '1');
+                    window.location.href = currentUrl.toString();
+                }, 1500);
+            } else if (refreshCount >= maxRefreshes) {
+                if (typeof showToast === 'function') {
+                    showToast('⏰ PDF ainda não disponível. Tente atualizar manualmente.', 'warning');
+                }
+                if (refreshTimer) clearInterval(refreshTimer);
+            }
+        }
+
+        setTimeout(autoRefresh, 10000);
+
+        refreshTimer = setInterval(function () {
+            if (refreshCount > 0 && refreshCount < maxRefreshes) {
+                autoRefresh();
+            } else {
+                clearInterval(refreshTimer);
+            }
+        }, 30000);
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden && refreshTimer) {
+                clearInterval(refreshTimer);
+                console.log('Auto-refresh pausado');
+            }
+        });
+    })();
+</script>
+{% endif %}
 {% endblock %}

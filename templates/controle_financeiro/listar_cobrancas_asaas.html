@@ -3,266 +3,365 @@
 
 {% block title %}Cobranças Asaas{% endblock %}
 
+{% block extra_css %}
+<style>
+    .header-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stats-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .table-modern {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-modern thead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .action-buttons .btn {
+        margin: 1px;
+        border-radius: 6px;
+    }
+
+    .status-badge {
+        font-size: 0.85em;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+
+    .floating-add {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-credit-card"></i>
-                        Cobranças Asaas
-                    </h3>
-                    <div class="card-tools">
-                        <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus"></i> Nova Cobrança
+    <!-- Header moderno -->
+    <div class="header-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-credit-card"></i>
+                    Cobranças Asaas
+                </h2>
+                <p class="mb-0 opacity-75">
+                    Gerencie todas as cobranças e boletos do sistema
+                </p>
+            </div>
+            <div class="col-md-4 text-right">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus"></i> Nova Cobrança
+                    </a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-outline-light">
+                            <i class="fas fa-cog"></i> Configurar
                         </a>
-                        {% if user.is_superuser %}
-                            <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-info btn-sm">
-                                <i class="fas fa-cog"></i> Configurar
-                            </a>
-                            <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-vial"></i> Testar
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <!-- Filtros -->
-                    <form method="get" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="status">Status:</label>
-                                    <select name="status" id="status" class="form-control">
-                                        <option value="">Todos</option>
-                                        {% for value, label in status_choices %}
-                                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            {% if user.is_superuser %}
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="loja">Loja:</label>
-                                        <select name="loja" id="loja" class="form-control">
-                                            <option value="">Todas</option>
-                                            <!-- Adicionar opções de lojas aqui -->
-                                        </select>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search"></i> Filtrar
-                                        </button>
-                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary">
-                                            <i class="fas fa-times"></i> Limpar
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-
-                    <!-- Estatísticas Rápidas -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="small-box bg-info">
-                                <div class="inner">
-                                    <h3>{{ cobrancas|length }}</h3>
-                                    <p>Total de Cobranças</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-receipt"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="small-box bg-warning">
-                                <div class="inner">
-                                    <h3>{{ cobrancas|length }}</h3>
-                                    <p>Pendentes</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="small-box bg-success">
-                                <div class="inner">
-                                    <h3>0</h3>
-                                    <p>Pagas</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="small-box bg-danger">
-                                <div class="inner">
-                                    <h3>0</h3>
-                                    <p>Vencidas</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tabela de Cobranças -->
-                    {% if cobrancas %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Loja</th>
-                                        <th>Valor</th>
-                                        <th>Vencimento</th>
-                                        <th>Status</th>
-                                        <th>Criação</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for cobranca in cobrancas %}
-                                        <tr>
-                                            <td>
-                                                <small class="text-muted">{{ cobranca.asaas_id|truncatechars:10 }}</small>
-                                            </td>
-                                            <td>
-                                                <strong>{{ cobranca.controle_financeiro.loja.nome }}</strong><br>
-                                                <small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj }}</small>
-                                            </td>
-                                            <td>
-                                                <strong>R$ {{ cobranca.valor|floatformat:2 }}</strong>
-                                            </td>
-                                            <td>
-                                                {{ cobranca.data_vencimento|date:"d/m/Y" }}<br>
-                                                <small class="
-                                                    {% if cobranca.dias_para_vencimento > 5 %}text-success
-                                                    {% elif cobranca.dias_para_vencimento > 0 %}text-warning
-                                                    {% else %}text-danger{% endif %}">
-                                                    {% if cobranca.dias_para_vencimento > 0 %}
-                                                        {{ cobranca.dias_para_vencimento }} dias
-                                                    {% elif cobranca.dias_para_vencimento == 0 %}
-                                                        Vence hoje
-                                                    {% else %}
-                                                        Vencido
-                                                    {% endif %}
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-
-                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
-                                                    {% elif cobranca.status == 'OVERDUE' %}danger
-                                                    {% elif cobranca.status == 'PENDING' %}warning
-                                                    {% else %}info{% endif %}">
-                                                    {{ cobranca.get_status_display }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {{ cobranca.data_criacao|date:"d/m/Y H:i" }}
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' cobranca.id %}" 
-                                                       class="btn btn-sm btn-primary" 
-                                                       title="Visualizar">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    
-                                                    {% if cobranca.bank_slip_url %}
-                                                        <a href="{{ cobranca.bank_slip_url }}" 
-                                                           target="_blank" 
-                                                           class="btn btn-sm btn-info" 
-                                                           title="Baixar Boleto">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                    
-                                                    {% if cobranca.pix_qr_code %}
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-success" 
-                                                                title="Ver PIX"
-                                                                onclick="showPixModal('{{ cobranca.id }}', '{{ cobranca.pix_copy_paste }}')">
-                                                            <i class="fas fa-qrcode"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    
-                                                    {% if cobranca.status == 'PENDING' %}
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-danger" 
-                                                                title="Excluir Cobrança"
-                                                                onclick="confirmarExclusao('{{ cobranca.id }}', '{{ cobranca.asaas_id }}')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Paginação -->
-                        {% if page_obj.has_other_pages %}
-                            <nav aria-label="Navegação de páginas">
-                                <ul class="pagination justify-content-center">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page=1">Primeira</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                                        </li>
-                                    {% endif %}
-
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                        </span>
-                                    </li>
-
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info text-center">
-                            <h4><i class="fas fa-info-circle"></i> Nenhuma cobrança encontrada</h4>
-                            <p>Não há cobranças cadastradas no sistema ainda.</p>
-                            {% if user.is_superuser %}
-                                <a href="{% url 'controle_financeiro:listar_controles' %}" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Gerar Nova Cobrança
-                                </a>
-                            {% endif %}
-                        </div>
+                        <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-outline-light">
+                            <i class="fas fa-vial"></i> Testar
+                        </a>
                     {% endif %}
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <form method="get">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status"><i class="fas fa-filter"></i> Status:</label>
+                        <select name="status" id="status" class="form-control">
+                            <option value="">Todos os status</option>
+                            <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pendente</option>
+                            <option value="RECEIVED" {% if status_filter == 'RECEIVED' %}selected{% endif %}>Recebido</option>
+                            <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmado</option>
+                            <option value="OVERDUE" {% if status_filter == 'OVERDUE' %}selected{% endif %}>Vencido</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if user.is_superuser %}
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="loja"><i class="fas fa-store"></i> Loja:</label>
+                        <select name="loja" id="loja" class="form-control">
+                            <option value="">Todas as lojas</option>
+                            <!-- Adicionar opções de lojas aqui -->
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="periodo"><i class="fas fa-calendar"></i> Período:</label>
+                        <select name="periodo" id="periodo" class="form-control">
+                            <option value="">Todos os períodos</option>
+                            <option value="hoje">Hoje</option>
+                            <option value="semana">Esta semana</option>
+                            <option value="mes">Este mês</option>
+                            <option value="trimestre">Este trimestre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <div class="btn-group w-100" role="group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}"
+                                class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Limpar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-receipt fa-2x"></i>
+                    </div>
+                    <h3 class="card-title">{{ cobrancas|length }}</h3>
+                    <p class="card-text text-muted">Total de Cobranças</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h3 class="card-title">{{ cobrancas|length }}</h3>
+                    <p class="card-text text-muted">Pendentes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                    <h3 class="card-title">0</h3>
+                    <p class="card-text text-muted">Pagas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="text-danger mb-2">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h3 class="card-title">0</h3>
+                    <p class="card-text text-muted">Vencidas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Cobranças -->
+    {% if cobrancas %}
+    <div class="card table-modern">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> ID</th>
+                        <th><i class="fas fa-store"></i> Loja</th>
+                        <th><i class="fas fa-money-bill-wave"></i> Valor</th>
+                        <th><i class="fas fa-calendar-alt"></i> Vencimento</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                        <th><i class="fas fa-clock"></i> Criação</th>
+                        <th><i class="fas fa-cogs"></i> Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cobranca in cobrancas %}
+                    <tr>
+                        <td>
+                            <code class="text-muted">{{ cobranca.asaas_id|truncatechars:10 }}</code>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ cobranca.controle_financeiro.loja.nome|truncatechars:25 }}</strong>
+                                <br><small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <strong class="text-primary">R$ {{ cobranca.valor|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ cobranca.data_vencimento|date:"d/m/Y" }}</strong>
+                                <br><small class="
+                                            {% if cobranca.dias_para_vencimento > 5 %}text-success
+                                            {% elif cobranca.dias_para_vencimento > 0 %}text-warning
+                                            {% else %}text-danger{% endif %}">
+                                    {% if cobranca.dias_para_vencimento > 0 %}
+                                    <i class="fas fa-clock"></i> {{ cobranca.dias_para_vencimento }} dias
+                                    {% elif cobranca.dias_para_vencimento == 0 %}
+                                    <i class="fas fa-exclamation"></i> Vence hoje
+                                    {% else %}
+                                    <i class="fas fa-exclamation-triangle"></i> Vencido
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge badge badge-
+                                        {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
+                                        {% elif cobranca.status == 'OVERDUE' %}danger
+                                        {% elif cobranca.status == 'PENDING' %}warning
+                                        {% else %}info{% endif %}">
+                                {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}
+                                <i class="fas fa-check-circle"></i>
+                                {% elif cobranca.status == 'OVERDUE' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                                {% elif cobranca.status == 'PENDING' %}
+                                <i class="fas fa-clock"></i>
+                                {% else %}
+                                <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                                {{ cobranca.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <small>{{ cobranca.data_criacao|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' cobranca.id %}"
+                                    class="btn btn-sm btn-primary" title="Visualizar Cobrança">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                {% if cobranca.bank_slip_url %}
+                                <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-sm btn-info"
+                                    title="Baixar Boleto PDF">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-secondary" title="PDF sendo gerado..." disabled>
+                                    <i class="fas fa-clock"></i>
+                                </button>
+                                {% endif %}
+
+                                {% if cobranca.pix_qr_code %}
+                                <button type="button" class="btn btn-sm btn-success" title="Ver PIX"
+                                    onclick="showPixModal('{{ cobranca.id }}', '{{ cobranca.pix_copy_paste }}')">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                                {% endif %}
+
+                                {% if cobranca.status == 'PENDING' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir Cobrança"
+                                    onclick="confirmarExclusao('{{ cobranca.id }}', '{{ cobranca.asaas_id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Navegação de páginas">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">Primeira</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-receipt fa-4x text-muted"></i>
+            </div>
+            <h4 class="text-muted">Nenhuma cobrança encontrada</h4>
+            <p class="text-muted mb-4">Não há cobranças cadastradas no sistema ainda.</p>
+            <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Criar Primeira Cobrança
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Floating Action Button -->
+    <div class="floating-add">
+        <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-lg rounded-circle"
+            title="Nova Cobrança">
+            <i class="fas fa-plus fa-lg"></i>
+        </a>
     </div>
 </div>
 
@@ -319,10 +418,10 @@
                         <li><strong>Status:</strong> Pendente</li>
                     </ul>
                 </div>
-                
+
                 <p><strong>Esta ação não pode ser desfeita!</strong></p>
                 <p>A cobrança será cancelada no Asaas e removida do sistema.</p>
-                
+
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="confirmarExclusaoCheck">
                     <label class="form-check-label" for="confirmarExclusaoCheck">
@@ -334,7 +433,8 @@
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarExclusao" disabled onclick="excluirCobranca()">
+                <button type="button" class="btn btn-danger" id="btnConfirmarExclusao" disabled
+                    onclick="excluirCobranca()">
                     <i class="fas fa-trash"></i> Excluir Cobrança
                 </button>
             </div>
@@ -343,113 +443,113 @@
 </div>
 
 <script>
-let cobrancaParaExcluir = null;
+    let cobrancaParaExcluir = null;
 
-function showPixModal(cobrancaId, pixCode) {
-    document.getElementById('modalPixCode').value = pixCode;
-    $('#pixModal').modal('show');
-}
-
-function copyModalPixCode() {
-    const pixCode = document.getElementById('modalPixCode');
-    pixCode.select();
-    pixCode.setSelectionRange(0, 99999);
-    
-    try {
-        document.execCommand('copy');
-        showToast('Código PIX copiado para a área de transferência!', 'success');
-    } catch (err) {
-        showToast('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.', 'error');
+    function showPixModal(cobrancaId, pixCode) {
+        document.getElementById('modalPixCode').value = pixCode;
+        $('#pixModal').modal('show');
     }
-}
 
-function confirmarExclusao(cobrancaId, asaasId) {
-    cobrancaParaExcluir = cobrancaId;
-    document.getElementById('cobrancaIdExcluir').textContent = asaasId;
-    document.getElementById('confirmarExclusaoCheck').checked = false;
-    document.getElementById('btnConfirmarExclusao').disabled = true;
-    $('#confirmarExclusaoModal').modal('show');
-}
+    function copyModalPixCode() {
+        const pixCode = document.getElementById('modalPixCode');
+        pixCode.select();
+        pixCode.setSelectionRange(0, 99999);
 
-// Habilitar botão de exclusão quando checkbox for marcado
-document.addEventListener('DOMContentLoaded', function() {
-    const checkbox = document.getElementById('confirmarExclusaoCheck');
-    const btnExcluir = document.getElementById('btnConfirmarExclusao');
-    
-    if (checkbox && btnExcluir) {
-        checkbox.addEventListener('change', function() {
-            btnExcluir.disabled = !this.checked;
-        });
-    }
-});
-
-function excluirCobranca() {
-    if (!cobrancaParaExcluir) return;
-    
-    const btnExcluir = document.getElementById('btnConfirmarExclusao');
-    btnExcluir.disabled = true;
-    btnExcluir.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
-    
-    // Fazer requisição AJAX para excluir
-    fetch(`{% url 'controle_financeiro:excluir_cobranca_asaas' 0 %}`.replace('0', cobrancaParaExcluir), {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            'confirmar': true
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Cobrança excluída com sucesso!', 'success');
-            $('#confirmarExclusaoModal').modal('hide');
-            // Recarregar página após 2 segundos
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        } else {
-            showToast(data.message || 'Erro ao excluir cobrança', 'error');
-            btnExcluir.disabled = false;
-            btnExcluir.innerHTML = '<i class="fas fa-trash"></i> Excluir Cobrança';
+        try {
+            document.execCommand('copy');
+            showToast('Código PIX copiado para a área de transferência!', 'success');
+        } catch (err) {
+            showToast('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.', 'error');
         }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        showToast('Erro ao excluir cobrança', 'error');
-        btnExcluir.disabled = false;
-        btnExcluir.innerHTML = '<i class="fas fa-trash"></i> Excluir Cobrança';
-    });
-}
+    }
 
-function showToast(message, type) {
-    // Criar toast element
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    toast.style.position = 'fixed';
-    toast.style.top = '20px';
-    toast.style.right = '20px';
-    toast.style.zIndex = '9999';
-    toast.style.minWidth = '300px';
-    
-    toast.innerHTML = `
+    function confirmarExclusao(cobrancaId, asaasId) {
+        cobrancaParaExcluir = cobrancaId;
+        document.getElementById('cobrancaIdExcluir').textContent = asaasId;
+        document.getElementById('confirmarExclusaoCheck').checked = false;
+        document.getElementById('btnConfirmarExclusao').disabled = true;
+        $('#confirmarExclusaoModal').modal('show');
+    }
+
+    // Habilitar botão de exclusão quando checkbox for marcado
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkbox = document.getElementById('confirmarExclusaoCheck');
+        const btnExcluir = document.getElementById('btnConfirmarExclusao');
+
+        if (checkbox && btnExcluir) {
+            checkbox.addEventListener('change', function () {
+                btnExcluir.disabled = !this.checked;
+            });
+        }
+    });
+
+    function excluirCobranca() {
+        if (!cobrancaParaExcluir) return;
+
+        const btnExcluir = document.getElementById('btnConfirmarExclusao');
+        btnExcluir.disabled = true;
+        btnExcluir.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+
+        // Fazer requisição AJAX para excluir
+        fetch(`{% url 'controle_financeiro:excluir_cobranca_asaas' 0 %}`.replace('0', cobrancaParaExcluir), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                'confirmar': true
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Cobrança excluída com sucesso!', 'success');
+                    $('#confirmarExclusaoModal').modal('hide');
+                    // Recarregar página após 2 segundos
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(data.message || 'Erro ao excluir cobrança', 'error');
+                    btnExcluir.disabled = false;
+                    btnExcluir.innerHTML = '<i class="fas fa-trash"></i> Excluir Cobrança';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showToast('Erro ao excluir cobrança', 'error');
+                btnExcluir.disabled = false;
+                btnExcluir.innerHTML = '<i class="fas fa-trash"></i> Excluir Cobrança';
+            });
+    }
+
+    function showToast(message, type) {
+        // Criar toast element
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.minWidth = '300px';
+
+        toast.innerHTML = `
         <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
         ${message}
         <button type="button" class="close" data-dismiss="alert">
             <span>&times;</span>
         </button>
     `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 4 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-        }
-    }, 4000);
-}
+
+        document.body.appendChild(toast);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 4000);
+    }
 </script>
 {% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Cobranças Asaas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-credit-card"></i>
+                        Cobranças Asaas
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Nova Cobrança
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Filtros Simples -->
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="status">Status:</label>
+                                    <select name="status" id="status" class="form-control">
+                                        <option value="">Todos os status</option>
+                                        <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pendente</option>
+                                        <option value="RECEIVED" {% if status_filter == 'RECEIVED' %}selected{% endif %}>Recebido</option>
+                                        <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmado</option>
+                                        <option value="OVERDUE" {% if status_filter == 'OVERDUE' %}selected{% endif %}>Vencido</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Filtrar
+                                        </button>
+                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary">
+                                            <i class="fas fa-times"></i> Limpar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Tabela Simples -->
+                    {% if cobrancas %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Loja</th>
+                                        <th>Valor</th>
+                                        <th>Vencimento</th>
+                                        <th>Status</th>
+                                        <th>Criação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cobranca in cobrancas %}
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted">{{ cobranca.asaas_id|truncatechars:10 }}</small>
+                                            </td>
+                                            <td>
+                                                <strong>{{ cobranca.controle_financeiro.loja.nome|truncatechars:25 }}</strong><br>
+                                                <small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj }}</small>
+                                            </td>
+                                            <td>
+                                                <strong>R$ {{ cobranca.valor|floatformat:2 }}</strong>
+                                            </td>
+                                            <td>
+                                                {{ cobranca.data_vencimento|date:"d/m/Y" }}<br>
+                                                <small class="text-muted">
+                                                    {% if cobranca.dias_para_vencimento > 0 %}
+                                                        {{ cobranca.dias_para_vencimento }} dias
+                                                    {% elif cobranca.dias_para_vencimento == 0 %}
+                                                        Vence hoje
+                                                    {% else %}
+                                                        Vencido
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-
+                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
+                                                    {% elif cobranca.status == 'OVERDUE' %}danger
+                                                    {% elif cobranca.status == 'PENDING' %}warning
+                                                    {% else %}info{% endif %}">
+                                                    {{ cobranca.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {{ cobranca.data_criacao|date:"d/m/Y H:i" }}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' cobranca.id %}" 
+                                                       class="btn btn-sm btn-primary" 
+                                                       title="Visualizar">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    
+                                                    {% if cobranca.bank_slip_url %}
+                                                        <a href="{{ cobranca.bank_slip_url }}" 
+                                                           target="_blank" 
+                                                           class="btn btn-sm btn-info" 
+                                                           title="Baixar Boleto">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <h4><i class="fas fa-info-circle"></i> Nenhuma cobrança encontrada</h4>
+                            <p>Não há cobranças cadastradas no sistema ainda.</p>
+                            <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Criar Primeira Cobrança
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

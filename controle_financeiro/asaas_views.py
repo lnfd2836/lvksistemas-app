@@ -132,8 +132,36 @@ def visualizar_cobranca_asaas(request, cobranca_id):
                 else:
                     messages.success(request, "Status da cobrança atualizado com sucesso!")
             else:
-                messages.warning(request, "Não foi possível atualizar o status da cobrança.")
-                logger.warning(f"Dados não retornados para cobrança {cobranca.asaas_id}")
+                # Cobrança não encontrada no Asaas - pode ter sido removida
+                logger.warning(f"Cobrança {cobranca.asaas_id} não encontrada no Asaas - pode ter sido removida")
+                
+                # Verificar se retornou erro 404 (cobrança removida)
+                try:
+                    import requests
+                    response = requests.get(
+                        f"{asaas_service.base_url}/payments/{cobranca.asaas_id}",
+                        headers=asaas_service.headers,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 404:
+                        # Cobrança foi removida do Asaas
+                        messages.warning(request, 
+                            "⚠️ Esta cobrança foi removida do Asaas. "
+                            "Ela será marcada como cancelada no sistema."
+                        )
+                        cobranca.status = 'DELETED'
+                        cobranca.observacoes = f"Cobrança removida do Asaas em {timezone.now().strftime('%d/%m/%Y %H:%M')}"
+                        cobranca.save()
+                        
+                    elif response.status_code == 401:
+                        messages.error(request, "❌ Erro de autenticação com Asaas. Verifique a API Key.")
+                    else:
+                        messages.warning(request, f"⚠️ Erro ao consultar cobrança no Asaas: {response.status_code}")
+                        
+                except Exception as api_error:
+                    logger.error(f"Erro ao verificar cobrança no Asaas: {str(api_error)}")
+                    messages.warning(request, "⚠️ Não foi possível verificar o status da cobrança no Asaas.")
                 
         except Exception as e:
             logger.error(f"Erro ao atualizar cobrança {cobranca.asaas_id}: {str(e)}")
