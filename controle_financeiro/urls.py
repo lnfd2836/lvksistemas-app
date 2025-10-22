@@ -53,6 +53,7 @@ urlpatterns = [
         path('asaas/cobrancas/', asaas_views.listar_cobrancas_asaas, name='listar_cobrancas_asaas'),
         path('asaas/cobrancas/<uuid:cobranca_id>/', asaas_views.visualizar_cobranca_asaas, name='visualizar_cobranca_asaas'),
         path('asaas/webhook/', asaas_views.webhook_asaas, name='webhook_asaas'),
+        path('asaas/webhook-debug/', asaas_views.webhook_debug, name='webhook_debug'),
         path('asaas/webhook-test/', asaas_views.webhook_test, name='webhook_test'),
         path('asaas/callback/success/', asaas_views.callback_success_asaas, name='callback_success_asaas'),
         path('asaas/configurar/', asaas_views.configurar_asaas, name='configurar_asaas'),

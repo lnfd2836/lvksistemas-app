@@ -180,6 +180,23 @@ def listar_cobrancas_asaas(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def webhook_debug(request):
+    """
+    Endpoint de debug para webhook - sem processamento, apenas retorna OK
+    """
+    logger.info(f"=== WEBHOOK DEBUG ENDPOINT ===")
+    logger.info(f"Method: {request.method}")
+    logger.info(f"Path: {request.path}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    logger.info(f"User-Agent: {request.META.get('HTTP_USER_AGENT', 'N/A')}")
+    logger.info(f"Remote IP: {request.META.get('REMOTE_ADDR', 'N/A')}")
+    logger.info(f"Body length: {len(request.body)}")
+    
+    return HttpResponse("DEBUG OK", status=200)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def webhook_test(request):
     """
     Webhook de teste simples para debug
@@ -208,6 +225,15 @@ def webhook_asaas(request):
     Webhook para receber notificações do Asaas
     """
     try:
+        # Log detalhado da requisição para debug
+        logger.info(f"=== WEBHOOK ASAAS DEBUG ===")
+        logger.info(f"Method: {request.method}")
+        logger.info(f"Path: {request.path}")
+        logger.info(f"Headers: {dict(request.headers)}")
+        logger.info(f"User-Agent: {request.META.get('HTTP_USER_AGENT', 'N/A')}")
+        logger.info(f"Remote IP: {request.META.get('REMOTE_ADDR', 'N/A')}")
+        logger.info(f"Body length: {len(request.body)}")
+        
         # Verificar se é uma requisição válida do Asaas
         # (Implementar validação de assinatura se necessário)
         
