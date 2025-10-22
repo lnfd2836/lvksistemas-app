@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.urls import reverse, resolve, Resolver404
 from django.http import HttpResponse
+from django.conf import settings
 from usuarios.services import SessionService, RedirectLoopPreventionService, AuthenticationService
 import logging
 
@@ -110,8 +111,8 @@ class ImprovedAuthenticationMiddleware:
         Returns:
             True se deve ser excluído da verificação
         """
-        # Exclusão específica para webhooks do Asaas
-        if '/asaas/webhook' in path:
+        # Usa a função utilitária global para verificar webhooks
+        if hasattr(settings, 'is_webhook_path') and settings.is_webhook_path(path):
             return True
             
         return any(path.startswith(excluded_path) for excluded_path in self.excluded_paths)

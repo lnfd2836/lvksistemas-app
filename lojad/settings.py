@@ -62,6 +62,19 @@ MIDDLEWARE = [
     'controle_financeiro.middleware.ControleFinanceiroMiddleware',
 ]
 
+# URLs que devem ser excluídas de todos os middlewares de autenticação
+WEBHOOK_EXCLUDED_PATHS = [
+    '/financeiro/asaas/webhook/',
+    '/financeiro/asaas/webhook-debug/',
+    '/financeiro/asaas/webhook-test/',
+]
+
+def is_webhook_path(path):
+    """
+    Verifica se o caminho é um webhook que deve ser excluído de middlewares de autenticação
+    """
+    return any(path.startswith(excluded_path) for excluded_path in WEBHOOK_EXCLUDED_PATHS) or '/asaas/webhook' in path
+
 ROOT_URLCONF = 'lojad.urls'
 
 TEMPLATES = [
