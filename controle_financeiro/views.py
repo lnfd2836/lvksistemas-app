@@ -917,7 +917,7 @@ def imprimir_boleto_pdf(request, boleto_id):
             if cobranca_asaas and cobranca_asaas.bank_slip_url:
                 return redirect(cobranca_asaas.bank_slip_url)
             
-            # Se é um boleto do Asaas mas não tem cobrança salva, tentar extrair ID das observações
+            # Se é um boleto do Asaas mas não tem cobrança salva
             if boleto.configuracao.codigo_banco == "461":  # Asaas
                 # Verificar se há ID do Asaas nas observações ou outros campos
                 observacoes = getattr(boleto, 'observacoes', '') or ''
@@ -931,6 +931,15 @@ def imprimir_boleto_pdf(request, boleto_id):
                     pdf_url = f"https://www.asaas.com/b/pdf/{asaas_id}"
                     logger.info(f"ID Asaas extraído das observações: {asaas_id}")
                     return redirect(pdf_url)
+                
+                # Se não encontrou ID nas observações, mostrar mensagem explicativa
+                messages.warning(request, 
+                    'Este boleto foi criado localmente. Para usar o PDF oficial do Asaas, '
+                    'gere uma nova cobrança através do sistema de Cobranças Asaas.'
+                )
+                
+                # Redirecionar para a página de geração de cobranças do Asaas
+                return redirect('controle_financeiro:gerar_cobranca_asaas', controle_id=boleto.controle_financeiro.id)
                 
         except Exception as e:
             # Log do erro mas continuar com PDF local
