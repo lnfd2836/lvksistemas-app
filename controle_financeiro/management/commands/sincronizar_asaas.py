@@ -19,10 +19,19 @@ class Command(BaseCommand):
             # Buscar todas as cobranças no Asaas
             self.stdout.write("Buscando cobranças no Asaas...")
             
-            response = asaas_service._fazer_requisicao('GET', '/payments', params={
-                'limit': 100,
-                'offset': 0
-            })
+            import requests
+            response = requests.get(
+                f"{asaas_service.base_url}/payments",
+                headers=asaas_service.headers,
+                params={'limit': 100, 'offset': 0},
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                response = response.json()
+            else:
+                self.stdout.write(f"Erro na API: {response.status_code} - {response.text}")
+                return
             
             if response and response.get('data'):
                 cobrancas_asaas = response['data']
