@@ -51,6 +51,23 @@ class AsaasService:
             'Accept': 'application/json'
         }
         
+        # Formato específico para API Keys de produção ($aact_prod_...)
+        self.headers_prod = {
+            'access_token': self.api_key,
+            'Content-Type': 'application/json',
+            'User-Agent': 'Java/1.8.0_282',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+        }
+        
+        # Formato Authorization para produção
+        self.headers_prod_auth = {
+            'Authorization': self.api_key,  # Para produção, usar a chave completa
+            'Content-Type': 'application/json',
+            'User-Agent': 'Java/1.8.0_282',
+            'Accept': 'application/json'
+        }
+        
         # Dados da conta Asaas (dados reais da conta)
         self.conta_dados = {
             'banco': '461',  # Asaas I.P S.A
@@ -69,46 +86,85 @@ class AsaasService:
             raise ValueError("ASAAS_API_KEY não configurada nas settings")
         
         # Lista de headers para testar (ordem de prioridade)
-        headers_to_test = [
-            ("access_token padrão", self.headers),
-            ("Authorization Bearer", self.headers_alt),
-            ("access_token com Accept", self.headers_alt2)
+        # Para produção, testar formatos específicos primeiro
+        if self.api_key and self.api_key.startswith('$aact_'):
+            headers_to_test = [
+                ("Authorization produção", self.headers_prod_auth),
+                ("access_token produção", self.headers_prod),
+                ("access_token padrão", self.headers),
+                ("Authorization Bearer", self.headers_alt),
+                ("access_token com Accept", self.headers_alt2)
+            ]
+        else:
+            headers_to_test = [
+                ("access_token padrão", self.headers),
+                ("Authorization Bearer", self.headers_alt),
+                ("access_token com Accept", self.headers_alt2),
+                ("Authorization produção", self.headers_prod_auth),
+                ("access_token produção", self.headers_prod)
+            ]
+        
+        # Lista de endpoints para testar (caso myAccount falhe)
+        endpoints_to_test = [
+            "/myAccount",
+            "/customers?limit=1",
+            "/payments?limit=1"
         ]
         
         for header_name, headers in headers_to_test:
-            try:
-                logger.info(f"Testando formato de header: {header_name}")
-                
-                response = requests.get(
-                    f"{self.base_url}/myAccount",
-                    headers=headers,
-                    timeout=60,  # Timeout aumentado para 60s
-                    verify=True  # Verificar SSL
-                )
-                
-                logger.info(f"Status code: {response.status_code}")
-                
-                if response.status_code == 200:
-                    account_data = response.json()
-                    logger.info(f"✅ Conexão com Asaas estabelecida ({header_name}). Conta: {account_data.get('name', 'N/A')}")
-                    # Usar headers que funcionaram
-                    self.headers = headers
-                    return True
-                elif response.status_code == 401:
-                    logger.warning(f"❌ API Key inválida ou expirada ({header_name})")
-                elif response.status_code == 403:
-                    logger.warning(f"❌ Acesso negado - possível bloqueio de firewall ({header_name})")
-                else:
-                    logger.warning(f"❌ Erro {response.status_code} ({header_name}): {response.text}")
+            for endpoint in endpoints_to_test:
+                try:
+                    logger.info(f"Testando {header_name} no endpoint {endpoint}")
                     
-            except requests.exceptions.Timeout:
-                logger.error(f"⏰ Timeout na conexão com Asaas ({header_name})")
-            except requests.exceptions.ConnectionError:
-                logger.error(f"🔌 Erro de conexão com Asaas ({header_name})")
-            except Exception as e:
-                logger.error(f"❌ Erro inesperado ({header_name}): {str(e)}")
+                    response = requests.get(
+                        f"{self.base_url}{endpoint}",
+                        headers=headers,
+                        timeout=90,  # Timeout aumentado para 90s
+                        verify=True,  # Verificar SSL
+                        allow_redirects=True
+                    )
+                    
+                    logger.info(f"Status code: {response.status_code}")
+                    logger.info(f"Response headers: {dict(response.headers)}")
+                    
+                    if response.status_code == 200:
+                        response_data = response.json()
+                        logger.info(f"✅ Conexão com Asaas estabelecida ({header_name}) no endpoint {endpoint}")
+                        
+                        if endpoint == "/myAccount":
+                            logger.info(f"Conta: {response_data.get('name', 'N/A')}")
+                        else:
+                            logger.info(f"Resposta válida recebida: {len(str(response_data))} caracteres")
+                        
+                        # Usar headers que funcionaram
+                        self.headers = headers
+                        return True
+                        
+                    elif response.status_code == 401:
+                        logger.warning(f"❌ API Key inválida ou expirada ({header_name}) - {endpoint}")
+                        break  # Não testar outros endpoints com essa API key
+                        
+                    elif response.status_code == 403:
+                        logger.warning(f"❌ Acesso negado ({header_name}) - {endpoint}: {response.text}")
+                        # Continuar testando outros endpoints
+                        
+                    elif response.status_code == 404:
+                        logger.warning(f"⚠️ Endpoint não encontrado ({header_name}) - {endpoint}")
+                        # Continuar testando outros endpoints
+                        
+                    else:
+                        logger.warning(f"❌ Erro {response.status_code} ({header_name}) - {endpoint}: {response.text}")
+                        
+                except requests.exceptions.Timeout:
+                    logger.error(f"⏰ Timeout na conexão com Asaas ({header_name}) - {endpoint}")
+                except requests.exceptions.ConnectionError as e:
+                    logger.error(f"🔌 Erro de conexão com Asaas ({header_name}) - {endpoint}: {str(e)}")
+                except requests.exceptions.SSLError as e:
+                    logger.error(f"🔒 Erro SSL ({header_name}) - {endpoint}: {str(e)}")
+                except Exception as e:
+                    logger.error(f"❌ Erro inesperado ({header_name}) - {endpoint}: {str(e)}")
         
-        logger.error("❌ Todos os formatos de header falharam")
+        logger.error("❌ Todos os formatos de header e endpoints falharam")
         return False
     
     def criar_cliente(self, controle_financeiro):
@@ -156,7 +212,7 @@ class AsaasService:
                     f"{self.base_url}/customers/{cliente_existente['id']}",
                     headers=self.headers,
                     json=cliente_data,
-                    timeout=30
+                    timeout=60
                 )
                 
                 if response.status_code == 200:
@@ -171,7 +227,7 @@ class AsaasService:
                     f"{self.base_url}/customers",
                     headers=self.headers,
                     json=cliente_data,
-                    timeout=30
+                    timeout=60
                 )
                 
                 if response.status_code == 200:
@@ -260,7 +316,7 @@ class AsaasService:
                 f"{self.base_url}/payments",
                 headers=self.headers,
                 json=cobranca_data,
-                timeout=30
+                timeout=60
             )
             
             if response.status_code == 200:
@@ -310,7 +366,7 @@ class AsaasService:
             response = requests.get(
                 f"{self.base_url}/payments/{payment_id}/pixQrCode",
                 headers=self.headers,
-                timeout=30
+                timeout=60
             )
             
             if response.status_code == 200:
@@ -339,7 +395,7 @@ class AsaasService:
             response = requests.get(
                 f"{self.base_url}/payments/{payment_id}",
                 headers=self.headers,
-                timeout=30
+                timeout=60
             )
             
             if response.status_code == 200:
@@ -482,7 +538,7 @@ class AsaasService:
                 f"{self.base_url}/customers",
                 headers=self.headers,
                 params={'externalReference': external_reference},
-                timeout=30
+                timeout=60
             )
             
             if response.status_code == 200:

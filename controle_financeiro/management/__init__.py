@@ -1,1 +1,1 @@
-# Management commands for controle_financeiro
+# Management commands package

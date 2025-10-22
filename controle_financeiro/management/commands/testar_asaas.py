@@ -1,151 +1,115 @@
 """
-Comando para testar a integração com a API do Asaas
+Comando Django para testar a integração com Asaas
 """
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from controle_financeiro.asaas_service import AsaasService
-from controle_financeiro.models import ControleFinanceiro
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Testa a integração com a API do Asaas'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--controle-id',
-            type=int,
-            help='ID do controle financeiro para testar geração de cobrança'
-        )
-        parser.add_argument(
             '--apenas-conexao',
             action='store_true',
-            help='Testa apenas a conexão com a API'
+            help='Testa apenas a conexão com a API',
+        )
+        parser.add_argument(
+            '--detalhado',
+            action='store_true',
+            help='Mostra informações detalhadas',
         )
 
     def handle(self, *args, **options):
-        self.stdout.write(
-            self.style.SUCCESS('=== Teste da Integração Asaas ===\n')
-        )
-
-        # Verificar configurações
-        self.stdout.write('1. Verificando configurações...')
+        self.stdout.write("=" * 60)
+        self.stdout.write("🔍 TESTE DA INTEGRAÇÃO ASAAS")
+        self.stdout.write("=" * 60)
         
+        # Mostrar configurações
         api_key = getattr(settings, 'ASAAS_API_KEY', None)
         environment = getattr(settings, 'ASAAS_ENVIRONMENT', 'sandbox')
         
-        if not api_key:
-            self.stdout.write(
-                self.style.ERROR('❌ ASAAS_API_KEY não configurada')
-            )
-            return
+        self.stdout.write(f"📋 Configurações:")
+        self.stdout.write(f"   Environment: {environment}")
+        self.stdout.write(f"   API Key: {'✅ Configurada' if api_key else '❌ Não configurada'}")
         
-        self.stdout.write(
-            self.style.SUCCESS(f'✅ API Key configurada (ambiente: {environment})')
-        )
-
-        # Testar conexão
-        self.stdout.write('\n2. Testando conexão com a API...')
+        if options['detalhado'] and api_key:
+            # Mostrar apenas os primeiros e últimos caracteres da API Key
+            masked_key = f"{api_key[:10]}...{api_key[-10:]}" if len(api_key) > 20 else api_key
+            self.stdout.write(f"   API Key (mascarada): {masked_key}")
+        
+        self.stdout.write("")
+        
+        if not api_key:
+            self.stdout.write(self.style.ERROR("❌ ASAAS_API_KEY não configurada!"))
+            return
         
         try:
-            asaas_service = AsaasService()
+            # Instanciar serviço
+            service = AsaasService()
+            self.stdout.write("✅ AsaasService instanciado com sucesso")
             
-            if asaas_service.validar_configuracao():
-                self.stdout.write(
-                    self.style.SUCCESS('✅ Conexão estabelecida com sucesso!')
-                )
-                self.stdout.write(f'   URL Base: {asaas_service.base_url}')
-                self.stdout.write(f'   Ambiente: {asaas_service.environment}')
+            # Testar validação
+            self.stdout.write("🔍 Testando validação de configuração...")
+            
+            if service.validar_configuracao():
+                self.stdout.write(self.style.SUCCESS("✅ CONFIGURAÇÃO VÁLIDA!"))
+                self.stdout.write("🎉 A API do Asaas está funcionando corretamente")
+                
+                if not options['apenas_conexao']:
+                    self.stdout.write("\n📊 Testando funcionalidades adicionais...")
+                    
+                    # Testar busca de clientes (sem criar)
+                    try:
+                        import requests
+                        response = requests.get(
+                            f"{service.base_url}/customers?limit=1",
+                            headers=service.headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            data = response.json()
+                            total_clientes = data.get('totalCount', 0)
+                            self.stdout.write(f"👥 Total de clientes: {total_clientes}")
+                        
+                    except Exception as e:
+                        self.stdout.write(f"⚠️ Erro ao buscar clientes: {str(e)}")
+                    
+                    # Testar busca de pagamentos (sem criar)
+                    try:
+                        response = requests.get(
+                            f"{service.base_url}/payments?limit=1",
+                            headers=service.headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            data = response.json()
+                            total_pagamentos = data.get('totalCount', 0)
+                            self.stdout.write(f"💰 Total de pagamentos: {total_pagamentos}")
+                        
+                    except Exception as e:
+                        self.stdout.write(f"⚠️ Erro ao buscar pagamentos: {str(e)}")
+                
             else:
-                self.stdout.write(
-                    self.style.ERROR('❌ Falha na conexão com a API')
-                )
-                return
+                self.stdout.write(self.style.ERROR("❌ CONFIGURAÇÃO INVÁLIDA!"))
+                self.stdout.write("🔧 Verifique:")
+                self.stdout.write("   - API Key do Asaas")
+                self.stdout.write("   - Configurações de rede/firewall")
+                self.stdout.write("   - Status do serviço Asaas")
                 
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'❌ Erro na conexão: {str(e)}')
-            )
-            return
-
-        # Se apenas teste de conexão, parar aqui
-        if options['apenas_conexao']:
-            self.stdout.write(
-                self.style.SUCCESS('\n✅ Teste de conexão concluído com sucesso!')
-            )
-            return
-
-        # Testar geração de cobrança
-        controle_id = options.get('controle_id')
-        
-        if controle_id:
-            self.stdout.write(f'\n3. Testando geração de cobrança (ID: {controle_id})...')
+            self.stdout.write(self.style.ERROR(f"❌ Erro inesperado: {str(e)}"))
             
-            try:
-                controle = ControleFinanceiro.objects.get(id=controle_id)
-                self.stdout.write(f'   Loja: {controle.loja.nome}')
-                self.stdout.write(f'   Valor: R$ {controle.valor_mensal}')
-                
-                # Gerar cobrança de teste
-                resultado = asaas_service.gerar_cobranca_com_pix(
-                    controle,
-                    dias_vencimento=30,
-                    descricao=f'Teste de cobrança - {controle.loja.nome}'
-                )
-                
-                if resultado.get('success'):
-                    cobranca = resultado['cobranca']
-                    pix = resultado.get('pix', {})
-                    
-                    self.stdout.write(
-                        self.style.SUCCESS('✅ Cobrança gerada com sucesso!')
-                    )
-                    self.stdout.write(f'   ID Asaas: {cobranca["id"]}')
-                    self.stdout.write(f'   Status: {cobranca["status"]}')
-                    self.stdout.write(f'   Valor: R$ {cobranca["value"]}')
-                    self.stdout.write(f'   Vencimento: {cobranca["dueDate"]}')
-                    
-                    if cobranca.get('invoiceUrl'):
-                        self.stdout.write(f'   URL Boleto: {cobranca["invoiceUrl"]}')
-                    
-                    if pix.get('qrCode'):
-                        self.stdout.write('   ✅ PIX QR Code gerado')
-                    
-                    if pix.get('payload'):
-                        self.stdout.write('   ✅ PIX Copia e Cola gerado')
-                        
-                else:
-                    self.stdout.write(
-                        self.style.ERROR(f'❌ Erro na geração: {resultado.get("error")}')
-                    )
-                    
-            except ControleFinanceiro.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(f'❌ Controle financeiro ID {controle_id} não encontrado')
-                )
-                return
-                
-            except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(f'❌ Erro na geração de cobrança: {str(e)}')
-                )
-                return
-        else:
-            self.stdout.write('\n3. Para testar geração de cobrança, use --controle-id=ID')
-
-        # Informações da conta
-        self.stdout.write('\n4. Dados da conta Asaas configurada:')
-        conta_dados = asaas_service.conta_dados
-        for key, value in conta_dados.items():
-            self.stdout.write(f'   {key.replace("_", " ").title()}: {value}')
-
-        self.stdout.write(
-            self.style.SUCCESS('\n✅ Teste concluído com sucesso!')
-        )
+            if options['detalhado']:
+                import traceback
+                self.stdout.write(traceback.format_exc())
         
-        # Dicas
-        self.stdout.write('\n📋 Próximos passos:')
-        self.stdout.write('   1. Configure o webhook no painel do Asaas')
-        self.stdout.write(f'   2. URL do webhook: {settings.SITE_URL}/financeiro/asaas/webhook/')
-        self.stdout.write('   3. Eventos recomendados: PAYMENT_RECEIVED, PAYMENT_OVERDUE')
-        self.stdout.write('   4. Teste pagamentos no ambiente sandbox')
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("🏁 Teste finalizado")
+        self.stdout.write("=" * 60)
