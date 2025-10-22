@@ -45,8 +45,8 @@ class LojaMiddleware:
         
         # Se o usuário não está autenticado, redireciona para login
         if not request.user.is_authenticated:
-            # Não redireciona se está tentando fazer login
-            if request.path == '/loja/login/':
+            # Não redireciona se está tentando fazer login ou se é webhook do Asaas
+            if request.path == '/loja/login/' or '/asaas/webhook' in request.path:
                 return self.get_response(request)
             return redirect('login')
         
