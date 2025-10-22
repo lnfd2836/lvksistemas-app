@@ -195,12 +195,20 @@
                     <p class="mb-2">
                         <strong>Boletos com PIX:</strong> Configure sua integração com Asaas para gerar boletos válidos com PIX integrado.
                     </p>
-                    <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-success btn-sm">
-                        <i class="fas fa-cog"></i> Configurar Asaas
-                    </a>
-                    <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-list"></i> Ver Configurações
-                    </a>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-credit-card"></i> Ver Cobranças Asaas
+                        </a>
+                        <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Nova Cobrança
+                        </a>
+                        <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-cog"></i> Configurar
+                        </a>
+                        <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list"></i> Configurações
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -296,6 +304,62 @@
                         <p class="text-muted">Nenhum boleto gerado</p>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cobranças Asaas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-credit-card"></i> Cobranças Asaas (Boletos com PIX)
+                </h6>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Nova Cobrança
+                    </a>
+                    <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-list"></i> Ver Todas
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="fas fa-barcode fa-2x text-primary mb-2"></i>
+                            <h6 class="mb-1">Boleto Bancário</h6>
+                            <small class="text-muted">Pagamento tradicional em bancos e lotéricas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="fas fa-qrcode fa-2x text-success mb-2"></i>
+                            <h6 class="mb-1">PIX Instantâneo</h6>
+                            <small class="text-muted">Pagamento em segundos, 24h por dia</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="fas fa-sync-alt fa-2x text-info mb-2"></i>
+                            <h6 class="mb-1">Automático</h6>
+                            <small class="text-muted">Geração e controle automatizados</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3 mb-0">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle fa-lg me-3"></i>
+                        <div>
+                            <strong>Sistema Integrado Asaas</strong><br>
+                            <small>Gere boletos com PIX integrado, receba notificações automáticas de pagamento e tenha controle total das suas cobranças.</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
