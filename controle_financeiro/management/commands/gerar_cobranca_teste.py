@@ -18,7 +18,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--loja-id',
-            type=int,
+            type=str,
             help='ID da loja para gerar cobrança (opcional)'
         )
         parser.add_argument(
