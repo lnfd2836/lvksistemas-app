@@ -29,6 +29,10 @@ class Command(BaseCommand):
                 
                 self.stdout.write(f"Bank Slip URL: {cobranca.bank_slip_url}")
                 self.stdout.write(f"PIX QR Code: {'Sim' if cobranca.pix_qr_code else 'Não'}")
+                if cobranca.pix_copy_paste:
+                    self.stdout.write(f"PIX Copia e Cola: {cobranca.pix_copy_paste[:50]}...")
+                if cobranca.pix_expires_date:
+                    self.stdout.write(f"PIX Expira em: {cobranca.pix_expires_date}")
                 self.stdout.write("-" * 50)
         else:
             self.stdout.write("Nenhuma cobrança encontrada no banco de dados")
