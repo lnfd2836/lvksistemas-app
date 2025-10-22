@@ -24,7 +24,21 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-this-in-productio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver', 'lvksistemas.herokuapp.com', 'lvksistemas-app-4f6fa281e217.herokuapp.com', 'lvksistemas.com.br', 'www.lvksistemas.com.br', 'crmvendas.net.br', 'www.crmvendas.net.br', 'loja-conveniencia-pdv-7fed430df60a.herokuapp.com']
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '0.0.0.0', 
+    'testserver', 
+    'lvksistemas.herokuapp.com', 
+    'lvksistemas-app-4f6fa281e217.herokuapp.com',
+    'lvksistemas.com.br', 
+    'www.lvksistemas.com.br', 
+    'crmvendas.net.br', 
+    'www.crmvendas.net.br', 
+    'loja-conveniencia-pdv-7fed430df60a.herokuapp.com',
+    '.herokuapp.com',  # Permite todos os subdomínios do Heroku
+    '.asaas.com'  # Permite webhooks do Asaas
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -205,11 +219,7 @@ if 'DYNO' in os.environ:
     X_FRAME_OPTIONS = 'DENY'
     
     # Configurações específicas para webhooks no Heroku
-    ALLOWED_HOSTS.extend([
-        'lvksistemas-app-4f6fa281e217.herokuapp.com',
-        '.herokuapp.com',
-        '.asaas.com'
-    ])
+    # ALLOWED_HOSTS já configurado acima
     
     # Forçar HTTPS para URLs do Asaas em produção
     if ASAAS_ENVIRONMENT == 'production':
