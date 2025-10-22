@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 from dashboard.views import redirect_to_appropriate_dashboard
 from dashboard.loja_login import loja_login
 from dashboard.simple_login import simple_login
+from controle_financeiro.webhook_raw import webhook_asaas_raw
 import json
 import logging
 
@@ -76,6 +77,9 @@ def webhook_asaas_bypass(request):
         return HttpResponse("Internal Error", status=500)
 
 urlpatterns = [
+    # WEBHOOK RAW - PRIMEIRA URL (completamente independente)
+    path('asaas-webhook-raw/', webhook_asaas_raw, name='webhook_asaas_raw'),
+    
     # WEBHOOK TEST SIMPLE - PRIMEIRA URL (teste básico)
     path('webhook-test-simple/', webhook_test_simple, name='webhook_test_simple'),
     
