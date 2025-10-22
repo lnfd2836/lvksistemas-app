@@ -202,42 +202,71 @@ def listar_cobrancas_asaas(request):
     """
     Lista todas as cobranças do Asaas
     """
-    if request.user.is_superuser:
-        # Super admin vê todas as cobranças
-        cobrancas = CobrancaAsaas.objects.all()
-    else:
-        # Admin de loja vê apenas suas cobranças
-        cobrancas = CobrancaAsaas.objects.filter(
-            controle_financeiro__loja__admin=request.user
-        )
-    
-    # Filtros
-    status_filter = request.GET.get('status')
-    if status_filter:
-        cobrancas = cobrancas.filter(status=status_filter)
-    
-    loja_filter = request.GET.get('loja')
-    if loja_filter and request.user.is_superuser:
-        cobrancas = cobrancas.filter(controle_financeiro__loja__id=loja_filter)
-    
-    # Ordenação
-    cobrancas = cobrancas.order_by('-data_criacao')
-    
-    # Paginação (opcional)
-    from django.core.paginator import Paginator
-    paginator = Paginator(cobrancas, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'cobrancas': page_obj.object_list,
-        'status_choices': CobrancaAsaas.STATUS_CHOICES,
-        'status_filter': status_filter,
-        'loja_filter': loja_filter,
-    }
-    
-    return render(request, 'controle_financeiro/listar_cobrancas_asaas.html', context)
+    try:
+        # Debug: Log do usuário
+        logger.info(f"Usuário acessando listagem: {request.user.username} (superuser: {request.user.is_superuser})")
+        
+        if request.user.is_superuser:
+            # Super admin vê todas as cobranças
+            cobrancas = CobrancaAsaas.objects.select_related('controle_financeiro__loja').all()
+        else:
+            # Admin de loja vê apenas suas cobranças
+            cobrancas = CobrancaAsaas.objects.select_related('controle_financeiro__loja').filter(
+                controle_financeiro__loja__admin=request.user
+            )
+        
+        # Debug: Log da quantidade de cobranças
+        logger.info(f"Total de cobranças encontradas: {cobrancas.count()}")
+        
+        # Filtros
+        status_filter = request.GET.get('status')
+        if status_filter:
+            cobrancas = cobrancas.filter(status=status_filter)
+            logger.info(f"Filtro de status aplicado: {status_filter}")
+        
+        loja_filter = request.GET.get('loja')
+        if loja_filter and request.user.is_superuser:
+            cobrancas = cobrancas.filter(controle_financeiro__loja__id=loja_filter)
+            logger.info(f"Filtro de loja aplicado: {loja_filter}")
+        
+        # Ordenação
+        cobrancas = cobrancas.order_by('-data_criacao')
+        
+        # Paginação
+        from django.core.paginator import Paginator
+        paginator = Paginator(cobrancas, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Debug: Log das cobranças na página atual
+        logger.info(f"Cobranças na página atual: {len(page_obj.object_list)}")
+        
+        context = {
+            'page_obj': page_obj,
+            'cobrancas': page_obj.object_list,
+            'status_filter': status_filter,
+            'loja_filter': loja_filter,
+        }
+        
+        return render(request, 'controle_financeiro/listar_cobrancas_asaas_simple.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro na listagem de cobranças: {str(e)}")
+        logger.error(f"Tipo do erro: {type(e).__name__}")
+        
+        # Em caso de erro, mostrar página com erro amigável
+        from django.contrib import messages
+        messages.error(request, f"Erro ao carregar cobranças: {str(e)}")
+        
+        # Contexto mínimo para evitar erro no template
+        context = {
+            'page_obj': None,
+            'cobrancas': [],
+            'status_filter': None,
+            'loja_filter': None,
+        }
+        
+        return render(request, 'controle_financeiro/listar_cobrancas_asaas_simple.html', context)
 
 
 @csrf_exempt

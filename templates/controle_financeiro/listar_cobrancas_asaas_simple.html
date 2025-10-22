@@ -16,6 +16,14 @@
                         <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-success btn-sm">
                             <i class="fas fa-plus"></i> Nova Cobrança
                         </a>
+                        {% if user.is_superuser %}
+                            <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-cog"></i> Configurar
+                            </a>
+                            <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-vial"></i> Testar
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -52,13 +60,24 @@
                         </div>
                     </form>
 
+                    <!-- Informações de Debug -->
+                    {% if user.is_superuser %}
+                    <div class="alert alert-info">
+                        <strong>Debug Info:</strong> 
+                        Total de cobranças encontradas: {{ cobrancas|length }}
+                        {% if page_obj %}
+                            | Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
                     <!-- Tabela Simples -->
                     {% if cobrancas %}
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>ID Asaas</th>
                                         <th>Loja</th>
                                         <th>Valor</th>
                                         <th>Vencimento</th>
@@ -71,34 +90,48 @@
                                     {% for cobranca in cobrancas %}
                                         <tr>
                                             <td>
-                                                <small class="text-muted">{{ cobranca.asaas_id|truncatechars:10 }}</small>
+                                                <code>{{ cobranca.asaas_id|truncatechars:15 }}</code>
                                             </td>
                                             <td>
-                                                <strong>{{ cobranca.controle_financeiro.loja.nome|truncatechars:25 }}</strong><br>
-                                                <small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj }}</small>
+                                                {% if cobranca.controle_financeiro and cobranca.controle_financeiro.loja %}
+                                                    <strong>{{ cobranca.controle_financeiro.loja.nome|truncatechars:30 }}</strong><br>
+                                                    <small class="text-muted">{{ cobranca.controle_financeiro.loja.cnpj|default:"N/A" }}</small>
+                                                {% else %}
+                                                    <span class="text-danger">Loja não encontrada</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <strong>R$ {{ cobranca.valor|floatformat:2 }}</strong>
+                                                <strong class="text-success">R$ {{ cobranca.valor|floatformat:2 }}</strong>
                                             </td>
                                             <td>
                                                 {{ cobranca.data_vencimento|date:"d/m/Y" }}<br>
                                                 <small class="text-muted">
                                                     {% if cobranca.dias_para_vencimento > 0 %}
-                                                        {{ cobranca.dias_para_vencimento }} dias
+                                                        <span class="text-success">{{ cobranca.dias_para_vencimento }} dias</span>
                                                     {% elif cobranca.dias_para_vencimento == 0 %}
-                                                        Vence hoje
+                                                        <span class="text-warning">Vence hoje</span>
                                                     {% else %}
-                                                        Vencido
+                                                        <span class="text-danger">Vencido</span>
                                                     {% endif %}
                                                 </small>
                                             </td>
                                             <td>
-                                                <span class="badge badge-
-                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}success
-                                                    {% elif cobranca.status == 'OVERDUE' %}danger
-                                                    {% elif cobranca.status == 'PENDING' %}warning
-                                                    {% else %}info{% endif %}">
-                                                    {{ cobranca.get_status_display }}
+                                                <span class="badge 
+                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}badge-success
+                                                    {% elif cobranca.status == 'OVERDUE' %}badge-danger
+                                                    {% elif cobranca.status == 'PENDING' %}badge-warning
+                                                    {% else %}badge-info{% endif %}">
+                                                    {% if cobranca.status == 'PENDING' %}
+                                                        Pendente
+                                                    {% elif cobranca.status == 'RECEIVED' %}
+                                                        Recebido
+                                                    {% elif cobranca.status == 'CONFIRMED' %}
+                                                        Confirmado
+                                                    {% elif cobranca.status == 'OVERDUE' %}
+                                                        Vencido
+                                                    {% else %}
+                                                        {{ cobranca.status }}
+                                                    {% endif %}
                                                 </span>
                                             </td>
                                             <td>
@@ -119,6 +152,20 @@
                                                            title="Baixar Boleto">
                                                             <i class="fas fa-download"></i>
                                                         </a>
+                                                    {% else %}
+                                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                                title="PDF não disponível" 
+                                                                disabled>
+                                                            <i class="fas fa-clock"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    
+                                                    {% if cobranca.pix_qr_code %}
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-success" 
+                                                                title="PIX disponível">
+                                                            <i class="fas fa-qrcode"></i>
+                                                        </button>
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -127,6 +174,37 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Paginação -->
+                        {% if page_obj and page_obj.has_other_pages %}
+                            <nav aria-label="Navegação de páginas" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">Primeira</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
                     {% else %}
                         <div class="alert alert-info text-center">
                             <h4><i class="fas fa-info-circle"></i> Nenhuma cobrança encontrada</h4>
