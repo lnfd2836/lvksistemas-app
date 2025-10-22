@@ -997,10 +997,6 @@ def pdf_asaas_direto(request, asaas_id):
     logger.info(f"Redirecionamento direto para PDF Asaas: {asaas_id} por usuário {request.user.username}")
     
     return redirect(pdf_url)
-            
-    except Exception as e:
-        messages.error(request, f'Erro ao acessar PDF: {str(e)}')
-        return redirect('controle_financeiro:listar_cobrancas_asaas')
 
 
 
