@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'controle_financeiro.webhook_middleware.WebhookMiddleware',  # Intercepta webhooks antes de tudo
     'django.middleware.security.SecurityMiddleware',
     'dashboard.middleware.error_capture.ErrorCaptureMiddleware',  # Captura de erros deve ser primeiro
     'dashboard.middleware.middleware_profiler.MiddlewareProfiler',  # Profiling de middleware

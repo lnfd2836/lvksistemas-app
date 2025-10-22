@@ -60,9 +60,10 @@ class ImprovedAuthenticationMiddleware:
                 logger.info(f"Path: {request.path}")
                 logger.info(f"Excluded paths: {self.excluded_paths}")
                 logger.info(f"Is excluded: {self.is_excluded_path(request.path)}")
+                logger.info(f"Is webhook: {getattr(request, 'is_webhook', False)}")
             
-            # Verifica se a URL atual está nas exceções
-            if self.is_excluded_path(request.path):
+            # Verifica se é um webhook ou se a URL atual está nas exceções
+            if getattr(request, 'is_webhook', False) or self.is_excluded_path(request.path):
                 return self.get_response(request)
             
             # Detecta loops de redirecionamento antes de processar
