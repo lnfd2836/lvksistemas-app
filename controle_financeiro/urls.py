@@ -53,7 +53,9 @@ urlpatterns = [
         # Integração Asaas
         path('asaas/gerar/<int:controle_id>/', asaas_views.gerar_cobranca_asaas, name='gerar_cobranca_asaas'),
         path('asaas/cobrancas/', asaas_views.listar_cobrancas_asaas, name='listar_cobrancas_asaas'),
+        path('asaas/cobrancas/criar/', asaas_views.criar_cobranca_asaas, name='criar_cobranca_asaas'),
         path('asaas/cobrancas/<uuid:cobranca_id>/', asaas_views.visualizar_cobranca_asaas, name='visualizar_cobranca_asaas'),
+        path('asaas/cobrancas/<uuid:cobranca_id>/excluir/', asaas_views.excluir_cobranca_asaas, name='excluir_cobranca_asaas'),
         path('asaas/webhook/', asaas_views.webhook_asaas, name='webhook_asaas'),
         path('asaas/webhook-debug/', asaas_views.webhook_debug, name='webhook_debug'),
         path('asaas/webhook-test/', asaas_views.webhook_test, name='webhook_test'),

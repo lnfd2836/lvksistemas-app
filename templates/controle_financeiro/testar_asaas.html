@@ -35,9 +35,9 @@
                                     <span class="info-box-text">Ambiente</span>
                                     <span class="info-box-number">
                                         {% if 'production' in settings.ASAAS_ENVIRONMENT %}
-                                            <span class="badge badge-success">Produção</span>
+                                        <span class="badge badge-success">Produção</span>
                                         {% else %}
-                                            <span class="badge badge-warning">Sandbox</span>
+                                        <span class="badge badge-warning">Sandbox</span>
                                         {% endif %}
                                     </span>
                                 </div>
@@ -52,9 +52,9 @@
                                     <span class="info-box-text">API Key</span>
                                     <span class="info-box-number">
                                         {% if settings.ASAAS_API_KEY %}
-                                            <span class="badge badge-success">Configurada</span>
+                                        <span class="badge badge-success">Configurada</span>
                                         {% else %}
-                                            <span class="badge badge-danger">Não Configurada</span>
+                                        <span class="badge badge-danger">Não Configurada</span>
                                         {% endif %}
                                     </span>
                                 </div>
@@ -82,7 +82,8 @@
                                 <div class="mt-3">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle"></i>
-                                        Este teste verificará se a API Key está funcionando e se conseguimos conectar com o Asaas.
+                                        Este teste verificará se a API Key está funcionando e se conseguimos conectar
+                                        com o Asaas.
                                     </small>
                                 </div>
                             </form>
@@ -91,62 +92,66 @@
 
                     <!-- Resultado do Teste -->
                     {% if resultado_teste %}
-                    <div class="card card-outline {% if resultado_teste.success %}card-success{% else %}card-danger{% endif %}">
+                    <div
+                        class="card card-outline {% if resultado_teste.success %}card-success{% else %}card-danger{% endif %}">
                         <div class="card-header">
                             <h5 class="card-title">
-                                <i class="fas fa-{% if resultado_teste.success %}check-circle{% else %}times-circle{% endif %}"></i>
+                                <i
+                                    class="fas fa-{% if resultado_teste.success %}check-circle{% else %}times-circle{% endif %}"></i>
                                 Resultado do Teste
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="alert alert-{% if resultado_teste.success %}success{% else %}danger{% endif %}">
                                 <h6>
-                                    <i class="fas fa-{% if resultado_teste.success %}check{% else %}exclamation-triangle{% endif %}"></i>
+                                    <i
+                                        class="fas fa-{% if resultado_teste.success %}check{% else %}exclamation-triangle{% endif %}"></i>
                                     {{ resultado_teste.message }}
                                 </h6>
                             </div>
 
                             {% if resultado_teste.success %}
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-info-circle"></i> Informações da Conexão:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><strong>Ambiente:</strong> {{ resultado_teste.environment|title }}</li>
-                                            <li><strong>URL Base:</strong> {{ resultado_teste.base_url }}</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        {% if resultado_teste.conta_dados %}
-                                        <h6><i class="fas fa-building"></i> Dados da Conta:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><strong>Banco:</strong> {{ resultado_teste.conta_dados.banco }} - {{ resultado_teste.conta_dados.nome_completo }}</li>
-                                            <li><strong>Agência:</strong> {{ resultado_teste.conta_dados.agencia }}</li>
-                                            <li><strong>Conta:</strong> {{ resultado_teste.conta_dados.conta }}</li>
-                                            <li><strong>PIX:</strong> {{ resultado_teste.conta_dados.chave_pix }}</li>
-                                        </ul>
-                                        {% endif %}
-                                    </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-info-circle"></i> Informações da Conexão:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Ambiente:</strong> {{ resultado_teste.environment|title }}</li>
+                                        <li><strong>URL Base:</strong> {{ resultado_teste.base_url }}</li>
+                                    </ul>
                                 </div>
+                                <div class="col-md-6">
+                                    {% if resultado_teste.conta_dados %}
+                                    <h6><i class="fas fa-building"></i> Dados da Conta:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Banco:</strong> {{ resultado_teste.conta_dados.banco }} - {{
+                                            resultado_teste.conta_dados.nome_completo }}</li>
+                                        <li><strong>Agência:</strong> {{ resultado_teste.conta_dados.agencia }}</li>
+                                        <li><strong>Conta:</strong> {{ resultado_teste.conta_dados.conta }}</li>
+                                        <li><strong>PIX:</strong> {{ resultado_teste.conta_dados.chave_pix }}</li>
+                                    </ul>
+                                    {% endif %}
+                                </div>
+                            </div>
 
-                                <div class="alert alert-info mt-3">
-                                    <h6><i class="fas fa-lightbulb"></i> Próximos Passos:</h6>
-                                    <ul class="mb-0">
-                                        <li>✅ A conexão com Asaas está funcionando</li>
-                                        <li>✅ Você pode gerar cobranças e boletos</li>
-                                        <li>✅ O PIX está configurado e funcionando</li>
-                                        <li>✅ O webhook está pronto para receber notificações</li>
-                                    </ul>
-                                </div>
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="fas fa-lightbulb"></i> Próximos Passos:</h6>
+                                <ul class="mb-0">
+                                    <li>✅ A conexão com Asaas está funcionando</li>
+                                    <li>✅ Você pode gerar cobranças e boletos</li>
+                                    <li>✅ O PIX está configurado e funcionando</li>
+                                    <li>✅ O webhook está pronto para receber notificações</li>
+                                </ul>
+                            </div>
                             {% else %}
-                                <div class="alert alert-warning mt-3">
-                                    <h6><i class="fas fa-tools"></i> Como Resolver:</h6>
-                                    <ul class="mb-0">
-                                        <li>🔧 Verifique se a API Key está correta</li>
-                                        <li>🔧 Confirme se o ambiente (sandbox/produção) está correto</li>
-                                        <li>🔧 Teste a conectividade com a internet</li>
-                                        <li>🔧 Verifique os logs do sistema para mais detalhes</li>
-                                    </ul>
-                                </div>
+                            <div class="alert alert-warning mt-3">
+                                <h6><i class="fas fa-tools"></i> Como Resolver:</h6>
+                                <ul class="mb-0">
+                                    <li>🔧 Verifique se a API Key está correta</li>
+                                    <li>🔧 Confirme se o ambiente (sandbox/produção) está correto</li>
+                                    <li>🔧 Teste a conectividade com a internet</li>
+                                    <li>🔧 Verifique os logs do sistema para mais detalhes</li>
+                                </ul>
+                            </div>
                             {% endif %}
                         </div>
                     </div>

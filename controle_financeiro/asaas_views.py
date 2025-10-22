@@ -466,3 +466,115 @@ def testar_asaas(request):
     }
     
     return render(request, 'controle_financeiro/testar_asaas.html', context)
+
+
+@login_required
+def criar_cobranca_asaas(request):
+    """
+    Página para criar nova cobrança no Asaas
+    """
+    if request.method == 'POST':
+        try:
+            controle_id = request.POST.get('controle_financeiro')
+            dias_vencimento = int(request.POST.get('dias_vencimento', 30))
+            descricao = request.POST.get('descricao', '')
+            
+            controle = get_object_or_404(ControleFinanceiro, id=controle_id)
+            
+            # Verificar permissões
+            if not request.user.is_superuser and controle.loja.admin != request.user:
+                messages.error(request, "Você não tem permissão para criar cobrança para esta loja.")
+                return redirect('controle_financeiro:criar_cobranca_asaas')
+            
+            # Gerar cobrança
+            asaas_service = AsaasService()
+            resultado = asaas_service.gerar_cobranca_com_pix(
+                controle, 
+                dias_vencimento=dias_vencimento,
+                descricao=descricao
+            )
+            
+            if resultado.get('success'):
+                messages.success(request, f'✅ Cobrança {resultado["cobranca"]["id"]} criada com sucesso!')
+                return redirect('controle_financeiro:listar_cobrancas_asaas')
+            else:
+                messages.error(request, f'❌ Erro ao criar cobrança: {resultado.get("error", "Erro desconhecido")}')
+                
+        except Exception as e:
+            logger.error(f"Erro ao criar cobrança: {str(e)}")
+            messages.error(request, f'❌ Erro interno: {str(e)}')
+    
+    # Buscar controles financeiros disponíveis
+    if request.user.is_superuser:
+        controles = ControleFinanceiro.objects.filter(status='ativa')
+    else:
+        controles = ControleFinanceiro.objects.filter(
+            loja__admin=request.user,
+            status='ativa'
+        )
+    
+    context = {
+        'controles': controles,
+    }
+    
+    return render(request, 'controle_financeiro/criar_cobranca_asaas.html', context)
+
+
+@login_required
+def excluir_cobranca_asaas(request, cobranca_id):
+    """
+    Exclui uma cobrança do Asaas
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'})
+    
+    try:
+        cobranca = get_object_or_404(CobrancaAsaas, id=cobranca_id)
+        
+        # Verificar permissões
+        if not request.user.is_superuser and cobranca.controle_financeiro.loja.admin != request.user:
+            return JsonResponse({'success': False, 'message': 'Você não tem permissão para excluir esta cobrança.'})
+        
+        # Só permite excluir cobranças pendentes
+        if cobranca.status != 'PENDING':
+            return JsonResponse({'success': False, 'message': 'Só é possível excluir cobranças pendentes.'})
+        
+        # Tentar cancelar no Asaas primeiro
+        try:
+            asaas_service = AsaasService()
+            
+            # Fazer requisição para cancelar no Asaas
+            import requests
+            response = requests.delete(
+                f"{asaas_service.base_url}/payments/{cobranca.asaas_id}",
+                headers=asaas_service.headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Cobrança {cobranca.asaas_id} cancelada no Asaas")
+            else:
+                logger.warning(f"Erro ao cancelar no Asaas: {response.status_code} - {response.text}")
+                # Continua com a exclusão local mesmo se falhar no Asaas
+                
+        except Exception as e:
+            logger.error(f"Erro ao cancelar cobrança no Asaas: {str(e)}")
+            # Continua com a exclusão local
+        
+        # Excluir do banco local
+        asaas_id = cobranca.asaas_id
+        cobranca.delete()
+        
+        logger.info(f"Cobrança {asaas_id} excluída do sistema por {request.user.username}")
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Cobrança {asaas_id} excluída com sucesso!'
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao excluir cobrança: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'message': f'Erro ao excluir cobrança: {str(e)}'
+        })

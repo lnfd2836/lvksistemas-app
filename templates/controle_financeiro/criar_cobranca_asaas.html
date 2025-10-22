@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Nova Cobrança Asaas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-plus"></i>
+                        Nova Cobrança Asaas
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    {% if controles %}
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="controle_financeiro">
+                                            <i class="fas fa-store"></i> Loja / Controle Financeiro *
+                                        </label>
+                                        <select name="controle_financeiro" id="controle_financeiro" class="form-control" required>
+                                            <option value="">Selecione uma loja...</option>
+                                            {% for controle in controles %}
+                                                <option value="{{ controle.id }}" 
+                                                        data-valor="{{ controle.valor_mensal }}"
+                                                        data-plano="{{ controle.plano.nome }}">
+                                                    {{ controle.loja.nome }} - {{ controle.plano.nome }} (R$ {{ controle.valor_mensal }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Selecione a loja para a qual deseja criar a cobrança
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="dias_vencimento">
+                                            <i class="fas fa-calendar-alt"></i> Dias para Vencimento *
+                                        </label>
+                                        <select name="dias_vencimento" id="dias_vencimento" class="form-control" required>
+                                            <option value="7">7 dias</option>
+                                            <option value="15">15 dias</option>
+                                            <option value="30" selected>30 dias</option>
+                                            <option value="45">45 dias</option>
+                                            <option value="60">60 dias</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Prazo para pagamento da cobrança
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="valor_preview">
+                                            <i class="fas fa-money-bill-wave"></i> Valor da Cobrança
+                                        </label>
+                                        <input type="text" id="valor_preview" class="form-control" readonly placeholder="Selecione uma loja">
+                                        <small class="form-text text-muted">
+                                            Valor será definido automaticamente
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="descricao">
+                                            <i class="fas fa-comment"></i> Descrição (Opcional)
+                                        </label>
+                                        <textarea name="descricao" id="descricao" class="form-control" rows="3" 
+                                                  placeholder="Descrição personalizada para a cobrança (deixe em branco para usar a descrição padrão)"></textarea>
+                                        <small class="form-text text-muted">
+                                            Se não informado, será usado: "Mensalidade [Plano] - [Loja]"
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Preview da Cobrança -->
+                            <div class="card card-outline card-info" id="preview_cobranca" style="display: none;">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-eye"></i> Preview da Cobrança
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Loja:</strong> <span id="preview_loja">-</span><br>
+                                            <strong>Plano:</strong> <span id="preview_plano">-</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Valor:</strong> R$ <span id="preview_valor">0,00</span><br>
+                                            <strong>Vencimento:</strong> <span id="preview_vencimento">-</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Descrição:</strong><br>
+                                            <span id="preview_descricao">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-info-circle"></i> Informações Importantes:</h6>
+                                        <ul class="mb-0">
+                                            <li>A cobrança será criada no Asaas com boleto bancário e PIX</li>
+                                            <li>O cliente receberá automaticamente o link para pagamento</li>
+                                            <li>Você será notificado quando o pagamento for realizado</li>
+                                            <li>O boleto pode ser pago em qualquer banco ou via PIX</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group text-center">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-plus"></i>
+                                    Criar Cobrança no Asaas
+                                </button>
+                                <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-secondary btn-lg ml-2">
+                                    <i class="fas fa-times"></i>
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Nenhum Controle Financeiro Disponível</h4>
+                            <p>Não há controles financeiros ativos para criar cobranças.</p>
+                            {% if user.is_superuser %}
+                                <a href="{% url 'controle_financeiro:listar_controles' %}" class="btn btn-primary">
+                                    <i class="fas fa-cog"></i> Gerenciar Controles Financeiros
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const controleSelect = document.getElementById('controle_financeiro');
+    const diasSelect = document.getElementById('dias_vencimento');
+    const descricaoTextarea = document.getElementById('descricao');
+    const valorPreview = document.getElementById('valor_preview');
+    const previewCard = document.getElementById('preview_cobranca');
+    
+    function atualizarPreview() {
+        const selectedOption = controleSelect.options[controleSelect.selectedIndex];
+        
+        if (controleSelect.value) {
+            const valor = selectedOption.dataset.valor;
+            const plano = selectedOption.dataset.plano;
+            const loja = selectedOption.text.split(' - ')[0];
+            const dias = diasSelect.value;
+            
+            // Calcular data de vencimento
+            const hoje = new Date();
+            const vencimento = new Date(hoje.getTime() + (dias * 24 * 60 * 60 * 1000));
+            const vencimentoStr = vencimento.toLocaleDateString('pt-BR');
+            
+            // Atualizar campos
+            valorPreview.value = `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`;
+            document.getElementById('preview_loja').textContent = loja;
+            document.getElementById('preview_plano').textContent = plano;
+            document.getElementById('preview_valor').textContent = parseFloat(valor).toFixed(2).replace('.', ',');
+            document.getElementById('preview_vencimento').textContent = vencimentoStr;
+            
+            // Descrição
+            const descricaoCustom = descricaoTextarea.value.trim();
+            const descricaoPadrao = `Mensalidade ${plano} - ${loja}`;
+            document.getElementById('preview_descricao').textContent = descricaoCustom || descricaoPadrao;
+            
+            previewCard.style.display = 'block';
+        } else {
+            valorPreview.value = '';
+            previewCard.style.display = 'none';
+        }
+    }
+    
+    // Event listeners
+    controleSelect.addEventListener('change', atualizarPreview);
+    diasSelect.addEventListener('change', atualizarPreview);
+    descricaoTextarea.addEventListener('input', atualizarPreview);
+    
+    // Preview inicial
+    atualizarPreview();
+});
+</script>
+{% endblock %}
