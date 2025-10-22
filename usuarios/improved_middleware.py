@@ -30,6 +30,7 @@ class ImprovedAuthenticationMiddleware:
             '/loja/login/',
             '/loja/logout/',
             '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
+            '/financeiro/asaas/webhook-debug/',  # Webhook debug do Asaas
             '/static/',
             '/media/',
             '/favicon.ico',
@@ -109,6 +110,10 @@ class ImprovedAuthenticationMiddleware:
         Returns:
             True se deve ser excluído da verificação
         """
+        # Exclusão específica para webhooks do Asaas
+        if '/asaas/webhook' in path:
+            return True
+            
         return any(path.startswith(excluded_path) for excluded_path in self.excluded_paths)
     
     def detect_potential_loop(self, request) -> bool:
