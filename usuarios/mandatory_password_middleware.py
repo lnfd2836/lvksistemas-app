@@ -30,6 +30,7 @@ class MandatoryPasswordChangeMiddleware:
             '/media/',
             '/admin/logout/',
             '/favicon.ico',
+            '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
             # URLs de reset de senha
             '/usuarios/password-reset/',
             '/usuarios/password-reset/done/',
