@@ -29,17 +29,26 @@ class AsaasService:
             self.base_url = 'https://sandbox.asaas.com/api/v3'
         
         # Headers padrão - Formato correto conforme documentação Asaas
+        # User-Agent compatível com firewall (conforme documentação)
         self.headers = {
             'access_token': self.api_key,
             'Content-Type': 'application/json',
-            'User-Agent': 'LVK Sistemas - Sistema de Gestão'
+            'User-Agent': 'Java/1.8.0_282'  # User-Agent oficial do Asaas
         }
         
         # Formato alternativo para teste (alguns endpoints podem usar Authorization)
         self.headers_alt = {
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json',
-            'User-Agent': 'LVK Sistemas - Sistema de Gestão'
+            'User-Agent': 'Java/1.8.0_282'  # User-Agent oficial do Asaas
+        }
+        
+        # Headers com access_token no formato alternativo
+        self.headers_alt2 = {
+            'access_token': self.api_key,
+            'Content-Type': 'application/json',
+            'User-Agent': 'Java/1.8.0_282',
+            'Accept': 'application/json'
         }
         
         # Dados da conta Asaas (dados reais da conta)
@@ -59,40 +68,48 @@ class AsaasService:
         if not self.api_key:
             raise ValueError("ASAAS_API_KEY não configurada nas settings")
         
-        try:
-            # Testar primeiro formato de header (access_token)
-            response = requests.get(
-                f"{self.base_url}/myAccount",
-                headers=self.headers,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                account_data = response.json()
-                logger.info(f"Conexão com Asaas estabelecida (access_token). Conta: {account_data.get('name', 'N/A')}")
-                return True
-            
-            # Se falhou, testar formato alternativo (Authorization Bearer)
-            logger.info("Testando formato alternativo de header (Authorization Bearer)")
-            response = requests.get(
-                f"{self.base_url}/myAccount",
-                headers=self.headers_alt,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                account_data = response.json()
-                logger.info(f"Conexão com Asaas estabelecida (Bearer). Conta: {account_data.get('name', 'N/A')}")
-                # Usar headers alternativos daqui em diante
-                self.headers = self.headers_alt
-                return True
-            else:
-                logger.error(f"Erro na validação da API Asaas (ambos formatos): {response.status_code} - {response.text}")
-                return False
+        # Lista de headers para testar (ordem de prioridade)
+        headers_to_test = [
+            ("access_token padrão", self.headers),
+            ("Authorization Bearer", self.headers_alt),
+            ("access_token com Accept", self.headers_alt2)
+        ]
+        
+        for header_name, headers in headers_to_test:
+            try:
+                logger.info(f"Testando formato de header: {header_name}")
                 
-        except Exception as e:
-            logger.error(f"Erro ao conectar com a API Asaas: {str(e)}")
-            return False
+                response = requests.get(
+                    f"{self.base_url}/myAccount",
+                    headers=headers,
+                    timeout=60,  # Timeout aumentado para 60s
+                    verify=True  # Verificar SSL
+                )
+                
+                logger.info(f"Status code: {response.status_code}")
+                
+                if response.status_code == 200:
+                    account_data = response.json()
+                    logger.info(f"✅ Conexão com Asaas estabelecida ({header_name}). Conta: {account_data.get('name', 'N/A')}")
+                    # Usar headers que funcionaram
+                    self.headers = headers
+                    return True
+                elif response.status_code == 401:
+                    logger.warning(f"❌ API Key inválida ou expirada ({header_name})")
+                elif response.status_code == 403:
+                    logger.warning(f"❌ Acesso negado - possível bloqueio de firewall ({header_name})")
+                else:
+                    logger.warning(f"❌ Erro {response.status_code} ({header_name}): {response.text}")
+                    
+            except requests.exceptions.Timeout:
+                logger.error(f"⏰ Timeout na conexão com Asaas ({header_name})")
+            except requests.exceptions.ConnectionError:
+                logger.error(f"🔌 Erro de conexão com Asaas ({header_name})")
+            except Exception as e:
+                logger.error(f"❌ Erro inesperado ({header_name}): {str(e)}")
+        
+        logger.error("❌ Todos os formatos de header falharam")
+        return False
     
     def criar_cliente(self, controle_financeiro):
         """
