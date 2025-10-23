@@ -13,7 +13,7 @@ class TipoLojaForm(forms.ModelForm):
             'tem_cor_produto', 'tem_peso_produto', 'tem_volume_produto',
             'tem_data_validade', 'tem_codigo_barras', 'tem_estoque_minimo',
             'tem_data_nascimento_cliente', 'tem_sexo_cliente', 'tem_cpf_cliente',
-            'tem_rg_cliente', 'tem_cnpj_cliente',
+            'tem_rg_cliente', 'tem_cnpj_cliente', 'tem_crm_cliente',
             'tem_desconto_venda', 'tem_taxa_entrega', 'tem_mesa_venda', 'tem_garcom_venda',
             'ativo'
         ]

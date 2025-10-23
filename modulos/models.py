@@ -45,6 +45,7 @@ class TipoLoja(models.Model):
     tem_cpf_cliente = models.BooleanField(default=True, verbose_name="Cliente: CPF")
     tem_rg_cliente = models.BooleanField(default=False, verbose_name="Cliente: RG")
     tem_cnpj_cliente = models.BooleanField(default=False, verbose_name="Cliente: CNPJ")
+    tem_crm_cliente = models.BooleanField(default=False, verbose_name="Cliente: CRM")
     
     # Campos específicos para vendas
     tem_desconto_venda = models.BooleanField(default=True, verbose_name="Venda: Desconto")
@@ -81,6 +82,7 @@ class TipoLoja(models.Model):
             'cpf_cliente': self.tem_cpf_cliente,
             'rg_cliente': self.tem_rg_cliente,
             'cnpj_cliente': self.tem_cnpj_cliente,
+            'crm_cliente': self.tem_crm_cliente,
             'desconto_venda': self.tem_desconto_venda,
             'taxa_entrega': self.tem_taxa_entrega,
             'mesa_venda': self.tem_mesa_venda,
