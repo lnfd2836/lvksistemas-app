@@ -24,27 +24,32 @@ def criar_cobranca_asaas_automatica(sender, instance, created, **kwargs):
         try:
             logger.info(f"Nova loja criada: {instance.nome}. Gerando cobrança automática do Asaas...")
             
-            # Verificar se já existe controle financeiro
-            controle = ControleFinanceiro.objects.filter(loja=instance).first()
-            
-            if not controle:
-                # Criar controle financeiro com plano padrão
+            # Usar get_or_create para evitar duplicatas
+            from django.db import transaction
+            with transaction.atomic():
+                # Buscar plano padrão
                 plano_padrao = PlanoFinanceiro.objects.filter(ativo=True).first()
                 
                 if not plano_padrao:
                     logger.warning(f"Nenhum plano ativo encontrado para loja {instance.nome}")
                     return
                 
-                controle = ControleFinanceiro.objects.create(
+                # Usar get_or_create para evitar duplicatas
+                controle, controle_created = ControleFinanceiro.objects.get_or_create(
                     loja=instance,
-                    plano=plano_padrao,
-                    data_inicio=timezone.now(),
-                    data_vencimento=timezone.now() + timedelta(days=30),
-                    valor_mensal=plano_padrao.valor_mensal,
-                    status='ativo'
+                    defaults={
+                        'plano': plano_padrao,
+                        'data_inicio': timezone.now(),
+                        'data_vencimento': timezone.now() + timedelta(days=30),
+                        'valor_mensal': plano_padrao.valor_mensal,
+                        'status': 'ativo'
+                    }
                 )
                 
-                logger.info(f"Controle financeiro criado para {instance.nome}")
+                if controle_created:
+                    logger.info(f"Controle financeiro criado para {instance.nome}")
+                else:
+                    logger.info(f"Controle financeiro já existe para {instance.nome}")
             
             # Gerar cobrança via API do Asaas
             asaas_service = AsaasService()
