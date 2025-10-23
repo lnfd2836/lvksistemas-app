@@ -228,7 +228,7 @@
                     </div>
                     <h5 class="card-title">PIX</h5>
                     <p class="card-text">
-                        {% if cobranca.pix_qr_code %}
+                        {% if cobranca.pix_copy_paste or cobranca.pix_qr_code %}
                         <span class="text-success"><i class="fas fa-check-circle"></i> Disponível</span><br>
                         <small>Pagamento instantâneo</small>
                         {% else %}
@@ -384,17 +384,33 @@
                     <small>Pagamento em segundos, 24h por dia</small>
                 </div>
                 <div class="card-body text-center">
-                    {% if cobranca.pix_qr_code %}
+                    {% if cobranca.pix_copy_paste or cobranca.pix_qr_code %}
                     <div class="mb-4">
                         <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
                         <h5 class="text-success">PIX Disponível!</h5>
-                        <p class="text-muted">Escaneie o QR Code ou copie o código</p>
+                        <p class="text-muted">
+                            {% if cobranca.pix_qr_code %}
+                                Escaneie o QR Code ou copie o código
+                            {% else %}
+                                Copie o código PIX abaixo
+                            {% endif %}
+                        </p>
                     </div>
 
+                    {% if cobranca.pix_qr_code %}
                     <div class="qr-code-container">
                         <img src="data:image/png;base64,{{ cobranca.pix_qr_code }}" alt="QR Code PIX" class="img-fluid"
                             style="max-width: 200px;">
                     </div>
+                    {% else %}
+                    <div class="qr-code-container">
+                        <div class="text-center p-4">
+                            <i class="fas fa-qrcode fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">QR Code não disponível</p>
+                            <small>Use o código PIX abaixo</small>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     {% if cobranca.pix_expires_date %}
                     <div class="alert alert-info mt-3">
