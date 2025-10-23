@@ -18,6 +18,7 @@ class TipoLoja(models.Model):
         ('casa_construcao', 'Casa e Construção'),
         ('livraria', 'Livraria'),
         ('clinica_estetica', 'Clínica de Estética'),
+        ('controle_qualidade', 'Controle de Qualidade'),
         ('outros', 'Outros'),
     ]
     
