@@ -132,6 +132,10 @@ def detalhar_controle_financeiro(request, controle_id):
     pagamentos = Pagamento.objects.filter(controle_financeiro=controle).order_by('-data_criacao')
     notificacoes = NotificacaoFinanceira.objects.filter(controle_financeiro=controle).order_by('-data_criacao')
     
+    # Buscar cobranças do Asaas relacionadas a este controle
+    from .models import CobrancaAsaas
+    cobrancas_asaas = CobrancaAsaas.objects.filter(controle_financeiro=controle).order_by('-data_criacao')
+    
     # Calcula dias de atraso se vencido
     dias_atraso = 0
     if controle.dias_para_vencimento <= 0:
@@ -141,6 +145,7 @@ def detalhar_controle_financeiro(request, controle_id):
         'controle': controle,
         'pagamentos': pagamentos,
         'notificacoes': notificacoes,
+        'cobrancas_asaas': cobrancas_asaas,
         'dias_atraso': dias_atraso,
     }
     

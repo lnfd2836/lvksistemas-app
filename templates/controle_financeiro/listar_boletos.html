@@ -27,12 +27,12 @@
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">Todos</option>
-                            <option value="pendente" {% if status_filter=='pendente' %}selected{% endif %}>Pendente
+                            <option value="pendente" {% if status_filter == 'pendente' %}selected{% endif %}>Pendente
                             </option>
-                            <option value="pago" {% if status_filter=='pago' %}selected{% endif %}>Pago</option>
-                            <option value="vencido" {% if status_filter=='vencido' %}selected{% endif %}>Vencido
+                            <option value="pago" {% if status_filter == 'pago' %}selected{% endif %}>Pago</option>
+                            <option value="vencido" {% if status_filter == 'vencido' %}selected{% endif %}>Vencido
                             </option>
-                            <option value="cancelado" {% if status_filter=='cancelado' %}selected{% endif %}>Cancelado
+                            <option value="cancelado" {% if status_filter == 'cancelado' %}selected{% endif %}>Cancelado
                             </option>
                         </select>
                     </div>
