@@ -274,11 +274,19 @@
                         </td>
                         <td>
                             <div class="action-buttons">
+                                <!-- Botão de Visualizar -->
                                 <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' cobranca.id %}"
                                     class="btn btn-sm btn-primary" title="Visualizar Cobrança">
                                     <i class="fas fa-eye"></i>
                                 </a>
 
+                                <!-- BOTÃO DE EXCLUIR - SEMPRE VISÍVEL -->
+                                <button type="button" class="btn btn-sm btn-danger" title="Excluir Cobrança" 
+                                    onclick="if(confirm('Excluir cobrança {{ cobranca.asaas_id }}?')) { alert('Funcionalidade em desenvolvimento'); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                                <!-- Botão de PDF -->
                                 {% if cobranca.bank_slip_url %}
                                 <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-sm btn-info"
                                     title="Baixar Boleto PDF">
@@ -290,18 +298,13 @@
                                 </button>
                                 {% endif %}
 
+                                <!-- Botão PIX -->
                                 {% if cobranca.pix_qr_code %}
                                 <button type="button" class="btn btn-sm btn-success" title="Ver PIX"
                                     onclick="showPixModal('{{ cobranca.id }}', '{{ cobranca.pix_copy_paste }}')">
                                     <i class="fas fa-qrcode"></i>
                                 </button>
                                 {% endif %}
-
-                                <button type="button" class="btn btn-sm btn-danger" title="Excluir Cobrança" 
-                                    style="margin-left: 5px;"
-                                    onclick="confirmarExclusao('{{ cobranca.id }}', '{{ cobranca.asaas_id }}', '{{ cobranca.status }}')">
-                                    <i class="fas fa-trash"></i> Excluir
-                                </button>
                             </div>
                         </td>
                     </tr>
