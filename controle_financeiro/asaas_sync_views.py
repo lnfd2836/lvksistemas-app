@@ -12,6 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 import json
 import logging
+import requests
 
 from .asaas_sync_service import get_sync_service, AsaasSyncService
 from .models import CobrancaAsaas, ControleFinanceiro
@@ -150,6 +151,19 @@ def forcar_sincronizacao(request):
                 if asaas_service.validar_configuracao():
                     messages.success(request, '✅ API Asaas acessível - configuração validada!')
                     
+                    # Teste adicional: verificar conectividade com timeout baixo
+                    try:
+                        teste_conectividade = asaas_service.test_connection_quick(timeout=3)
+                        if not teste_conectividade.get('accessible', False):
+                            messages.warning(request, 
+                                '⚠️ API Asaas pode estar instável. Sincronização pode falhar.'
+                            )
+                    except Exception as teste_error:
+                        logger.warning(f"Teste de conectividade falhou: {str(teste_error)}")
+                        messages.warning(request, 
+                            '⚠️ Teste de conectividade falhou. Continuando com sincronização...'
+                        )
+                    
                     # Agora fazer sincronização simples usando apenas métodos que funcionam
                     try:
                         # Buscar cobranças reais para sincronizar (excluir exemplos e testes)
@@ -175,7 +189,7 @@ def forcar_sincronizacao(request):
                         
                         for cobranca in cobrancas_para_sync:
                             try:
-                                # Usar o método consultar_cobranca que já existe
+                                # Usar o método consultar_cobranca com tratamento específico para Connection refused
                                 dados_asaas = asaas_service.consultar_cobranca(cobranca.asaas_id, timeout=10)
                                 
                                 if dados_asaas:
@@ -193,6 +207,20 @@ def forcar_sincronizacao(request):
                                 else:
                                     erros.append(f"Não foi possível consultar {cobranca.asaas_id}")
                                     
+                            except requests.exceptions.ConnectionError as e:
+                                if "Connection refused" in str(e):
+                                    error_msg = f"Connection refused para {cobranca.asaas_id} - parando sincronização"
+                                    erros.append(error_msg)
+                                    logger.warning(error_msg)
+                                    messages.error(request, 
+                                        '🚫 Connection Refused detectado! A API Asaas está temporariamente indisponível. '
+                                        'Tente novamente em alguns minutos.'
+                                    )
+                                    break  # Parar imediatamente se connection refused
+                                else:
+                                    error_msg = f"Erro de conexão para {cobranca.asaas_id}: {str(e)}"
+                                    erros.append(error_msg)
+                                    logger.warning(error_msg)
                             except Exception as e:
                                 error_msg = f"Erro ao processar {cobranca.asaas_id}: {str(e)}"
                                 erros.append(error_msg)
