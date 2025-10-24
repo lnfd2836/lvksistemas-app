@@ -119,13 +119,12 @@ class AsaasService:
                     response = requests.get(
                         f"{self.base_url}{endpoint}",
                         headers=headers,
-                        timeout=90,  # Timeout aumentado para 90s
+                        timeout=30,  # Timeout reduzido para 30s
                         verify=True,  # Verificar SSL
                         allow_redirects=True
                     )
                     
                     logger.info(f"Status code: {response.status_code}")
-                    logger.info(f"Response headers: {dict(response.headers)}")
                     
                     if response.status_code == 200:
                         response_data = response.json()
@@ -145,7 +144,7 @@ class AsaasService:
                         break  # Não testar outros endpoints com essa API key
                         
                     elif response.status_code == 403:
-                        logger.warning(f"❌ Acesso negado ({header_name}) - {endpoint}: {response.text}")
+                        logger.warning(f"❌ Acesso negado ({header_name}) - {endpoint}")
                         # Continuar testando outros endpoints
                         
                     elif response.status_code == 404:
@@ -153,16 +152,20 @@ class AsaasService:
                         # Continuar testando outros endpoints
                         
                     else:
-                        logger.warning(f"❌ Erro {response.status_code} ({header_name}) - {endpoint}: {response.text}")
+                        logger.warning(f"❌ Erro {response.status_code} ({header_name}) - {endpoint}")
                         
                 except requests.exceptions.Timeout:
                     logger.error(f"⏰ Timeout na conexão com Asaas ({header_name}) - {endpoint}")
+                    continue  # Tentar próximo endpoint
                 except requests.exceptions.ConnectionError as e:
                     logger.error(f"🔌 Erro de conexão com Asaas ({header_name}) - {endpoint}: {str(e)}")
+                    continue  # Tentar próximo endpoint
                 except requests.exceptions.SSLError as e:
                     logger.error(f"🔒 Erro SSL ({header_name}) - {endpoint}: {str(e)}")
+                    continue  # Tentar próximo endpoint
                 except Exception as e:
                     logger.error(f"❌ Erro inesperado ({header_name}) - {endpoint}: {str(e)}")
+                    continue  # Tentar próximo endpoint
         
         logger.error("❌ Todos os formatos de header e endpoints falharam")
         return False

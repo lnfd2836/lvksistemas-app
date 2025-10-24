@@ -129,25 +129,54 @@ class AsaasSyncService:
         }
         
         try:
-            # Validar configuração
-            if not self.asaas_service.validar_configuracao():
-                raise ValueError("Configuração do Asaas inválida")
+            # Validar configuração com retry
+            validation_attempts = 3
+            config_valid = False
+            
+            for attempt in range(validation_attempts):
+                try:
+                    if self.asaas_service.validar_configuracao():
+                        config_valid = True
+                        break
+                    else:
+                        logger.warning(f"Tentativa {attempt + 1} de validação falhou")
+                        if attempt < validation_attempts - 1:
+                            time.sleep(2)  # Aguardar 2 segundos antes de tentar novamente
+                except Exception as e:
+                    logger.error(f"Erro na tentativa {attempt + 1} de validação: {str(e)}")
+                    if attempt < validation_attempts - 1:
+                        time.sleep(2)
+            
+            if not config_valid:
+                raise ValueError("Configuração do Asaas inválida após múltiplas tentativas")
             
             # 1. Sincronizar cobranças existentes no sistema
-            local_result = self._sync_existing_charges()
-            result['total_processed'] += local_result['processed']
-            result['updates_made'] += local_result['updates']
-            result['errors'].extend(local_result['errors'])
+            try:
+                local_result = self._sync_existing_charges()
+                result['total_processed'] += local_result['processed']
+                result['updates_made'] += local_result['updates']
+                result['errors'].extend(local_result['errors'])
+            except Exception as e:
+                logger.error(f"Erro ao sincronizar cobranças existentes: {str(e)}")
+                result['errors'].append(f"Erro cobranças existentes: {str(e)}")
             
             # 2. Buscar novas cobranças no Asaas
-            remote_result = self._fetch_new_charges_from_asaas()
-            result['new_charges'] += remote_result['new_charges']
-            result['errors'].extend(remote_result['errors'])
+            try:
+                remote_result = self._fetch_new_charges_from_asaas()
+                result['new_charges'] += remote_result['new_charges']
+                result['errors'].extend(remote_result['errors'])
+            except Exception as e:
+                logger.error(f"Erro ao buscar novas cobranças: {str(e)}")
+                result['errors'].append(f"Erro novas cobranças: {str(e)}")
             
             # 3. Verificar cobranças vencidas
-            overdue_result = self._check_overdue_charges()
-            result['updates_made'] += overdue_result['updates']
-            result['errors'].extend(overdue_result['errors'])
+            try:
+                overdue_result = self._check_overdue_charges()
+                result['updates_made'] += overdue_result['updates']
+                result['errors'].extend(overdue_result['errors'])
+            except Exception as e:
+                logger.error(f"Erro ao verificar cobranças vencidas: {str(e)}")
+                result['errors'].append(f"Erro cobranças vencidas: {str(e)}")
             
             logger.info(f"Sincronização completa: {result}")
             
@@ -174,10 +203,32 @@ class AsaasSyncService:
                 status__in=['RECEIVED', 'CONFIRMED', 'REFUNDED']
             )
             
+            logger.info(f"Sincronizando {cobrancas.count()} cobranças existentes")
+            
             for cobranca in cobrancas:
                 try:
-                    # Consultar status atual no Asaas
-                    dados_asaas = self.asaas_service.consultar_cobranca(cobranca.asaas_id)
+                    # Consultar status atual no Asaas com retry
+                    dados_asaas = None
+                    max_retries = 3
+                    
+                    for retry in range(max_retries):
+                        try:
+                            dados_asaas = self.asaas_service.consultar_cobranca(cobranca.asaas_id)
+                            break  # Sucesso, sair do loop de retry
+                        except requests.exceptions.ConnectionError as e:
+                            if "Connection refused" in str(e) and retry < max_retries - 1:
+                                logger.warning(f"Connection refused para cobrança {cobranca.asaas_id}, tentativa {retry + 1}/{max_retries}")
+                                time.sleep(2 ** retry)  # Backoff exponencial
+                                continue
+                            else:
+                                raise  # Re-raise se não for connection refused ou última tentativa
+                        except Exception as e:
+                            if retry < max_retries - 1:
+                                logger.warning(f"Erro na tentativa {retry + 1} para cobrança {cobranca.asaas_id}: {str(e)}")
+                                time.sleep(1)
+                                continue
+                            else:
+                                raise
                     
                     if dados_asaas:
                         # Verificar se houve mudanças
@@ -191,6 +242,8 @@ class AsaasSyncService:
                             # Processar pagamento se foi recebido
                             if cobranca.status in ['RECEIVED', 'CONFIRMED'] and status_anterior not in ['RECEIVED', 'CONFIRMED']:
                                 cobranca.marcar_como_paga()
+                    else:
+                        logger.warning(f"Não foi possível obter dados da cobrança {cobranca.asaas_id}")
                     
                     result['processed'] += 1
                     
@@ -198,6 +251,7 @@ class AsaasSyncService:
                     error_msg = f"Erro ao sincronizar cobrança {cobranca.asaas_id}: {str(e)}"
                     logger.error(error_msg)
                     result['errors'].append(error_msg)
+                    # Continuar com próxima cobrança mesmo com erro
         
         except Exception as e:
             error_msg = f"Erro ao buscar cobranças locais: {str(e)}"
