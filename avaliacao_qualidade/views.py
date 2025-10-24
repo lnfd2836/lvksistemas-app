@@ -73,7 +73,7 @@ def dashboard_avaliacao(request):
         'medias': medias,
     }
     
-    return render(request, 'avaliacao_qualidade/dashboard.html', context)
+    return render(request, 'avaliacao_qualidade/dashboard_fatesa.html', context)
 
 
 # === GESTÃO DE CURSOS ===
