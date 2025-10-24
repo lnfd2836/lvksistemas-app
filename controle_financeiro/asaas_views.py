@@ -649,8 +649,9 @@ def excluir_cobranca_asaas(request, cobranca_id):
             'success': False, 
             'message': f'Erro ao excluir cobrança: {str(e)}'
         })
-@login_r
-equired
+
+
+@login_required
 def webhook_debug(request):
     """
     Página para debug do webhook Asaas
