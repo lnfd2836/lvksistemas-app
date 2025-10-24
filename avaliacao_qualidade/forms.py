@@ -1,237 +1,407 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Curso, Coordenador, Professor, AvaliacaoConfig, AvaliacaoResposta
+from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ValidationError
+from .models import (
+    PerfilUsuario, Curso, Coordenador, Professor, 
+    AvaliacaoConfig, AvaliacaoResposta
+)
 
+
+class CadastroUsuarioForm(UserCreationForm):
+    """Formulário para cadastro de usuários do sistema FATESA"""
+    
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite o email'
+        })
+    )
+    
+    nome_completo = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite o nome completo'
+        })
+    )
+    
+    tipo_perfil = forms.ChoiceField(
+        choices=PerfilUsuario.TIPO_PERFIL_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    telefone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '(00) 00000-0000'
+        })
+    )
+    
+    especialidade = forms.CharField(
+        max_length=300,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Especialidade (apenas para professores)'
+        })
+    )
+    
+    cursos_coordenados = forms.ModelMultipleChoiceField(
+        queryset=Curso.objects.filter(ativo=True),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        })
+    )
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite o nome de usuário'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Digite a senha'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Confirme a senha'
+        })
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise ValidationError('Este email já está em uso.')
+        return email
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_perfil = cleaned_data.get('tipo_perfil')
+        especialidade = cleaned_data.get('especialidade')
+        cursos_coordenados = cleaned_data.get('cursos_coordenados')
+        
+        # Validações específicas por tipo de perfil
+        if tipo_perfil == 'professor' and not especialidade:
+            self.add_error('especialidade', 'Especialidade é obrigatória para professores.')
+        
+        if tipo_perfil == 'coordenacao' and not cursos_coordenados:
+            self.add_error('cursos_coordenados', 'Pelo menos um curso deve ser selecionado para coordenadores.')
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['nome_completo'].split()[0]
+        user.last_name = ' '.join(self.cleaned_data['nome_completo'].split()[1:])
+        
+        if commit:
+            user.save()
+            
+            # Criar perfil
+            perfil = PerfilUsuario.objects.create(
+                user=user,
+                tipo_perfil=self.cleaned_data['tipo_perfil'],
+                nome_completo=self.cleaned_data['nome_completo'],
+                telefone=self.cleaned_data.get('telefone', ''),
+                especialidade=self.cleaned_data.get('especialidade', '')
+            )
+            
+            # Adicionar cursos coordenados se for coordenador
+            if self.cleaned_data.get('cursos_coordenados'):
+                perfil.cursos_coordenados.set(self.cleaned_data['cursos_coordenados'])
+        
+        return user
+
+
+class EditarUsuarioForm(forms.ModelForm):
+    """Formulário para editar usuários existentes"""
+    
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    
+    nome_completo = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    
+    tipo_perfil = forms.ChoiceField(
+        choices=PerfilUsuario.TIPO_PERFIL_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    telefone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    
+    especialidade = forms.CharField(
+        max_length=300,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    
+    cursos_coordenados = forms.ModelMultipleChoiceField(
+        queryset=Curso.objects.filter(ativo=True),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        })
+    )
+    
+    ativo = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'is_active')
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.perfil = kwargs.pop('perfil', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.perfil:
+            self.fields['nome_completo'].initial = self.perfil.nome_completo
+            self.fields['tipo_perfil'].initial = self.perfil.tipo_perfil
+            self.fields['telefone'].initial = self.perfil.telefone
+            self.fields['especialidade'].initial = self.perfil.especialidade
+            self.fields['cursos_coordenados'].initial = self.perfil.cursos_coordenados.all()
+            self.fields['ativo'].initial = self.perfil.ativo
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError('Este email já está em uso.')
+        return email
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        
+        if commit:
+            user.save()
+            
+            # Atualizar perfil
+            if self.perfil:
+                self.perfil.nome_completo = self.cleaned_data['nome_completo']
+                self.perfil.tipo_perfil = self.cleaned_data['tipo_perfil']
+                self.perfil.telefone = self.cleaned_data.get('telefone', '')
+                self.perfil.especialidade = self.cleaned_data.get('especialidade', '')
+                self.perfil.ativo = self.cleaned_data.get('ativo', True)
+                self.perfil.save()
+                
+                # Atualizar cursos coordenados
+                if self.cleaned_data.get('cursos_coordenados'):
+                    self.perfil.cursos_coordenados.set(self.cleaned_data['cursos_coordenados'])
+                else:
+                    self.perfil.cursos_coordenados.clear()
+        
+        return user
+
+
+class AlterarSenhaForm(forms.Form):
+    """Formulário para alterar senha do usuário"""
+    
+    senha_atual = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite a senha atual'
+        })
+    )
+    
+    nova_senha = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite a nova senha'
+        })
+    )
+    
+    confirmar_senha = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirme a nova senha'
+        })
+    )
+    
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+    
+    def clean_senha_atual(self):
+        senha_atual = self.cleaned_data.get('senha_atual')
+        if not self.user.check_password(senha_atual):
+            raise ValidationError('Senha atual incorreta.')
+        return senha_atual
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        nova_senha = cleaned_data.get('nova_senha')
+        confirmar_senha = cleaned_data.get('confirmar_senha')
+        
+        if nova_senha and confirmar_senha:
+            if nova_senha != confirmar_senha:
+                raise ValidationError('As senhas não coincidem.')
+        
+        return cleaned_data
+    
+    def save(self):
+        nova_senha = self.cleaned_data['nova_senha']
+        self.user.set_password(nova_senha)
+        self.user.save()
+        return self.user
+
+# === FORMS BÁSICOS DO SISTEMA ===
 
 class CursoForm(forms.ModelForm):
-    """Formulário para cadastro/edição de cursos"""
+    """Formulário para cursos"""
     
     class Meta:
         model = Curso
         fields = ['nome', 'codigo', 'ativo']
         widgets = {
-            'nome': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nome completo do curso'
-            }),
-            'codigo': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Código único do curso'
-            }),
-            'ativo': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 
 class CoordenadorForm(forms.ModelForm):
-    """Formulário para cadastro/edição de coordenadores"""
+    """Formulário para coordenadores"""
     
     class Meta:
         model = Coordenador
-        fields = ['nome', 'email', 'telefone', 'user', 'ativo']
+        fields = ['nome', 'email', 'telefone', 'ativo']
         widgets = {
-            'nome': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nome completo do coordenador'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'email@exemplo.com'
-            }),
-            'telefone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '(11) 99999-9999'
-            }),
-            'user': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'ativo': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Filtrar apenas usuários que não são coordenadores
-        self.fields['user'].queryset = User.objects.filter(
-            coordenador_fatesa__isnull=True
-        )
-        self.fields['user'].empty_label = "Selecione um usuário (opcional)"
 
 
 class ProfessorForm(forms.ModelForm):
-    """Formulário para cadastro/edição de professores"""
+    """Formulário para professores"""
     
     class Meta:
         model = Professor
-        fields = ['nome', 'email', 'telefone', 'especialidade', 'user', 'ativo']
+        fields = ['nome', 'email', 'telefone', 'especialidade', 'ativo']
         widgets = {
-            'nome': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nome completo do professor'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'email@exemplo.com'
-            }),
-            'telefone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '(11) 99999-9999'
-            }),
-            'especialidade': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Área de especialidade'
-            }),
-            'user': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'ativo': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
+            'especialidade': forms.TextInput(attrs={'class': 'form-control'}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Filtrar apenas usuários que não são professores
-        self.fields['user'].queryset = User.objects.filter(
-            professor_fatesa__isnull=True
-        )
-        self.fields['user'].empty_label = "Selecione um usuário (opcional)"
 
 
 class AvaliacaoConfigForm(forms.ModelForm):
-    """Formulário para configuração de avaliação"""
+    """Formulário para configuração de avaliações"""
     
     class Meta:
         model = AvaliacaoConfig
         fields = ['curso', 'coordenador', 'professores', 'turma']
         widgets = {
-            'curso': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True
-            }),
-            'coordenador': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True
-            }),
-            'professores': forms.SelectMultiple(attrs={
-                'class': 'form-select',
-                'multiple': True,
-                'size': '8'
-            }),
-            'turma': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ex: Turma A - Janeiro/2024',
-                'required': True
-            })
+            'curso': forms.Select(attrs={'class': 'form-select'}),
+            'coordenador': forms.Select(attrs={'class': 'form-select'}),
+            'professores': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            'turma': forms.TextInput(attrs={'class': 'form-control'}),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Filtrar apenas registros ativos
-        self.fields['curso'].queryset = Curso.objects.filter(ativo=True).order_by('nome')
-        self.fields['coordenador'].queryset = Coordenador.objects.filter(ativo=True).order_by('nome')
-        self.fields['professores'].queryset = Professor.objects.filter(ativo=True).order_by('nome')
-        
-        # Labels personalizados
-        self.fields['curso'].empty_label = "Selecione o curso"
-        self.fields['coordenador'].empty_label = "Selecione o coordenador"
 
 
 class AvaliacaoRespostaForm(forms.ModelForm):
-    """Formulário para resposta do aluno"""
+    """Formulário para respostas de avaliação dos alunos"""
     
     class Meta:
         model = AvaliacaoResposta
-        fields = [
-            # Seção 1 - Professor
-            'nota_relacionamento_professor',
-            'nota_didatica_professor', 
-            'nota_dominio_assunto',
-            'professor_respeita_horarios',
-            
-            # Seção 2 - Origem
-            'origem_conhecimento',
-            
-            # Seção 3 - Motivo
-            'motivo_escolha',
-            
-            # Seção 4 - Curso
-            'nota_conteudo_teorico',
-            'nota_atividade_pratica',
-            
-            # Seção 5 - Administração
-            'nota_portaria',
-            'nota_atendimento_aluno',
-            'nota_secretaria',
-            'nota_recepcao_paciente',
-            'nota_biblioteca',
-            'nota_setor_comercial',
-            'nota_limpeza',
-            'nota_cantina',
-            
-            # Seção 6 - Comentários
-            'comentarios_adicionais',
-            'sugestoes_melhorias',
-            'nome_aluno',
-            'contato_aluno'
-        ]
-        
+        exclude = ['avaliacao_config', 'ip_address', 'user_agent', 'data_resposta']
         widgets = {
             # Notas (0-10)
-            'nota_relacionamento_professor': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_didatica_professor': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_dominio_assunto': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_conteudo_teorico': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_atividade_pratica': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_portaria': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_atendimento_aluno': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_secretaria': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_recepcao_paciente': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_biblioteca': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_setor_comercial': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_limpeza': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
-            'nota_cantina': forms.Select(attrs={
-                'class': 'form-select nota-select',
-                'required': True
-            }),
+            'nota_relacionamento_professor': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_didatica_professor': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_dominio_assunto': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_conteudo_teorico': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_atividade_pratica': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_portaria': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_atendimento_aluno': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_secretaria': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_recepcao_paciente': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_biblioteca': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_setor_comercial': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_limpeza': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
+            'nota_cantina': forms.Select(
+                choices=[(i, str(i)) for i in range(11)],
+                attrs={'class': 'form-select'}
+            ),
             
             # Sim/Não
             'professor_respeita_horarios': forms.RadioSelect(
@@ -240,26 +410,22 @@ class AvaliacaoRespostaForm(forms.ModelForm):
             ),
             
             # Selects
-            'origem_conhecimento': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True
-            }),
-            'motivo_escolha': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True
-            }),
+            'origem_conhecimento': forms.Select(attrs={'class': 'form-select'}),
+            'motivo_escolha': forms.Select(attrs={'class': 'form-select'}),
             
             # Textos
             'comentarios_adicionais': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Deixe seus comentários sobre o curso (opcional)'
+                'placeholder': 'Deixe seus comentários aqui...'
             }),
             'sugestoes_melhorias': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Sugestões para melhorar o curso (opcional)'
+                'placeholder': 'Suas sugestões são importantes para nós...'
             }),
+            
+            # Dados opcionais
             'nome_aluno': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Seu nome (opcional)'
@@ -267,88 +433,5 @@ class AvaliacaoRespostaForm(forms.ModelForm):
             'contato_aluno': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Telefone ou email (opcional)'
-            })
+            }),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Personalizar labels
-        self.fields['nota_relacionamento_professor'].label = "Relacionamento professor-aluno"
-        self.fields['nota_didatica_professor'].label = "Didática dos professores"
-        self.fields['nota_dominio_assunto'].label = "Domínio do assunto pelos professores"
-        self.fields['professor_respeita_horarios'].label = "O professor respeita os horários e fica disponível para dúvidas após as aulas?"
-        
-        self.fields['origem_conhecimento'].label = "Como você ficou sabendo da FATESA?"
-        self.fields['motivo_escolha'].label = "O que motivou sua decisão de escolher a FATESA?"
-        
-        self.fields['nota_conteudo_teorico'].label = "Satisfação com o conteúdo teórico"
-        self.fields['nota_atividade_pratica'].label = "Satisfação com a atividade prática"
-        
-        self.fields['nota_portaria'].label = "Portaria"
-        self.fields['nota_atendimento_aluno'].label = "Atendimento ao aluno"
-        self.fields['nota_secretaria'].label = "Secretaria"
-        self.fields['nota_recepcao_paciente'].label = "Recepção Paciente"
-        self.fields['nota_biblioteca'].label = "Biblioteca"
-        self.fields['nota_setor_comercial'].label = "Setor Comercial"
-        self.fields['nota_limpeza'].label = "Limpeza"
-        self.fields['nota_cantina'].label = "Cantina"
-        
-        self.fields['comentarios_adicionais'].label = "Comentários adicionais"
-        self.fields['sugestoes_melhorias'].label = "Sugestões de melhorias"
-        self.fields['nome_aluno'].label = "Nome (opcional)"
-        self.fields['contato_aluno'].label = "Contato (opcional)"
-
-
-class FiltroRelatorioForm(forms.Form):
-    """Formulário para filtros de relatórios"""
-    
-    PERIODO_CHOICES = [
-        ('', 'Todos os períodos'),
-        ('30', 'Últimos 30 dias'),
-        ('90', 'Últimos 90 dias'),
-        ('365', 'Último ano'),
-    ]
-    
-    curso = forms.ModelChoiceField(
-        queryset=Curso.objects.filter(ativo=True).order_by('nome'),
-        required=False,
-        empty_label="Todos os cursos",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    coordenador = forms.ModelChoiceField(
-        queryset=Coordenador.objects.filter(ativo=True).order_by('nome'),
-        required=False,
-        empty_label="Todos os coordenadores",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    professor = forms.ModelChoiceField(
-        queryset=Professor.objects.filter(ativo=True).order_by('nome'),
-        required=False,
-        empty_label="Todos os professores",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    periodo = forms.ChoiceField(
-        choices=PERIODO_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    data_inicio = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={
-            'class': 'form-control',
-            'type': 'date'
-        })
-    )
-    
-    data_fim = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={
-            'class': 'form-control',
-            'type': 'date'
-        })
-    )

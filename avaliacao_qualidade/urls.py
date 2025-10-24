@@ -39,4 +39,18 @@ urlpatterns = [
     
     # === AJAX ===
     path('ajax/estatisticas/', views.ajax_estatisticas, name='ajax_estatisticas'),
+    
+    # === GERENCIAMENTO DE USUÁRIOS ===
+    path('usuarios/', views.listar_usuarios, name='listar_usuarios'),
+    path('usuarios/cadastrar/', views.cadastrar_usuario, name='cadastrar_usuario'),
+    path('usuarios/<int:user_id>/editar/', views.editar_usuario, name='editar_usuario'),
+    path('usuarios/<int:user_id>/senha/', views.alterar_senha_usuario, name='alterar_senha_usuario'),
+    path('usuarios/<int:user_id>/desativar/', views.desativar_usuario, name='desativar_usuario'),
+    
+    # === PERFIL DO USUÁRIO ===
+    path('meu-perfil/', views.meu_perfil, name='meu_perfil'),
+    path('alterar-senha/', views.alterar_minha_senha, name='alterar_minha_senha'),
+    
+    # === CADASTRO PÚBLICO ===
+    path('cadastro/', views.cadastro_publico, name='cadastro_publico'),
 ]

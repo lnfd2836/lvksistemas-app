@@ -707,3 +707,260 @@ def ajax_estatisticas(request):
     }
     
     return JsonResponse(stats)
+
+
+# === VIEWS DE GERENCIAMENTO DE USUÁRIOS ===
+
+from django.contrib.auth.models import User
+from django.contrib.auth import login, authenticate
+from .models import PerfilUsuario
+from .forms import CadastroUsuarioForm, EditarUsuarioForm, AlterarSenhaForm
+
+
+@login_required
+def listar_usuarios(request):
+    """Lista todos os usuários do sistema FATESA"""
+    
+    # Verificar permissão
+    if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    # Filtros
+    tipo_perfil = request.GET.get('tipo_perfil', '')
+    ativo = request.GET.get('ativo', '')
+    busca = request.GET.get('busca', '')
+    
+    # Query base
+    usuarios = User.objects.filter(perfil_fatesa__isnull=False).select_related('perfil_fatesa')
+    
+    # Aplicar filtros
+    if tipo_perfil:
+        usuarios = usuarios.filter(perfil_fatesa__tipo_perfil=tipo_perfil)
+    
+    if ativo == 'true':
+        usuarios = usuarios.filter(perfil_fatesa__ativo=True)
+    elif ativo == 'false':
+        usuarios = usuarios.filter(perfil_fatesa__ativo=False)
+    
+    if busca:
+        usuarios = usuarios.filter(
+            Q(perfil_fatesa__nome_completo__icontains=busca) |
+            Q(username__icontains=busca) |
+            Q(email__icontains=busca)
+        )
+    
+    # Ordenação
+    usuarios = usuarios.order_by('perfil_fatesa__nome_completo')
+    
+    # Paginação
+    paginator = Paginator(usuarios, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'tipo_perfil_filter': tipo_perfil,
+        'ativo_filter': ativo,
+        'busca_filter': busca,
+        'tipos_perfil': PerfilUsuario.TIPO_PERFIL_CHOICES,
+        'total_usuarios': usuarios.count(),
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/listar.html', context)
+
+
+@login_required
+def cadastrar_usuario(request):
+    """Cadastra um novo usuário no sistema"""
+    
+    # Verificar permissão
+    if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    if request.method == 'POST':
+        form = CadastroUsuarioForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                messages.success(request, f'Usuário {user.username} cadastrado com sucesso!')
+                return redirect('avaliacao_qualidade:listar_usuarios')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar usuário: {str(e)}')
+    else:
+        form = CadastroUsuarioForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Cadastrar Usuário',
+        'cursos': Curso.objects.filter(ativo=True),
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/cadastrar.html', context)
+
+
+@login_required
+def editar_usuario(request, user_id):
+    """Edita um usuário existente"""
+    
+    # Verificar permissão
+    if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
+    perfil = user.perfil_fatesa
+    
+    if request.method == 'POST':
+        form = EditarUsuarioForm(request.POST, instance=user, perfil=perfil)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f'Usuário {user.username} atualizado com sucesso!')
+                return redirect('avaliacao_qualidade:listar_usuarios')
+            except Exception as e:
+                messages.error(request, f'Erro ao atualizar usuário: {str(e)}')
+    else:
+        form = EditarUsuarioForm(instance=user, perfil=perfil)
+    
+    context = {
+        'form': form,
+        'user_editado': user,
+        'perfil': perfil,
+        'titulo': f'Editar Usuário - {user.username}',
+        'cursos': Curso.objects.filter(ativo=True),
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/editar.html', context)
+
+
+@login_required
+def alterar_senha_usuario(request, user_id):
+    """Altera a senha de um usuário (apenas diretoria)"""
+    
+    # Verificar permissão
+    if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
+    
+    if request.method == 'POST':
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        
+        if nova_senha and nova_senha == confirmar_senha:
+            user.set_password(nova_senha)
+            user.save()
+            messages.success(request, f'Senha do usuário {user.username} alterada com sucesso!')
+            return redirect('avaliacao_qualidade:listar_usuarios')
+        else:
+            messages.error(request, 'As senhas não coincidem.')
+    
+    context = {
+        'user_editado': user,
+        'titulo': f'Alterar Senha - {user.username}',
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/alterar_senha.html', context)
+
+
+@login_required
+def meu_perfil(request):
+    """Permite ao usuário editar seu próprio perfil"""
+    
+    if not hasattr(request.user, 'perfil_fatesa'):
+        messages.error(request, 'Perfil não encontrado.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    perfil = request.user.perfil_fatesa
+    
+    if request.method == 'POST':
+        # Atualizar dados básicos
+        nome_completo = request.POST.get('nome_completo')
+        telefone = request.POST.get('telefone')
+        email = request.POST.get('email')
+        
+        if nome_completo:
+            perfil.nome_completo = nome_completo
+            perfil.save()
+            
+            # Atualizar email do usuário
+            if email and email != request.user.email:
+                if not User.objects.filter(email=email).exclude(pk=request.user.pk).exists():
+                    request.user.email = email
+                    request.user.save()
+                else:
+                    messages.error(request, 'Este email já está em uso.')
+                    return render(request, 'avaliacao_qualidade/usuarios/meu_perfil.html', {'perfil': perfil})
+            
+            if telefone:
+                perfil.telefone = telefone
+                perfil.save()
+            
+            messages.success(request, 'Perfil atualizado com sucesso!')
+            return redirect('avaliacao_qualidade:meu_perfil')
+    
+    context = {
+        'perfil': perfil,
+        'titulo': 'Meu Perfil',
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/meu_perfil.html', context)
+
+
+@login_required
+def alterar_minha_senha(request):
+    """Permite ao usuário alterar sua própria senha"""
+    
+    if request.method == 'POST':
+        form = AlterarSenhaForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Senha alterada com sucesso!')
+            return redirect('avaliacao_qualidade:meu_perfil')
+    else:
+        form = AlterarSenhaForm(request.user)
+    
+    context = {
+        'form': form,
+        'titulo': 'Alterar Minha Senha',
+    }
+    
+    return render(request, 'avaliacao_qualidade/usuarios/alterar_minha_senha.html', context)
+
+
+@login_required
+def desativar_usuario(request, user_id):
+    """Desativa/ativa um usuário"""
+    
+    # Verificar permissão
+    if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
+        messages.error(request, 'Você não tem permissão para realizar esta ação.')
+        return redirect('avaliacao_qualidade:dashboard_fatesa')
+    
+    user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
+    
+    if request.method == 'POST':
+        perfil = user.perfil_fatesa
+        perfil.ativo = not perfil.ativo
+        perfil.save()
+        
+        # Também desativar/ativar o usuário Django
+        user.is_active = perfil.ativo
+        user.save()
+        
+        status = 'ativado' if perfil.ativo else 'desativado'
+        messages.success(request, f'Usuário {user.username} {status} com sucesso!')
+    
+    return redirect('avaliacao_qualidade:listar_usuarios')
+
+
+def cadastro_publico(request):
+    """Página de cadastro público (se habilitada)"""
+    
+    # Esta view pode ser usada para permitir auto-cadastro
+    # Por enquanto, redireciona para login
+    messages.info(request, 'Entre em contato com a administração para criar sua conta.')
+    return redirect('login')

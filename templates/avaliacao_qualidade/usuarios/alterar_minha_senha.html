@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - FATESA{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .security-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        color: white;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="form-section">
+            <div class="text-center mb-4">
+                <div class="security-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h4 class="mb-2">Alterar Senha</h4>
+                <p class="text-muted">Digite sua senha atual e a nova senha</p>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.senha_atual.id_for_label }}" class="form-label">
+                        <i class="fas fa-lock me-2"></i>
+                        Senha Atual *
+                    </label>
+                    {{ form.senha_atual }}
+                    {% if form.senha_atual.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.senha_atual.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.nova_senha.id_for_label }}" class="form-label">
+                        <i class="fas fa-key me-2"></i>
+                        Nova Senha *
+                    </label>
+                    {{ form.nova_senha }}
+                    {% if form.nova_senha.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.nova_senha.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">
+                        A senha deve ter pelo menos 8 caracteres.
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.confirmar_senha.id_for_label }}" class="form-label">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Confirmar Nova Senha *
+                    </label>
+                    {{ form.confirmar_senha }}
+                    {% if form.confirmar_senha.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.confirmar_senha.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="fas fa-save me-2"></i>
+                        Alterar Senha
+                    </button>
+                    
+                    <a href="{% url 'avaliacao_qualidade:meu_perfil' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Voltar ao Perfil
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação em tempo real
+    const novaSenhaInput = document.getElementById('{{ form.nova_senha.id_for_label }}');
+    const confirmarSenhaInput = document.getElementById('{{ form.confirmar_senha.id_for_label }}');
+    
+    function validarSenhas() {
+        const novaSenha = novaSenhaInput.value;
+        const confirmarSenha = confirmarSenhaInput.value;
+        
+        // Remover classes anteriores
+        confirmarSenhaInput.classList.remove('is-valid', 'is-invalid');
+        
+        if (confirmarSenha && novaSenha) {
+            if (novaSenha === confirmarSenha) {
+                confirmarSenhaInput.classList.add('is-valid');
+            } else {
+                confirmarSenhaInput.classList.add('is-invalid');
+            }
+        }
+    }
+    
+    novaSenhaInput.addEventListener('input', validarSenhas);
+    confirmarSenhaInput.addEventListener('input', validarSenhas);
+});
+</script>
+{% endblock %}

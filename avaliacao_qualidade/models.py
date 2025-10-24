@@ -1,9 +1,112 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 import uuid
 import secrets
 import string
+
+
+class PerfilUsuario(models.Model):
+    """Perfil de usuário para o sistema FATESA"""
+    
+    TIPO_PERFIL_CHOICES = [
+        ('diretoria', 'Diretoria'),
+        ('coordenacao', 'Coordenação'),
+        ('professor', 'Professor'),
+        ('secretaria', 'Secretaria'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='perfil_fatesa',
+        verbose_name="Usuário"
+    )
+    tipo_perfil = models.CharField(
+        max_length=20, 
+        choices=TIPO_PERFIL_CHOICES,
+        verbose_name="Tipo de Perfil"
+    )
+    nome_completo = models.CharField(max_length=200, verbose_name="Nome Completo")
+    telefone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefone")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    # Campos específicos para coordenadores
+    cursos_coordenados = models.ManyToManyField(
+        'Curso', 
+        blank=True, 
+        related_name='coordenadores_perfil',
+        verbose_name="Cursos Coordenados"
+    )
+    
+    # Campos específicos para professores
+    especialidade = models.CharField(
+        max_length=300, 
+        blank=True, 
+        null=True, 
+        verbose_name="Especialidade"
+    )
+    
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuário"
+        ordering = ['nome_completo']
+    
+    def __str__(self):
+        return f"{self.nome_completo} ({self.get_tipo_perfil_display()})"
+    
+    def save(self, *args, **kwargs):
+        # Criar o usuário se não existir
+        if not self.user_id:
+            raise ValidationError("Usuário é obrigatório")
+        
+        super().save(*args, **kwargs)
+        
+        # Adicionar aos grupos apropriados
+        self.configurar_grupos()
+    
+    def configurar_grupos(self):
+        """Configura os grupos do usuário baseado no tipo de perfil"""
+        # Remove de todos os grupos FATESA
+        grupos_fatesa = ['FATESA_Diretoria', 'FATESA_Coordenacao', 'FATESA_Professor', 'FATESA_Secretaria']
+        for grupo_nome in grupos_fatesa:
+            try:
+                grupo = Group.objects.get(name=grupo_nome)
+                self.user.groups.remove(grupo)
+            except Group.DoesNotExist:
+                pass
+        
+        # Adiciona ao grupo apropriado
+        grupo_nome = f'FATESA_{self.tipo_perfil.title()}'
+        if self.tipo_perfil == 'coordenacao':
+            grupo_nome = 'FATESA_Coordenacao'
+        
+        grupo, created = Group.objects.get_or_create(name=grupo_nome)
+        self.user.groups.add(grupo)
+    
+    def pode_acessar_dashboard_diretoria(self):
+        """Verifica se pode acessar dashboard da diretoria"""
+        return self.tipo_perfil == 'diretoria'
+    
+    def pode_acessar_dashboard_coordenacao(self):
+        """Verifica se pode acessar dashboard de coordenação"""
+        return self.tipo_perfil in ['diretoria', 'coordenacao']
+    
+    def pode_acessar_dashboard_professor(self):
+        """Verifica se pode acessar dashboard do professor"""
+        return self.tipo_perfil in ['diretoria', 'coordenacao', 'professor']
+    
+    def pode_criar_avaliacoes(self):
+        """Verifica se pode criar avaliações"""
+        return self.tipo_perfil in ['diretoria', 'secretaria']
+    
+    def pode_gerenciar_usuarios(self):
+        """Verifica se pode gerenciar usuários"""
+        return self.tipo_perfil == 'diretoria'
 
 
 class Curso(models.Model):
