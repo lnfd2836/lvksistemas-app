@@ -592,31 +592,36 @@ def excluir_cobranca_asaas(request, cobranca_id):
         if not request.user.is_superuser and cobranca.controle_financeiro.loja.admin != request.user:
             return JsonResponse({'success': False, 'message': 'Você não tem permissão para excluir esta cobrança.'})
         
-        # Só permite excluir cobranças pendentes
-        if cobranca.status != 'PENDING':
-            return JsonResponse({'success': False, 'message': 'Só é possível excluir cobranças pendentes.'})
+        # Permitir exclusão de qualquer status (como no painel Asaas)
         
-        # Tentar cancelar no Asaas primeiro
+        # Tentar cancelar/remover no Asaas baseado no status
+        asaas_message = ""
         try:
             asaas_service = AsaasService()
-            
-            # Fazer requisição para cancelar no Asaas
             import requests
-            response = requests.delete(
-                f"{asaas_service.base_url}/payments/{cobranca.asaas_id}",
-                headers=asaas_service.headers,
-                timeout=30
-            )
             
-            if response.status_code == 200:
-                logger.info(f"Cobrança {cobranca.asaas_id} cancelada no Asaas")
+            if cobranca.status == 'PENDING':
+                # Para cobranças pendentes, tentar cancelar
+                response = requests.delete(
+                    f"{asaas_service.base_url}/payments/{cobranca.asaas_id}",
+                    headers=asaas_service.headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Cobrança {cobranca.asaas_id} cancelada no Asaas")
+                    asaas_message = " e cancelada no Asaas"
+                else:
+                    logger.warning(f"Erro ao cancelar no Asaas: {response.status_code} - {response.text}")
+                    asaas_message = " (erro ao cancelar no Asaas, mas removida do sistema)"
             else:
-                logger.warning(f"Erro ao cancelar no Asaas: {response.status_code} - {response.text}")
-                # Continua com a exclusão local mesmo se falhar no Asaas
+                # Para cobranças pagas/processadas, apenas remover do sistema local
+                logger.info(f"Cobrança {cobranca.asaas_id} com status {cobranca.status} removida apenas do sistema local")
+                asaas_message = " (mantida no histórico do Asaas)"
                 
         except Exception as e:
-            logger.error(f"Erro ao cancelar cobrança no Asaas: {str(e)}")
-            # Continua com a exclusão local
+            logger.error(f"Erro ao processar cobrança no Asaas: {str(e)}")
+            asaas_message = " (erro na comunicação com Asaas, mas removida do sistema)"
         
         # Excluir do banco local
         asaas_id = cobranca.asaas_id
@@ -626,7 +631,7 @@ def excluir_cobranca_asaas(request, cobranca_id):
         
         return JsonResponse({
             'success': True, 
-            'message': f'Cobrança {asaas_id} excluída com sucesso!'
+            'message': f'Cobrança {asaas_id} excluída com sucesso{asaas_message}!'
         })
         
     except Exception as e:
