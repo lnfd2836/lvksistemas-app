@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
+{% csrf_token %}
 
 {% block title %}Cobranças Asaas{% endblock %}
 
@@ -550,6 +551,50 @@
                 toast.parentNode.removeChild(toast);
             }
         }, 4000);
+    }
+
+    // Função para confirmar exclusão de cobrança
+    function confirmarExclusao(cobrancaId, asaasId) {
+        if (confirm(`Tem certeza que deseja excluir a cobrança ${asaasId}?\n\nEsta ação irá:\n- Cancelar a cobrança no Asaas\n- Remover do sistema local\n\nEsta ação não pode ser desfeita!`)) {
+            excluirCobranca(cobrancaId);
+        }
+    }
+
+    // Função para excluir cobrança
+    function excluirCobranca(cobrancaId) {
+        // Mostrar loading
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        fetch(`/financeiro/asaas/cobrancas/${cobrancaId}/excluir/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Remover a linha da tabela
+                btn.closest('tr').remove();
+            } else {
+                showToast(data.message, 'error');
+                // Restaurar botão
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showToast('Erro ao excluir cobrança. Tente novamente.', 'error');
+            // Restaurar botão
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
     }
 </script>
 {% endblock %}
