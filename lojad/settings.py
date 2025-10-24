@@ -356,7 +356,7 @@ if not LOGS_DIR.exists():
 
 # Heroku specific settings
 if 'DYNO' in os.environ:
-    DEBUG = False
+    # DEBUG já está configurado acima com env('DEBUG')
     SECURE_SSL_REDIRECT = False  # Desabilitado para permitir webhooks HTTP do Asaas
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
