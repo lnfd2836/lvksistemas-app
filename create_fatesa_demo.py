@@ -56,8 +56,7 @@ def criar_loja_fatesa_demo():
                 cep='60000-000',
                 admin_user=admin_user,
                 tipo_loja=tipo_controle,
-                status='ativa',
-                descricao='Loja de demonstração do sistema FATESA - Controle de Qualidade Educacional'
+                status='ativa'
             )
             
             print(f"✅ Loja FATESA demo criada com sucesso!")
