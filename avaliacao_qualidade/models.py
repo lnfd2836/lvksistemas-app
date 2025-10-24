@@ -205,7 +205,7 @@ class AvaliacaoConfig(models.Model):
     
     # Controle
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ativa')
-    criado_por = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Criado por")
+    criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Criado por", null=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_finalizacao = models.DateTimeField(null=True, blank=True, verbose_name="Data de Finalização")
     

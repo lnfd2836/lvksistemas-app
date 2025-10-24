@@ -63,7 +63,7 @@ class Notificacao(models.Model):
     prioridade = models.CharField(max_length=10, choices=PRIORIDADE_CHOICES, default='media', verbose_name="Prioridade")
     
     # Destinatário
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificacoes', null=True, blank=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='notificacoes', null=True, blank=True)
     loja = models.ForeignKey(Loja, on_delete=models.CASCADE, related_name='notificacoes', null=True, blank=True)
     
     # Controle

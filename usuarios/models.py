@@ -44,7 +44,7 @@ class PerfilUsuario(models.Model):
 class LogAcesso(models.Model):
     """Modelo para log de acessos dos usuários"""
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='logs_acesso')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='logs_acesso', null=True)
     acao = models.CharField(max_length=50, verbose_name="Ação")
     ip_address = models.GenericIPAddressField(verbose_name="Endereço IP")
     user_agent = models.TextField(verbose_name="User Agent")
@@ -64,7 +64,7 @@ class LogAcesso(models.Model):
 class SessaoAtiva(models.Model):
     """Modelo para rastrear sessões ativas dos usuários"""
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessoes_ativas')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='sessoes_ativas', null=True)
     session_key = models.CharField(max_length=40, unique=True, verbose_name="Chave da Sessão")
     ip_address = models.GenericIPAddressField(verbose_name="Endereço IP")
     user_agent = models.TextField(verbose_name="User Agent")
