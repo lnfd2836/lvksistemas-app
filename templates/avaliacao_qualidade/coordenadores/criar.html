@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Coordenador - FATESA{% endblock %}
+{% block page_title %}Cadastrar Coordenador{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-tie me-2"></i>
+                    Cadastrar Novo Coordenador
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                {{ form.nome.label }}
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger small">{{ form.nome.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.ativo.id_for_label }}" class="form-label">
+                                <i class="fas fa-toggle-on me-1"></i>
+                                Status
+                            </label>
+                            <div class="form-check">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                    {{ form.ativo.label }}
+                                </label>
+                            </div>
+                            {% if form.ativo.errors %}
+                                <div class="text-danger small">{{ form.ativo.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                {{ form.email.label }}
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.telefone.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-1"></i>
+                                {{ form.telefone.label }}
+                            </label>
+                            {{ form.telefone }}
+                            {% if form.telefone.errors %}
+                                <div class="text-danger small">{{ form.telefone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.user.id_for_label }}" class="form-label">
+                            <i class="fas fa-user-cog me-1"></i>
+                            {{ form.user.label }}
+                        </label>
+                        {{ form.user }}
+                        {% if form.user.errors %}
+                            <div class="text-danger small">{{ form.user.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Vincule um usuário do sistema para que o coordenador possa acessar o dashboard.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Informações importantes:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>O coordenador terá acesso ao dashboard de coordenação</li>
+                            <li>Poderá visualizar relatórios dos cursos sob sua responsabilidade</li>
+                            <li>Terá acesso a filtros avançados e exportação de dados</li>
+                            <li>Se vincular um usuário, ele poderá fazer login no sistema</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'avaliacao_qualidade:listar_coordenadores' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            Cadastrar Coordenador
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
