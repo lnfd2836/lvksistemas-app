@@ -595,6 +595,10 @@ def sincronizar_usando_funcionalidades_existentes(request):
     if request.method not in ['GET', 'POST']:
         return HttpResponseNotAllowed(['GET', 'POST'])
     
+    # Teste simples primeiro
+    from django.http import HttpResponse
+    return HttpResponse("✅ Função funcionando! Método: " + request.method)
+    
     try:
         logger.info("Iniciando sincronização usando funcionalidades existentes...")
         
