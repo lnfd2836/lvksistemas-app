@@ -48,4 +48,7 @@ urlpatterns = [
     
     # Gerenciamento de funcionários
     path('funcionarios/', include('lojas.urls_funcionarios')),
+    
+    # URLs administrativas (super admin)
+    path('admin/', include('lojas.urls_admin')),
 ]

@@ -27,10 +27,11 @@ admin.site.register(User, CustomUserAdmin)
 
 @admin.register(Loja)
 class LojaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cnpj', 'email', 'cidade', 'estado', 'status', 'data_criacao')
-    list_filter = ('status', 'estado', 'data_criacao')
+    list_display = ('nome', 'cnpj', 'email', 'cidade', 'estado', 'status', 'data_criacao', 'acoes_personalizadas')
+    list_filter = ('status', 'estado', 'data_criacao', 'tipo_loja')
     search_fields = ('nome', 'cnpj', 'email', 'cidade')
     readonly_fields = ('data_criacao', 'data_atualizacao', 'senha_provisoria')
+    
     fieldsets = (
         ('Informações Básicas', {
             'fields': ('nome', 'cnpj', 'email', 'telefone')
@@ -39,7 +40,7 @@ class LojaAdmin(admin.ModelAdmin):
             'fields': ('endereco', 'cidade', 'estado', 'cep')
         }),
         ('Configurações', {
-            'fields': ('status', 'admin_user', 'senha_provisoria', 'senha_provisoria_expirada')
+            'fields': ('status', 'admin_user', 'tipo_loja', 'senha_provisoria', 'senha_provisoria_expirada')
         }),
         ('Banco de Dados', {
             'fields': ('db_name', 'db_host', 'db_port')
@@ -48,6 +49,55 @@ class LojaAdmin(admin.ModelAdmin):
             'fields': ('data_criacao', 'data_atualizacao')
         })
     )
+    
+    def acoes_personalizadas(self, obj):
+        """Adiciona botões de ação personalizados"""
+        from django.utils.html import format_html
+        from django.urls import reverse
+        
+        if self.request.user.is_superuser:
+            return format_html(
+                '<a class="button" href="{}" style="background-color: #dc3545; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; margin-right: 5px;" '
+                'onclick="return confirm(\'Tem certeza que deseja excluir esta loja? Você será direcionado para uma página de confirmação detalhada.\');">'
+                '<i class="fas fa-trash"></i> Excluir com Segurança</a>',
+                reverse('lojas_admin:confirmar_exclusao_loja', args=[obj.pk])
+            )
+        return "Sem permissão"
+    
+    acoes_personalizadas.short_description = "Ações"
+    acoes_personalizadas.allow_tags = True
+    
+    def get_actions(self, request):
+        """Remove a ação padrão de delete para super admins"""
+        actions = super().get_actions(request)
+        if request.user.is_superuser and 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+    
+    def has_delete_permission(self, request, obj=None):
+        """Remove permissão de delete padrão para usar nossa exclusão personalizada"""
+        return False
+    
+    def get_list_display(self, request):
+        """Mostra ações personalizadas apenas para super admins"""
+        list_display = list(self.list_display)
+        if not request.user.is_superuser and 'acoes_personalizadas' in list_display:
+            list_display.remove('acoes_personalizadas')
+        return list_display
+    
+    def get_queryset(self, request):
+        """Otimiza queries incluindo relacionamentos"""
+        return super().get_queryset(request).select_related('admin_user', 'tipo_loja')
+    
+    def save_model(self, request, obj, form, change):
+        """Salva o request no objeto para usar em acoes_personalizadas"""
+        self.request = request
+        super().save_model(request, obj, form, change)
+    
+    def changelist_view(self, request, extra_context=None):
+        """Adiciona o request ao contexto"""
+        self.request = request
+        return super().changelist_view(request, extra_context)
 
 
 @admin.register(Cliente)
