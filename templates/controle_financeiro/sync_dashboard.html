@@ -117,7 +117,7 @@
                         <div class="alert alert-danger alert-sm mb-2" style="padding: 5px 10px; font-size: 12px;">
                             <i class="fas fa-exclamation-triangle"></i> <strong>NÃO USE:</strong> O botão abaixo ainda dá Connection Refused
                         </div>
-                        <form method="post" action="{% url 'controle_financeiro:forcar_sincronizacao' %}" class="d-inline">
+                        <form method="post" action="/financeiro/sync/forcar/" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-sm mb-2" title="❌ ESTE BOTÃO DÁ CONNECTION REFUSED - NÃO USE!" disabled>
                                 <i class="fas fa-ban"></i> ❌ Sincronizar Agora (COM PROBLEMA)
@@ -150,7 +150,7 @@
                         </form>
                         
                         <!-- Resetar Estatísticas -->
-                        <form method="post" action="{% url 'controle_financeiro:resetar_estatisticas' %}" class="d-inline">
+                        <form method="post" action="/financeiro/sync/resetar/" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-secondary btn-sm mb-2">
                                 <i class="fas fa-redo"></i> Resetar Stats
@@ -166,13 +166,13 @@
                         
                         <div class="mt-3">
                             <h6>🔧 Funcionalidades que já funcionam:</h6>
-                            <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-success btn-sm mb-1">
+                            <a href="/financeiro/asaas/testar/" class="btn btn-success btn-sm mb-1">
                                 <i class="fas fa-check-circle"></i> Testar Integração Asaas
                             </a>
-                            <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-info btn-sm mb-1">
+                            <a href="/financeiro/asaas/configurar/" class="btn btn-info btn-sm mb-1">
                                 <i class="fas fa-cog"></i> Configurar Asaas
                             </a>
-                            <a href="{% url 'controle_financeiro:webhook_debug' %}" class="btn btn-warning btn-sm mb-1">
+                            <a href="/financeiro/asaas/webhook-debug/" class="btn btn-warning btn-sm mb-1">
                                 <i class="fas fa-bug"></i> Debug Webhook
                             </a>
                         </div>
@@ -182,7 +182,7 @@
                         <h6>Controle Automático</h6>
                         
                         {% if not sync_status.is_running %}
-                            <form method="post" action="{% url 'controle_financeiro:iniciar_sincronizacao' %}" class="mb-2">
+                            <form method="post" action="/financeiro/sync/iniciar/" class="mb-2">
                                 {% csrf_token %}
                                 <div class="form-group">
                                     <label for="interval">Intervalo (segundos):</label>
@@ -198,7 +198,7 @@
                                 </button>
                             </form>
                         {% else %}
-                            <form method="post" action="{% url 'controle_financeiro:parar_sincronizacao' %}">
+                            <form method="post" action="/financeiro/sync/parar/">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning btn-sm">
                                     <i class="fas fa-stop"></i> Parar Automática
