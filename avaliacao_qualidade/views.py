@@ -724,7 +724,7 @@ def listar_usuarios(request):
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     # Filtros
     tipo_perfil = request.GET.get('tipo_perfil', '')
@@ -777,7 +777,7 @@ def cadastrar_usuario(request):
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     if request.method == 'POST':
         form = CadastroUsuarioForm(request.POST)
@@ -807,7 +807,7 @@ def editar_usuario(request, user_id):
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
     perfil = user.perfil_fatesa
@@ -842,7 +842,7 @@ def alterar_senha_usuario(request, user_id):
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
     
@@ -872,7 +872,7 @@ def meu_perfil(request):
     
     if not hasattr(request.user, 'perfil_fatesa'):
         messages.error(request, 'Perfil não encontrado.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     perfil = request.user.perfil_fatesa
     
@@ -938,7 +938,7 @@ def desativar_usuario(request, user_id):
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para realizar esta ação.')
-        return redirect('avaliacao_qualidade:dashboard_fatesa')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
     user = get_object_or_404(User, id=user_id, perfil_fatesa__isnull=False)
     

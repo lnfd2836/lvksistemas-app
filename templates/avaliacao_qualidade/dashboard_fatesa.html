@@ -12,19 +12,19 @@
         margin-bottom: 2rem;
         border-radius: 10px;
     }
-    
+
     .fatesa-card {
         border: none;
         border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
+
     .fatesa-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
-    
+
     .stat-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -32,19 +32,19 @@
         padding: 1.5rem;
         margin-bottom: 1rem;
     }
-    
+
     .stat-card.success {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     }
-    
+
     .stat-card.warning {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     }
-    
+
     .stat-card.info {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
-    
+
     .btn-fatesa {
         background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
         border: none;
@@ -54,13 +54,13 @@
         font-weight: 600;
         transition: all 0.3s ease;
     }
-    
+
     .btn-fatesa:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(31, 78, 121, 0.4);
         color: white;
     }
-    
+
     .section-title {
         color: #1f4e79;
         font-weight: 700;
@@ -68,7 +68,7 @@
         position: relative;
         padding-bottom: 0.5rem;
     }
-    
+
     .section-title::after {
         content: '';
         position: absolute;
@@ -79,7 +79,7 @@
         background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
         border-radius: 2px;
     }
-    
+
     .quick-action {
         background: white;
         border-radius: 15px;
@@ -88,18 +88,18 @@
         border: 2px solid #e9ecef;
         transition: all 0.3s ease;
     }
-    
+
     .quick-action:hover {
         border-color: #1f4e79;
         transform: translateY(-3px);
     }
-    
+
     .quick-action i {
         font-size: 2.5rem;
         color: #1f4e79;
         margin-bottom: 1rem;
     }
-    
+
     .recent-item {
         background: white;
         border-radius: 10px;
@@ -108,9 +108,9 @@
         border-left: 4px solid #1f4e79;
         transition: all 0.3s ease;
     }
-    
+
     .recent-item:hover {
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         transform: translateX(5px);
     }
 </style>
@@ -144,7 +144,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card info">
             <div class="d-flex justify-content-between align-items-center">
@@ -158,7 +158,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card warning">
             <div class="d-flex justify-content-between align-items-center">
@@ -172,7 +172,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
@@ -196,7 +196,7 @@
             Ações Rápidas
         </h2>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-plus-circle"></i>
@@ -205,7 +205,7 @@
             <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-fatesa btn-sm">Criar</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-list-alt"></i>
@@ -214,7 +214,7 @@
             <a href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}" class="btn btn-fatesa btn-sm">Ver Todas</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-book"></i>
@@ -223,7 +223,7 @@
             <a href="{% url 'avaliacao_qualidade:listar_cursos' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-chalkboard-teacher"></i>
@@ -232,7 +232,7 @@
             <a href="{% url 'avaliacao_qualidade:listar_professores' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-user-tie"></i>
@@ -241,7 +241,7 @@
             <a href="{% url 'avaliacao_qualidade:listar_coordenadores' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-users"></i>
@@ -250,7 +250,7 @@
             <a href="{% url 'avaliacao_qualidade:listar_usuarios' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
         </div>
     </div>
-    
+
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
         <div class="quick-action">
             <i class="fas fa-chart-bar"></i>
@@ -269,7 +269,7 @@
             Dashboards por Perfil
         </h2>
     </div>
-    
+
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card fatesa-card">
             <div class="card-body text-center">
@@ -283,7 +283,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card fatesa-card">
             <div class="card-body text-center">
@@ -297,7 +297,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card fatesa-card">
             <div class="card-body text-center">
@@ -325,51 +325,53 @@
             </div>
             <div class="card-body">
                 {% if avaliacoes_recentes %}
-                    {% for avaliacao in avaliacoes_recentes %}
-                    <div class="recent-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">{{ avaliacao.curso.nome|truncatechars:50 }}</h6>
-                                <p class="text-muted mb-1">
-                                    <i class="fas fa-user-tie me-1"></i>
-                                    {{ avaliacao.coordenador.nome }} | 
-                                    <i class="fas fa-users me-1"></i>
-                                    {{ avaliacao.turma }}
-                                </p>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    {{ avaliacao.data_criacao|date:"d/m/Y H:i" }}
-                                </small>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-{% if avaliacao.status == 'ativa' %}success{% elif avaliacao.status == 'finalizada' %}secondary{% else %}warning{% endif %} mb-2">
-                                    {{ avaliacao.get_status_display }}
-                                </span>
-                                <br>
-                                <span class="badge bg-info">{{ avaliacao.total_avaliacoes }} respostas</span>
-                                <br>
-                                <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' avaliacao.id %}" class="btn btn-sm btn-outline-primary mt-1">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </div>
+                {% for avaliacao in avaliacoes_recentes %}
+                <div class="recent-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ avaliacao.curso.nome|truncatechars:50 }}</h6>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-user-tie me-1"></i>
+                                {{ avaliacao.coordenador.nome }} |
+                                <i class="fas fa-users me-1"></i>
+                                {{ avaliacao.turma }}
+                            </p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ avaliacao.data_criacao|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span
+                                class="badge bg-{% if avaliacao.status == 'ativa' %}success{% elif avaliacao.status == 'finalizada' %}secondary{% else %}warning{% endif %} mb-2">
+                                {{ avaliacao.get_status_display }}
+                            </span>
+                            <br>
+                            <span class="badge bg-info">{{ avaliacao.total_avaliacoes }} respostas</span>
+                            <br>
+                            <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' avaliacao.id %}"
+                                class="btn btn-sm btn-outline-primary mt-1">
+                                <i class="fas fa-eye"></i>
+                            </a>
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+                {% endfor %}
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
-                        <p class="text-muted">Crie sua primeira avaliação para começar!</p>
-                        <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-fatesa">
-                            <i class="fas fa-plus me-1"></i>
-                            Criar Primeira Avaliação
-                        </a>
-                    </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                    <p class="text-muted">Crie sua primeira avaliação para começar!</p>
+                    <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-fatesa">
+                        <i class="fas fa-plus me-1"></i>
+                        Criar Primeira Avaliação
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-4">
         <div class="card fatesa-card">
             <div class="card-header bg-success text-white">
@@ -380,65 +382,75 @@
             </div>
             <div class="card-body">
                 {% if medias %}
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Relacionamento Professor</span>
-                            <strong>{{ medias.media_professor|floatformat:1|default:"N/A" }}</strong>
-                        </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: {% if medias.media_professor %}{{ medias.media_professor|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Relacionamento Professor</span>
+                        <strong>{{ medias.media_professor|floatformat:1|default:"N/A" }}</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success"
+                            style="width: {% if medias.media_professor %}{{ medias.media_professor|floatformat:0 }}0%{% else %}0%{% endif %}">
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Didática</span>
-                            <strong>{{ medias.media_didatica|floatformat:1|default:"N/A" }}</strong>
-                        </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-info" style="width: {% if medias.media_didatica %}{{ medias.media_didatica|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Didática</span>
+                        <strong>{{ medias.media_didatica|floatformat:1|default:"N/A" }}</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-info"
+                            style="width: {% if medias.media_didatica %}{{ medias.media_didatica|floatformat:0 }}0%{% else %}0%{% endif %}">
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Domínio do Assunto</span>
-                            <strong>{{ medias.media_dominio|floatformat:1|default:"N/A" }}</strong>
-                        </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-warning" style="width: {% if medias.media_dominio %}{{ medias.media_dominio|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Domínio do Assunto</span>
+                        <strong>{{ medias.media_dominio|floatformat:1|default:"N/A" }}</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning"
+                            style="width: {% if medias.media_dominio %}{{ medias.media_dominio|floatformat:0 }}0%{% else %}0%{% endif %}">
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Conteúdo Teórico</span>
-                            <strong>{{ medias.media_teorico|floatformat:1|default:"N/A" }}</strong>
-                        </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: {% if medias.media_teorico %}{{ medias.media_teorico|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Conteúdo Teórico</span>
+                        <strong>{{ medias.media_teorico|floatformat:1|default:"N/A" }}</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary"
+                            style="width: {% if medias.media_teorico %}{{ medias.media_teorico|floatformat:0 }}0%{% else %}0%{% endif %}">
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Atividade Prática</span>
-                            <strong>{{ medias.media_pratico|floatformat:1|default:"N/A" }}</strong>
-                        </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-danger" style="width: {% if medias.media_pratico %}{{ medias.media_pratico|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Atividade Prática</span>
+                        <strong>{{ medias.media_pratico|floatformat:1|default:"N/A" }}</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-danger"
+                            style="width: {% if medias.media_pratico %}{{ medias.media_pratico|floatformat:0 }}0%{% else %}0%{% endif %}">
                         </div>
                     </div>
+                </div>
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                        <h6 class="text-muted">Sem dados ainda</h6>
-                        <p class="text-muted small">As médias aparecerão quando houver respostas de avaliação.</p>
-                    </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">Sem dados ainda</h6>
+                    <p class="text-muted small">As médias aparecerão quando houver respostas de avaliação.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
-        
+
         <!-- Respostas Recentes -->
         <div class="card fatesa-card mt-4">
             <div class="card-header bg-info text-white">
@@ -449,28 +461,29 @@
             </div>
             <div class="card-body">
                 {% if respostas_recentes %}
-                    {% for resposta in respostas_recentes %}
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-1">{{ resposta.nome_aluno|default:"Anônimo" }}</h6>
-                            <p class="text-muted mb-1 small">{{ resposta.avaliacao_config.curso.nome|truncatechars:30 }}</p>
-                            <small class="text-muted">{{ resposta.data_resposta|date:"d/m/Y H:i" }}</small>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <span class="badge bg-success">{{ resposta.get_media_geral|floatformat:1 }}</span>
+                {% for resposta in respostas_recentes %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
+                            <i class="fas fa-user"></i>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-1">{{ resposta.nome_aluno|default:"Anônimo" }}</h6>
+                        <p class="text-muted mb-1 small">{{ resposta.avaliacao_config.curso.nome|truncatechars:30 }}</p>
+                        <small class="text-muted">{{ resposta.data_resposta|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-success">{{ resposta.get_media_geral|floatformat:1 }}</span>
+                    </div>
+                </div>
+                {% endfor %}
                 {% else %}
-                    <div class="text-center py-3">
-                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                        <p class="text-muted mb-0">Nenhuma resposta ainda</p>
-                    </div>
+                <div class="text-center py-3">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">Nenhuma resposta ainda</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -512,26 +525,26 @@
 
 {% block extra_js %}
 <script>
-// Atualizar estatísticas a cada 30 segundos
-setInterval(function() {
-    // Aqui você pode adicionar AJAX para atualizar estatísticas em tempo real
-    console.log('Atualizando estatísticas...');
-}, 30000);
+    // Atualizar estatísticas a cada 30 segundos
+    setInterval(function () {
+        // Aqui você pode adicionar AJAX para atualizar estatísticas em tempo real
+        console.log('Atualizando estatísticas...');
+    }, 30000);
 
-// Animações suaves
-document.addEventListener('DOMContentLoaded', function() {
-    // Animar cards ao carregar
-    const cards = document.querySelectorAll('.fatesa-card, .stat-card, .quick-action');
-    cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            card.style.transition = 'all 0.5s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
+    // Animações suaves
+    document.addEventListener('DOMContentLoaded', function () {
+        // Animar cards ao carregar
+        const cards = document.querySelectorAll('.fatesa-card, .stat-card, .quick-action');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
     });
-});
 </script>
 {% endblock %}
