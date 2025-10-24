@@ -131,7 +131,7 @@
                         
                         <!-- BOTÃO VERDE SIMPLIFICADO PARA TESTE -->
                         <div class="mb-3">
-                            <form method="post" action="{% url 'controle_financeiro:sincronizar_funcionalidades_existentes' %}" style="display: inline-block;">
+                            <form method="post" action="/financeiro/sync/funcionalidades-existentes/" style="display: inline-block;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success btn-lg" 
                                         style="font-weight: bold; padding: 15px 30px; font-size: 18px;"
@@ -142,7 +142,7 @@
                         </div>
                         
                         <!-- BOTÃO ORIGINAL (MANTIDO PARA COMPATIBILIDADE) -->
-                        <form method="post" action="{% url 'controle_financeiro:sincronizar_funcionalidades_existentes' %}" class="d-inline">
+                        <form method="post" action="/financeiro/sync/funcionalidades-existentes/" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-success btn-lg mb-2" title="✅ ESTE BOTÃO SEMPRE FUNCIONA!" style="font-weight: bold;">
                                 <i class="fas fa-check-double"></i> ✅ SYNC SEGURA (USE ESTE!)
