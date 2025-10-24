@@ -446,3 +446,18 @@ def redirect_configurar_boletos_to_asaas(request):
     """Redireciona configurar_boletos para configurar_asaas"""
     messages.info(request, 'Sistema otimizado! Configure a integração Asaas.')
     return redirect('controle_financeiro:configurar_asaas')
+
+@login_required
+@user_passes_test(is_superuser)
+def executar_rotinas_financeiras(request):
+    """Executa rotinas financeiras automáticas"""
+    if request.method == 'POST':
+        try:
+            # Verificar vencimentos
+            verificar_vencimentos(request)
+            
+            messages.success(request, 'Rotinas financeiras executadas com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao executar rotinas: {e}')
+    
+    return redirect('controle_financeiro:dashboard_financeiro')

@@ -20,6 +20,7 @@ urlpatterns = [
     
     # Utilitários
     path('verificar-vencimentos/', views.verificar_vencimentos, name='verificar_vencimentos'),
+    path('executar-rotinas-financeiras/', views.executar_rotinas_financeiras, name='executar_rotinas_financeiras'),
     
     # Cliente (loja)
     path('pagamento/', views.pagamento_cliente, name='pagamento_cliente'),
