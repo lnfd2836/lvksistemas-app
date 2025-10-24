@@ -24,8 +24,22 @@ class Command(BaseCommand):
             # Associar usuário específico
             try:
                 user = User.objects.get(username=username)
-                user.loja_admin = loja_fatesa
-                user.save()
+                # Criar nova loja para cada usuário ou usar a existente
+                user_loja, created = Loja.objects.get_or_create(
+                    admin_user=user,
+                    defaults={
+                        'nome': f"Controle de qualidade - {user.username}",
+                        'endereco': 'FATESA',
+                        'telefone': '(00) 0000-0000',
+                        'email': user.email or 'admin@fatesa.edu.br',
+                        'tipo_loja': 'avaliacao_qualidade'
+                    }
+                )
+                if created:
+                    self.stdout.write(f"✅ Nova loja criada para {user.username}")
+                else:
+                    self.stdout.write(f"✅ Loja já existia para {user.username}")
+                    
                 self.stdout.write(
                     self.style.SUCCESS(f'Usuário {username} associado à loja FATESA!')
                 )
@@ -43,19 +57,35 @@ class Command(BaseCommand):
             
             for perfil in perfis:
                 user = perfil.user
-                user.loja_admin = loja_fatesa
-                user.save()
+                # Criar nova loja para cada usuário ou usar a existente
+                user_loja, created = Loja.objects.get_or_create(
+                    admin_user=user,
+                    defaults={
+                        'nome': f"Controle de qualidade - {user.username}",
+                        'endereco': 'FATESA',
+                        'telefone': '(00) 0000-0000',
+                        'email': user.email or 'admin@fatesa.edu.br',
+                        'tipo_loja': 'avaliacao_qualidade'
+                    }
+                )
                 count += 1
-                self.stdout.write(f"✅ {user.username} associado à loja FATESA")
+                if created:
+                    self.stdout.write(f"✅ {user.username} - Nova loja criada")
+                else:
+                    self.stdout.write(f"✅ {user.username} - Loja já existia")
             
             self.stdout.write(
-                self.style.SUCCESS(f'\n{count} usuários associados à loja FATESA!')
+                self.style.SUCCESS(f'\n{count} usuários processados!')
             )
         
         else:
             # Listar usuários sem loja
-            users_sem_loja = User.objects.filter(loja_admin__isnull=True)
-            if users_sem_loja.exists():
+            users_sem_loja = []
+            for user in User.objects.all():
+                if not hasattr(user, 'loja_admin') or not user.loja_admin:
+                    users_sem_loja.append(user)
+            
+            if users_sem_loja:
                 self.stdout.write("Usuários sem loja associada:")
                 for user in users_sem_loja:
                     self.stdout.write(f"- {user.username}")
