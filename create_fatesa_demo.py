@@ -30,13 +30,23 @@ def criar_loja_fatesa_demo():
                 print("❌ Tipo de loja 'controle_qualidade' não encontrado!")
                 return False
             
-            # Buscar usuário admin
+            # Buscar usuário admin (tentar admin primeiro, depois temp_admin2)
+            admin_user = None
             try:
                 admin_user = User.objects.get(username='admin')
                 print(f"✅ Usuário admin encontrado: {admin_user.username}")
             except User.DoesNotExist:
-                print("❌ Usuário admin não encontrado!")
-                return False
+                try:
+                    admin_user = User.objects.get(username='temp_admin2')
+                    print(f"✅ Usuário temp_admin2 encontrado: {admin_user.username}")
+                except User.DoesNotExist:
+                    # Buscar qualquer superusuário
+                    admin_user = User.objects.filter(is_superuser=True, is_active=True).first()
+                    if admin_user:
+                        print(f"✅ Superusuário encontrado: {admin_user.username}")
+                    else:
+                        print("❌ Nenhum superusuário encontrado!")
+                        return False
             
             # Verificar se já existe loja demo
             if Loja.objects.filter(nome='FATESA - Demo').exists():
