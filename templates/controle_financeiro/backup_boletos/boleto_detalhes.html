@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Boleto {{ boleto.numero_boleto }} - {{ boleto.controle_financeiro.loja.nome }}{% endblock %}
+{% block page_title %}Detalhes do Boleto{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-file-invoice"></i> Boleto {{ boleto.numero_boleto }}
+                </h6>
+                <div class="btn-group" role="group">
+                    {% if boleto.status != 'cancelado' %}
+                    <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}"
+                        class="btn btn-primary btn-sm" target="_blank">
+                        <i class="fas fa-print"></i> Imprimir PDF
+                    </a>
+                    {% endif %}
+
+                    {% if user.is_superuser %}
+                    <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    {% else %}
+                    <a href="{% url 'controle_financeiro:boletos_cliente' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Meus Boletos
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Informações do Beneficiário -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-building"></i> Beneficiário
+                        </h6>
+                        <div class="border p-3 rounded">
+                            <strong>{{ boleto.configuracao.nome_beneficiario }}</strong><br>
+                            CNPJ: {{ boleto.configuracao.cnpj_beneficiario }}<br>
+                            {{ boleto.configuracao.endereco_beneficiario }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-shop"></i> Pagador
+                        </h6>
+                        <div class="border p-3 rounded">
+                            <strong>{{ boleto.controle_financeiro.loja.nome }}</strong><br>
+                            CNPJ: {{ boleto.controle_financeiro.loja.cnpj }}<br>
+                            {{ boleto.controle_financeiro.loja.endereco }}<br>
+                            {{ boleto.controle_financeiro.loja.cidade }}/{{ boleto.controle_financeiro.loja.estado }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados do Boleto -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle"></i> Dados do Boleto
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light" width="200">Número do Boleto</td>
+                                        <td>{{ boleto.numero_boleto }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Valor</td>
+                                        <td><strong class="text-success">R$ {{ boleto.valor|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Data de Vencimento</td>
+                                        <td>
+                                            {{ boleto.data_vencimento|date:"d/m/Y" }}
+                                            {% if boleto.dias_para_vencimento > 0 %}
+                                            <span class="badge badge-info ml-2">Em {{ boleto.dias_para_vencimento }}
+                                                dias</span>
+                                            {% elif boleto.dias_para_vencimento == 0 %}
+                                            <span class="badge badge-warning ml-2">Vence hoje</span>
+                                            {% else %}
+                                            <span class="badge badge-danger ml-2">Vencido há {{ boleto.dias_para_vencimento|add:"-1"|floatformat:"0" }} dias</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Status</td>
+                                        <td>
+                                            <span
+                                                class="badge badge-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% elif boleto.status == 'cancelado' %}secondary{% else %}warning{% endif %} badge-lg">
+                                                {{ boleto.get_status_display }}
+                                            </span>
+                                            {% if boleto.status == 'pago' and boleto.data_pagamento %}
+                                            <small class="text-muted ml-2">Pago em {{ boleto.data_pagamento|date:"d/m/Y H:i" }}</small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Data de Geração</td>
+                                        <td>{{ boleto.data_criacao|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    {% if boleto.observacoes %}
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Observações</td>
+                                        <td>{{ boleto.observacoes|linebreaks }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados Bancários -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-university"></i> Dados Bancários
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light" width="200">Banco</td>
+                                        <td>{{ boleto.configuracao.codigo_banco }} - {{ boleto.configuracao.nome_banco }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Agência</td>
+                                        <td>{{ boleto.configuracao.agencia }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Conta</td>
+                                        <td>{{ boleto.configuracao.conta }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Carteira</td>
+                                        <td>{{ boleto.configuracao.carteira }}</td>
+                                    </tr>
+                                    {% if boleto.configuracao.codigo_cedente %}
+                                    <tr>
+                                        <td class="font-weight-bold bg-light">Código do Cedente</td>
+                                        <td>{{ boleto.configuracao.codigo_cedente }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linha Digitável e Código de Barras -->
+                {% if boleto.status != 'cancelado' %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-barcode"></i> Dados para Pagamento
+                        </h6>
+
+                        <!-- Linha Digitável -->
+                        <div class="mb-3">
+                            <label class="font-weight-bold">Linha Digitável:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="linhaDigitavel"
+                                    value="{{ boleto.linha_digitavel }}" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-primary" type="button"
+                                        onclick="copiarTexto('linhaDigitavel')">
+                                        <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">Use esta linha para pagar em qualquer banco, internet banking ou
+                                aplicativo.</small>
+                        </div>
+
+                        <!-- Código de Barras -->
+                        <div class="mb-3">
+                            <label class="font-weight-bold">Código de Barras:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="codigoBarras"
+                                    value="{{ boleto.codigo_barras }}" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-primary" type="button"
+                                        onclick="copiarTexto('codigoBarras')">
+                                        <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instruções para Código de Barras Visual -->
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-camera"></i> Código de Barras Visual
+                            </h6>
+                            <p class="mb-2">
+                                <strong>📱 Para escanear com a câmera:</strong>
+                            </p>
+                            <ol class="mb-0">
+                                <li>Baixe o <strong>PDF do boleto</strong> clicando no botão "Imprimir PDF" acima</li>
+                                <li>Abra o PDF no seu celular ou computador</li>
+                                <li>Use a <strong>câmera do seu app bancário</strong> para escanear as barrinhas do
+                                    código</li>
+                                <li>O app reconhecerá automaticamente e preencherá os dados</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Instruções -->
+                {% if boleto.configuracao.instrucoes %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle"></i> Instruções
+                        </h6>
+                        <div class="alert alert-info">
+                            {{ boleto.configuracao.instrucoes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Ações do Super Admin -->
+                {% if user.is_superuser and boleto.status == 'pendente' %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="border-top pt-3">
+                            <h6 class="text-danger mb-3">
+                                <i class="fas fa-user-shield"></i> Ações do Administrador
+                            </h6>
+                            <form method="post" action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}"
+                                class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="next"
+                                    value="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}">
+                                <button type="submit" class="btn btn-success"
+                                    onclick="return confirm('Confirma que este boleto foi pago?')">
+                                    <i class="fas fa-check"></i> Marcar como Pago
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copiarTexto(elementId) {
+        const elemento = document.getElementById(elementId);
+        elemento.select();
+        elemento.setSelectionRange(0, 99999); // Para dispositivos móveis
+
+        navigator.clipboard.writeText(elemento.value).then(function () {
+            // Feedback visual
+            const botao = elemento.nextElementSibling.querySelector('button');
+            const textoOriginal = botao.innerHTML;
+            botao.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+            botao.classList.remove('btn-outline-primary');
+            botao.classList.add('btn-success');
+
+            setTimeout(function () {
+                botao.innerHTML = textoOriginal;
+                botao.classList.remove('btn-success');
+                botao.classList.add('btn-outline-primary');
+            }, 2000);
+        }).catch(function (err) {
+            alert('Erro ao copiar: ' + err);
+        });
+    }
+</script>
+{% endblock %}

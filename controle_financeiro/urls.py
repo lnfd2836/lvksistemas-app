@@ -24,42 +24,27 @@ urlpatterns = [
     # Cliente (loja)
     path('pagamento/', views.pagamento_cliente, name='pagamento_cliente'),
     
-    # Configuração de boletos
-    path('boletos/configurar/', views.configurar_boletos, name='configurar_boletos'),
-    path('boletos/configurar/<int:config_id>/', views.editar_configuracao_boleto, name='editar_configuracao_boleto'),
-    path('boletos/gerar/<int:controle_id>/', views.gerar_boleto, name='gerar_boleto'),
-    path('boletos/', views.listar_boletos, name='listar_boletos'),
-    path('boletos/<int:boleto_id>/pago/', views.marcar_boleto_pago, name='marcar_boleto_pago'),
+    # === REDIRECIONAMENTOS (COMPATIBILIDADE) ===
+    # Boletos antigos -> Cobranças Asaas
+    path('boletos/', views.redirect_boletos_to_asaas, name='listar_boletos'),
+    path('boletos/configurar/', views.redirect_configurar_boletos_to_asaas, name='configurar_boletos'),
+    path('boletos/gerar/<int:controle_id>/', views.redirect_gerar_boleto_to_asaas, name='gerar_boleto'),
+    path('boletos-cliente/', views.redirect_boletos_cliente_to_asaas, name='boletos_cliente'),
     
-        # Cliente (loja) - boletos
-        path('boletos-cliente/', views.boletos_cliente, name='boletos_cliente'),
-        
-        # Detalhes do boleto
-        path('boletos/<int:boleto_id>/detalhes/', views.detalhar_boleto, name='detalhar_boleto'),
-        
-        # Automação financeira
-        path('gerar-boletos-automaticos/', views.gerar_boletos_automaticos, name='gerar_boletos_automaticos'),
-        path('executar-rotinas-financeiras/', views.executar_rotinas_financeiras, name='executar_rotinas_financeiras'),
-        
-        # Gerenciamento manual de boletos
-        path('boletos/criar-manual/', views.criar_boleto_manual, name='criar_boleto_manual'),
-        path('boletos/<int:boleto_id>/excluir/', views.excluir_boleto, name='excluir_boleto'),
-        
-        # PDF e pagamento
-        path('boletos/<int:boleto_id>/pdf/', views.imprimir_boleto_pdf, name='imprimir_boleto_pdf'),
-        path('asaas/pdf/<str:cobranca_id>/', views.pdf_asaas_redirect, name='pdf_asaas_redirect'),
-        path('asaas/pdf-direto/<str:asaas_id>/', views.pdf_asaas_direto, name='pdf_asaas_direto'),
-        
-        # Integração Asaas
-        path('asaas/gerar/<int:controle_id>/', asaas_views.gerar_cobranca_asaas, name='gerar_cobranca_asaas'),
-        path('asaas/cobrancas/', asaas_views.listar_cobrancas_asaas, name='listar_cobrancas_asaas'),
-        path('asaas/cobrancas/criar/', asaas_views.criar_cobranca_asaas, name='criar_cobranca_asaas'),
-        path('asaas/cobrancas/<uuid:cobranca_id>/', asaas_views.visualizar_cobranca_asaas, name='visualizar_cobranca_asaas'),
-        path('asaas/cobrancas/<uuid:cobranca_id>/excluir/', asaas_views.excluir_cobranca_asaas, name='excluir_cobranca_asaas'),
-        path('asaas/webhook/', asaas_views.webhook_asaas, name='webhook_asaas'),
-        path('asaas/webhook-debug/', asaas_views.webhook_debug, name='webhook_debug'),
-        path('asaas/webhook-test/', asaas_views.webhook_test, name='webhook_test'),
-        path('asaas/callback/success/', asaas_views.callback_success_asaas, name='callback_success_asaas'),
-        path('asaas/configurar/', asaas_views.configurar_asaas, name='configurar_asaas'),
-        path('asaas/testar/', asaas_views.testar_asaas, name='testar_asaas'),
-    ]
+    # === INTEGRAÇÃO ASAAS (PRINCIPAL) ===
+    path('asaas/gerar/<int:controle_id>/', asaas_views.gerar_cobranca_asaas, name='gerar_cobranca_asaas'),
+    path('asaas/cobrancas/', asaas_views.listar_cobrancas_asaas, name='listar_cobrancas_asaas'),
+    path('asaas/cobrancas/criar/', asaas_views.criar_cobranca_asaas, name='criar_cobranca_asaas'),
+    path('asaas/cobrancas/<uuid:cobranca_id>/', asaas_views.visualizar_cobranca_asaas, name='visualizar_cobranca_asaas'),
+    path('asaas/cobrancas/<uuid:cobranca_id>/excluir/', asaas_views.excluir_cobranca_asaas, name='excluir_cobranca_asaas'),
+    path('asaas/webhook/', asaas_views.webhook_asaas, name='webhook_asaas'),
+    path('asaas/webhook-debug/', asaas_views.webhook_debug, name='webhook_debug'),
+    path('asaas/webhook-test/', asaas_views.webhook_test, name='webhook_test'),
+    path('asaas/callback/success/', asaas_views.callback_success_asaas, name='callback_success_asaas'),
+    path('asaas/configurar/', asaas_views.configurar_asaas, name='configurar_asaas'),
+    path('asaas/testar/', asaas_views.testar_asaas, name='testar_asaas'),
+    
+    # PDF Asaas
+    path('asaas/pdf/<str:cobranca_id>/', views.pdf_asaas_redirect, name='pdf_asaas_redirect'),
+    path('asaas/pdf-direto/<str:asaas_id>/', views.pdf_asaas_direto, name='pdf_asaas_direto'),
+]

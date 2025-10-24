@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Configuração de Boleto{% endblock %}
+{% block page_title %}Editar Configuração de Boleto{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/boleto-config.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">{{ config.nome_banco }} - {{ config.nome_beneficiario }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+                {% if not config.ativo %}
+                <button type="button" class="btn btn-success" onclick="ativarConfiguracao({{ config.id }})">
+                    <i class="fas fa-check"></i> Ativar Esta Configuração
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8">
+        <div class="card shadow config-form-container config-form-visible">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-edit"></i> Editar Configuração
+                </h6>
+                <span class="badge bg-{% if config.ativo %}success{% else %}secondary{% endif %}">
+                    {% if config.ativo %}Ativo{% else %}Inativo{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if form_errors %}
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Erro na Validação
+                    </h6>
+                    <p class="mb-0">Por favor, corrija os erros abaixo e tente novamente.</p>
+                </div>
+                {% endif %}
+                
+                <form method="post" id="boleto-config-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="config_id" value="{{ config.id }}">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome_banco" class="form-label">Nome do Banco</label>
+                            <input type="text" class="form-control" id="nome_banco" name="nome_banco" 
+                                   value="{{ config.nome_banco }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo_banco" class="form-label">Código do Banco</label>
+                            <input type="text" class="form-control" id="codigo_banco" name="codigo_banco" 
+                                   value="{{ config.codigo_banco }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="agencia" class="form-label">Agência</label>
+                            <input type="text" class="form-control" id="agencia" name="agencia" 
+                                   value="{{ config.agencia }}" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="conta" class="form-label">Conta</label>
+                            <input type="text" class="form-control" id="conta" name="conta" 
+                                   value="{{ config.conta }}" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="carteira" class="form-label">Carteira</label>
+                            <input type="text" class="form-control" id="carteira" name="carteira" 
+                                   value="{{ config.carteira }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo_cedente" class="form-label">Código do Cedente</label>
+                            <input type="text" class="form-control" id="codigo_cedente" name="codigo_cedente" 
+                                   value="{{ config.codigo_cedente|default:'' }}" 
+                                   placeholder="Código do cedente/beneficiário no banco">
+                            <div class="form-text">
+                                <strong>Importante:</strong> Código fornecido pelo banco para identificação do beneficiário.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="convenio" class="form-label">Número do Convênio</label>
+                            <input type="text" class="form-control" id="convenio" name="convenio" 
+                                   value="{{ config.convenio|default:'' }}" 
+                                   placeholder="Número do convênio de cobrança">
+                            <div class="form-text">
+                                <strong>Para Asaas:</strong> Número do convênio de cobrança fornecido pelo Asaas.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Dados do Beneficiário</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome_beneficiario" class="form-label">Nome do Beneficiário</label>
+                            <input type="text" class="form-control" id="nome_beneficiario" name="nome_beneficiario" 
+                                   value="{{ config.nome_beneficiario }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="cnpj_beneficiario" class="form-label">CNPJ do Beneficiário</label>
+                            <input type="text" class="form-control" id="cnpj_beneficiario" name="cnpj_beneficiario" 
+                                   value="{{ config.cnpj_beneficiario }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="endereco_beneficiario" class="form-label">Endereço do Beneficiário</label>
+                        <textarea class="form-control" id="endereco_beneficiario" name="endereco_beneficiario" 
+                                  rows="3" required>{{ config.endereco_beneficiario }}</textarea>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Configurações do Boleto</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="multa" class="form-label">Multa (%)</label>
+                            <input type="number" class="form-control" id="multa" name="multa" 
+                                   step="0.01" value="{{ config.multa }}" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="juros" class="form-label">Juros ao Mês (%)</label>
+                            <input type="number" class="form-control" id="juros" name="juros" 
+                                   step="0.01" value="{{ config.juros }}" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="desconto" class="form-label">Desconto (%)</label>
+                            <input type="number" class="form-control" id="desconto" name="desconto" 
+                                   step="0.01" value="{{ config.desconto }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="instrucoes" class="form-label">Instruções do Boleto</label>
+                        <textarea class="form-control" id="instrucoes" name="instrucoes" 
+                                  rows="3" placeholder="Instruções que aparecerão no boleto...">{{ config.instrucoes }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="ativo" name="ativo" 
+                                   {% if config.ativo %}checked{% endif %}>
+                            <label class="form-check-label" for="ativo">
+                                Configuração ativa
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações da Configuração -->
+    <div class="col-xl-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Informações da Configuração
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{% if config.ativo %}success{% else %}secondary{% endif %} ms-2">
+                        {% if config.ativo %}Ativo{% else %}Inativo{% endif %}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Criado em:</strong>
+                    <span class="ms-2">{{ config.data_criacao|date:"d/m/Y H:i" }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Atualizado em:</strong>
+                    <span class="ms-2">{{ config.data_atualizacao|date:"d/m/Y H:i" }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Banco:</strong>
+                    <span class="ms-2">{{ config.nome_banco }} ({{ config.codigo_banco }})</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Agência:</strong>
+                    <span class="ms-2">{{ config.agencia }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Conta:</strong>
+                    <span class="ms-2">{{ config.conta }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Carteira:</strong>
+                    <span class="ms-2">{{ config.carteira }}</span>
+                </div>
+                
+                {% if config.codigo_cedente %}
+                <div class="mb-3">
+                    <strong>Código do Cedente:</strong>
+                    <span class="ms-2">{{ config.codigo_cedente }}</span>
+                </div>
+                {% endif %}
+                
+                {% if config.convenio %}
+                <div class="mb-3">
+                    <strong>Convênio:</strong>
+                    <span class="ms-2">{{ config.convenio }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Ações Rápidas -->
+        <div class="card shadow mt-3">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt"></i> Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> Ver Todas as Configurações
+                    </a>
+                    
+                    <a href="{% url 'controle_financeiro:listar_boletos' %}" class="btn btn-outline-info">
+                        <i class="fas fa-barcode"></i> Ver Boletos Gerados
+                    </a>
+                    
+                    <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-chart-bar"></i> Dashboard Financeiro
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass server-side data to JavaScript
+    window.boletoConfigData = {
+        hasConfigurations: true,
+        showForm: true,
+        formErrors: {{ form_errors|yesno:"true,false" }},
+        editing: true,
+        configId: {{ config.id }}
+    };
+    
+    // Function to activate a configuration
+    function ativarConfiguracao(configId) {
+        if (confirm('Tem certeza que deseja ativar esta configuração? A configuração atual será desativada.')) {
+            // Create a form to submit the activation
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "controle_financeiro:configurar_boletos" %}';
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            // Add config_id
+            const configInput = document.createElement('input');
+            configInput.type = 'hidden';
+            configInput.name = 'config_id';
+            configInput.value = configId;
+            form.appendChild(configInput);
+            
+            // Add ativo field
+            const ativoInput = document.createElement('input');
+            ativoInput.type = 'hidden';
+            ativoInput.name = 'ativo';
+            ativoInput.value = 'on';
+            form.appendChild(ativoInput);
+            
+            // Copy all current form data to preserve changes
+            const currentForm = document.getElementById('boleto-config-form');
+            const formData = new FormData(currentForm);
+            
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrfmiddlewaretoken' && key !== 'config_id' && key !== 'ativo') {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+<script src="{% static 'js/boleto-config.js' %}"></script>
+{% endblock %}

@@ -314,400 +314,20 @@ def pagamento_cliente(request):
 # Views para configuração de boletos
 @login_required
 @user_passes_test(is_superuser)
-def configurar_boletos(request):
-    """Configuração de boletos para Super Admin"""
-    
-    form_errors = False
-    form_success = False
-    show_form = request.GET.get('show_form', 'false') == 'true'
-    
-    if request.method == 'POST':
-        try:
-            # Cria ou atualiza configuração
-            config_id = request.POST.get('config_id')
-            if config_id:
-                config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
-            else:
-                config = ConfiguracaoBoleto()
-            
-            # Validação básica dos campos obrigatórios
-            required_fields = ['nome_banco', 'codigo_banco', 'agencia', 'conta', 'carteira', 
-                             'nome_beneficiario', 'cnpj_beneficiario', 'endereco_beneficiario']
-            
-            for field in required_fields:
-                if not request.POST.get(field, '').strip():
-                    messages.error(request, f'O campo {field.replace("_", " ").title()} é obrigatório.')
-                    form_errors = True
-            
-            if not form_errors:
-                config.nome_banco = request.POST.get('nome_banco')
-                config.codigo_banco = request.POST.get('codigo_banco')
-                config.agencia = request.POST.get('agencia')
-                config.conta = request.POST.get('conta')
-                config.carteira = request.POST.get('carteira')
-                config.codigo_cedente = request.POST.get('codigo_cedente', '')
-                config.convenio = request.POST.get("convenio", "") or None
-                config.nome_beneficiario = request.POST.get('nome_beneficiario')
-                config.cnpj_beneficiario = request.POST.get('cnpj_beneficiario')
-                config.endereco_beneficiario = request.POST.get('endereco_beneficiario')
-                config.instrucoes = request.POST.get('instrucoes', '')
-                
-                try:
-                    config.multa = Decimal(request.POST.get('multa', 2.00))
-                    config.juros = Decimal(request.POST.get('juros', 1.00))
-                    config.desconto = Decimal(request.POST.get('desconto', 0.00))
-                except (ValueError, TypeError):
-                    messages.error(request, 'Valores de multa, juros e desconto devem ser números válidos.')
-                    form_errors = True
-                
-                if not form_errors:
-                    config.ativo = 'ativo' in request.POST
-                    
-                    # Se está ativando esta configuração, desativa todas as outras
-                    if config.ativo:
-                        ConfiguracaoBoleto.objects.exclude(id=config.id).update(ativo=False)
-                    
-                    config.save()
-                    messages.success(request, 'Configuração de boleto salva com sucesso!')
-                    form_success = True
-                    
-                    # Redireciona para esconder o formulário após sucesso
-                    return redirect('controle_financeiro:configurar_boletos')
-        
-        except Exception as e:
-            messages.error(request, f'Erro ao salvar configuração: {str(e)}')
-            form_errors = True
-    
-    # Busca configurações existentes
-    configuracoes = ConfiguracaoBoleto.objects.all().order_by('-data_criacao')
-    
-    # Determina o estado inicial do formulário
-    # Mostra o formulário se:
-    # 1. Não há configurações existentes
-    # 2. Há erros de validação
-    # 3. Foi explicitamente solicitado via parâmetro show_form
-    should_show_form = (
-        not configuracoes.exists() or 
-        form_errors or 
-        show_form
-    )
-    
-    # Busca a configuração ativa para exibir no resumo
-    configuracao_ativa = configuracoes.filter(ativo=True).first()
-    
-    context = {
-        'configuracoes': configuracoes,
-        'configuracao_ativa': configuracao_ativa,
-        'show_form': should_show_form,
-        'form_errors': form_errors,
-        'form_success': form_success,
-        'has_configurations': configuracoes.exists(),
-    }
-    
-    return render(request, 'controle_financeiro/configurar_boletos.html', context)
-
-
 @login_required
 
 @login_required
 @user_passes_test(is_superuser)
-def editar_configuracao_boleto(request, config_id):
-    """Edita uma configuração de boleto"""
-    
-    config = get_object_or_404(ConfiguracaoBoleto, id=config_id)
-    form_errors = False
-    
-    if request.method == 'POST':
-        try:
-            # Validação básica dos campos obrigatórios
-            required_fields = ['nome_banco', 'codigo_banco', 'agencia', 'conta', 'carteira', 
-                             'nome_beneficiario', 'cnpj_beneficiario', 'endereco_beneficiario']
-            
-            for field in required_fields:
-                if not request.POST.get(field, '').strip():
-                    messages.error(request, f'O campo {field.replace("_", " ").title()} é obrigatório.')
-                    form_errors = True
-            
-            if not form_errors:
-                config.nome_banco = request.POST.get('nome_banco')
-                config.codigo_banco = request.POST.get('codigo_banco')
-                config.agencia = request.POST.get('agencia')
-                config.conta = request.POST.get('conta')
-                config.carteira = request.POST.get('carteira')
-                config.codigo_cedente = request.POST.get('codigo_cedente', '')
-                config.nome_beneficiario = request.POST.get('nome_beneficiario')
-                config.cnpj_beneficiario = request.POST.get('cnpj_beneficiario')
-                config.endereco_beneficiario = request.POST.get('endereco_beneficiario')
-                config.instrucoes = request.POST.get('instrucoes', '')
-                
-                try:
-                    config.multa = Decimal(request.POST.get('multa', 2.00))
-                    config.juros = Decimal(request.POST.get('juros', 1.00))
-                    config.desconto = Decimal(request.POST.get('desconto', 0.00))
-                except (ValueError, TypeError):
-                    messages.error(request, 'Valores de multa, juros e desconto devem ser números válidos.')
-                    form_errors = True
-                
-                if not form_errors:
-                    config.ativo = 'ativo' in request.POST
-                    
-                    # Se está ativando esta configuração, desativa todas as outras
-                    if config.ativo:
-                        ConfiguracaoBoleto.objects.exclude(id=config.id).update(ativo=False)
-                    
-                    config.save()
-                    messages.success(request, 'Configuração de boleto atualizada com sucesso!')
-                    return redirect('controle_financeiro:configurar_boletos')
-        
-        except Exception as e:
-            messages.error(request, f'Erro ao atualizar configuração: {str(e)}')
-            form_errors = True
-    
-    context = {
-        'config': config,
-        'form_errors': form_errors,
-        'editing': True,
-    }
-    
-    return render(request, 'controle_financeiro/editar_configuracao_boleto.html', context)
-
-
 @login_required
 @user_passes_test(is_superuser)
-def gerar_boleto(request, controle_id):
-    """Gera um boleto SEMPRE via API do Asaas"""
-    
-    controle = get_object_or_404(ControleFinanceiro, id=controle_id)
-    
-    if request.method == 'POST':
-        try:
-            # SEMPRE usar API do Asaas - não mais boletos locais
-            from .asaas_service import AsaasService
-            
-            asaas_service = AsaasService()
-            
-            # Validar configuração da API
-            if not asaas_service.validar_configuracao():
-                messages.error(request, 
-                    '❌ API do Asaas não está configurada corretamente. '
-                    'Verifique as configurações de API Key e conectividade.'
-                )
-                return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
-            
-            # Gerar cobrança via API do Asaas
-            resultado = asaas_service.gerar_cobranca_com_pix(controle, dias_vencimento=30)
-            
-            if resultado.get('success'):
-                messages.success(request, 
-                    f'✅ Cobrança Asaas {resultado["cobranca"]["id"]} gerada com sucesso! '
-                    'Boleto e PIX disponíveis.'
-                )
-                
-                # Redirecionar para visualizar a cobrança criada
-                from .models import CobrancaAsaas
-                cobranca = CobrancaAsaas.objects.filter(
-                    controle_financeiro=controle
-                ).order_by('-data_criacao').first()
-                
-                if cobranca:
-                    return redirect('controle_financeiro:visualizar_cobranca_asaas', cobranca_id=cobranca.id)
-                else:
-                    return redirect('controle_financeiro:listar_cobrancas_asaas')
-            else:
-                error_msg = resultado.get('error', 'Erro desconhecido')
-                messages.error(request, f'❌ Erro ao gerar cobrança via API Asaas: {error_msg}')
-                return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
-                
-        except Exception as e:
-            messages.error(request, f'❌ Erro interno ao gerar cobrança: {str(e)}')
-            return redirect('controle_financeiro:gerar_boleto', controle_id=controle_id)
-    
-    # Lista configurações ativas - priorizar Asaas
-    configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
-    
-    # Debug: garantir que o Asaas apareça
-    if not configuracoes.exists():
-        # Se não há configurações ativas, ativar o Asaas
-        config_asaas = ConfiguracaoBoleto.objects.filter(codigo_banco="461").first()
-        if config_asaas:
-            config_asaas.ativo = True
-            config_asaas.save()
-            configuracoes = ConfiguracaoBoleto.objects.filter(ativo=True)
-    
-    # Logs removidos para produção
-    
-    context = {
-        'controle': controle,
-        'configuracoes': configuracoes,
-    }
-    
-    return render(request, 'controle_financeiro/gerar_boleto.html', context)
-
-
 @login_required
 @user_passes_test(is_superuser)
-def listar_boletos(request):
-    """Lista todos os boletos gerados"""
-    
-    # Filtros
-    status_filter = request.GET.get('status', '')
-    search = request.GET.get('search', '')
-    
-    boletos = BoletoGerado.objects.select_related('controle_financeiro__loja', 'configuracao').all()
-    
-    if status_filter:
-        boletos = boletos.filter(status=status_filter)
-    
-    if search:
-        boletos = boletos.filter(
-            Q(numero_boleto__icontains=search) |
-            Q(controle_financeiro__loja__nome__icontains=search) |
-            Q(linha_digitavel__icontains=search)
-        )
-    
-    boletos = boletos.order_by('-data_criacao')
-    
-    # Calcula dias de atraso para cada boleto
-    for boleto in boletos:
-        if boleto.dias_para_vencimento <= 0:
-            boleto.dias_atraso = abs(boleto.dias_para_vencimento)
-        else:
-            boleto.dias_atraso = 0
-    
-    context = {
-        'boletos': boletos,
-        'status_filter': status_filter,
-        'search': search,
-    }
-    
-    return render(request, 'controle_financeiro/listar_boletos.html', context)
-
-
 @login_required
 @user_passes_test(is_superuser)
-def marcar_boleto_pago(request, boleto_id):
-    """Marca um boleto como pago"""
-    
-    if request.method == 'POST':
-        boleto = get_object_or_404(BoletoGerado, id=boleto_id)
-        
-        try:
-            boleto.marcar_como_pago()
-            messages.success(
-                request, 
-                f'✅ Boleto {boleto.numero_boleto} da loja {boleto.controle_financeiro.loja.nome} '
-                f'foi marcado como pago! Valor: R$ {boleto.valor}'
-            )
-        except Exception as e:
-            messages.error(request, f'❌ Erro ao marcar boleto como pago: {str(e)}')
-        
-        # Redireciona de volta para a página de origem se especificada
-        next_url = request.POST.get('next') or request.GET.get('next')
-        if next_url:
-            return redirect(next_url)
-        
-        return redirect('controle_financeiro:listar_boletos')
-    
-    return redirect('controle_financeiro:listar_boletos')
-
-
 # Views para clientes (lojas) - boletos
 @login_required
-def boletos_cliente(request):
-    """Interface de boletos para clientes"""
-    
-    # Busca o controle financeiro da loja do usuário
-    try:
-        controle = ControleFinanceiro.objects.get(loja__admin_user=request.user)
-    except ControleFinanceiro.DoesNotExist:
-        messages.error(request, 'Controle financeiro não encontrado para sua loja.')
-        return redirect('dashboard:principal')
-    
-    # Boletos da loja
-    boletos = BoletoGerado.objects.filter(controle_financeiro=controle).order_by('-data_criacao')
-    
-    # Calcula dias de atraso se vencido
-    dias_atraso = 0
-    if controle.dias_para_vencimento <= 0:
-        dias_atraso = abs(controle.dias_para_vencimento)
-    
-    context = {
-        'controle': controle,
-        'boletos': boletos,
-        'dias_atraso': dias_atraso,
-    }
-    
-    return render(request, 'controle_financeiro/boletos_cliente.html', context)
-
-
 @login_required
 @user_passes_test(is_superuser)
-def gerar_boletos_automaticos(request):
-    """Gera cobranças automaticamente via API do Asaas para lojas que vencem em 10 dias"""
-    
-    if request.method == 'POST':
-        try:
-            from .asaas_service import AsaasService
-            from .models import CobrancaAsaas
-            from datetime import timedelta
-            
-            dias_antecedencia = int(request.POST.get('dias_antecedencia', 10))
-            
-            # Buscar controles que vencem nos próximos X dias e não têm cobrança
-            data_limite = timezone.now() + timedelta(days=dias_antecedencia)
-            
-            controles_sem_cobranca = ControleFinanceiro.objects.filter(
-                data_vencimento__lte=data_limite,
-                status__in=['ativo', 'vencida']
-            ).exclude(
-                id__in=CobrancaAsaas.objects.values_list('controle_financeiro_id', flat=True)
-            )
-            
-            asaas_service = AsaasService()
-            
-            # Verificar se API está funcionando
-            if not asaas_service.validar_configuracao():
-                messages.error(request, '❌ API do Asaas não está configurada. Verifique as configurações.')
-                return redirect('controle_financeiro:dashboard_financeiro')
-            
-            cobrancas_geradas = 0
-            erros = []
-            
-            for controle in controles_sem_cobranca:
-                try:
-                    resultado = asaas_service.gerar_cobranca_com_pix(
-                        controle, 
-                        dias_vencimento=30,
-                        descricao=f"Mensalidade automática - {controle.loja.nome}"
-                    )
-                    
-                    if resultado.get('success'):
-                        cobrancas_geradas += 1
-                        logger.info(f"Cobrança automática gerada para {controle.loja.nome}")
-                    else:
-                        error_msg = resultado.get('error', 'Erro desconhecido')
-                        erros.append({'loja': controle.loja.nome, 'erro': error_msg})
-                        
-                except Exception as e:
-                    erros.append({'loja': controle.loja.nome, 'erro': str(e)})
-            
-            messages.success(
-                request, 
-                f'✅ Processo concluído! {cobrancas_geradas} cobranças Asaas geradas automaticamente.'
-            )
-            
-            if erros:
-                for erro in erros:
-                    messages.warning(request, f'⚠️ Erro na loja {erro["loja"]}: {erro["erro"]}')
-            
-        except Exception as e:
-            messages.error(request, f'❌ Erro ao gerar cobranças automáticas: {str(e)}')
-        
-        return redirect('controle_financeiro:dashboard_financeiro')
-    
-    return redirect('controle_financeiro:dashboard_financeiro')
-
-
 @login_required
 @user_passes_test(is_superuser)
 def executar_rotinas_financeiras(request):
@@ -746,201 +366,10 @@ def executar_rotinas_financeiras(request):
 
 @login_required
 @user_passes_test(is_superuser)
-def criar_boleto_manual(request):
-    """Cria um boleto manualmente"""
-    
-    if request.method == 'POST':
-        try:
-            controle_id = request.POST.get('controle_id')
-            valor = request.POST.get('valor')
-            dias_vencimento = int(request.POST.get('dias_vencimento', 30))
-            observacoes = request.POST.get('observacoes', '')
-            
-            # Busca o controle financeiro
-            controle = get_object_or_404(ControleFinanceiro, id=controle_id)
-            
-            # Busca configuração ativa
-            configuracao = ConfiguracaoBoleto.objects.filter(ativo=True).first()
-            if not configuracao:
-                messages.error(request, 'Nenhuma configuração de boleto ativa encontrada!')
-                return redirect('controle_financeiro:dashboard_financeiro')
-            
-            # Gera o boleto
-            from .services import BoletoService
-            boleto_service = BoletoService()
-            
-            # Se não informou valor, usa o valor mensal da loja
-            if not valor:
-                valor = controle.valor_mensal
-            else:
-                valor = Decimal(valor)
-            
-            boleto = boleto_service.gerar_boleto(controle, configuracao, dias_vencimento)
-            
-            # Atualiza valor se diferente do padrão
-            if valor != controle.valor_mensal:
-                boleto.valor = valor
-                boleto.save()
-            
-            # Adiciona observações se fornecidas
-            if observacoes:
-                boleto.observacoes = observacoes
-                boleto.save()
-            
-            messages.success(
-                request, 
-                f'Boleto {boleto.numero_boleto} criado com sucesso para {controle.loja.nome}! '
-                f'Valor: R$ {boleto.valor} - Vence em: {boleto.data_vencimento.strftime("%d/%m/%Y")}'
-            )
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao criar boleto: {str(e)}')
-        
-        return redirect('controle_financeiro:dashboard_financeiro')
-    
-    return redirect('controle_financeiro:dashboard_financeiro')
-
-
 @login_required
 @user_passes_test(is_superuser)
-def excluir_boleto(request, boleto_id):
-    """Exclui um boleto"""
-    
-    if request.method == 'POST':
-        try:
-            boleto = get_object_or_404(BoletoGerado, id=boleto_id)
-            
-            # Verifica se o boleto pode ser excluído
-            if boleto.status == 'pago':
-                messages.error(request, 'Não é possível excluir um boleto que já foi pago!')
-                return redirect('controle_financeiro:dashboard_financeiro')
-            
-            loja_nome = boleto.controle_financeiro.loja.nome
-            numero_boleto = boleto.numero_boleto
-            
-            boleto.delete()
-            
-            messages.success(
-                request, 
-                f'Boleto {numero_boleto} da loja {loja_nome} foi excluído com sucesso!'
-            )
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao excluir boleto: {str(e)}')
-        
-        return redirect('controle_financeiro:dashboard_financeiro')
-    
-    # Se não for POST, mostra confirmação
-    boleto = get_object_or_404(BoletoGerado, id=boleto_id)
-    
-    context = {
-        'boleto': boleto,
-    }
-    
-    return render(request, 'controle_financeiro/confirmar_exclusao_boleto.html', context)
-
-
 @login_required
-def detalhar_boleto(request, boleto_id):
-    """Exibe os detalhes completos de um boleto"""
-    
-    boleto = get_object_or_404(BoletoGerado, id=boleto_id)
-    
-    # Verifica se o usuário tem permissão para ver este boleto
-    if not request.user.is_superuser:
-        # Se não for superuser, verifica se é o dono da loja
-        if boleto.controle_financeiro.loja.admin_user != request.user:
-            messages.error(request, 'Você não tem permissão para visualizar este boleto.')
-            return redirect('dashboard:principal')
-    
-    context = {
-        'boleto': boleto,
-    }
-    
-    return render(request, 'controle_financeiro/boleto_detalhes.html', context)
-
-
 @login_required
-def imprimir_boleto_pdf(request, boleto_id):
-    """Gera PDF do boleto para impressão"""
-    
-    boleto = get_object_or_404(BoletoGerado, id=boleto_id)
-    
-    # Verifica se o usuário tem permissão para ver este boleto
-    if not request.user.is_superuser:
-        # Se não for superuser, verifica se é o dono da loja
-        if boleto.controle_financeiro.loja.admin_user != request.user:
-            messages.error(request, 'Você não tem permissão para visualizar este boleto.')
-            return redirect('dashboard:principal')
-    
-    try:
-        # Verificar se existe cobrança do Asaas associada
-        try:
-            from .models import CobrancaAsaas
-            
-            # Tentar buscar por controle financeiro
-            cobranca_asaas = CobrancaAsaas.objects.filter(
-                controle_financeiro=boleto.controle_financeiro
-            ).first()
-            
-            # Se não encontrou, tentar buscar pela loja (caso mais recente)
-            if not cobranca_asaas:
-                cobranca_asaas = CobrancaAsaas.objects.filter(
-                    controle_financeiro__loja=boleto.controle_financeiro.loja
-                ).order_by('-data_criacao').first()
-            
-            # Se existe cobrança do Asaas e tem URL do PDF, redirecionar
-            if cobranca_asaas and cobranca_asaas.bank_slip_url:
-                return redirect(cobranca_asaas.bank_slip_url)
-            
-            # Se é um boleto do Asaas mas não tem cobrança salva
-            if boleto.configuracao.codigo_banco == "461":  # Asaas
-                # Verificar se há ID do Asaas nas observações ou outros campos
-                observacoes = getattr(boleto, 'observacoes', '') or ''
-                
-                # Procurar padrão de ID do Asaas nas observações
-                import re
-                asaas_id_match = re.search(r'pay_[a-zA-Z0-9]+|[a-zA-Z0-9]{16,20}', observacoes)
-                
-                if asaas_id_match:
-                    asaas_id = asaas_id_match.group()
-                    pdf_url = f"https://www.asaas.com/b/pdf/{asaas_id}"
-                    logger.info(f"ID Asaas extraído das observações: {asaas_id}")
-                    return redirect(pdf_url)
-                
-                # Se não encontrou ID nas observações, mostrar mensagem explicativa
-                messages.warning(request, 
-                    'Este boleto foi criado localmente. Para usar o PDF oficial do Asaas, '
-                    'gere uma nova cobrança através do sistema de Cobranças Asaas.'
-                )
-                
-                # Redirecionar para a página de geração de cobranças do Asaas
-                return redirect('controle_financeiro:gerar_cobranca_asaas', controle_id=boleto.controle_financeiro.id)
-                
-        except Exception as e:
-            # Log do erro mas continuar com PDF local
-            logger.warning(f"Erro ao buscar cobrança Asaas: {str(e)}")
-            pass
-        
-        # NUNCA MAIS GERAR PDF LOCAL - sempre redirecionar para Asaas
-        if boleto.configuracao.codigo_banco == "461":  # Asaas
-            messages.warning(request, 
-                '⚠️ Este é um boleto antigo. O sistema agora usa apenas cobranças oficiais do Asaas. '
-                'Clique no botão abaixo para gerar uma nova cobrança oficial.'
-            )
-            return redirect('controle_financeiro:gerar_cobranca_asaas', controle_id=boleto.controle_financeiro.id)
-        else:
-            # Para outros bancos (se houver), manter PDF local
-            from .pdf_service import BoletoPDFService
-            
-            pdf_service = BoletoPDFService()
-            return pdf_service.gerar_pdf_boleto(boleto)
-        
-    except Exception as e:
-        messages.error(request, f'Erro ao gerar PDF do boleto: {str(e)}')
-        return redirect('controle_financeiro:detalhar_boleto', boleto_id=boleto_id)
-
-
 @login_required
 def pdf_asaas_redirect(request, cobranca_id):
     """Redireciona para o PDF oficial do Asaas"""
@@ -986,3 +415,34 @@ def pdf_asaas_direto(request, asaas_id):
 
 
 
+
+
+
+# === VIEWS DE REDIRECIONAMENTO PARA ASAAS ===
+
+@login_required
+@user_passes_test(is_superuser)
+def redirect_boletos_to_asaas(request):
+    """Redireciona listar_boletos para listar_cobrancas_asaas"""
+    messages.info(request, 'Sistema otimizado! Agora utilizamos apenas cobranças Asaas.')
+    return redirect('controle_financeiro:listar_cobrancas_asaas')
+
+@login_required
+@user_passes_test(is_superuser)
+def redirect_gerar_boleto_to_asaas(request, controle_id):
+    """Redireciona gerar_boleto para gerar_cobranca_asaas"""
+    messages.info(request, 'Sistema otimizado! Gerando cobrança via Asaas.')
+    return redirect('controle_financeiro:gerar_cobranca_asaas', controle_id=controle_id)
+
+@login_required
+def redirect_boletos_cliente_to_asaas(request):
+    """Redireciona boletos_cliente para dashboard com cobranças Asaas"""
+    messages.info(request, 'Sistema otimizado! Visualize suas cobranças no dashboard.')
+    return redirect('dashboard:dashboard')
+
+@login_required
+@user_passes_test(is_superuser)
+def redirect_configurar_boletos_to_asaas(request):
+    """Redireciona configurar_boletos para configurar_asaas"""
+    messages.info(request, 'Sistema otimizado! Configure a integração Asaas.')
+    return redirect('controle_financeiro:configurar_asaas')

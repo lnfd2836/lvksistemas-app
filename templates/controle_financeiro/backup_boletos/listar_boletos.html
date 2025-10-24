@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}Boletos Gerados{% endblock %}
+{% block page_title %}Boletos Gerados{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Gerencie todos os boletos gerados no sistema</p>
+            </div>
+            <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="pendente" {% if status_filter == 'pendente' %}selected{% endif %}>Pendente
+                            </option>
+                            <option value="pago" {% if status_filter == 'pago' %}selected{% endif %}>Pago</option>
+                            <option value="vencido" {% if status_filter == 'vencido' %}selected{% endif %}>Vencido
+                            </option>
+                            <option value="cancelado" {% if status_filter == 'cancelado' %}selected{% endif %}>Cancelado
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search"
+                            placeholder="Número do boleto, loja ou linha digitável..." value="{{ search }}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Boletos -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-barcode"></i> Boletos Gerados
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if boletos %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Loja</th>
+                                <th>Banco</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Linha Digitável</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for boleto in boletos %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ boleto.numero_boleto }}</div>
+                                    <small class="text-muted">{{ boleto.data_criacao|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ boleto.controle_financeiro.loja.nome }}</div>
+                                    <small class="text-muted">{{ boleto.controle_financeiro.loja.cnpj }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ boleto.configuracao.nome_banco }}</div>
+                                    <small class="text-muted">{{ boleto.configuracao.nome_beneficiario }}</small>
+                                </td>
+                                <td>R$ {{ boleto.valor|floatformat:2 }}</td>
+                                <td>
+                                    {{ boleto.data_vencimento|date:"d/m/Y" }}
+                                    {% if boleto.dias_para_vencimento <= 0 %} <br><small class="text-danger">{{
+                                            boleto.dias_atraso }} dias atraso</small>
+                                        {% elif boleto.dias_para_vencimento <= 3 %} <br><small class="text-warning">{{
+                                                boleto.dias_para_vencimento }} dias</small>
+                                            {% endif %}
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if boleto.status == 'pago' %}success{% elif boleto.status == 'vencido' %}danger{% else %}warning{% endif %}">
+                                        {{ boleto.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <code class="small">{{ boleto.linha_digitavel }}</code>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}"
+                                            class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}"
+                                            class="btn btn-sm btn-outline-secondary" title="Imprimir PDF"
+                                            target="_blank">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        {% if boleto.status == 'pendente' %}
+                                        <form method="post"
+                                            action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}"
+                                            style="display: inline;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next"
+                                                value="{% url 'controle_financeiro:listar_boletos' %}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                                title="Marcar como pago"
+                                                onclick="return confirm('Confirma que este boleto foi pago?')">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            title="Excluir boleto" data-bs-toggle="modal"
+                                            data-bs-target="#modalExcluir{{ boleto.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">
+                                            <i
+                                                class="bi bi-{% if boleto.status == 'pago' %}check-circle{% else %}x-circle{% endif %}"></i>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum boleto encontrado</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> Estatísticas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-warning">{{ boletos|length }}</div>
+                            <div class="text-muted">Total de Boletos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-warning">
+                                {% for boleto in boletos %}
+                                {% if boleto.status == 'pendente' %}{{ forloop.counter0|add:1 }}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-muted">Pendentes</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-success">
+                                {% for boleto in boletos %}
+                                {% if boleto.status == 'pago' %}{{ forloop.counter0|add:1 }}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-muted">Pagos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-danger">
+                                {% for boleto in boletos %}
+                                {% if boleto.status == 'vencido' %}{{ forloop.counter0|add:1 }}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-muted">Vencidos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais de confirmação para exclusão -->
+{% for boleto in boletos %}
+{% if boleto.status == 'pendente' %}
+<div class="modal fade" id="modalExcluir{{ boleto.id }}" tabindex="-1"
+    aria-labelledby="modalExcluir{{ boleto.id }}Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalExcluir{{ boleto.id }}Label">
+                    <i class="bi bi-exclamation-triangle text-warning"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                <p>Tem certeza que deseja excluir o boleto:</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Boleto {{ boleto.numero_boleto }}</h6>
+                        <p class="card-text">
+                            <strong>Loja:</strong> {{ boleto.controle_financeiro.loja.nome }}<br>
+                            <strong>CNPJ:</strong> {{ boleto.controle_financeiro.loja.cnpj }}<br>
+                            <strong>Valor:</strong> R$ {{ boleto.valor|floatformat:2 }}<br>
+                            <strong>Vencimento:</strong> {{ boleto.data_vencimento|date:"d/m/Y" }}<br>
+                            <strong>Status:</strong> {{ boleto.get_status_display }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <form method="post" action="{% url 'controle_financeiro:excluir_boleto' boleto.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sim, Excluir Boleto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
