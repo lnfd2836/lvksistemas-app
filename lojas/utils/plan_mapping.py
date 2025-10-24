@@ -94,23 +94,27 @@ def create_both_financial_records(loja, plano_comercial):
             # Get or create corresponding PlanoFinanceiro
             plano_financeiro = get_or_create_plano_financeiro_from_comercial(plano_comercial)
             
-            # Create ControleFinanceiro
-            controle_financeiro = ControleFinanceiro.objects.create(
+            # Create ControleFinanceiro (usar get_or_create para evitar duplicatas)
+            controle_financeiro, controle_created = ControleFinanceiro.objects.get_or_create(
                 loja=loja,
-                plano=plano_financeiro,
-                status='ativa',
-                valor_mensal=plano_comercial.preco_mensal,
-                data_inicio=timezone.now(),
-                data_vencimento=timezone.now() + timedelta(days=30)
+                defaults={
+                    'plano': plano_financeiro,
+                    'status': 'ativa',
+                    'valor_mensal': plano_comercial.preco_mensal,
+                    'data_inicio': timezone.now(),
+                    'data_vencimento': timezone.now() + timedelta(days=30)
+                }
             )
             
-            # Create AssinaturaLoja
-            assinatura_loja = AssinaturaLoja.objects.create(
+            # Create AssinaturaLoja (usar get_or_create para evitar duplicatas)
+            assinatura_loja, assinatura_created = AssinaturaLoja.objects.get_or_create(
                 loja=loja,
-                plano=plano_comercial,
-                status='ativa',
-                tipo_pagamento='mensal',
-                data_vencimento=timezone.now() + timedelta(days=30)
+                defaults={
+                    'plano': plano_comercial,
+                    'status': 'ativa',
+                    'tipo_pagamento': 'mensal',
+                    'data_vencimento': timezone.now() + timedelta(days=30)
+                }
             )
             
             return controle_financeiro, assinatura_loja
@@ -155,13 +159,15 @@ def fix_inconsistent_store_data(loja):
                     status='ativo'
                 )
             
-            # Create AssinaturaLoja
-            assinatura = AssinaturaLoja.objects.create(
+            # Create AssinaturaLoja (usar get_or_create para evitar duplicatas)
+            assinatura, assinatura_created = AssinaturaLoja.objects.get_or_create(
                 loja=loja,
-                plano=plano_comercial,
-                status=controle.status,
-                tipo_pagamento='mensal',
-                data_vencimento=controle.data_vencimento
+                defaults={
+                    'plano': plano_comercial,
+                    'status': controle.status,
+                    'tipo_pagamento': 'mensal',
+                    'data_vencimento': controle.data_vencimento
+                }
             )
             
             return assinatura
