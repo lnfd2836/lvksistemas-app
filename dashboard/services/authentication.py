@@ -44,17 +44,11 @@ class AuthenticationService:
             return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_UNAUTHORIZED]
         
         try:
-            # Verifica se é super usuário
+            # Verifica se é super usuário - sempre vai para dashboard super admin
             if user.is_superuser:
-                logger.info(f"Super usuário {user.username} detectado")
-                # Verifica se tem loja associada para decidir o dashboard
-                user_store = AuthenticationService.get_user_store(user)
-                if user_store:
-                    logger.info(f"Super usuário {user.username} tem loja associada: {user_store.nome}")
-                    return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_STORE_ADMIN]
-                else:
-                    logger.info(f"Super usuário {user.username} sem loja associada, dashboard admin")
-                    return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_SUPER_ADMIN]
+                logger.info(f"Super usuário {user.username} detectado - redirecionando para dashboard super admin")
+                # Super admins sempre vão para o dashboard principal, independente de ter loja
+                return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_SUPER_ADMIN]
             
             # Verifica se é administrador de loja
             elif AuthenticationService.can_access_store_dashboard(user):
@@ -228,6 +222,7 @@ class AuthenticationService:
             return 'anonymous'
         
         try:
+            # Super admin sempre tem prioridade, mesmo com loja associada
             if user.is_superuser:
                 return 'super_admin'
             elif hasattr(user, 'loja_admin') and user.loja_admin:

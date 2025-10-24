@@ -71,10 +71,11 @@ def dashboard_principal(request):
         context = AuthenticationService.get_dashboard_context(request.user)
         user_type = context['user_type']
         
-        # Se é super usuário com loja associada, redirecionar para dashboard da loja
-        if user_type == 'super_admin' and context['store']:
-            logger.info(f"Super usuário {request.user.username} tem loja associada, redirecionando para dashboard da loja")
-            return redirect('dashboard:loja')
+        # Super admins sempre ficam no dashboard principal, mesmo com loja associada
+        # (comentado para permitir que super admins vejam o dashboard principal)
+        # if user_type == 'super_admin' and context['store']:
+        #     logger.info(f"Super usuário {request.user.username} tem loja associada, redirecionando para dashboard da loja")
+        #     return redirect('dashboard:loja')
         
         # Se é store admin, redirecionar para dashboard da loja
         if user_type == 'store_admin':
