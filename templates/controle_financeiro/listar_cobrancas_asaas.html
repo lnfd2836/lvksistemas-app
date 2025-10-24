@@ -84,12 +84,12 @@
                         <i class="fas fa-plus"></i> Nova Cobrança
                     </a>
                     {% if user.is_superuser %}
-                        <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-outline-light">
-                            <i class="fas fa-cog"></i> Configurar
-                        </a>
-                        <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-outline-light">
-                            <i class="fas fa-vial"></i> Testar
-                        </a>
+                    <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-outline-light">
+                        <i class="fas fa-cog"></i> Configurar
+                    </a>
+                    <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-outline-light">
+                        <i class="fas fa-vial"></i> Testar
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -105,10 +105,14 @@
                         <label for="status"><i class="fas fa-filter"></i> Status:</label>
                         <select name="status" id="status" class="form-control">
                             <option value="">Todos os status</option>
-                            <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pendente</option>
-                            <option value="RECEIVED" {% if status_filter == 'RECEIVED' %}selected{% endif %}>Recebido</option>
-                            <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmado</option>
-                            <option value="OVERDUE" {% if status_filter == 'OVERDUE' %}selected{% endif %}>Vencido</option>
+                            <option value="PENDING" {% if status_filter=='PENDING' %}selected{% endif %}>Pendente
+                            </option>
+                            <option value="RECEIVED" {% if status_filter=='RECEIVED' %}selected{% endif %}>Recebido
+                            </option>
+                            <option value="CONFIRMED" {% if status_filter=='CONFIRMED' %}selected{% endif %}>Confirmado
+                            </option>
+                            <option value="OVERDUE" {% if status_filter=='OVERDUE' %}selected{% endif %}>Vencido
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -281,7 +285,7 @@
                                 </a>
 
                                 <!-- BOTÃO DE EXCLUIR - SEMPRE VISÍVEL -->
-                                <button type="button" class="btn btn-sm btn-danger" title="Excluir Cobrança" 
+                                <button type="button" class="btn btn-sm btn-danger" title="Excluir Cobrança"
                                     onclick="if(confirm('Excluir cobrança {{ cobranca.asaas_id }}?')) { alert('Funcionalidade em desenvolvimento'); }">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -558,7 +562,7 @@
     // Função para confirmar exclusão de cobrança
     function confirmarExclusao(cobrancaId, asaasId, status) {
         let mensagem = `Tem certeza que deseja excluir a cobrança ${asaasId}?\n\n`;
-        
+
         if (status === 'PENDING') {
             mensagem += `Esta ação irá:\n- Cancelar a cobrança no Asaas\n- Remover do sistema local\n\nEsta ação não pode ser desfeita!`;
         } else if (status === 'RECEIVED' || status === 'CONFIRMED') {
@@ -566,7 +570,7 @@
         } else {
             mensagem += `Esta ação irá:\n- Remover do sistema local\n- Tentar cancelar no Asaas (se possível)\n\nEsta ação não pode ser desfeita!`;
         }
-        
+
         if (confirm(mensagem)) {
             excluirCobranca(cobrancaId);
         }
@@ -575,7 +579,7 @@
     // Função para confirmar exclusão de cobrança
     function confirmarExclusao(cobrancaId, asaasId, status) {
         let mensagem = `Tem certeza que deseja excluir a cobrança ${asaasId}?\n\n`;
-        
+
         if (status === 'PENDING') {
             mensagem += `Esta ação irá:\n- Cancelar a cobrança no Asaas\n- Remover do sistema local\n\nEsta ação não pode ser desfeita!`;
         } else if (status === 'RECEIVED' || status === 'CONFIRMED') {
@@ -583,7 +587,7 @@
         } else {
             mensagem += `Esta ação irá:\n- Remover do sistema local\n- Tentar cancelar no Asaas (se possível)\n\nEsta ação não pode ser desfeita!`;
         }
-        
+
         if (confirm(mensagem)) {
             excluirCobranca(cobrancaId);
         }
@@ -604,26 +608,26 @@
                 'Content-Type': 'application/json',
             },
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                // Remover a linha da tabela
-                btn.closest('tr').remove();
-            } else {
-                showToast(data.message, 'error');
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Remover a linha da tabela
+                    btn.closest('tr').remove();
+                } else {
+                    showToast(data.message, 'error');
+                    // Restaurar botão
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showToast('Erro ao excluir cobrança. Tente novamente.', 'error');
                 // Restaurar botão
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            showToast('Erro ao excluir cobrança. Tente novamente.', 'error');
-            // Restaurar botão
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-        });
+            });
     }
 </script>
 {% endblock %}

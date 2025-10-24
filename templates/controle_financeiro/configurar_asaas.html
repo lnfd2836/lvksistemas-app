@@ -60,7 +60,7 @@
                             <div class="mb-3">
                                 <label for="api_key" class="form-label">API Key *</label>
                                 <input type="password" class="form-control" id="api_key" name="api_key" 
-                                       value="{{ form.api_key.value|default:'' }}" required>
+                                       value="{{ config.api_key|default:'' }}" required>
                                 <div class="form-text">Sua chave de API do Asaas (sandbox ou produção)</div>
                             </div>
                         </div>
@@ -69,10 +69,10 @@
                             <div class="mb-3">
                                 <label for="environment" class="form-label">Ambiente *</label>
                                 <select class="form-select" id="environment" name="environment" required>
-                                    <option value="sandbox" {% if form.environment.value == 'sandbox' %}selected{% endif %}>
+                                    <option value="sandbox" {% if config.environment == 'sandbox' %}selected{% endif %}>
                                         Sandbox (Testes)
                                     </option>
-                                    <option value="production" {% if form.environment.value == 'production' %}selected{% endif %}>
+                                    <option value="production" {% if config.environment == 'production' %}selected{% endif %}>
                                         Produção
                                     </option>
                                 </select>
@@ -94,10 +94,10 @@
                             <div class="mb-3">
                                 <label for="status" class="form-label">Status</label>
                                 <select class="form-select" id="status" name="status">
-                                    <option value="ativo" {% if form.status.value == 'ativo' %}selected{% endif %}>
+                                    <option value="ativo" {% if config.status == 'ativo' %}selected{% endif %}>
                                         Ativo
                                     </option>
-                                    <option value="inativo" {% if form.status.value == 'inativo' %}selected{% endif %}>
+                                    <option value="inativo" {% if config.status == 'inativo' %}selected{% endif %}>
                                         Inativo
                                     </option>
                                 </select>
@@ -107,7 +107,7 @@
                     
                     <div class="mb-3">
                         <label for="observacoes" class="form-label">Observações</label>
-                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ config.observacoes|default:'' }}</textarea>
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">

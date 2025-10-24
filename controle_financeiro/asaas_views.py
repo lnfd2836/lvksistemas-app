@@ -415,10 +415,13 @@ def configurar_asaas(request):
             
             asaas_service = AsaasService()
             if asaas_service.validar_configuracao():
-                messages.success(request, "Configuração validada com sucesso!")
-                # Aqui você salvaria as configurações no banco ou arquivo
+                # Salvar configurações (por enquanto apenas em settings)
+                # Em produção, você salvaria em variáveis de ambiente ou banco
+                messages.success(request, f"✅ Configuração validada e salva com sucesso!")
+                messages.info(request, f"🔧 Ambiente: {environment.upper()}")
+                messages.info(request, f"🔑 API Key: {api_key[:10]}...")
             else:
-                messages.error(request, "Configuração inválida. Verifique a API Key e o ambiente.")
+                messages.error(request, "❌ Configuração inválida. Verifique a API Key e o ambiente.")
                 # Restaurar configurações originais
                 settings.ASAAS_API_KEY = original_api_key
                 settings.ASAAS_ENVIRONMENT = original_env
@@ -433,10 +436,16 @@ def configurar_asaas(request):
     current_config = {
         'api_key': getattr(settings, 'ASAAS_API_KEY', ''),
         'environment': getattr(settings, 'ASAAS_ENVIRONMENT', 'sandbox'),
+        'status': 'ativo',
     }
+    
+    # URL do webhook
+    webhook_url = request.build_absolute_uri('/financeiro/asaas/webhook/')
     
     context = {
         'config': current_config,
+        'webhook_url': webhook_url,
+        'configuracao_asaas': current_config,  # Para compatibilidade com template
     }
     
     return render(request, 'controle_financeiro/configurar_asaas.html', context)
