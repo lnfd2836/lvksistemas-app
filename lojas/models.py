@@ -38,8 +38,10 @@ class Loja(models.Model):
     # Usuário administrador da loja
     admin_user = models.OneToOneField(
         User, 
-        on_delete=models.CASCADE, 
+        on_delete=models.SET_NULL, 
         related_name='loja_admin',
+        null=True,
+        blank=True,
         verbose_name="Administrador"
     )
     
