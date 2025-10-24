@@ -176,6 +176,10 @@ def dashboard_loja(request, loja=None, loja_id=None):
             messages.error(request, 'Erro ao determinar loja para acesso.')
             return redirect('login')
     
+        # VERIFICAR SE É A LOJA FATESA (Controle de qualidade)
+        if target_loja.nome == "Controle de qualidade":
+            return dashboard_fatesa(request, target_loja)
+    
         # Obter contexto do dashboard
         dashboard_context = AuthenticationService.get_dashboard_context(request.user)
         
@@ -841,3 +845,79 @@ def estatisticas_ajax(request):
     }
     
     return JsonResponse(stats)
+
+
+def dashboard_fatesa(request, loja):
+    """Dashboard específico para FATESA - Sistema de Controle de Qualidade"""
+    
+    try:
+        # Importar modelos do sistema de avaliação
+        from avaliacao_qualidade.models import (
+            Curso, Coordenador, Professor, AvaliacaoConfig, AvaliacaoResposta
+        )
+        from django.db.models import Avg, Count
+        from datetime import timedelta
+        
+        # Estatísticas gerais
+        total_cursos = Curso.objects.filter(ativo=True).count()
+        total_coordenadores = Coordenador.objects.filter(ativo=True).count()
+        total_professores = Professor.objects.filter(ativo=True).count()
+        
+        # Avaliações
+        avaliacoes_ativas = AvaliacaoConfig.objects.filter(status='ativa').count()
+        total_respostas = AvaliacaoResposta.objects.count()
+        
+        # Avaliações recentes
+        avaliacoes_recentes = AvaliacaoConfig.objects.all().order_by('-data_criacao')[:10]
+        
+        # Respostas recentes
+        respostas_recentes = AvaliacaoResposta.objects.all().order_by('-data_resposta')[:10]
+        
+        # Estatísticas por período
+        hoje = timezone.now().date()
+        inicio_mes = hoje.replace(day=1)
+        
+        respostas_mes = AvaliacaoResposta.objects.filter(
+            data_resposta__date__gte=inicio_mes
+        ).count()
+        
+        # Médias gerais
+        medias = AvaliacaoResposta.objects.aggregate(
+            media_professor=Avg('nota_relacionamento_professor'),
+            media_didatica=Avg('nota_didatica_professor'),
+            media_dominio=Avg('nota_dominio_assunto'),
+            media_teorico=Avg('nota_conteudo_teorico'),
+            media_pratico=Avg('nota_atividade_pratica'),
+            media_administracao=Avg('nota_portaria')
+        )
+        
+        context = {
+            'loja': loja,
+            'total_cursos': total_cursos,
+            'total_coordenadores': total_coordenadores,
+            'total_professores': total_professores,
+            'avaliacoes_ativas': avaliacoes_ativas,
+            'total_respostas': total_respostas,
+            'respostas_mes': respostas_mes,
+            'avaliacoes_recentes': avaliacoes_recentes,
+            'respostas_recentes': respostas_recentes,
+            'medias': medias,
+        }
+        
+        logger.info(f"Dashboard FATESA carregado para usuário {request.user.username}")
+        return render(request, 'avaliacao_qualidade/dashboard_fatesa.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar dashboard FATESA: {str(e)}")
+        # Em caso de erro, mostrar dashboard normal da loja
+        messages.warning(request, 'Sistema FATESA temporariamente indisponível. Mostrando dashboard padrão.')
+        
+        # Retornar contexto básico para dashboard normal
+        context = {
+            'loja': loja,
+            'total_clientes': 0,
+            'total_produtos': 0,
+            'vendas_hoje': 0,
+            'receita_hoje': 0,
+        }
+        return render(request, 'dashboard/loja.html', context)

@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Avaliações - FATESA{% endblock %}
+{% block page_title %}Gerenciar Avaliações{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h4>
+            <i class="fas fa-clipboard-list me-2"></i>
+            Avaliações de Qualidade
+        </h4>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Nova Avaliação
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Buscar por curso, turma ou coordenador...">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    <option value="ativa" {% if status_filter == 'ativa' %}selected{% endif %}>Ativa</option>
+                    <option value="finalizada" {% if status_filter == 'finalizada' %}selected{% endif %}>Finalizada</option>
+                    <option value="cancelada" {% if status_filter == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search me-1"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Avaliações -->
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Coordenador</th>
+                            <th>Turma</th>
+                            <th>Status</th>
+                            <th>Respostas</th>
+                            <th>Criado em</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for avaliacao in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ avaliacao.curso.nome|truncatechars:50 }}</strong>
+                            </td>
+                            <td>{{ avaliacao.coordenador.nome }}</td>
+                            <td>{{ avaliacao.turma }}</td>
+                            <td>
+                                <span class="badge bg-{% if avaliacao.status == 'ativa' %}success{% elif avaliacao.status == 'finalizada' %}secondary{% else %}warning{% endif %}">
+                                    {{ avaliacao.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ avaliacao.total_avaliacoes }}</span>
+                            </td>
+                            <td>{{ avaliacao.data_criacao|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' avaliacao.id %}" class="btn btn-outline-primary" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if avaliacao.status == 'ativa' %}
+                                    <button class="btn btn-outline-success" onclick="copiarLink('{{ request.build_absolute_uri }}{% url 'avaliacao_qualidade:formulario_aluno' avaliacao.link_token %}')" title="Copiar Link">
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginação">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Próximo</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                <p class="text-muted">Crie sua primeira avaliação para começar!</p>
+                <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    Criar Primeira Avaliação
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarLink(link) {
+    navigator.clipboard.writeText(link).then(function() {
+        // Mostrar feedback visual
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+        }, 2000);
+        
+        // Mostrar toast ou alert
+        alert('Link copiado para a área de transferência!');
+    }).catch(function(err) {
+        console.error('Erro ao copiar link: ', err);
+        // Fallback para navegadores mais antigos
+        prompt('Copie o link abaixo:', link);
+    });
+}
+</script>
+{% endblock %}

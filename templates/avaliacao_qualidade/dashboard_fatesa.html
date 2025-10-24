@@ -1,0 +1,528 @@
+{% extends 'base.html' %}
+
+{% block title %}FATESA - Controle de Qualidade{% endblock %}
+{% block page_title %}FATESA - Sistema de Avaliação de Qualidade{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fatesa-header {
+        background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+    }
+    
+    .fatesa-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .fatesa-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card.success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .stat-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stat-card.info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .btn-fatesa {
+        background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-fatesa:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(31, 78, 121, 0.4);
+        color: white;
+    }
+    
+    .section-title {
+        color: #1f4e79;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding-bottom: 0.5rem;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
+        border-radius: 2px;
+    }
+    
+    .quick-action {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-action:hover {
+        border-color: #1f4e79;
+        transform: translateY(-3px);
+    }
+    
+    .quick-action i {
+        font-size: 2.5rem;
+        color: #1f4e79;
+        margin-bottom: 1rem;
+    }
+    
+    .recent-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #1f4e79;
+        transition: all 0.3s ease;
+    }
+    
+    .recent-item:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header FATESA -->
+<div class="fatesa-header text-center">
+    <div class="container">
+        <h1 class="display-4 mb-3">
+            <i class="fas fa-graduation-cap me-3"></i>
+            FATESA
+        </h1>
+        <h3 class="mb-2">Sistema de Controle de Qualidade</h3>
+        <p class="lead mb-0">Faculdade de Tecnologia em Saúde - Avaliação de Cursos Presenciais</p>
+    </div>
+</div>
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total de Cursos</div>
+                    <div class="h4 mb-0 font-weight-bold">{{ total_cursos }}</div>
+                </div>
+                <div>
+                    <i class="fas fa-book fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">Professores</div>
+                    <div class="h4 mb-0 font-weight-bold">{{ total_professores }}</div>
+                </div>
+                <div>
+                    <i class="fas fa-chalkboard-teacher fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">Avaliações Ativas</div>
+                    <div class="h4 mb-0 font-weight-bold">{{ avaliacoes_ativas }}</div>
+                </div>
+                <div>
+                    <i class="fas fa-clipboard-check fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">Respostas Este Mês</div>
+                    <div class="h4 mb-0 font-weight-bold">{{ respostas_mes }}</div>
+                </div>
+                <div>
+                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="section-title">
+            <i class="fas fa-bolt me-2"></i>
+            Ações Rápidas
+        </h2>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-plus-circle"></i>
+            <h6 class="font-weight-bold">Nova Avaliação</h6>
+            <p class="text-muted small mb-3">Criar link para alunos</p>
+            <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-fatesa btn-sm">Criar</a>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-list-alt"></i>
+            <h6 class="font-weight-bold">Ver Avaliações</h6>
+            <p class="text-muted small mb-3">Gerenciar avaliações</p>
+            <a href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}" class="btn btn-fatesa btn-sm">Ver Todas</a>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-book"></i>
+            <h6 class="font-weight-bold">Cursos</h6>
+            <p class="text-muted small mb-3">Gerenciar cursos</p>
+            <a href="{% url 'avaliacao_qualidade:listar_cursos' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <h6 class="font-weight-bold">Professores</h6>
+            <p class="text-muted small mb-3">Gerenciar professores</p>
+            <a href="{% url 'avaliacao_qualidade:listar_professores' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-user-tie"></i>
+            <h6 class="font-weight-bold">Coordenadores</h6>
+            <p class="text-muted small mb-3">Gerenciar coordenadores</p>
+            <a href="{% url 'avaliacao_qualidade:listar_coordenadores' %}" class="btn btn-fatesa btn-sm">Gerenciar</a>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="quick-action">
+            <i class="fas fa-chart-bar"></i>
+            <h6 class="font-weight-bold">Relatórios</h6>
+            <p class="text-muted small mb-3">Dashboards e relatórios</p>
+            <a href="{% url 'avaliacao_qualidade:dashboard_diretoria' %}" class="btn btn-fatesa btn-sm">Ver</a>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboards por Perfil -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="section-title">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Dashboards por Perfil
+        </h2>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card fatesa-card">
+            <div class="card-body text-center">
+                <i class="fas fa-user-graduate fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Dashboard da Coordenação</h5>
+                <p class="card-text">Acesso completo a relatórios e filtros por curso e professor.</p>
+                <a href="{% url 'avaliacao_qualidade:dashboard_coordenacao' %}" class="btn btn-fatesa">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    Acessar Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card fatesa-card">
+            <div class="card-body text-center">
+                <i class="fas fa-chalkboard-teacher fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Dashboard do Professor</h5>
+                <p class="card-text">Acesso restrito às próprias turmas e avaliações.</p>
+                <a href="{% url 'avaliacao_qualidade:dashboard_professor' %}" class="btn btn-fatesa">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    Acessar Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card fatesa-card">
+            <div class="card-body text-center">
+                <i class="fas fa-crown fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Dashboard da Diretoria</h5>
+                <p class="card-text">Visão consolidada, rankings e alertas automáticos.</p>
+                <a href="{% url 'avaliacao_qualidade:dashboard_diretoria' %}" class="btn btn-fatesa">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    Acessar Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avaliações Recentes e Estatísticas -->
+<div class="row">
+    <div class="col-xl-8">
+        <div class="card fatesa-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Avaliações Recentes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if avaliacoes_recentes %}
+                    {% for avaliacao in avaliacoes_recentes %}
+                    <div class="recent-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ avaliacao.curso.nome|truncatechars:50 }}</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-user-tie me-1"></i>
+                                    {{ avaliacao.coordenador.nome }} | 
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ avaliacao.turma }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ avaliacao.data_criacao|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-{% if avaliacao.status == 'ativa' %}success{% elif avaliacao.status == 'finalizada' %}secondary{% else %}warning{% endif %} mb-2">
+                                    {{ avaliacao.get_status_display }}
+                                </span>
+                                <br>
+                                <span class="badge bg-info">{{ avaliacao.total_avaliacoes }} respostas</span>
+                                <br>
+                                <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' avaliacao.id %}" class="btn btn-sm btn-outline-primary mt-1">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                        <p class="text-muted">Crie sua primeira avaliação para começar!</p>
+                        <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-fatesa">
+                            <i class="fas fa-plus me-1"></i>
+                            Criar Primeira Avaliação
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <div class="card fatesa-card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Médias Gerais
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if medias %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Relacionamento Professor</span>
+                            <strong>{{ medias.media_professor|floatformat:1|default:"N/A" }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {% if medias.media_professor %}{{ medias.media_professor|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Didática</span>
+                            <strong>{{ medias.media_didatica|floatformat:1|default:"N/A" }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: {% if medias.media_didatica %}{{ medias.media_didatica|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Domínio do Assunto</span>
+                            <strong>{{ medias.media_dominio|floatformat:1|default:"N/A" }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: {% if medias.media_dominio %}{{ medias.media_dominio|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Conteúdo Teórico</span>
+                            <strong>{{ medias.media_teorico|floatformat:1|default:"N/A" }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: {% if medias.media_teorico %}{{ medias.media_teorico|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Atividade Prática</span>
+                            <strong>{{ medias.media_pratico|floatformat:1|default:"N/A" }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: {% if medias.media_pratico %}{{ medias.media_pratico|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">Sem dados ainda</h6>
+                        <p class="text-muted small">As médias aparecerão quando houver respostas de avaliação.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Respostas Recentes -->
+        <div class="card fatesa-card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>
+                    Últimas Respostas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if respostas_recentes %}
+                    {% for resposta in respostas_recentes %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">{{ resposta.nome_aluno|default:"Anônimo" }}</h6>
+                            <p class="text-muted mb-1 small">{{ resposta.avaliacao_config.curso.nome|truncatechars:30 }}</p>
+                            <small class="text-muted">{{ resposta.data_resposta|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-success">{{ resposta.get_media_geral|floatformat:1 }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Nenhuma resposta ainda</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações do Sistema -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card fatesa-card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                        <h6>Sistema Seguro</h6>
+                        <p class="text-muted small">Links únicos e dados protegidos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-mobile-alt fa-2x text-success mb-2"></i>
+                        <h6>Mobile Friendly</h6>
+                        <p class="text-muted small">Otimizado para smartphones</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                        <h6>Relatórios em Tempo Real</h6>
+                        <p class="text-muted small">Estatísticas atualizadas automaticamente</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-download fa-2x text-warning mb-2"></i>
+                        <h6>Exportação PDF/Excel</h6>
+                        <p class="text-muted small">Relatórios completos para download</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar estatísticas a cada 30 segundos
+setInterval(function() {
+    // Aqui você pode adicionar AJAX para atualizar estatísticas em tempo real
+    console.log('Atualizando estatísticas...');
+}, 30000);
+
+// Animações suaves
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar cards ao carregar
+    const cards = document.querySelectorAll('.fatesa-card, .stat-card, .quick-action');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

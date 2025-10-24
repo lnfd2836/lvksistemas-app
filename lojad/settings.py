@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'dashboard',
     'planos',
     'controle_financeiro',
+    'avaliacao_qualidade',
 ]
 
 MIDDLEWARE = [

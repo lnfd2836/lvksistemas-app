@@ -92,6 +92,7 @@ urlpatterns = [
     path('planos/', include('planos.urls')),
     path('financeiro/', include('controle_financeiro.urls')),
     path('modulos/', include('modulos.urls')),
+    path('avaliacao-qualidade/', include('avaliacao_qualidade.urls')),
     
     # Redirecionamento para clínica de estética
     path('estetica/', estetica_redirect, name='estetica_redirect'),
