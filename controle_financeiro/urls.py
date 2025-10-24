@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import asaas_views
+from . import asaas_sync_views
 
 app_name = 'controle_financeiro'
 
@@ -48,4 +49,19 @@ urlpatterns = [
     # PDF Asaas
     path('asaas/pdf/<str:cobranca_id>/', views.pdf_asaas_redirect, name='pdf_asaas_redirect'),
     path('asaas/pdf-direto/<str:asaas_id>/', views.pdf_asaas_direto, name='pdf_asaas_direto'),
+    
+    # === SINCRONIZAÇÃO EM TEMPO REAL ===
+    path('sync/', asaas_sync_views.dashboard_sincronizacao, name='dashboard_sincronizacao'),
+    path('sync/iniciar/', asaas_sync_views.iniciar_sincronizacao, name='iniciar_sincronizacao'),
+    path('sync/parar/', asaas_sync_views.parar_sincronizacao, name='parar_sincronizacao'),
+    path('sync/forcar/', asaas_sync_views.forcar_sincronizacao, name='forcar_sincronizacao'),
+    path('sync/cobranca/<str:asaas_id>/', asaas_sync_views.sincronizar_cobranca, name='sincronizar_cobranca'),
+    path('sync/resetar/', asaas_sync_views.resetar_estatisticas, name='resetar_estatisticas'),
+    path('sync/configurar/', asaas_sync_views.configurar_sincronizacao, name='configurar_sincronizacao'),
+    path('sync/problemas/', asaas_sync_views.listar_cobrancas_problemas, name='listar_cobrancas_problemas'),
+    
+    # APIs de Sincronização
+    path('api/sync/status/', asaas_sync_views.api_sync_status, name='api_sync_status'),
+    path('api/sync/stats/', asaas_sync_views.api_cobrancas_stats, name='api_cobrancas_stats'),
+    path('api/sync/webhook/', asaas_sync_views.webhook_sync_trigger, name='webhook_sync_trigger'),
 ]

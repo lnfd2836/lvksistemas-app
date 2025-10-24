@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Sincronização Asaas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sync-status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .sync-running {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    .sync-stopped {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .stats-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .sync-controls {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .status-running { background-color: #28a745; }
+    .status-stopped { background-color: #dc3545; }
+    .status-warning { background-color: #ffc107; }
+    
+    .refresh-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1><i class="fas fa-sync-alt"></i> Dashboard de Sincronização Asaas</h1>
+            <p class="text-muted">Controle e monitoramento da sincronização em tempo real com a API do Asaas</p>
+        </div>
+    </div>
+
+    <!-- Status da Sincronização -->
+    <div class="row">
+        <div class="col-12">
+            <div class="sync-status {% if sync_status.is_running %}sync-running{% else %}sync-stopped{% endif %}">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4>
+                            <span class="status-indicator {% if sync_status.is_running %}status-running{% else %}status-stopped{% endif %}"></span>
+                            Status: {% if sync_status.is_running %}Sincronização Ativa{% else %}Sincronização Parada{% endif %}
+                        </h4>
+                        {% if sync_status.is_running %}
+                            <p class="mb-0">
+                                <strong>Intervalo:</strong> {{ sync_status.sync_interval }}s | 
+                                <strong>Última Sincronização:</strong> 
+                                {% if sync_status.last_sync %}
+                                    {{ sync_status.last_sync|date:"d/m/Y H:i:s" }}
+                                {% else %}
+                                    Nunca executada
+                                {% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-right">
+                        {% if sync_status.is_running %}
+                            <form method="post" action="{% url 'controle_financeiro:parar_sincronizacao' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-stop"></i> Parar Sincronização
+                                </button>
+                            </form>
+                        {% else %}
+                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalIniciarSync">
+                                <i class="fas fa-play"></i> Iniciar Sincronização
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">{{ total_cobrancas }}</div>
+                <div class="text-muted">Total de Cobranças</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number text-warning">{{ cobrancas_pendentes }}</div>
+                <div class="text-muted">Pendentes</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number text-success">{{ cobrancas_pagas }}</div>
+                <div class="text-muted">Pagas</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number text-danger">{{ cobrancas_vencidas }}</div>
+                <div class="text-muted">Vencidas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles de Sincronização -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="sync-controls">
+                <h5><i class="fas fa-cogs"></i> Controles de Sincronização</h5>
+                
+                <div class="btn-group-vertical w-100" role="group">
+                    <form method="post" action="{% url 'controle_financeiro:forcar_sincronizacao' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-sync"></i> Forçar Sincronização Agora
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'controle_financeiro:configurar_sincronizacao' %}" class="btn btn-secondary btn-block">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                    
+                    <a href="{% url 'controle_financeiro:listar_cobrancas_problemas' %}" class="btn btn-warning btn-block">
+                        <i class="fas fa-exclamation-triangle"></i> Cobranças com Problemas ({{ cobrancas_problema }})
+                    </a>
+                    
+                    <form method="post" action="{% url 'controle_financeiro:resetar_estatisticas' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary btn-block" onclick="return confirm('Tem certeza que deseja resetar as estatísticas?')">
+                            <i class="fas fa-trash"></i> Resetar Estatísticas
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="sync-controls">
+                <h5><i class="fas fa-chart-bar"></i> Estatísticas de Sincronização</h5>
+                
+                <table class="table table-sm">
+                    <tr>
+                        <td>Total Sincronizado:</td>
+                        <td><strong>{{ sync_status.stats.total_synced }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Atualizações Encontradas:</td>
+                        <td><strong>{{ sync_status.stats.updates_found }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Erros:</td>
+                        <td><strong class="text-danger">{{ sync_status.stats.errors }}</strong></td>
+                    </tr>
+                    {% if sync_status.stats.last_error %}
+                    <tr>
+                        <td colspan="2">
+                            <small class="text-danger">
+                                <strong>Último Erro:</strong><br>
+                                {{ sync_status.stats.last_error|truncatechars:100 }}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cobranças Recentes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Cobranças Atualizadas Recentemente (24h)</h5>
+                </div>
+                <div class="card-body">
+                    {% if cobrancas_recentes %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID Asaas</th>
+                                        <th>Loja</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Vencimento</th>
+                                        <th>Última Atualização</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cobranca in cobrancas_recentes %}
+                                    <tr>
+                                        <td>
+                                            <code>{{ cobranca.asaas_id }}</code>
+                                        </td>
+                                        <td>{{ cobranca.controle_financeiro.loja.nome }}</td>
+                                        <td>R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                        <td>
+                                            {% if cobranca.status == 'PENDING' %}
+                                                <span class="badge badge-warning">Pendente</span>
+                                            {% elif cobranca.status == 'RECEIVED' %}
+                                                <span class="badge badge-success">Recebido</span>
+                                            {% elif cobranca.status == 'OVERDUE' %}
+                                                <span class="badge badge-danger">Vencido</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">{{ cobranca.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
+                                        <td>{{ cobranca.data_atualizacao|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <a href="{% url 'controle_financeiro:sincronizar_cobranca' cobranca.asaas_id %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Sincronizar">
+                                                <i class="fas fa-sync"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhuma cobrança atualizada nas últimas 24 horas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Tasks -->
+    {% if ultimas_tasks %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tasks"></i> Últimas Execuções de Sincronização</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Resultado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in ultimas_tasks %}
+                                <tr>
+                                    <td>{{ task.task_name|default:"N/A" }}</td>
+                                    <td>
+                                        {% if task.status == 'SUCCESS' %}
+                                            <span class="badge badge-success">Sucesso</span>
+                                        {% elif task.status == 'FAILURE' %}
+                                            <span class="badge badge-danger">Erro</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{{ task.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ task.date_created|date:"d/m/Y H:i:s" }}</td>
+                                    <td>
+                                        {% if task.result %}
+                                            <small>{{ task.result|truncatechars:50 }}</small>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Iniciar Sincronização -->
+<div class="modal fade" id="modalIniciarSync" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'controle_financeiro:iniciar_sincronizacao' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Iniciar Sincronização em Tempo Real</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="interval">Intervalo de Sincronização (segundos):</label>
+                        <select name="interval" id="interval" class="form-control">
+                            <option value="60">1 minuto (teste)</option>
+                            <option value="300" selected>5 minutos (recomendado)</option>
+                            <option value="600">10 minutos</option>
+                            <option value="1800">30 minutos</option>
+                            <option value="3600">1 hora</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Intervalos menores consomem mais recursos mas mantêm os dados mais atualizados.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-play"></i> Iniciar Sincronização
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Botão de Refresh -->
+<button class="btn btn-primary refresh-btn" onclick="location.reload()" title="Atualizar Dashboard">
+    <i class="fas fa-refresh"></i>
+</button>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh a cada 30 segundos se a sincronização estiver ativa
+{% if sync_status.is_running %}
+setTimeout(function() {
+    location.reload();
+}, 30000);
+{% endif %}
+
+// Atualizar estatísticas via AJAX a cada 10 segundos
+setInterval(function() {
+    fetch('{% url "controle_financeiro:api_sync_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar indicadores na página
+                console.log('Status atualizado:', data.data);
+            }
+        })
+        .catch(error => console.error('Erro ao atualizar status:', error));
+}, 10000);
+</script>
+{% endblock %}

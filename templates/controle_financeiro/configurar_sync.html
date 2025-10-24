@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configurações de Sincronização{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1><i class="fas fa-cog"></i> Configurações de Sincronização Asaas</h1>
+            <p class="text-muted">Configure o comportamento da sincronização em tempo real</p>
+            
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'controle_financeiro:dashboard_sincronizacao' %}">Dashboard Sincronização</a>
+                    </li>
+                    <li class="breadcrumb-item active">Configurações</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-sliders-h"></i> Configurações Gerais</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="auto_start" name="auto_start" 
+                                       {% if sync_status.is_running %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_start">
+                                    <strong>Sincronização Automática</strong>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Ativa a sincronização em tempo real automaticamente
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="interval">Intervalo de Sincronização (segundos):</label>
+                            <select name="interval" id="interval" class="form-control">
+                                <option value="60" {% if sync_status.sync_interval == 60 %}selected{% endif %}>
+                                    1 minuto (apenas para testes)
+                                </option>
+                                <option value="300" {% if sync_status.sync_interval == 300 %}selected{% endif %}>
+                                    5 minutos (recomendado)
+                                </option>
+                                <option value="600" {% if sync_status.sync_interval == 600 %}selected{% endif %}>
+                                    10 minutos
+                                </option>
+                                <option value="1800" {% if sync_status.sync_interval == 1800 %}selected{% endif %}>
+                                    30 minutos
+                                </option>
+                                <option value="3600" {% if sync_status.sync_interval == 3600 %}selected{% endif %}>
+                                    1 hora
+                                </option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Intervalos menores mantêm os dados mais atualizados, mas consomem mais recursos.
+                                <strong>Recomendado: 5 minutos</strong>
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                            <a href="{% url 'controle_financeiro:dashboard_sincronizacao' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Configurações Avançadas -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools"></i> Configurações Avançadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Informação:</strong> As configurações avançadas são aplicadas automaticamente pelo sistema.
+                    </div>
+
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Timeout de Requisições:</strong></td>
+                            <td>60 segundos</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Período de Monitoramento:</strong></td>
+                            <td>Últimos 30 dias</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Limpeza Automática:</strong></td>
+                            <td>Cobranças antigas (> 1 ano) removidas semanalmente</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Retry em Caso de Erro:</strong></td>
+                            <td>3 tentativas com intervalo crescente</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Webhook Automático:</strong></td>
+                            <td>Sincronização imediata via webhook</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Status Atual -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info"></i> Status Atual</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Sincronização:</strong></td>
+                            <td>
+                                {% if sync_status.is_running %}
+                                    <span class="badge badge-success">Ativa</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Parada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Intervalo Atual:</strong></td>
+                            <td>{{ sync_status.sync_interval }}s</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thread Ativa:</strong></td>
+                            <td>
+                                {% if sync_status.thread_alive %}
+                                    <span class="badge badge-success">Sim</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Não</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Última Sincronização:</strong></td>
+                            <td>
+                                {% if sync_status.last_sync %}
+                                    {{ sync_status.last_sync|date:"d/m/Y H:i:s" }}
+                                {% else %}
+                                    <span class="text-muted">Nunca</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Estatísticas</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Total Sincronizado:</strong></td>
+                            <td>{{ sync_status.stats.total_synced }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Atualizações:</strong></td>
+                            <td>{{ sync_status.stats.updates_found }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Erros:</strong></td>
+                            <td class="text-danger">{{ sync_status.stats.errors }}</td>
+                        </tr>
+                    </table>
+
+                    {% if sync_status.stats.last_error %}
+                    <div class="alert alert-warning alert-sm mt-3">
+                        <small>
+                            <strong>Último Erro:</strong><br>
+                            {{ sync_status.stats.last_error|truncatechars:80 }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt"></i> Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <form method="post" action="{% url 'controle_financeiro:forcar_sincronizacao' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-sync"></i> Sincronizar Agora
+                            </button>
+                        </form>
+
+                        <form method="post" action="{% url 'controle_financeiro:resetar_estatisticas' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary btn-block" 
+                                    onclick="return confirm('Resetar estatísticas?')">
+                                <i class="fas fa-trash"></i> Resetar Estatísticas
+                            </button>
+                        </form>
+
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_problemas' %}" 
+                           class="btn btn-warning btn-block">
+                            <i class="fas fa-exclamation-triangle"></i> Ver Problemas
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentação -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-book"></i> Documentação</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        <strong>Como funciona:</strong><br>
+                        O sistema de sincronização monitora continuamente as cobranças no Asaas, 
+                        verificando mudanças de status e processando pagamentos automaticamente.
+                    </p>
+                    
+                    <p class="small text-muted">
+                        <strong>Intervalos recomendados:</strong><br>
+                        • <strong>5 minutos:</strong> Uso normal<br>
+                        • <strong>1 minuto:</strong> Apenas testes<br>
+                        • <strong>10+ minutos:</strong> Baixo volume
+                    </p>
+
+                    <p class="small text-muted">
+                        <strong>Monitoramento:</strong><br>
+                        O sistema também responde a webhooks do Asaas para sincronização imediata 
+                        quando há mudanças importantes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar status a cada 10 segundos
+setInterval(function() {
+    location.reload();
+}, 10000);
+</script>
+{% endblock %}
