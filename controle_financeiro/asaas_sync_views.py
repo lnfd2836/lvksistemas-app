@@ -149,23 +149,48 @@ def forcar_sincronizacao(request):
                 
                 logger.info("Iniciando validação da configuração da API Asaas...")
                 
-                # Teste 1: Usar o método que já funciona
-                if asaas_service.validar_configuracao():
-                    logger.info("Configuração da API Asaas validada com sucesso")
-                    messages.success(request, '✅ API Asaas acessível - configuração validada!')
-                    
-                    # Teste adicional: verificar conectividade com timeout baixo
-                    try:
-                        teste_conectividade = asaas_service.test_connection_quick(timeout=3)
-                        if not teste_conectividade.get('accessible', False):
+                # Teste 1: Usar o método que já funciona com tratamento específico
+                try:
+                    config_valid = asaas_service.validar_configuracao()
+                    if config_valid:
+                        logger.info("Configuração da API Asaas validada com sucesso")
+                        messages.success(request, '✅ API Asaas acessível - configuração validada!')
+                        
+                        # Teste adicional: verificar conectividade com timeout baixo
+                        try:
+                            teste_conectividade = asaas_service.test_connection_quick(timeout=3)
+                            if not teste_conectividade.get('accessible', False):
+                                messages.warning(request, 
+                                    '⚠️ API Asaas pode estar instável. Sincronização pode falhar.'
+                                )
+                        except Exception as teste_error:
+                            logger.warning(f"Teste de conectividade falhou: {str(teste_error)}")
                             messages.warning(request, 
-                                '⚠️ API Asaas pode estar instável. Sincronização pode falhar.'
+                                '⚠️ Teste de conectividade falhou. Continuando com sincronização...'
                             )
-                    except Exception as teste_error:
-                        logger.warning(f"Teste de conectividade falhou: {str(teste_error)}")
-                        messages.warning(request, 
-                            '⚠️ Teste de conectividade falhou. Continuando com sincronização...'
+                    else:
+                        logger.warning("Validação da configuração retornou False")
+                        messages.error(request, '❌ Configuração da API Asaas inválida')
+                        return redirect('controle_financeiro:dashboard_sincronizacao')
+                        
+                except requests.exceptions.ConnectionError as e:
+                    if "Connection refused" in str(e) or "[Errno 111]" in str(e):
+                        logger.error(f"Connection refused na validação: {str(e)}")
+                        messages.error(request, 
+                            '🚫 Connection Refused na validação! A API Asaas está temporariamente indisponível. '
+                            'Isso é temporário - aguarde 5-10 minutos e tente novamente.'
                         )
+                        messages.info(request, 
+                            '💡 Dica: Connection Refused geralmente ocorre por sobrecarga da API. '
+                            'Tente em horários de menor movimento (madrugada, fins de semana).'
+                        )
+                        return redirect('controle_financeiro:dashboard_sincronizacao')
+                    else:
+                        raise
+                except Exception as e:
+                    logger.error(f"Erro na validação da configuração: {str(e)}")
+                    messages.error(request, f'❌ Erro na validação: {str(e)}')
+                    return redirect('controle_financeiro:dashboard_sincronizacao')
                     
                     # Agora fazer sincronização simples usando apenas métodos que funcionam
                     try:
