@@ -588,9 +588,6 @@ def testar_conectividade(request):
     return redirect('controle_financeiro:dashboard_sincronizacao')
 
 
-@login_required
-@user_passes_test(is_superuser)
-@require_http_methods(["POST"])
 def sincronizar_usando_funcionalidades_existentes(request):
     """Sincronização usando apenas funcionalidades que já funcionam"""
     
