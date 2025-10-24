@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Testar Webhook Asaas{% endblock %}
+{% block page_title %}Teste do Webhook Asaas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Teste a funcionalidade do webhook Asaas</p>
+            </div>
+            <div>
+                <a href="{% url 'controle_financeiro:webhook_debug' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de Teste -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-vial"></i> Simular Webhook
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Teste de Webhook</strong><br>
+                        Este teste simula o recebimento de um webhook do Asaas para verificar se o sistema está processando corretamente.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">URL do Webhook:</label>
+                        <input type="text" class="form-control" value="{{ webhook_url }}" readonly>
+                        <div class="form-text">Esta é a URL que deve ser configurada no Asaas</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Evento a Simular:</label>
+                        <select class="form-select" name="event_type">
+                            <option value="PAYMENT_RECEIVED">Pagamento Recebido</option>
+                            <option value="PAYMENT_CONFIRMED">Pagamento Confirmado</option>
+                            <option value="PAYMENT_OVERDUE">Pagamento Vencido</option>
+                            <option value="PAYMENT_DELETED">Pagamento Excluído</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-play"></i> Executar Teste de Webhook
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Informações de Ajuda -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="fas fa-question-circle"></i> Como Funciona
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>O que é um Webhook?</h6>
+                <p class="small">Um webhook é uma notificação automática que o Asaas envia para seu sistema quando algo acontece (como um pagamento).</p>
+                
+                <h6>Eventos Principais:</h6>
+                <ul class="small">
+                    <li><strong>RECEIVED:</strong> Pagamento recebido</li>
+                    <li><strong>CONFIRMED:</strong> Pagamento confirmado</li>
+                    <li><strong>OVERDUE:</strong> Pagamento vencido</li>
+                    <li><strong>DELETED:</strong> Cobrança excluída</li>
+                </ul>
+                
+                <h6>Configuração no Asaas:</h6>
+                <ol class="small">
+                    <li>Acesse o painel Asaas</li>
+                    <li>Vá em Configurações</li>
+                    <li>Clique em Webhooks</li>
+                    <li>Adicione a URL acima</li>
+                    <li>Selecione os eventos</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

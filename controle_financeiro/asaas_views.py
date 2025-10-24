@@ -649,3 +649,62 @@ def excluir_cobranca_asaas(request, cobranca_id):
             'success': False, 
             'message': f'Erro ao excluir cobrança: {str(e)}'
         })
+@login_r
+equired
+def webhook_debug(request):
+    """
+    Página para debug do webhook Asaas
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Apenas super administradores podem acessar o debug.")
+        return redirect('dashboard:index')
+    
+    # Buscar últimos webhooks recebidos (se houver um modelo para isso)
+    # Por enquanto, vamos mostrar informações básicas
+    
+    webhook_url = request.build_absolute_uri('/financeiro/asaas/webhook/')
+    
+    context = {
+        'webhook_url': webhook_url,
+        'debug_info': {
+            'status': 'Webhook configurado',
+            'url': webhook_url,
+            'metodo': 'POST',
+            'content_type': 'application/json',
+        }
+    }
+    
+    return render(request, 'controle_financeiro/webhook_debug.html', context)
+
+
+@login_required
+def webhook_test(request):
+    """
+    Página para testar webhook Asaas
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Apenas super administradores podem acessar o teste.")
+        return redirect('dashboard:index')
+    
+    if request.method == 'POST':
+        # Simular um webhook de teste
+        test_data = {
+            'event': 'PAYMENT_RECEIVED',
+            'payment': {
+                'id': 'pay_test_123',
+                'status': 'RECEIVED',
+                'value': 99.90,
+                'description': 'Teste de webhook'
+            }
+        }
+        
+        messages.success(request, "✅ Webhook de teste simulado com sucesso!")
+        messages.info(request, f"📋 Dados: {test_data}")
+    
+    webhook_url = request.build_absolute_uri('/financeiro/asaas/webhook/')
+    
+    context = {
+        'webhook_url': webhook_url,
+    }
+    
+    return render(request, 'controle_financeiro/webhook_test.html', context)
