@@ -177,8 +177,8 @@ def dashboard_loja(request, loja=None, loja_id=None):
             messages.error(request, 'Erro ao determinar loja para acesso.')
             return redirect('login')
     
-        # VERIFICAR SE É A LOJA FATESA (Controle de qualidade)
-        if target_loja.nome == "Controle de qualidade":
+        # VERIFICAR SE É UMA LOJA DO TIPO CONTROLE DE QUALIDADE (FATESA)
+        if target_loja.tipo_loja and target_loja.tipo_loja.nome == "controle_qualidade":
             return dashboard_fatesa(request, target_loja)
     
         # Obter contexto do dashboard

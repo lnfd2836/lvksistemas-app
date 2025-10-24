@@ -1,0 +1,103 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:auth_user_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; <a href="{% url 'admin:auth_user_change' user_to_delete.pk %}">{{ user_to_delete.username }}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h3><i class="fas fa-exclamation-triangle"></i> {{ title }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <h4><i class="fas fa-user"></i> Usuário a ser excluído:</h4>
+            <p><strong>Nome de usuário:</strong> {{ user_to_delete.username }}</p>
+            <p><strong>Email:</strong> {{ user_to_delete.email }}</p>
+            <p><strong>Nome completo:</strong> {{ user_to_delete.get_full_name|default:"Não informado" }}</p>
+            <p><strong>Último login:</strong> {{ user_to_delete.last_login|default:"Nunca" }}</p>
+            <p><strong>Data de criação:</strong> {{ user_to_delete.date_joined }}</p>
+            {% if user_to_delete.is_superuser %}
+                <p class="text-danger"><strong><i class="fas fa-crown"></i> SUPERUSUÁRIO</strong></p>
+            {% endif %}
+        </div>
+
+        {% if dependencies %}
+        <div class="alert alert-info">
+            <h4><i class="fas fa-link"></i> Dependências encontradas:</h4>
+            <ul class="list-group">
+                {% for dep in dependencies %}
+                <li class="list-group-item {% if dep.blocking %}list-group-item-danger{% else %}list-group-item-warning{% endif %}">
+                    <strong>{{ dep.model }}:</strong> {{ dep.count }} registro{{ dep.count|pluralize }}
+                    <br>
+                    <small>{{ dep.action }}</small>
+                    {% if dep.details %}
+                        <ul class="mt-2">
+                            {% for detail in dep.details %}
+                            <li>{{ detail }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if has_blocking_dependencies %}
+        <div class="alert alert-danger">
+            <h4><i class="fas fa-ban"></i> Exclusão Bloqueada</h4>
+            <p>Este usuário possui dependências que impedem sua exclusão. Resolva as dependências marcadas como "BLOQUEANTE" antes de prosseguir.</p>
+        </div>
+        {% else %}
+        <div class="alert alert-danger">
+            <h4><i class="fas fa-trash"></i> Confirmar Exclusão</h4>
+            <p><strong>ATENÇÃO:</strong> Esta ação não pode ser desfeita!</p>
+            <p>O usuário será permanentemente removido do sistema, e todas as suas referências serão limpas conforme indicado acima.</p>
+        </div>
+        {% endif %}
+
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="btn-group" role="group">
+                {% if not has_blocking_dependencies %}
+                <button type="submit" name="confirm" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Confirmar Exclusão
+                </button>
+                {% endif %}
+                <button type="submit" name="cancel" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.card {
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.list-group-item-danger {
+    border-left: 4px solid #dc3545;
+}
+
+.list-group-item-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.btn-group {
+    gap: 10px;
+}
+</style>
+{% endblock %}
