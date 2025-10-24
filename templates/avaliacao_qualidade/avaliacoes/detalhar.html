@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ avaliacao.curso.nome }} - FATESA{% endblock %}
+{% block page_title %}Detalhes da Avaliação{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h4>{{ avaliacao.curso.nome|truncatechars:80 }}</h4>
+        <p class="text-muted">{{ avaliacao.turma }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'avaliacao_qualidade:exportar_relatorio_pdf' avaliacao.id %}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-1"></i>
+                PDF
+            </a>
+            <a href="{% url 'avaliacao_qualidade:exportar_relatorio_excel' avaliacao.id %}" class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i>
+                Excel
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Avaliação -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Informações da Avaliação
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Curso:</strong> {{ avaliacao.curso.nome }}</p>
+                <p><strong>Coordenador:</strong> {{ avaliacao.coordenador.nome }}</p>
+                <p><strong>Turma:</strong> {{ avaliacao.turma }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Status:</strong> 
+                    <span class="badge bg-{% if avaliacao.status == 'ativa' %}success{% elif avaliacao.status == 'finalizada' %}secondary{% else %}warning{% endif %}">
+                        {{ avaliacao.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>Criado em:</strong> {{ avaliacao.data_criacao|date:"d/m/Y H:i" }}</p>
+                <p><strong>Total de Respostas:</strong> {{ avaliacao.total_avaliacoes }}</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <p><strong>Professores:</strong></p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for professor in avaliacao.professores.all %}
+                        <span class="badge bg-primary">{{ professor.nome }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {% if avaliacao.status == 'ativa' %}
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Link para Alunos:</h6>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="linkAvaliacao" value="{{ link_completo }}" readonly>
+                        <button class="btn btn-outline-primary" onclick="copiarLink()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas -->
+{% if stats %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-bar me-2"></i>
+            Estatísticas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h6>Avaliação do Professor</h6>
+                <p>Relacionamento: <strong>{{ stats.media_professor|floatformat:1|default:"N/A" }}</strong></p>
+                <p>Didática: <strong>{{ stats.media_didatica|floatformat:1|default:"N/A" }}</strong></p>
+                <p>Domínio: <strong>{{ stats.media_dominio|floatformat:1|default:"N/A" }}</strong></p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Avaliação do Curso</h6>
+                <p>Conteúdo Teórico: <strong>{{ stats.media_teorico|floatformat:1|default:"N/A" }}</strong></p>
+                <p>Atividade Prática: <strong>{{ stats.media_pratico|floatformat:1|default:"N/A" }}</strong></p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Avaliação da Administração</h6>
+                <p>Média Geral: <strong>{{ stats.media_administracao|floatformat:1|default:"N/A" }}</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Respostas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-comments me-2"></i>
+            Respostas dos Alunos ({{ respostas.count }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if respostas %}
+            {% for resposta in respostas %}
+            <div class="border rounded p-3 mb-3">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>{{ resposta.nome_aluno|default:"Anônimo" }}</h6>
+                        <p class="text-muted mb-1">{{ resposta.data_resposta|date:"d/m/Y H:i" }}</p>
+                        {% if resposta.contato_aluno %}
+                            <p class="text-muted small">Contato: {{ resposta.contato_aluno }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-success fs-6">Média: {{ resposta.get_media_geral|floatformat:1 }}</span>
+                    </div>
+                </div>
+                
+                {% if resposta.comentarios_adicionais %}
+                <div class="mt-2">
+                    <strong>Comentários:</strong>
+                    <p class="text-muted">{{ resposta.comentarios_adicionais }}</p>
+                </div>
+                {% endif %}
+                
+                {% if resposta.sugestoes_melhorias %}
+                <div class="mt-2">
+                    <strong>Sugestões:</strong>
+                    <p class="text-muted">{{ resposta.sugestoes_melhorias }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma resposta ainda</h5>
+                <p class="text-muted">Compartilhe o link da avaliação com os alunos para começar a receber feedback.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+        Voltar às Avaliações
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarLink() {
+    const linkInput = document.getElementById('linkAvaliacao');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(linkInput.value).then(function() {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+        
+        alert('Link copiado para a área de transferência!');
+    }).catch(function(err) {
+        console.error('Erro ao copiar: ', err);
+        alert('Erro ao copiar link. Tente selecionar e copiar manualmente.');
+    });
+}
+</script>
+{% endblock %}

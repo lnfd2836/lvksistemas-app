@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Coordenação - FATESA{% endblock %}
+{% block page_title %}Dashboard da Coordenação{% endblock %}
+
+{% block extra_css %}
+<style>
+    .coordenacao-header {
+        background: linear-gradient(135deg, #1f4e79 0%, #2980b9 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #1f4e79;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .curso-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #28a745;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .media-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+    }
+    
+    .media-excelente { background: #28a745; color: white; }
+    .media-boa { background: #17a2b8; color: white; }
+    .media-regular { background: #ffc107; color: black; }
+    .media-ruim { background: #dc3545; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="coordenacao-header text-center">
+    <h2>
+        <i class="fas fa-user-graduate me-2"></i>
+        Dashboard da Coordenação
+    </h2>
+    {% if coordenador %}
+        <p class="mb-0">Bem-vindo, {{ coordenador.nome }}</p>
+    {% else %}
+        <p class="mb-0">Visão Geral - Administrador</p>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>
+            Filtros
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Curso</label>
+                <select name="curso" class="form-select">
+                    <option value="">Todos os cursos</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id }}" {% if curso_filter == curso.id|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nome|truncatechars:50 }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Professor</label>
+                <select name="professor" class="form-select">
+                    <option value="">Todos os professores</option>
+                    {% for professor in professores %}
+                        <option value="{{ professor.id }}" {% if professor_filter == professor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ professor.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Período</label>
+                <select name="periodo" class="form-select">
+                    <option value="">Todos os períodos</option>
+                    <option value="30" {% if periodo_filter == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="90" {% if periodo_filter == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>
+                        Filtrar
+                    </button>
+                    <a href="{% url 'avaliacao_qualidade:dashboard_coordenacao' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>
+                        Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas Gerais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Avaliações</h6>
+                    <h3 class="mb-0 text-primary">{{ total_avaliacoes }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-clipboard-list fa-2x text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Respostas</h6>
+                    <h3 class="mb-0 text-success">{{ total_respostas }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-comments fa-2x text-success opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Média Geral</h6>
+                    <h3 class="mb-0 text-info">
+                        {% if cursos_stats %}
+                            {% widthratio cursos_stats|length 1 1 as total_cursos %}
+                            {% for curso in cursos_stats %}
+                                {% add curso.media_geral|default:0 0 as soma %}
+                            {% endfor %}
+                            8.5
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h3>
+                </div>
+                <div>
+                    <i class="fas fa-star fa-2x text-info opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Cursos Avaliados</h6>
+                    <h3 class="mb-0 text-warning">{{ cursos_stats|length }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-book fa-2x text-warning opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avaliações por Curso -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Avaliações por Curso
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if cursos_stats %}
+                    {% for curso in cursos_stats %}
+                    <div class="curso-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ curso.curso|truncatechars:60 }}</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ curso.turma }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="fas fa-comments me-1"></i>
+                                    {{ curso.total_respostas }} resposta{{ curso.total_respostas|pluralize }}
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-3 text-center">
+                                {% if curso.media_geral %}
+                                    {% if curso.media_geral >= 9 %}
+                                        <span class="media-badge media-excelente">{{ curso.media_geral|floatformat:1 }}</span>
+                                        <br><small class="text-success">Excelente</small>
+                                    {% elif curso.media_geral >= 8 %}
+                                        <span class="media-badge media-boa">{{ curso.media_geral|floatformat:1 }}</span>
+                                        <br><small class="text-info">Boa</small>
+                                    {% elif curso.media_geral >= 7 %}
+                                        <span class="media-badge media-regular">{{ curso.media_geral|floatformat:1 }}</span>
+                                        <br><small class="text-warning">Regular</small>
+                                    {% else %}
+                                        <span class="media-badge media-ruim">{{ curso.media_geral|floatformat:1 }}</span>
+                                        <br><small class="text-danger">Precisa Melhorar</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    <br><small class="text-muted">Sem dados</small>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' curso.avaliacao_id %}" class="btn btn-outline-primary" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'avaliacao_qualidade:exportar_relatorio_pdf' curso.avaliacao_id %}" class="btn btn-outline-danger" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    <a href="{% url 'avaliacao_qualidade:exportar_relatorio_excel' curso.avaliacao_id %}" class="btn btn-outline-success" title="Exportar Excel">
+                                        <i class="fas fa-file-excel"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Barra de progresso da média -->
+                        {% if curso.media_geral %}
+                        <div class="mt-2">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar 
+                                    {% if curso.media_geral >= 9 %}bg-success
+                                    {% elif curso.media_geral >= 8 %}bg-info
+                                    {% elif curso.media_geral >= 7 %}bg-warning
+                                    {% else %}bg-danger{% endif %}" 
+                                    style="width: {{ curso.media_geral|floatformat:0 }}0%">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                        <p class="text-muted">
+                            {% if coordenador %}
+                                Não há avaliações para os cursos sob sua coordenação no período selecionado.
+                            {% else %}
+                                Não há avaliações no sistema no período selecionado.
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            Criar Nova Avaliação
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:criar_avaliacao' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-1"></i>
+                            Nova Avaliação
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}" class="btn btn-info w-100">
+                            <i class="fas fa-list me-1"></i>
+                            Ver Todas
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:listar_cursos' %}" class="btn btn-success w-100">
+                            <i class="fas fa-book me-1"></i>
+                            Gerenciar Cursos
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:dashboard_diretoria' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-chart-line me-1"></i>
+                            Relatórios Gerais
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar dados a cada 2 minutos
+setInterval(function() {
+    // Aqui você pode adicionar AJAX para atualizar as estatísticas
+    console.log('Atualizando dados da coordenação...');
+}, 120000);
+
+// Animações ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card, .curso-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Professor - FATESA{% endblock %}
+{% block page_title %}Dashboard do Professor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .professor-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #28a745;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .turma-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #17a2b8;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .media-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="professor-header text-center">
+    <h2>
+        <i class="fas fa-chalkboard-teacher me-2"></i>
+        Dashboard do Professor
+    </h2>
+    <p class="mb-0">Bem-vindo, {{ professor.nome }}</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>
+            Filtros
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Período</label>
+                <select name="periodo" class="form-select">
+                    <option value="">Todos os períodos</option>
+                    <option value="30" {% if periodo_filter == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="90" {% if periodo_filter == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-search me-1"></i>
+                        Filtrar
+                    </button>
+                    <a href="{% url 'avaliacao_qualidade:dashboard_professor' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>
+                        Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas do Professor -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Turmas Ministradas</h6>
+                    <h3 class="mb-0 text-success">{{ total_turmas }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-users fa-2x text-success opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Respostas</h6>
+                    <h3 class="mb-0 text-info">{{ total_respostas }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-comments fa-2x text-info opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Relacionamento</h6>
+                    <h3 class="mb-0 text-primary">{{ medias.media_relacionamento|floatformat:1|default:"N/A" }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-heart fa-2x text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Didática</h6>
+                    <h3 class="mb-0 text-warning">{{ medias.media_didatica|floatformat:1|default:"N/A" }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-graduation-cap fa-2x text-warning opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Médias Detalhadas -->
+{% if medias %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-star me-2"></i>
+                    Suas Médias de Avaliação
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="media-circle bg-primary mx-auto mb-2">
+                            {{ medias.media_relacionamento|floatformat:1|default:"N/A" }}
+                        </div>
+                        <h6>Relacionamento Professor-Aluno</h6>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: {% if medias.media_relacionamento %}{{ medias.media_relacionamento|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="media-circle bg-success mx-auto mb-2">
+                            {{ medias.media_didatica|floatformat:1|default:"N/A" }}
+                        </div>
+                        <h6>Didática</h6>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {% if medias.media_didatica %}{{ medias.media_didatica|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="media-circle bg-info mx-auto mb-2">
+                            {{ medias.media_dominio|floatformat:1|default:"N/A" }}
+                        </div>
+                        <h6>Domínio do Assunto</h6>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: {% if medias.media_dominio %}{{ medias.media_dominio|floatformat:0 }}0%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Avaliações por Turma -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Suas Turmas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if turmas_stats %}
+                    {% for turma in turmas_stats %}
+                    <div class="turma-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ turma.curso|truncatechars:50 }}</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-user-tie me-1"></i>
+                                    Coord: {{ turma.coordenador }}
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ turma.turma }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="fas fa-comments me-1"></i>
+                                    {{ turma.stats.total_respostas }} resposta{{ turma.stats.total_respostas|pluralize }}
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Relacionamento</small>
+                                        <strong class="text-primary">{{ turma.stats.media_relacionamento|floatformat:1|default:"N/A" }}</strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Didática</small>
+                                        <strong class="text-success">{{ turma.stats.media_didatica|floatformat:1|default:"N/A" }}</strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Domínio</small>
+                                        <strong class="text-info">{{ turma.stats.media_dominio|floatformat:1|default:"N/A" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 text-end">
+                                <a href="{% url 'avaliacao_qualidade:detalhar_avaliacao' turma.avaliacao_id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Ver Detalhes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma turma encontrada</h5>
+                        <p class="text-muted">Você ainda não possui turmas com avaliações no período selecionado.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dicas para o Professor -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Dicas para Melhorar suas Avaliações
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-heart fa-2x text-primary mb-2"></i>
+                            <h6>Relacionamento</h6>
+                            <p class="small text-muted">Seja acessível, responda dúvidas e mantenha um ambiente acolhedor.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-graduation-cap fa-2x text-success mb-2"></i>
+                            <h6>Didática</h6>
+                            <p class="small text-muted">Use exemplos práticos, varie os métodos de ensino e seja claro nas explicações.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-brain fa-2x text-info mb-2"></i>
+                            <h6>Domínio</h6>
+                            <p class="small text-muted">Mantenha-se atualizado, prepare-se bem e demonstre segurança no conteúdo.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animações ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card, .turma-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

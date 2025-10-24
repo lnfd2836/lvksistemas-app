@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Diretoria - FATESA{% endblock %}
+{% block page_title %}Dashboard da Diretoria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .diretoria-header {
+        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #dc3545;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .ranking-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #28a745;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .ranking-item:hover {
+        transform: translateX(5px);
+    }
+    
+    .ranking-position {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .pos-1 { background: #ffd700; color: #333; }
+    .pos-2 { background: #c0c0c0; color: #333; }
+    .pos-3 { background: #cd7f32; color: white; }
+    .pos-other { background: #6c757d; color: white; }
+    
+    .alert-item {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 5px;
+    }
+    
+    .media-institucional {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="diretoria-header text-center">
+    <h2>
+        <i class="fas fa-crown me-2"></i>
+        Dashboard da Diretoria
+    </h2>
+    <p class="mb-0">Visão Estratégica e Comparativa</p>
+</div>
+
+<!-- Estatísticas Institucionais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Cursos</h6>
+                    <h3 class="mb-0 text-primary">{{ total_cursos }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-book fa-2x text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Professores</h6>
+                    <h3 class="mb-0 text-success">{{ total_professores }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-chalkboard-teacher fa-2x text-success opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Avaliações</h6>
+                    <h3 class="mb-0 text-info">{{ total_avaliacoes }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-clipboard-check fa-2x text-info opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total de Respostas</h6>
+                    <h3 class="mb-0 text-warning">{{ total_respostas }}</h3>
+                </div>
+                <div>
+                    <i class="fas fa-comments fa-2x text-warning opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Média Institucional -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card text-center">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-star me-2"></i>
+                    Média Institucional FATESA
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="media-institucional">{{ media_institucional|floatformat:1|default:"N/A" }}</div>
+                <p class="text-muted mb-0">Média geral de todas as avaliações</p>
+                {% if media_institucional %}
+                    {% if media_institucional >= 9 %}
+                        <span class="badge bg-success fs-6">Excelência</span>
+                    {% elif media_institucional >= 8 %}
+                        <span class="badge bg-primary fs-6">Muito Bom</span>
+                    {% elif media_institucional >= 7 %}
+                        <span class="badge bg-warning fs-6">Bom</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">Precisa Melhorar</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rankings -->
+<div class="row mb-4">
+    <!-- Ranking de Cursos -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Top 10 Cursos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if ranking_cursos %}
+                    {% for curso in ranking_cursos %}
+                    <div class="ranking-item">
+                        <div class="d-flex align-items-center">
+                            <div class="ranking-position 
+                                {% if forloop.counter == 1 %}pos-1
+                                {% elif forloop.counter == 2 %}pos-2
+                                {% elif forloop.counter == 3 %}pos-3
+                                {% else %}pos-other{% endif %}">
+                                {{ forloop.counter }}
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ curso.curso|truncatechars:40 }}</h6>
+                                <small class="text-muted">{{ curso.total_respostas }} resposta{{ curso.total_respostas|pluralize }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6">{{ curso.media_geral|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-trophy fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Nenhum curso avaliado ainda</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ranking de Professores -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-medal me-2"></i>
+                    Top 10 Professores
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if ranking_professores %}
+                    {% for professor in ranking_professores %}
+                    <div class="ranking-item">
+                        <div class="d-flex align-items-center">
+                            <div class="ranking-position 
+                                {% if forloop.counter == 1 %}pos-1
+                                {% elif forloop.counter == 2 %}pos-2
+                                {% elif forloop.counter == 3 %}pos-3
+                                {% else %}pos-other{% endif %}">
+                                {{ forloop.counter }}
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ professor.professor }}</h6>
+                                <small class="text-muted">{{ professor.total_respostas }} resposta{{ professor.total_respostas|pluralize }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary fs-6">{{ professor.media_geral|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-medal fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Nenhum professor avaliado ainda</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas -->
+{% if alertas %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Alertas - Avaliações Abaixo de 7.0
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for alerta in alertas %}
+                <div class="alert-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ alerta.curso|truncatechars:50 }}</h6>
+                            <p class="mb-1 text-muted">{{ alerta.turma }}</p>
+                            <small class="text-muted">{{ alerta.data|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning text-dark fs-6">{{ alerta.media|floatformat:1 }}</span>
+                            <br>
+                            <small class="text-danger">Atenção Necessária</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ações Estratégicas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Ações Estratégicas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:dashboard_coordenacao' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-user-graduate me-1"></i>
+                            Dashboard Coordenação
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}" class="btn btn-success w-100">
+                            <i class="fas fa-list me-1"></i>
+                            Todas as Avaliações
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:listar_cursos' %}" class="btn btn-info w-100">
+                            <i class="fas fa-book me-1"></i>
+                            Gerenciar Cursos
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'avaliacao_qualidade:listar_professores' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                            Gerenciar Professores
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Indicadores de Performance -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Indicadores de Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-percentage fa-2x text-primary mb-2"></i>
+                        <h6>Taxa de Resposta</h6>
+                        <h4 class="text-primary">
+                            {% if total_avaliacoes > 0 %}
+                                {% widthratio total_respostas total_avaliacoes 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h4>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-thumbs-up fa-2x text-success mb-2"></i>
+                        <h6>Cursos Acima de 8.0</h6>
+                        <h4 class="text-success">
+                            {% for curso in ranking_cursos %}
+                                {% if curso.media_geral >= 8 %}{{ forloop.counter }}{% endif %}
+                            {% empty %}0{% endfor %}
+                        </h4>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h6>Alertas Ativos</h6>
+                        <h4 class="text-warning">{{ alertas|length }}</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-star fa-2x text-info mb-2"></i>
+                        <h6>Excelência (≥9.0)</h6>
+                        <h4 class="text-info">
+                            {% for curso in ranking_cursos %}
+                                {% if curso.media_geral >= 9 %}{{ forloop.counter }}{% endif %}
+                            {% empty %}0{% endfor %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar dados a cada 5 minutos
+setInterval(function() {
+    console.log('Atualizando dados da diretoria...');
+    // Aqui você pode adicionar AJAX para atualizar as estatísticas
+}, 300000);
+
+// Animações ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card, .ranking-item, .alert-item');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
+});
+</script>
+{% endblock %}
