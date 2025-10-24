@@ -203,6 +203,92 @@ class AsaasSyncService:
         
         return result
     
+    def _create_loja_and_controle_from_customer(self, customer_data, payment_data):
+        """
+        Cria automaticamente uma loja e controle financeiro para cobranças órfãs
+        
+        Args:
+            customer_data: Dados do customer do Asaas
+            payment_data: Dados do payment do Asaas
+            
+        Returns:
+            ControleFinanceiro: Controle financeiro criado ou None se falhar
+        """
+        try:
+            from lojas.models import Loja
+            from controle_financeiro.models import ControleFinanceiro, PlanoFinanceiro
+            from django.utils import timezone
+            from datetime import timedelta
+            
+            # Extrair dados do customer
+            customer_name = customer_data.get('name', 'Loja Importada do Asaas')
+            customer_email = customer_data.get('email', '')
+            customer_cnpj = customer_data.get('cpfCnpj', '')
+            customer_phone = customer_data.get('phone', '')
+            customer_address = customer_data.get('address', '')
+            customer_city = customer_data.get('city', '')
+            customer_state = customer_data.get('state', '')
+            
+            # Verificar se já existe loja com esses dados
+            loja_existente = None
+            if customer_email:
+                loja_existente = Loja.objects.filter(email=customer_email).first()
+            if not loja_existente and customer_cnpj:
+                loja_existente = Loja.objects.filter(cnpj=customer_cnpj).first()
+            
+            if loja_existente:
+                logger.info(f"Loja existente encontrada: {loja_existente.nome}")
+                loja = loja_existente
+            else:
+                # Criar nova loja
+                loja = Loja.objects.create(
+                    nome=customer_name,
+                    email=customer_email,
+                    cnpj=customer_cnpj,
+                    telefone=customer_phone,
+                    endereco=customer_address or 'Endereço não informado',
+                    cidade=customer_city or 'Cidade não informada',
+                    estado=customer_state or 'Estado não informado',
+                    cep='00000000',  # Valor padrão
+                    status='ativa'
+                )
+                logger.info(f"Nova loja criada: {loja.nome} (ID: {loja.id})")
+            
+            # Verificar se já existe controle financeiro para esta loja
+            controle_existente = ControleFinanceiro.objects.filter(loja=loja).first()
+            if controle_existente:
+                logger.info(f"Controle financeiro existente encontrado: {controle_existente.id}")
+                return controle_existente
+            
+            # Buscar plano financeiro padrão
+            plano_padrao = PlanoFinanceiro.objects.filter(nome='Básico').first()
+            if not plano_padrao:
+                # Criar plano básico se não existir
+                plano_padrao = PlanoFinanceiro.objects.create(
+                    nome='Básico',
+                    descricao='Plano básico para lojas importadas',
+                    valor_mensal=29.90,
+                    status='ativo'
+                )
+                logger.info(f"Plano básico criado: {plano_padrao.nome}")
+            
+            # Criar controle financeiro
+            controle_financeiro = ControleFinanceiro.objects.create(
+                loja=loja,
+                plano=plano_padrao,
+                status='ativa',
+                valor_mensal=plano_padrao.valor_mensal,
+                data_inicio=timezone.now(),
+                data_vencimento=timezone.now() + timedelta(days=30)
+            )
+            
+            logger.info(f"Controle financeiro criado: {controle_financeiro.id} para loja {loja.nome}")
+            return controle_financeiro
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar loja e controle financeiro: {str(e)}")
+            return None
+    
     def _sync_existing_charges(self) -> Dict:
         """Sincroniza cobranças já existentes no sistema (versão Heroku otimizada)"""
         result = {
@@ -312,6 +398,33 @@ class AsaasSyncService:
                                     
                                 except ControleFinanceiro.DoesNotExist:
                                     logger.warning(f"Controle financeiro {cf_id} não encontrado para cobrança {payment['id']}")
+                                    
+                                    # Tentar criar loja e controle financeiro automaticamente para cobrança órfã
+                                    customer_id = payment.get('customer')
+                                    if customer_id:
+                                        try:
+                                            # Buscar dados do customer no Asaas
+                                            customer_response = requests.get(
+                                                f"{self.asaas_service.base_url}/customers/{customer_id}",
+                                                headers=self.asaas_service.headers,
+                                                timeout=10
+                                            )
+                                            
+                                            if customer_response.status_code == 200:
+                                                customer_data = customer_response.json()
+                                                logger.info(f"Criando loja e controle financeiro para cobrança órfã {payment['id']}")
+                                                controle_criado = self._create_loja_and_controle_from_customer(customer_data, payment)
+                                                if controle_criado:
+                                                    self._create_charge_from_asaas_data(payment, controle_criado)
+                                                    result['new_charges'] += 1
+                                                    logger.info(f"Cobrança órfã {payment['id']} associada ao controle criado {controle_criado.id}")
+                                                else:
+                                                    logger.warning(f"Não foi possível criar controle financeiro para cobrança órfã {payment['id']}")
+                                            else:
+                                                logger.warning(f"Erro ao buscar customer {customer_id} para cobrança órfã: {customer_response.status_code}")
+                                                
+                                        except Exception as e:
+                                            logger.warning(f"Erro ao processar cobrança órfã {payment['id']}: {str(e)}")
                             
                             else:
                                 # Cobrança sem externalReference - tentar associar por dados do customer
@@ -348,7 +461,15 @@ class AsaasSyncService:
                                                 result['new_charges'] += 1
                                                 logger.info(f"Cobrança órfã {payment['id']} associada ao controle {controle.id} via {customer_email or customer_cnpj}")
                                             else:
-                                                logger.warning(f"Nenhum controle financeiro encontrado para customer {customer_id} ({customer_email or customer_cnpj}) - cobrança {payment['id']}")
+                                                # Tentar criar loja e controle financeiro automaticamente
+                                                logger.info(f"Criando loja e controle financeiro para customer {customer_id} - cobrança {payment['id']}")
+                                                controle_criado = self._create_loja_and_controle_from_customer(customer_data, payment)
+                                                if controle_criado:
+                                                    self._create_charge_from_asaas_data(payment, controle_criado)
+                                                    result['new_charges'] += 1
+                                                    logger.info(f"Cobrança órfã {payment['id']} associada ao controle criado {controle_criado.id}")
+                                                else:
+                                                    logger.warning(f"Não foi possível criar controle financeiro para customer {customer_id} - cobrança {payment['id']}")
                                         else:
                                             logger.warning(f"Erro ao buscar customer {customer_id}: {customer_response.status_code}")
                                     
