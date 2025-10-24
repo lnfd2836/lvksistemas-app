@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from datetime import timedelta
 import json
+import logging
 
 from .asaas_sync_service import get_sync_service, AsaasSyncService
 from .models import CobrancaAsaas, ControleFinanceiro
@@ -19,6 +20,8 @@ try:
     TASKS_AVAILABLE = True
 except ImportError:
     TASKS_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 def is_superuser(user):
@@ -128,7 +131,7 @@ def parar_sincronizacao(request):
 @user_passes_test(is_superuser)
 @require_http_methods(["POST"])
 def forcar_sincronizacao(request):
-    """Força uma sincronização imediata"""
+    """Força uma sincronização usando as funcionalidades já testadas"""
     
     try:
         if TASKS_AVAILABLE:
@@ -136,13 +139,188 @@ def forcar_sincronizacao(request):
             task = sync_asaas_charges_task.delay()
             messages.success(request, f'Sincronização forçada iniciada (Task ID: {task.id})')
         else:
-            # Executar diretamente
-            sync_service = get_sync_service()
-            result = sync_service.sync_all_charges()
-            messages.success(request, f'Sincronização concluída: {result["total_processed"]} processadas, {result["updates_made"]} atualizadas')
+            # Usar o método validar_configuracao que já funciona
+            logger.info("Usando método validar_configuracao que já funciona...")
+            
+            try:
+                from .asaas_service import AsaasService
+                asaas_service = AsaasService()
+                
+                # Teste 1: Usar o método que já funciona
+                if asaas_service.validar_configuracao():
+                    messages.success(request, '✅ API Asaas acessível - configuração validada!')
+                    
+                    # Agora fazer sincronização simples usando apenas métodos que funcionam
+                    try:
+                        # Buscar cobranças reais para sincronizar (excluir exemplos e testes)
+                        cobrancas_para_sync = CobrancaAsaas.objects.filter(
+                            status__in=['PENDING', 'OVERDUE']
+                        ).exclude(
+                            asaas_id__contains='exemplo'
+                        ).exclude(
+                            asaas_id__contains='TESTE'
+                        ).exclude(
+                            asaas_id__startswith='test_'
+                        ).order_by('-data_criacao')[:10]  # Aumentar para 10 cobranças reais
+                        
+                        logger.info(f"Sincronizando {len(cobrancas_para_sync)} cobranças reais (excluindo exemplos/testes)")
+                        
+                        if len(cobrancas_para_sync) == 0:
+                            messages.info(request, '📋 Nenhuma cobrança real encontrada para sincronizar (apenas exemplos/testes no banco)')
+                            return redirect('controle_financeiro:dashboard_sincronizacao')
+                        
+                        total_processadas = 0
+                        total_atualizadas = 0
+                        erros = []
+                        
+                        for cobranca in cobrancas_para_sync:
+                            try:
+                                # Usar o método consultar_cobranca que já existe
+                                dados_asaas = asaas_service.consultar_cobranca(cobranca.asaas_id, timeout=10)
+                                
+                                if dados_asaas:
+                                    status_anterior = cobranca.status
+                                    
+                                    # Atualizar status se mudou
+                                    if dados_asaas.get('status') != status_anterior:
+                                        cobranca.status = dados_asaas.get('status', status_anterior)
+                                        cobranca.save()
+                                        total_atualizadas += 1
+                                        logger.info(f"Cobrança {cobranca.asaas_id} atualizada: {status_anterior} → {cobranca.status}")
+                                    
+                                    total_processadas += 1
+                                    
+                                else:
+                                    erros.append(f"Não foi possível consultar {cobranca.asaas_id}")
+                                    
+                            except Exception as e:
+                                error_msg = f"Erro ao processar {cobranca.asaas_id}: {str(e)}"
+                                erros.append(error_msg)
+                                logger.warning(error_msg)
+                        
+                        # Mostrar resultado
+                        if total_processadas > 0:
+                            messages.success(request, 
+                                f'✅ Sincronização concluída! {total_processadas} processadas, {total_atualizadas} atualizadas'
+                            )
+                        else:
+                            messages.info(request, '📋 Nenhuma cobrança encontrada para sincronizar')
+                        
+                        if erros:
+                            messages.warning(request, f'⚠️ {len(erros)} erro(s) encontrado(s). Primeiro: {erros[0][:100]}...')
+                            
+                    except Exception as sync_error:
+                        logger.error(f"Erro na sincronização simples: {str(sync_error)}")
+                        messages.error(request, f'❌ Erro na sincronização: {str(sync_error)}')
+                        
+                else:
+                    messages.error(request, '❌ Configuração da API Asaas inválida. Verifique as configurações.')
+                    
+            except Exception as config_error:
+                logger.error(f"Erro na validação da configuração: {str(config_error)}")
+                
+                # Se der erro, tentar o método de teste que já funciona
+                try:
+                    # Redirecionar para a página de teste que já funciona
+                    messages.info(request, '🔄 Redirecionando para teste da API que já funciona...')
+                    return redirect('controle_financeiro:testar_asaas')
+                    
+                except Exception as redirect_error:
+                    messages.error(request, f'❌ Erro geral: {str(config_error)}')
     
     except Exception as e:
-        messages.error(request, f'Erro ao forçar sincronização: {str(e)}')
+        logger.error(f"Erro geral ao forçar sincronização: {str(e)}")
+        messages.error(request, f'❌ Erro geral: {str(e)}')
+    
+    return redirect('controle_financeiro:dashboard_sincronizacao')
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_http_methods(["POST"])
+def sincronizar_usando_funcionalidades_existentes(request):
+    """Sincronização usando apenas funcionalidades que já funcionam"""
+    
+    try:
+        logger.info("Iniciando sincronização usando funcionalidades existentes...")
+        
+        # Usar AsaasService que já funciona
+        from .asaas_service import AsaasService
+        asaas_service = AsaasService()
+        
+        # Primeiro, validar se API está funcionando
+        if not asaas_service.validar_configuracao():
+            messages.error(request, '❌ API Asaas não está acessível. Verifique as configurações.')
+            return redirect('controle_financeiro:dashboard_sincronizacao')
+        
+        messages.info(request, '✅ API Asaas validada - iniciando sincronização...')
+        
+        # Buscar cobranças para sincronizar (apenas algumas)
+        cobrancas = CobrancaAsaas.objects.filter(
+            status__in=['PENDING', 'OVERDUE']
+        ).order_by('-data_criacao')[:10]  # Máximo 10
+        
+        if not cobrancas:
+            messages.info(request, '📋 Nenhuma cobrança pendente encontrada para sincronizar.')
+            return redirect('controle_financeiro:dashboard_sincronizacao')
+        
+        total_processadas = 0
+        total_atualizadas = 0
+        erros = []
+        
+        for cobranca in cobrancas:
+            try:
+                # Usar método que já funciona
+                dados_asaas = asaas_service.consultar_cobranca(cobranca.asaas_id, timeout=15)
+                
+                if dados_asaas:
+                    status_anterior = cobranca.status
+                    novo_status = dados_asaas.get('status', status_anterior)
+                    
+                    if novo_status != status_anterior:
+                        cobranca.status = novo_status
+                        cobranca.save()
+                        total_atualizadas += 1
+                        
+                        # Se foi paga, processar pagamento
+                        if novo_status in ['RECEIVED', 'CONFIRMED'] and status_anterior not in ['RECEIVED', 'CONFIRMED']:
+                            try:
+                                cobranca.marcar_como_paga()
+                                messages.success(request, f'💰 Pagamento processado: {cobranca.asaas_id}')
+                            except Exception as payment_error:
+                                logger.warning(f"Erro ao processar pagamento: {str(payment_error)}")
+                    
+                    total_processadas += 1
+                    logger.info(f"Cobrança {cobranca.asaas_id}: {status_anterior} → {novo_status}")
+                    
+                else:
+                    erros.append(f"Cobrança {cobranca.asaas_id} não encontrada na API")
+                    
+            except Exception as e:
+                error_msg = f"Erro ao processar {cobranca.asaas_id}: {str(e)}"
+                erros.append(error_msg)
+                logger.warning(error_msg)
+        
+        # Mostrar resultados
+        if total_processadas > 0:
+            messages.success(request, 
+                f'✅ Sincronização concluída! {total_processadas} processadas, {total_atualizadas} atualizadas'
+            )
+        
+        if erros:
+            messages.warning(request, 
+                f'⚠️ {len(erros)} erro(s) encontrado(s). Verifique os logs para detalhes.'
+            )
+            # Mostrar primeiro erro
+            if erros:
+                messages.info(request, f'Primeiro erro: {erros[0][:100]}...')
+        
+        if total_processadas == 0 and not erros:
+            messages.info(request, '📋 Todas as cobranças já estão atualizadas.')
+            
+    except Exception as e:
+        logger.error(f"Erro na sincronização usando funcionalidades existentes: {str(e)}")
+        messages.error(request, f'❌ Erro na sincronização: {str(e)}')
     
     return redirect('controle_financeiro:dashboard_sincronizacao')
 
@@ -343,6 +521,179 @@ def listar_cobrancas_problemas(request):
     }
     
     return render(request, 'controle_financeiro/cobrancas_problemas.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_http_methods(["POST"])
+def testar_conectividade(request):
+    """Testa conectividade usando as funcionalidades já testadas e funcionais"""
+    
+    try:
+        logger.info("Iniciando teste de conectividade usando métodos que já funcionam...")
+        
+        # Usar o AsaasService que já funciona
+        from .asaas_service import AsaasService
+        asaas_service = AsaasService()
+        
+        try:
+            # Usar o método validar_configuracao que já funciona
+            if asaas_service.validar_configuracao():
+                messages.success(request, 
+                    '✅ Conectividade perfeita! API Asaas acessível e configuração válida.'
+                )
+                
+                # Informações adicionais sobre a configuração
+                messages.info(request, f'🔧 Ambiente: {asaas_service.environment.upper()}')
+                messages.info(request, f'🌐 URL Base: {asaas_service.base_url}')
+                
+                # Testar com uma cobrança se existir
+                try:
+                    cobranca_teste = CobrancaAsaas.objects.filter(status='PENDING').first()
+                    if cobranca_teste:
+                        dados = asaas_service.consultar_cobranca(cobranca_teste.asaas_id, timeout=10)
+                        if dados:
+                            messages.success(request, 
+                                f'✅ Teste adicional: Cobrança {cobranca_teste.asaas_id} consultada com sucesso!'
+                            )
+                        else:
+                            messages.warning(request, 
+                                f'⚠️ Cobrança {cobranca_teste.asaas_id} não pôde ser consultada (pode ter sido removida)'
+                            )
+                    else:
+                        messages.info(request, '📋 Nenhuma cobrança pendente para testar no momento')
+                        
+                except Exception as charge_error:
+                    messages.warning(request, f'⚠️ Erro ao testar cobrança: {str(charge_error)}')
+                
+            else:
+                messages.error(request, 
+                    '❌ Configuração da API Asaas inválida. Verifique a chave da API e o ambiente.'
+                )
+                messages.info(request, 
+                    '🔧 Dica: Acesse "Configurar Asaas" para verificar as configurações.'
+                )
+                
+        except Exception as validation_error:
+            error_str = str(validation_error)
+            
+            if "Connection refused" in error_str:
+                messages.error(request, 
+                    '🚫 Connection Refused detectado! A API Asaas está rejeitando conexões. '
+                    'Isso é temporário - aguarde 5-10 minutos e tente novamente.'
+                )
+                messages.info(request, 
+                    '💡 Dica: Connection Refused geralmente ocorre por sobrecarga da API. '
+                    'Tente em horários de menor movimento (madrugada, fins de semana).'
+                )
+            else:
+                messages.error(request, f'❌ Erro na validação: {error_str}')
+                
+                # Sugerir usar a página de teste que já funciona
+                messages.info(request, 
+                    '🔄 Alternativa: Use a página "Testar Integração com Asaas" que já está funcionando.'
+                )
+    
+    except Exception as e:
+        logger.error(f"Erro geral no teste de conectividade: {str(e)}")
+        messages.error(request, f'❌ Erro geral: {str(e)}')
+        
+        # Sugerir alternativa
+        messages.info(request, 
+            '🔄 Tente usar a página "Testar Integração com Asaas" como alternativa.'
+        )
+    
+    return redirect('controle_financeiro:dashboard_sincronizacao')
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_http_methods(["POST"])
+def sincronizar_usando_funcionalidades_existentes(request):
+    """Sincronização usando apenas funcionalidades que já funcionam"""
+    
+    try:
+        logger.info("Iniciando sincronização usando funcionalidades existentes...")
+        
+        # Usar AsaasService que já funciona
+        from .asaas_service import AsaasService
+        asaas_service = AsaasService()
+        
+        # Primeiro, validar se API está funcionando
+        if not asaas_service.validar_configuracao():
+            messages.error(request, '❌ API Asaas não está acessível. Verifique as configurações.')
+            return redirect('controle_financeiro:dashboard_sincronizacao')
+        
+        messages.info(request, '✅ API Asaas validada - iniciando sincronização...')
+        
+        # Buscar cobranças para sincronizar (apenas algumas)
+        cobrancas = CobrancaAsaas.objects.filter(
+            status__in=['PENDING', 'OVERDUE']
+        ).order_by('-data_criacao')[:10]  # Máximo 10
+        
+        if not cobrancas:
+            messages.info(request, '📋 Nenhuma cobrança pendente encontrada para sincronizar.')
+            return redirect('controle_financeiro:dashboard_sincronizacao')
+        
+        total_processadas = 0
+        total_atualizadas = 0
+        erros = []
+        
+        for cobranca in cobrancas:
+            try:
+                # Usar método que já funciona
+                dados_asaas = asaas_service.consultar_cobranca(cobranca.asaas_id, timeout=15)
+                
+                if dados_asaas:
+                    status_anterior = cobranca.status
+                    novo_status = dados_asaas.get('status', status_anterior)
+                    
+                    if novo_status != status_anterior:
+                        cobranca.status = novo_status
+                        cobranca.save()
+                        total_atualizadas += 1
+                        
+                        # Se foi paga, processar pagamento
+                        if novo_status in ['RECEIVED', 'CONFIRMED'] and status_anterior not in ['RECEIVED', 'CONFIRMED']:
+                            try:
+                                cobranca.marcar_como_paga()
+                                messages.success(request, f'💰 Pagamento processado: {cobranca.asaas_id}')
+                            except Exception as payment_error:
+                                logger.warning(f"Erro ao processar pagamento: {str(payment_error)}")
+                    
+                    total_processadas += 1
+                    logger.info(f"Cobrança {cobranca.asaas_id}: {status_anterior} → {novo_status}")
+                    
+                else:
+                    erros.append(f"Cobrança {cobranca.asaas_id} não encontrada na API")
+                    
+            except Exception as e:
+                error_msg = f"Erro ao processar {cobranca.asaas_id}: {str(e)}"
+                erros.append(error_msg)
+                logger.warning(error_msg)
+        
+        # Mostrar resultados
+        if total_processadas > 0:
+            messages.success(request, 
+                f'✅ Sincronização concluída! {total_processadas} processadas, {total_atualizadas} atualizadas'
+            )
+        
+        if erros:
+            messages.warning(request, 
+                f'⚠️ {len(erros)} erro(s) encontrado(s). Verifique os logs para detalhes.'
+            )
+            # Mostrar primeiro erro
+            if erros:
+                messages.info(request, f'Primeiro erro: {erros[0][:100]}...')
+        
+        if total_processadas == 0 and not erros:
+            messages.info(request, '📋 Todas as cobranças já estão atualizadas.')
+            
+    except Exception as e:
+        logger.error(f"Erro na sincronização usando funcionalidades existentes: {str(e)}")
+        messages.error(request, f'❌ Erro na sincronização: {str(e)}')
+    
+    return redirect('controle_financeiro:dashboard_sincronizacao')
 
 
 @login_required

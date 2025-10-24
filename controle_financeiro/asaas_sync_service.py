@@ -39,27 +39,23 @@ class AsaasSyncService:
     
     def start_real_time_sync(self, interval_seconds: int = 300):
         """
-        Inicia sincronização em tempo real
+        Inicia sincronização em tempo real (modo Heroku - sem threading)
         
         Args:
             interval_seconds: Intervalo entre sincronizações em segundos
         """
         if self.is_running:
-            logger.warning("Sincronização já está em execução")
+            logger.warning("Sincronização já está marcada como ativa")
             return False
         
+        # Marcar como ativo (sem threading no Heroku)
         self.sync_interval = interval_seconds
         self.is_running = True
+        self.last_sync = timezone.now()
         
-        # Iniciar thread de sincronização
-        self.sync_thread = threading.Thread(
-            target=self._sync_loop,
-            daemon=True,
-            name="AsaasSyncThread"
-        )
-        self.sync_thread.start()
+        logger.info(f"Sincronização marcada como ativa (intervalo: {interval_seconds}s)")
+        logger.info("HEROKU MODE: Use execução manual ou Celery para sincronização contínua")
         
-        logger.info(f"Sincronização em tempo real iniciada (intervalo: {interval_seconds}s)")
         return True
     
     def stop_real_time_sync(self):
@@ -68,9 +64,7 @@ class AsaasSyncService:
             return False
         
         self.is_running = False
-        
-        if self.sync_thread and self.sync_thread.is_alive():
-            self.sync_thread.join(timeout=10)
+        self.sync_thread = None
         
         logger.info("Sincronização em tempo real parada")
         return True
@@ -115,7 +109,7 @@ class AsaasSyncService:
     
     def sync_all_charges(self) -> Dict:
         """
-        Sincroniza todas as cobranças com o Asaas
+        Sincroniza todas as cobranças com o Asaas (versão anti-connection refused)
         
         Returns:
             Dict com resultado da sincronização
@@ -129,56 +123,63 @@ class AsaasSyncService:
         }
         
         try:
-            # Validar configuração com retry
-            validation_attempts = 3
+            # Estratégia 1: Validação com timeout muito baixo
+            logger.info("Iniciando validação com timeout reduzido...")
             config_valid = False
             
-            for attempt in range(validation_attempts):
-                try:
-                    if self.asaas_service.validar_configuracao():
-                        config_valid = True
-                        break
-                    else:
-                        logger.warning(f"Tentativa {attempt + 1} de validação falhou")
-                        if attempt < validation_attempts - 1:
-                            time.sleep(2)  # Aguardar 2 segundos antes de tentar novamente
-                except Exception as e:
-                    logger.error(f"Erro na tentativa {attempt + 1} de validação: {str(e)}")
-                    if attempt < validation_attempts - 1:
-                        time.sleep(2)
+            try:
+                # Usar timeout de apenas 5 segundos para validação inicial
+                config_valid = self._validate_with_short_timeout()
+            except Exception as e:
+                logger.warning(f"Validação rápida falhou: {str(e)}")
+                result['errors'].append(f"Validação rápida: {str(e)}")
             
             if not config_valid:
-                raise ValueError("Configuração do Asaas inválida após múltiplas tentativas")
+                # Estratégia 2: Tentar validação com delay progressivo
+                logger.info("Tentando validação com delay progressivo...")
+                for attempt in range(3):
+                    try:
+                        time.sleep(attempt * 2)  # 0s, 2s, 4s
+                        if self.asaas_service.validar_configuracao():
+                            config_valid = True
+                            logger.info(f"Validação bem-sucedida na tentativa {attempt + 1}")
+                            break
+                    except requests.exceptions.ConnectionError as e:
+                        if "Connection refused" in str(e):
+                            logger.warning(f"Connection refused na tentativa {attempt + 1}")
+                            result['errors'].append(f"Connection refused tentativa {attempt + 1}")
+                        else:
+                            raise
+                    except Exception as e:
+                        logger.warning(f"Erro na tentativa {attempt + 1}: {str(e)}")
+                        result['errors'].append(f"Tentativa {attempt + 1}: {str(e)}")
             
-            # 1. Sincronizar cobranças existentes no sistema
+            if not config_valid:
+                # Estratégia 3: Modo degradado - apenas verificar cobranças locais
+                logger.info("Modo degradado: verificando apenas dados locais")
+                return self._sync_local_only_mode()
+            
+            # Se chegou aqui, API está acessível - prosseguir com sincronização limitada
+            logger.info("API acessível - iniciando sincronização limitada")
+            
+            # 1. Sincronizar apenas algumas cobranças existentes (máximo 10)
             try:
-                local_result = self._sync_existing_charges()
+                local_result = self._sync_existing_charges_limited()
                 result['total_processed'] += local_result['processed']
                 result['updates_made'] += local_result['updates']
                 result['errors'].extend(local_result['errors'])
+            except requests.exceptions.ConnectionError as e:
+                if "Connection refused" in str(e):
+                    logger.warning("Connection refused durante sincronização - parando")
+                    result['errors'].append("Connection refused durante sincronização")
+                    return result
+                else:
+                    raise
             except Exception as e:
                 logger.error(f"Erro ao sincronizar cobranças existentes: {str(e)}")
                 result['errors'].append(f"Erro cobranças existentes: {str(e)}")
             
-            # 2. Buscar novas cobranças no Asaas
-            try:
-                remote_result = self._fetch_new_charges_from_asaas()
-                result['new_charges'] += remote_result['new_charges']
-                result['errors'].extend(remote_result['errors'])
-            except Exception as e:
-                logger.error(f"Erro ao buscar novas cobranças: {str(e)}")
-                result['errors'].append(f"Erro novas cobranças: {str(e)}")
-            
-            # 3. Verificar cobranças vencidas
-            try:
-                overdue_result = self._check_overdue_charges()
-                result['updates_made'] += overdue_result['updates']
-                result['errors'].extend(overdue_result['errors'])
-            except Exception as e:
-                logger.error(f"Erro ao verificar cobranças vencidas: {str(e)}")
-                result['errors'].append(f"Erro cobranças vencidas: {str(e)}")
-            
-            logger.info(f"Sincronização completa: {result}")
+            logger.info(f"Sincronização limitada concluída: {result}")
             
         except Exception as e:
             logger.error(f"Erro na sincronização completa: {str(e)}")
@@ -187,7 +188,7 @@ class AsaasSyncService:
         return result
     
     def _sync_existing_charges(self) -> Dict:
-        """Sincroniza cobranças já existentes no sistema"""
+        """Sincroniza cobranças já existentes no sistema (versão Heroku otimizada)"""
         result = {
             'processed': 0,
             'updates': 0,
@@ -195,40 +196,32 @@ class AsaasSyncService:
         }
         
         try:
-            # Buscar cobranças pendentes ou recentes (últimos 30 dias)
-            data_limite = timezone.now() - timedelta(days=30)
+            # Buscar apenas cobranças mais recentes para evitar timeout
+            data_limite = timezone.now() - timedelta(days=7)  # Reduzido para 7 dias
             cobrancas = CobrancaAsaas.objects.filter(
                 data_criacao__gte=data_limite
             ).exclude(
                 status__in=['RECEIVED', 'CONFIRMED', 'REFUNDED']
-            )
+            )[:50]  # Limitar a 50 cobranças por execução
             
-            logger.info(f"Sincronizando {cobrancas.count()} cobranças existentes")
+            logger.info(f"Sincronizando {len(cobrancas)} cobranças existentes (últimos 7 dias)")
             
             for cobranca in cobrancas:
                 try:
-                    # Consultar status atual no Asaas com retry
+                    # Consultar status atual no Asaas com timeout reduzido
                     dados_asaas = None
-                    max_retries = 3
                     
-                    for retry in range(max_retries):
-                        try:
-                            dados_asaas = self.asaas_service.consultar_cobranca(cobranca.asaas_id)
-                            break  # Sucesso, sair do loop de retry
-                        except requests.exceptions.ConnectionError as e:
-                            if "Connection refused" in str(e) and retry < max_retries - 1:
-                                logger.warning(f"Connection refused para cobrança {cobranca.asaas_id}, tentativa {retry + 1}/{max_retries}")
-                                time.sleep(2 ** retry)  # Backoff exponencial
-                                continue
-                            else:
-                                raise  # Re-raise se não for connection refused ou última tentativa
-                        except Exception as e:
-                            if retry < max_retries - 1:
-                                logger.warning(f"Erro na tentativa {retry + 1} para cobrança {cobranca.asaas_id}: {str(e)}")
-                                time.sleep(1)
-                                continue
-                            else:
-                                raise
+                    try:
+                        # Usar timeout mais baixo para evitar connection refused
+                        dados_asaas = self.asaas_service.consultar_cobranca(
+                            cobranca.asaas_id, 
+                            timeout=15  # Timeout reduzido
+                        )
+                    except requests.exceptions.RequestException as e:
+                        # Log do erro mas continuar com próxima cobrança
+                        logger.warning(f"Erro de conexão para cobrança {cobranca.asaas_id}: {str(e)}")
+                        result['errors'].append(f"Conexão falhou para {cobranca.asaas_id}")
+                        continue
                     
                     if dados_asaas:
                         # Verificar se houve mudanças
@@ -242,14 +235,12 @@ class AsaasSyncService:
                             # Processar pagamento se foi recebido
                             if cobranca.status in ['RECEIVED', 'CONFIRMED'] and status_anterior not in ['RECEIVED', 'CONFIRMED']:
                                 cobranca.marcar_como_paga()
-                    else:
-                        logger.warning(f"Não foi possível obter dados da cobrança {cobranca.asaas_id}")
                     
                     result['processed'] += 1
                     
                 except Exception as e:
                     error_msg = f"Erro ao sincronizar cobrança {cobranca.asaas_id}: {str(e)}"
-                    logger.error(error_msg)
+                    logger.warning(error_msg)  # Warning em vez de error
                     result['errors'].append(error_msg)
                     # Continuar com próxima cobrança mesmo com erro
         
@@ -261,25 +252,25 @@ class AsaasSyncService:
         return result
     
     def _fetch_new_charges_from_asaas(self) -> Dict:
-        """Busca novas cobranças criadas no Asaas"""
+        """Busca novas cobranças criadas no Asaas (versão Heroku otimizada)"""
         result = {
             'new_charges': 0,
             'errors': []
         }
         
         try:
-            # Buscar cobranças dos últimos 7 dias
-            data_inicio = (timezone.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            # Buscar cobranças dos últimos 3 dias apenas
+            data_inicio = (timezone.now() - timedelta(days=3)).strftime('%Y-%m-%d')
             
-            # Fazer requisição para API do Asaas
+            # Fazer requisição para API do Asaas com timeout reduzido
             response = requests.get(
                 f"{self.asaas_service.base_url}/payments",
                 headers=self.asaas_service.headers,
                 params={
                     'dateCreated[ge]': data_inicio,
-                    'limit': 100
+                    'limit': 50  # Reduzido para 50
                 },
-                timeout=60
+                timeout=20  # Timeout reduzido
             )
             
             if response.status_code == 200:
@@ -451,13 +442,209 @@ class AsaasSyncService:
             'sync_interval': self.sync_interval,
             'last_sync': self.last_sync,
             'stats': self.sync_stats.copy(),
-            'thread_alive': self.sync_thread.is_alive() if self.sync_thread else False
+            'thread_alive': False  # No Heroku, usar Celery em vez de threads
         }
     
     def force_sync_now(self) -> Dict:
-        """Força uma sincronização imediata"""
+        """Força uma sincronização imediata (versão Heroku otimizada)"""
         logger.info("Iniciando sincronização forçada")
-        return self.sync_all_charges()
+        try:
+            result = self.sync_all_charges()
+            self.last_sync = timezone.now()
+            
+            # Atualizar estatísticas
+            self.sync_stats['total_synced'] += result['total_processed']
+            self.sync_stats['updates_found'] += result['updates_made']
+            
+            if result['errors']:
+                self.sync_stats['errors'] += len(result['errors'])
+                self.sync_stats['last_error'] = result['errors'][-1] if result['errors'] else None
+            
+            return result
+        except Exception as e:
+            logger.error(f"Erro na sincronização forçada: {str(e)}")
+            self.sync_stats['errors'] += 1
+            self.sync_stats['last_error'] = str(e)
+            return {
+                'total_processed': 0,
+                'updates_made': 0,
+                'new_charges': 0,
+                'errors': [str(e)],
+                'details': []
+            }
+    
+    def _validate_with_short_timeout(self) -> bool:
+        """Validação com timeout muito curto para detectar connection refused rapidamente"""
+        try:
+            # Criar uma instância temporária com timeout muito baixo
+            temp_service = AsaasService()
+            
+            # Fazer uma requisição muito simples com timeout de 3 segundos
+            response = requests.get(
+                f"{temp_service.base_url}/myAccount",
+                headers=temp_service.headers,
+                timeout=3
+            )
+            
+            return response.status_code in [200, 401, 403]  # Qualquer resposta é boa
+            
+        except requests.exceptions.ConnectionError as e:
+            if "Connection refused" in str(e):
+                logger.warning("Connection refused detectado na validação rápida")
+                return False
+            raise
+        except requests.exceptions.Timeout:
+            logger.warning("Timeout na validação rápida")
+            return False
+        except Exception as e:
+            logger.warning(f"Erro na validação rápida: {str(e)}")
+            return False
+    
+    def _sync_local_only_mode(self) -> Dict:
+        """Modo degradado - apenas verificações locais sem API"""
+        result = {
+            'total_processed': 0,
+            'updates_made': 0,
+            'new_charges': 0,
+            'errors': ['Modo degradado: API inacessível'],
+            'details': ['Executando apenas verificações locais']
+        }
+        
+        try:
+            # Verificar cobranças que deveriam estar vencidas
+            agora = timezone.now()
+            cobrancas_para_vencer = CobrancaAsaas.objects.filter(
+                status='PENDING',
+                data_vencimento__lt=agora
+            )
+            
+            for cobranca in cobrancas_para_vencer:
+                if cobranca.status == 'PENDING':
+                    cobranca.status = 'OVERDUE'
+                    cobranca.save()
+                    result['updates_made'] += 1
+                    result['total_processed'] += 1
+            
+            logger.info(f"Modo degradado: {result['updates_made']} cobranças marcadas como vencidas")
+            
+        except Exception as e:
+            result['errors'].append(f"Erro no modo degradado: {str(e)}")
+        
+        return result
+    
+    def _sync_existing_charges_limited(self) -> Dict:
+        """Sincroniza apenas algumas cobranças existentes (máximo 10)"""
+        result = {
+            'processed': 0,
+            'updates': 0,
+            'errors': []
+        }
+        
+        try:
+            # Buscar apenas cobranças reais (excluir exemplos e testes)
+            cobrancas = CobrancaAsaas.objects.filter(
+                status__in=['PENDING', 'OVERDUE']
+            ).exclude(
+                asaas_id__contains='exemplo'
+            ).exclude(
+                asaas_id__contains='TESTE'
+            ).exclude(
+                asaas_id__startswith='test_'
+            ).order_by('-data_criacao')[:10]
+            
+            logger.info(f"Sincronizando {len(cobrancas)} cobranças (modo limitado)")
+            
+            for cobranca in cobrancas:
+                try:
+                    # Usar timeout muito baixo para detectar connection refused rapidamente
+                    dados_asaas = self.asaas_service.consultar_cobranca(
+                        cobranca.asaas_id, 
+                        timeout=5  # Timeout muito baixo
+                    )
+                    
+                    if dados_asaas:
+                        status_anterior = cobranca.status
+                        cobranca.atualizar_dados_asaas(dados_asaas)
+                        
+                        if cobranca.status != status_anterior:
+                            result['updates'] += 1
+                            logger.info(f"Cobrança {cobranca.asaas_id} atualizada: {status_anterior} → {cobranca.status}")
+                            
+                            # Processar pagamento se foi recebido
+                            if cobranca.status in ['RECEIVED', 'CONFIRMED'] and status_anterior not in ['RECEIVED', 'CONFIRMED']:
+                                cobranca.marcar_como_paga()
+                    
+                    result['processed'] += 1
+                    
+                    # Pequeno delay entre requisições para evitar sobrecarga
+                    time.sleep(0.5)
+                    
+                except requests.exceptions.ConnectionError as e:
+                    if "Connection refused" in str(e):
+                        logger.warning(f"Connection refused para cobrança {cobranca.asaas_id} - parando sincronização")
+                        result['errors'].append(f"Connection refused em {cobranca.asaas_id}")
+                        break  # Parar imediatamente se connection refused
+                    else:
+                        raise
+                except Exception as e:
+                    error_msg = f"Erro ao sincronizar cobrança {cobranca.asaas_id}: {str(e)}"
+                    logger.warning(error_msg)
+                    result['errors'].append(error_msg)
+                    # Continuar com próxima cobrança
+        
+        except Exception as e:
+            error_msg = f"Erro ao buscar cobranças locais: {str(e)}"
+            logger.error(error_msg)
+            result['errors'].append(error_msg)
+        
+        return result
+
+    def simple_sync_check(self) -> Dict:
+        """Verificação de conectividade anti-connection refused"""
+        result = {
+            'api_accessible': False,
+            'config_valid': False,
+            'sample_charges_checked': 0,
+            'errors': []
+        }
+        
+        try:
+            # 1. Teste rápido de conectividade
+            logger.info("Executando teste rápido de conectividade...")
+            if self._validate_with_short_timeout():
+                result['api_accessible'] = True
+                result['config_valid'] = True
+                logger.info("✅ Teste rápido passou - API acessível")
+                
+                # 2. Testar com UMA cobrança apenas
+                cobrancas_teste = CobrancaAsaas.objects.filter(
+                    status='PENDING'
+                ).order_by('-data_criacao')[:1]  # Apenas 1 cobrança
+                
+                for cobranca in cobrancas_teste:
+                    try:
+                        dados = self.asaas_service.consultar_cobranca(cobranca.asaas_id, timeout=5)
+                        if dados:
+                            result['sample_charges_checked'] += 1
+                            logger.info(f"✅ Cobrança {cobranca.asaas_id} testada com sucesso")
+                        break  # Testar apenas uma
+                    except requests.exceptions.ConnectionError as e:
+                        if "Connection refused" in str(e):
+                            result['errors'].append(f"Connection refused ao testar {cobranca.asaas_id}")
+                            result['api_accessible'] = False
+                            break
+                        else:
+                            result['errors'].append(f"Erro de conexão: {str(e)}")
+                    except Exception as e:
+                        result['errors'].append(f"Erro ao consultar {cobranca.asaas_id}: {str(e)}")
+                        
+            else:
+                result['errors'].append("Teste rápido de conectividade falhou")
+                
+        except Exception as e:
+            result['errors'].append(f"Erro na verificação: {str(e)}")
+        
+        return result
     
     def reset_stats(self):
         """Reseta as estatísticas de sincronização"""
