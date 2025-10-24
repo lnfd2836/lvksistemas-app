@@ -159,12 +159,8 @@
                 <div>
                     <h6 class="text-muted mb-1">Média Geral</h6>
                     <h3 class="mb-0 text-info">
-                        {% if cursos_stats %}
-                            {% widthratio cursos_stats|length 1 1 as total_cursos %}
-                            {% for curso in cursos_stats %}
-                                {% add curso.media_geral|default:0 0 as soma %}
-                            {% endfor %}
-                            8.5
+                        {% if media_geral_coordenacao %}
+                            {{ media_geral_coordenacao|floatformat:1 }}
                         {% else %}
                             N/A
                         {% endif %}
