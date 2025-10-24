@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from lojas.models import Loja
+from modulos.models import TipoLoja
 
 
 class Command(BaseCommand):
@@ -12,9 +13,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            loja_fatesa = Loja.objects.get(nome="Controle de qualidade")
-        except Loja.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Loja FATESA não encontrada!"))
+            tipo_controle = TipoLoja.objects.get(nome='controle_qualidade')
+        except TipoLoja.DoesNotExist:
+            self.stdout.write(self.style.ERROR("Tipo de loja 'controle_qualidade' não encontrado!"))
             return
         
         username = options.get('username')
@@ -32,7 +33,7 @@ class Command(BaseCommand):
                         'endereco': 'FATESA',
                         'telefone': '(00) 0000-0000',
                         'email': user.email or 'admin@fatesa.edu.br',
-                        'tipo_loja': 'avaliacao_qualidade'
+                        'tipo_loja': tipo_controle
                     }
                 )
                 if created:
@@ -65,7 +66,7 @@ class Command(BaseCommand):
                         'endereco': 'FATESA',
                         'telefone': '(00) 0000-0000',
                         'email': user.email or 'admin@fatesa.edu.br',
-                        'tipo_loja': 'avaliacao_qualidade'
+                        'tipo_loja': tipo_controle
                     }
                 )
                 count += 1
