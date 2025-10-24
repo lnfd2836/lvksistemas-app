@@ -162,7 +162,23 @@ class AsaasSyncService:
             # Se chegou aqui, API está acessível - prosseguir com sincronização limitada
             logger.info("API acessível - iniciando sincronização limitada")
             
-            # 1. Sincronizar apenas algumas cobranças existentes (máximo 10)
+            # 1. Buscar novas cobranças do Asaas
+            try:
+                new_result = self._fetch_new_charges_from_asaas()
+                result['new_charges'] += new_result['new_charges']
+                result['errors'].extend(new_result['errors'])
+                logger.info(f"Novas cobranças sincronizadas: {new_result['new_charges']}")
+            except requests.exceptions.ConnectionError as e:
+                if "Connection refused" in str(e):
+                    logger.warning("Connection refused durante busca de novas cobranças - continuando")
+                    result['errors'].append("Connection refused durante busca de novas cobranças")
+                else:
+                    raise
+            except Exception as e:
+                logger.error(f"Erro ao buscar novas cobranças: {str(e)}")
+                result['errors'].append(f"Erro novas cobranças: {str(e)}")
+            
+            # 2. Sincronizar apenas algumas cobranças existentes (máximo 10)
             try:
                 local_result = self._sync_existing_charges_limited()
                 result['total_processed'] += local_result['processed']
@@ -296,6 +312,48 @@ class AsaasSyncService:
                                     
                                 except ControleFinanceiro.DoesNotExist:
                                     logger.warning(f"Controle financeiro {cf_id} não encontrado para cobrança {payment['id']}")
+                            
+                            else:
+                                # Cobrança sem externalReference - tentar associar por dados do customer
+                                customer_id = payment.get('customer')
+                                if customer_id:
+                                    try:
+                                        # Buscar dados do customer no Asaas
+                                        customer_response = requests.get(
+                                            f"{self.asaas_service.base_url}/customers/{customer_id}",
+                                            headers=self.asaas_service.headers,
+                                            timeout=10
+                                        )
+                                        
+                                        if customer_response.status_code == 200:
+                                            customer_data = customer_response.json()
+                                            customer_email = customer_data.get('email', '')
+                                            customer_cnpj = customer_data.get('cpfCnpj', '')
+                                            
+                                            # Buscar controle financeiro por email ou CNPJ
+                                            controle = None
+                                            if customer_email:
+                                                controle = ControleFinanceiro.objects.filter(
+                                                    loja__email=customer_email
+                                                ).first()
+                                            
+                                            if not controle and customer_cnpj:
+                                                controle = ControleFinanceiro.objects.filter(
+                                                    loja__cnpj=customer_cnpj
+                                                ).first()
+                                            
+                                            if controle:
+                                                # Criar nova cobrança no sistema
+                                                self._create_charge_from_asaas_data(payment, controle)
+                                                result['new_charges'] += 1
+                                                logger.info(f"Cobrança órfã {payment['id']} associada ao controle {controle.id} via {customer_email or customer_cnpj}")
+                                            else:
+                                                logger.warning(f"Nenhum controle financeiro encontrado para customer {customer_id} ({customer_email or customer_cnpj}) - cobrança {payment['id']}")
+                                        else:
+                                            logger.warning(f"Erro ao buscar customer {customer_id}: {customer_response.status_code}")
+                                    
+                                    except Exception as e:
+                                        logger.warning(f"Erro ao associar cobrança órfã {payment['id']}: {str(e)}")
                     
                     except Exception as e:
                         error_msg = f"Erro ao processar nova cobrança {payment.get('id', 'N/A')}: {str(e)}"
