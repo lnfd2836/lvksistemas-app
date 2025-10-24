@@ -569,6 +569,23 @@
         }
     }
 
+    // Função para confirmar exclusão de cobrança
+    function confirmarExclusao(cobrancaId, asaasId, status) {
+        let mensagem = `Tem certeza que deseja excluir a cobrança ${asaasId}?\n\n`;
+        
+        if (status === 'PENDING') {
+            mensagem += `Esta ação irá:\n- Cancelar a cobrança no Asaas\n- Remover do sistema local\n\nEsta ação não pode ser desfeita!`;
+        } else if (status === 'RECEIVED' || status === 'CONFIRMED') {
+            mensagem += `⚠️ ATENÇÃO: Esta cobrança já foi PAGA!\n\nEsta ação irá:\n- Remover do sistema local\n- Manter histórico no Asaas\n\nEsta ação não pode ser desfeita!`;
+        } else {
+            mensagem += `Esta ação irá:\n- Remover do sistema local\n- Tentar cancelar no Asaas (se possível)\n\nEsta ação não pode ser desfeita!`;
+        }
+        
+        if (confirm(mensagem)) {
+            excluirCobranca(cobrancaId);
+        }
+    }
+
     // Função para excluir cobrança
     function excluirCobranca(cobrancaId) {
         // Mostrar loading
