@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurar Asaas{% endblock %}
+{% block page_title %}Configuração Asaas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="text-muted mb-0">Configure a integração com Asaas para geração de cobranças com PIX e boleto</p>
+            </div>
+            <div>
+                <a href="{% url 'controle_financeiro:dashboard_financeiro' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status da Configuração -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% if configuracao_asaas %}
+        <div class="alert alert-success d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1"><i class="fas fa-check-circle"></i> Asaas Configurado</h6>
+                <strong>Ambiente:</strong> {{ configuracao_asaas.environment|title }} | 
+                <strong>Status:</strong> {{ configuracao_asaas.status|title }}
+            </div>
+            <span class="badge bg-success">
+                <i class="fas fa-check"></i> Ativo
+            </span>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <h6 class="mb-1"><i class="fas fa-exclamation-triangle"></i> Configuração Necessária</h6>
+            <p class="mb-0">Configure sua API Key do Asaas para começar a gerar cobranças.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Formulário de Configuração -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cog"></i> Configuração da API Asaas
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="api_key" class="form-label">API Key *</label>
+                                <input type="password" class="form-control" id="api_key" name="api_key" 
+                                       value="{{ form.api_key.value|default:'' }}" required>
+                                <div class="form-text">Sua chave de API do Asaas (sandbox ou produção)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="environment" class="form-label">Ambiente *</label>
+                                <select class="form-select" id="environment" name="environment" required>
+                                    <option value="sandbox" {% if form.environment.value == 'sandbox' %}selected{% endif %}>
+                                        Sandbox (Testes)
+                                    </option>
+                                    <option value="production" {% if form.environment.value == 'production' %}selected{% endif %}>
+                                        Produção
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="webhook_url" class="form-label">URL do Webhook</label>
+                                <input type="url" class="form-control" id="webhook_url" name="webhook_url" 
+                                       value="{{ webhook_url }}" readonly>
+                                <div class="form-text">URL automática para receber notificações</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="ativo" {% if form.status.value == 'ativo' %}selected{% endif %}>
+                                        Ativo
+                                    </option>
+                                    <option value="inativo" {% if form.status.value == 'inativo' %}selected{% endif %}>
+                                        Inativo
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" name="testar" class="btn btn-outline-primary me-md-2">
+                            <i class="fas fa-vial"></i> Testar Conexão
+                        </button>
+                        <button type="submit" name="salvar" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configuração
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Informações de Ajuda -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="fas fa-info-circle"></i> Como Configurar
+                </h6>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Acesse sua conta no <a href="https://www.asaas.com" target="_blank">Asaas</a></li>
+                    <li>Vá em <strong>Configurações → API</strong></li>
+                    <li>Copie sua <strong>API Key</strong></li>
+                    <li>Cole aqui e escolha o ambiente</li>
+                    <li>Teste a conexão antes de salvar</li>
+                </ol>
+                
+                <hr>
+                
+                <h6 class="text-info">Funcionalidades:</h6>
+                <ul class="small">
+                    <li>Geração de boletos</li>
+                    <li>PIX automático</li>
+                    <li>Webhook de notificações</li>
+                    <li>Controle de status</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Status da Conexão -->
+        {% if teste_conexao %}
+        <div class="card shadow mt-3">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold {% if teste_conexao.sucesso %}text-success{% else %}text-danger{% endif %}">
+                    <i class="fas fa-{% if teste_conexao.sucesso %}check-circle{% else %}times-circle{% endif %}"></i> 
+                    Teste de Conexão
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if teste_conexao.sucesso %}
+                <div class="alert alert-success">
+                    <strong>✅ Conexão OK!</strong><br>
+                    {{ teste_conexao.mensagem }}
+                </div>
+                {% else %}
+                <div class="alert alert-danger">
+                    <strong>❌ Erro na conexão:</strong><br>
+                    {{ teste_conexao.mensagem }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt"></i> Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'controle_financeiro:testar_asaas' %}" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-vial"></i> Testar API
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-list"></i> Ver Cobranças
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'controle_financeiro:criar_cobranca_asaas' %}" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-plus"></i> Nova Cobrança
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'controle_financeiro:webhook_debug' %}" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="fas fa-bug"></i> Debug Webhook
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
