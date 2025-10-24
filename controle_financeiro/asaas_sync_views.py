@@ -147,8 +147,11 @@ def forcar_sincronizacao(request):
                 from .asaas_service import AsaasService
                 asaas_service = AsaasService()
                 
+                logger.info("Iniciando validação da configuração da API Asaas...")
+                
                 # Teste 1: Usar o método que já funciona
                 if asaas_service.validar_configuracao():
+                    logger.info("Configuração da API Asaas validada com sucesso")
                     messages.success(request, '✅ API Asaas acessível - configuração validada!')
                     
                     # Teste adicional: verificar conectividade com timeout baixo
@@ -242,23 +245,37 @@ def forcar_sincronizacao(request):
                         messages.error(request, f'❌ Erro na sincronização: {str(sync_error)}')
                         
                 else:
+                    logger.error("Falha na validação da configuração da API Asaas")
                     messages.error(request, '❌ Configuração da API Asaas inválida. Verifique as configurações.')
                     
             except Exception as config_error:
                 logger.error(f"Erro na validação da configuração: {str(config_error)}")
+                logger.error(f"Tipo do erro: {type(config_error).__name__}")
                 
-                # Se der erro, tentar o método de teste que já funciona
-                try:
-                    # Redirecionar para a página de teste que já funciona
-                    messages.info(request, '🔄 Redirecionando para teste da API que já funciona...')
-                    return redirect('controle_financeiro:testar_asaas')
-                    
-                except Exception as redirect_error:
-                    messages.error(request, f'❌ Erro geral: {str(config_error)}')
+                # Tratamento específico para Connection refused na validação
+                if "Connection refused" in str(config_error) or "[Errno 111]" in str(config_error):
+                    messages.error(request, 
+                        '🚫 Connection Refused na validação! A API Asaas está temporariamente indisponível. '
+                        'Tente novamente em alguns minutos.'
+                    )
+                    return redirect('controle_financeiro:dashboard_sincronizacao')
     
     except Exception as e:
-        logger.error(f"Erro geral ao forçar sincronização: {str(e)}")
-        messages.error(request, f'❌ Erro geral: {str(e)}')
+        error_str = str(e)
+        logger.error(f"Erro geral ao forçar sincronização: {error_str}")
+        
+        # Tratamento específico para Connection refused
+        if "Connection refused" in error_str or "[Errno 111]" in error_str:
+            messages.error(request, 
+                '🚫 Connection Refused detectado! A API Asaas está temporariamente indisponível. '
+                'Isso é temporário - aguarde 5-10 minutos e tente novamente.'
+            )
+            messages.info(request, 
+                '💡 Dica: Connection Refused geralmente ocorre por sobrecarga da API. '
+                'Tente em horários de menor movimento (madrugada, fins de semana).'
+            )
+        else:
+            messages.error(request, f'❌ Erro geral: {error_str}')
     
     return redirect('controle_financeiro:dashboard_sincronizacao')
 
