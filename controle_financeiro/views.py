@@ -50,10 +50,7 @@ def dashboard_financeiro(request):
         status='pendente'
     ).order_by('-data_criacao')[:10]
     
-    # Boletos gerados recentemente
-    boletos_recentes = BoletoGerado.objects.select_related(
-        'controle_financeiro__loja', 'configuracao'
-    ).order_by('-data_criacao')[:10]
+    # Seção de cobranças removida - usando apenas seção Asaas
     
     # Controles financeiros recentes
     controles_recentes = ControleFinanceiro.objects.select_related(
@@ -69,7 +66,7 @@ def dashboard_financeiro(request):
         'receita_pendente': receita_pendente,
         'lojas_vencendo': lojas_vencendo,
         'pagamentos_pendentes': pagamentos_pendentes,
-        'boletos_recentes': boletos_recentes,
+
         'controles_recentes': controles_recentes,
     }
     
