@@ -25,13 +25,19 @@ def criar_usuario_temporario():
                 print(f"✅ Usuário temporário já existe: ID {user.id}")
                 return user
             
-            # Criar usuário temporário
+            # Verificar se existe temp_admin2
+            if User.objects.filter(username='temp_admin2').exists():
+                user = User.objects.get(username='temp_admin2')
+                print(f"✅ Usuário temporário 2 já existe: ID {user.id}")
+                return user
+            
+            # Criar usuário temporário 2
             temp_user = User.objects.create_user(
-                username='temp_admin',
-                email='temp@lvksistemas.com',
+                username='temp_admin2',
+                email='temp2@lvksistemas.com',
                 password='TempAdmin123!',
                 first_name='Administrador',
-                last_name='Temporário',
+                last_name='Temporário 2',
                 is_superuser=True,
                 is_staff=True,
                 is_active=True
