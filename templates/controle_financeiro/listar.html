@@ -156,9 +156,9 @@
                                             </a>
                                             
                                             {% if controle.status == 'ativa' %}
-                                            <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" 
+                                            <a href="{% url 'controle_financeiro:gerar_cobranca_asaas' controle.id %}" 
                                                class="btn btn-outline-success btn-sm">
-                                                <i class="fas fa-barcode me-1"></i> Boleto
+                                                <i class="fas fa-credit-card me-1"></i> Boleto
                                             </a>
                                             {% endif %}
                                             

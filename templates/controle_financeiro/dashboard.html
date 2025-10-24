@@ -136,7 +136,7 @@
                                 <i class="fas fa-calendar-check fa-2x text-primary"></i>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-1">Gerar Boletos Automáticos</h6>
+                                <h6 class="mb-1">Gerar Cobranças Automáticos</h6>
                                 <p class="text-muted mb-0 small">
                                     Gera cobranças Asaas para lojas que vencem em 10 dias
                                 </p>
@@ -222,12 +222,12 @@
 </div>
 
 <div class="row">
-    <!-- Boletos Gerados -->
+    <!-- Cobranças Geradas -->
     <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-credit-card"></i> Boletos Gerados
+                    <i class="fas fa-credit-card"></i> Cobranças Geradas
                 </h6>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
@@ -272,12 +272,12 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{% url 'controle_financeiro:detalhar_boleto' boleto.id %}"
+                                        <a href="{% url 'controle_financeiro:visualizar_cobranca_asaas' boleto.id %}"
                                             class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <a href="{% url 'controle_financeiro:imprimir_boleto_pdf' boleto.id %}"
+                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' boleto.id %}"
                                             class="btn btn-sm btn-outline-secondary" title="Imprimir PDF"
                                             target="_blank">
                                             <i class="bi bi-printer"></i>
@@ -285,7 +285,7 @@
 
                                         {% if boleto.status == 'pendente' %}
                                         <form method="post"
-                                            action="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}"
+                                            action="{% url 'controle_financeiro:listar_cobrancas_asaas' boleto.id %}"
                                             style="display: inline;">
                                             {% csrf_token %}
                                             <input type="hidden" name="next"
@@ -465,7 +465,7 @@
                                     </a>
 
                                     {% if controle.status == 'ativa' %}
-                                    <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}"
+                                    <a href="{% url 'controle_financeiro:gerar_cobranca_asaas' controle.id %}"
                                         class="btn btn-outline-success btn-sm">
                                         <i class="fas fa-credit-card me-1"></i> Boleto
                                     </a>
@@ -654,7 +654,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </button>
-                <form method="post" action="{% url 'controle_financeiro:excluir_boleto' boleto.id %}" class="d-inline">
+                <form method="post" action="{% url 'controle_financeiro:listar_cobrancas_asaas' boleto.id %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Sim, Excluir Boleto

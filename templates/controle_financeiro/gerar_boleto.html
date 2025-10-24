@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
-{% block title %}Gerar Boleto - {{ controle.loja.nome }}{% endblock %}
-{% block page_title %}Gerar Boleto - {{ controle.loja.nome }}{% endblock %}
+{% block title %}Gerar Cobrança - {{ controle.loja.nome }}{% endblock %}
+{% block page_title %}Gerar Cobrança - {{ controle.loja.nome }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -67,7 +67,7 @@
         <div class="card shadow">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-barcode"></i> Gerar Novo Boleto
+                    <i class="fas fa-credit-card"></i> Gerar Novo Boleto
                 </h6>
             </div>
             <div class="card-body">
@@ -104,7 +104,7 @@
                         
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-barcode"></i> Gerar Boleto
+                                <i class="fas fa-credit-card"></i> Gerar Cobrança
                             </button>
                         </div>
                     </form>
@@ -113,8 +113,8 @@
                         <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                         <h5 class="text-warning">Nenhuma Configuração Ativa</h5>
                         <p class="text-muted">Não há configurações de boleto ativas disponíveis.</p>
-                        <a href="{% url 'controle_financeiro:configurar_boletos' %}" class="btn btn-primary">
-                            <i class="fas fa-cog"></i> Configurar Boletos
+                        <a href="{% url 'controle_financeiro:configurar_asaas' %}" class="btn btn-primary">
+                            <i class="fas fa-cog"></i> Configurar Asaas
                         </a>
                     </div>
                 {% endif %}
@@ -170,7 +170,7 @@
                                     </td>
                                     <td>
                                         {% if boleto.status == 'pendente' %}
-                                        <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
+                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' boleto.id %}" 
                                            class="btn btn-success btn-sm" 
                                            onclick="return confirm('Marcar boleto como pago?')">
                                             <i class="fas fa-check"></i> Pago
@@ -188,7 +188,7 @@
                     </div>
                 {% else %}
                     <div class="text-center py-4">
-                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                        <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
                         <p class="text-muted">Nenhum boleto gerado para esta loja</p>
                     </div>
                 {% endif %}

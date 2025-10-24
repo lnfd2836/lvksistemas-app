@@ -15,8 +15,8 @@
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
                 {% if controle.status == 'ativa' %}
-                <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" class="btn btn-primary">
-                    <i class="fas fa-barcode"></i> Gerar Boleto
+                <a href="{% url 'controle_financeiro:gerar_cobranca_asaas' controle.id %}" class="btn btn-primary">
+                    <i class="fas fa-credit-card"></i> Gerar Cobrança
                 </a>
                 {% endif %}
             </div>
@@ -147,8 +147,8 @@
                     <i class="fas fa-credit-card"></i> Gerar Cobrança Asaas
                 </a>
                 
-                <a href="{% url 'controle_financeiro:gerar_boleto' controle.id %}" class="btn btn-primary btn-block mb-3">
-                    <i class="fas fa-barcode"></i> Gerar Boleto (Antigo)
+                <a href="{% url 'controle_financeiro:gerar_cobranca_asaas' controle.id %}" class="btn btn-primary btn-block mb-3">
+                    <i class="fas fa-credit-card"></i> Gerar Cobrança (Antigo)
                 </a>
                 
                 <a href="{% url 'lojas:detalhar_loja' controle.loja.id %}" class="btn btn-info btn-block">
@@ -329,13 +329,13 @@
     </div>
 </div>
 
-<!-- Boletos Gerados (Sistema Antigo) -->
+<!-- Cobranças Geradas (Sistema Antigo) -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card shadow">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-barcode"></i> Boletos Gerados (Sistema Antigo)
+                    <i class="fas fa-credit-card"></i> Cobranças Geradas (Sistema Antigo)
                 </h6>
             </div>
             <div class="card-body">
@@ -371,7 +371,7 @@
                                     </td>
                                     <td>
                                         {% if boleto.status == 'pendente' %}
-                                        <a href="{% url 'controle_financeiro:marcar_boleto_pago' boleto.id %}" 
+                                        <a href="{% url 'controle_financeiro:listar_cobrancas_asaas' boleto.id %}" 
                                            class="btn btn-success btn-sm" 
                                            onclick="return confirm('Marcar boleto como pago?')">
                                             <i class="fas fa-check"></i> Pago
@@ -389,7 +389,7 @@
                     </div>
                 {% else %}
                     <div class="text-center py-4">
-                        <i class="fas fa-barcode fa-3x text-muted mb-3"></i>
+                        <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
                         <p class="text-muted">Nenhum boleto antigo gerado</p>
                         <small class="text-muted">Use o sistema Asaas acima para gerar cobranças com PIX</small>
                     </div>
