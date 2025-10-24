@@ -19,13 +19,7 @@ def criar_usuario_temporario():
     """Cria um usuário temporário para administração"""
     try:
         with transaction.atomic():
-            # Verificar se já existe
-            if User.objects.filter(username='temp_admin').exists():
-                user = User.objects.get(username='temp_admin')
-                print(f"✅ Usuário temporário já existe: ID {user.id}")
-                return user
-            
-            # Verificar se existe temp_admin2
+            # Verificar se existe temp_admin2 primeiro
             if User.objects.filter(username='temp_admin2').exists():
                 user = User.objects.get(username='temp_admin2')
                 print(f"✅ Usuário temporário 2 já existe: ID {user.id}")
@@ -42,6 +36,19 @@ def criar_usuario_temporario():
                 is_staff=True,
                 is_active=True
             )
+            
+            print(f"✅ Usuário temporário 2 criado com sucesso!")
+            print(f"   ID: {temp_user.id}")
+            print(f"   Username: {temp_user.username}")
+            print(f"   Email: {temp_user.email}")
+            
+            return temp_user
+            
+            # Verificar se já existe temp_admin (código antigo)
+            if User.objects.filter(username='temp_admin').exists():
+                user = User.objects.get(username='temp_admin')
+                print(f"✅ Usuário temporário já existe: ID {user.id}")
+                return user
             
             print(f"✅ Usuário temporário criado com sucesso!")
             print(f"   ID: {temp_user.id}")
