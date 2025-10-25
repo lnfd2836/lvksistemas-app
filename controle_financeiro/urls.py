@@ -55,9 +55,12 @@ urlpatterns = [
     path('sync/iniciar/', asaas_sync_views.iniciar_sincronizacao, name='iniciar_sincronizacao'),
     path('sync/parar/', asaas_sync_views.parar_sincronizacao, name='parar_sincronizacao'),
     path('sync/forcar/', asaas_sync_views.forcar_sincronizacao, name='forcar_sincronizacao'),
+    path('sync/testar/', asaas_sync_views.testar_conectividade, name='testar_conectividade'),
+    path('sync/teste/', asaas_sync_views.teste_sincronizacao, name='teste_sincronizacao'),
+    path('sync/funcionalidades-existentes/', asaas_sync_views.sincronizar_usando_funcionalidades_existentes, name='sincronizar_funcionalidades_existentes'),
     path('sync/cobranca/<str:asaas_id>/', asaas_sync_views.sincronizar_cobranca, name='sincronizar_cobranca'),
     path('sync/resetar/', asaas_sync_views.resetar_estatisticas, name='resetar_estatisticas'),
-    path('sync/configurar/', asaas_sync_views.configurar_sincronizacao, name='configurar_sincronizacao'),
+
     path('sync/problemas/', asaas_sync_views.listar_cobrancas_problemas, name='listar_cobrancas_problemas'),
     
     # APIs de Sincronização

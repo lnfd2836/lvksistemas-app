@@ -588,6 +588,11 @@ def testar_conectividade(request):
     return redirect('controle_financeiro:dashboard_sincronizacao')
 
 
+def teste_sincronizacao(request):
+    """Função de teste para sincronização"""
+    from django.http import HttpResponse
+    return HttpResponse("✅ Função de teste funcionando! Método: " + request.method)
+
 def sincronizar_usando_funcionalidades_existentes(request):
     """Sincronização usando apenas funcionalidades que já funcionam"""
     from django.http import HttpResponse
