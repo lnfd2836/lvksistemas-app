@@ -465,12 +465,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add loading state to buttons
     document.querySelectorAll('form button[type="submit"]').forEach(button => {
+        const originalText = button.innerHTML;
         button.addEventListener('click', function() {
             this.disabled = true;
             this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processando...';
+            
+            // Restaurar botão após 5 segundos
             setTimeout(() => {
                 this.disabled = false;
-            }, 3000);
+                this.innerHTML = originalText;
+            }, 5000);
         });
     });
 });
