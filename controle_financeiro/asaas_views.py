@@ -212,7 +212,7 @@ def listar_cobrancas_asaas(request):
         else:
             # Admin de loja vê apenas suas cobranças
             cobrancas = CobrancaAsaas.objects.select_related('controle_financeiro__loja').filter(
-                controle_financeiro__loja__admin=request.user
+                controle_financeiro__loja__admin_user=request.user
             )
         
         # Debug: Log da quantidade de cobranças
