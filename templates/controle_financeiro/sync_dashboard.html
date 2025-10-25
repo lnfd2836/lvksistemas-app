@@ -448,7 +448,8 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-refresh stats every 30 seconds
+    // Auto-refresh stats every 30 seconds (TEMPORARIAMENTE DESABILITADO)
+    /*
     setInterval(function() {
         fetch('/financeiro/api/sync/stats/')
             .then(response => response.json())
@@ -460,6 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.log('Stats update failed:', error));
     }, 30000);
+    */
     
     // Add loading state to buttons
     document.querySelectorAll('form button[type="submit"]').forEach(button => {
