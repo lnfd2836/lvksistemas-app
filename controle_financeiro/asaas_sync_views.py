@@ -488,14 +488,26 @@ def api_cobrancas_stats(request):
             total_valor=Sum('valor')
         ).order_by('status')
         
-        # Converter para lista e garantir que valores são serializáveis
+        # Converter para lista (versão simplificada)
         stats_list = []
         for stat in stats_por_status:
-            stats_list.append({
-                'status': stat['status'],
-                'count': stat['count'],
-                'total_valor': float(stat['total_valor']) if stat['total_valor'] else 0.0
-            })
+            try:
+                valor = 0.0
+                if stat['total_valor']:
+                    valor = float(stat['total_valor'])
+                
+                stats_list.append({
+                    'status': stat['status'],
+                    'count': stat['count'],
+                    'total_valor': valor
+                })
+            except Exception as e:
+                logger.error(f"Erro ao processar stat: {str(e)}")
+                stats_list.append({
+                    'status': stat['status'],
+                    'count': stat['count'],
+                    'total_valor': 0.0
+                })
         
         # Cobranças por período
         hoje = timezone.now().date()
