@@ -480,6 +480,15 @@ def api_cobrancas_stats(request):
     """API para obter estatísticas das cobranças (versão simplificada)"""
     
     try:
+        # Simple rate limiting - cache results for 30 seconds
+        from django.core.cache import cache
+        cache_key = f"sync_stats_{request.user.id}"
+        cached_result = cache.get(cache_key)
+        
+        if cached_result:
+            return JsonResponse(cached_result)
+        
+        logger.info(f"Generating fresh stats for user {request.user.username}")
         # Apenas contar total para evitar erros
         total_cobrancas = CobrancaAsaas.objects.count()
         
@@ -543,13 +552,18 @@ def api_cobrancas_stats(request):
                 'mes': 0
             }
         
-        return JsonResponse({
+        result = {
             'success': True,
             'data': {
                 'stats_por_status': stats_por_status,
                 'cobrancas_periodo': cobrancas_periodo
             }
-        })
+        }
+        
+        # Cache result for 30 seconds
+        cache.set(cache_key, result, 30)
+        
+        return JsonResponse(result)
     
     except Exception as e:
         logger.error(f"Erro na API de stats: {str(e)}")
