@@ -483,36 +483,76 @@ def api_cobrancas_stats(request):
         # Apenas contar total para evitar erros
         total_cobrancas = CobrancaAsaas.objects.count()
         
-        # Dados simplificados
-        stats_list = [
-            {'status': 'TOTAL', 'count': total_cobrancas, 'total_valor': 0.0}
-        ]
+        # Dados simplificados por status
+        try:
+            stats_por_status = []
+            
+            # Contar por status principais
+            status_counts = {
+                'PENDING': CobrancaAsaas.objects.filter(status='PENDING').count(),
+                'RECEIVED': CobrancaAsaas.objects.filter(status='RECEIVED').count(),
+                'CONFIRMED': CobrancaAsaas.objects.filter(status='CONFIRMED').count(),
+                'OVERDUE': CobrancaAsaas.objects.filter(status='OVERDUE').count(),
+            }
+            
+            for status, count in status_counts.items():
+                stats_por_status.append({
+                    'status': status,
+                    'count': count,
+                    'total_valor': 0.0  # Simplificado para evitar erros
+                })
+            
+            # Adicionar total
+            stats_por_status.append({
+                'status': 'TOTAL',
+                'count': total_cobrancas,
+                'total_valor': 0.0
+            })
+            
+        except Exception as status_error:
+            logger.warning(f"Erro ao calcular stats por status: {status_error}")
+            stats_por_status = [
+                {'status': 'TOTAL', 'count': total_cobrancas, 'total_valor': 0.0}
+            ]
         
         # Cobranças por período
-        hoje = timezone.now().date()
-        ontem = hoje - timedelta(days=1)
-        semana_passada = hoje - timedelta(days=7)
-        mes_passado = hoje - timedelta(days=30)
-        
-        cobrancas_hoje = CobrancaAsaas.objects.filter(data_criacao__date=hoje).count()
-        cobrancas_ontem = CobrancaAsaas.objects.filter(data_criacao__date=ontem).count()
-        cobrancas_semana = CobrancaAsaas.objects.filter(data_criacao__date__gte=semana_passada).count()
-        cobrancas_mes = CobrancaAsaas.objects.filter(data_criacao__date__gte=mes_passada).count()
+        try:
+            hoje = timezone.now().date()
+            ontem = hoje - timedelta(days=1)
+            semana_passada = hoje - timedelta(days=7)
+            mes_passado = hoje - timedelta(days=30)
+            
+            cobrancas_hoje = CobrancaAsaas.objects.filter(data_criacao__date=hoje).count()
+            cobrancas_ontem = CobrancaAsaas.objects.filter(data_criacao__date=ontem).count()
+            cobrancas_semana = CobrancaAsaas.objects.filter(data_criacao__date__gte=semana_passada).count()
+            cobrancas_mes = CobrancaAsaas.objects.filter(data_criacao__date__gte=mes_passado).count()
+            
+            cobrancas_periodo = {
+                'hoje': cobrancas_hoje,
+                'ontem': cobrancas_ontem,
+                'semana': cobrancas_semana,
+                'mes': cobrancas_mes
+            }
+            
+        except Exception as periodo_error:
+            logger.warning(f"Erro ao calcular stats por período: {periodo_error}")
+            cobrancas_periodo = {
+                'hoje': 0,
+                'ontem': 0,
+                'semana': 0,
+                'mes': 0
+            }
         
         return JsonResponse({
             'success': True,
             'data': {
-                'stats_por_status': stats_list,
-                'cobrancas_periodo': {
-                    'hoje': cobrancas_hoje,
-                    'ontem': cobrancas_ontem,
-                    'semana': cobrancas_semana,
-                    'mes': cobrancas_mes
-                }
+                'stats_por_status': stats_por_status,
+                'cobrancas_periodo': cobrancas_periodo
             }
         })
     
     except Exception as e:
+        logger.error(f"Erro na API de stats: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)
