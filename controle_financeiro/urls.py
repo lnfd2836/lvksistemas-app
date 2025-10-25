@@ -62,6 +62,7 @@ urlpatterns = [
     path('sync/resetar/', asaas_sync_views.resetar_estatisticas, name='resetar_estatisticas'),
 
     path('sync/problemas/', asaas_sync_views.listar_cobrancas_problemas, name='listar_cobrancas_problemas'),
+    path('sync/configurar/', asaas_sync_views.configurar_sincronizacao, name='configurar_sincronizacao'),
     
     # APIs de Sincronização
     path('api/sync/status/', asaas_sync_views.api_sync_status, name='api_sync_status'),
