@@ -488,6 +488,15 @@ def api_cobrancas_stats(request):
             total_valor=Sum('valor')
         ).order_by('status')
         
+        # Converter para lista e garantir que valores são serializáveis
+        stats_list = []
+        for stat in stats_por_status:
+            stats_list.append({
+                'status': stat['status'],
+                'count': stat['count'],
+                'total_valor': float(stat['total_valor']) if stat['total_valor'] else 0.0
+            })
+        
         # Cobranças por período
         hoje = timezone.now().date()
         ontem = hoje - timedelta(days=1)
@@ -502,7 +511,7 @@ def api_cobrancas_stats(request):
         return JsonResponse({
             'success': True,
             'data': {
-                'stats_por_status': list(stats_por_status),
+                'stats_por_status': stats_list,
                 'cobrancas_periodo': {
                     'hoje': cobrancas_hoje,
                     'ontem': cobrancas_ontem,
