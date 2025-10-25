@@ -695,15 +695,18 @@ def testar_conectividade(request):
     return redirect('controle_financeiro:dashboard_sincronizacao')
 
 
+@login_required
+@user_passes_test(is_superuser)
 def teste_sincronizacao(request):
     """Função de teste para sincronização"""
-    from django.http import HttpResponse
-    return HttpResponse("✅ Função de teste funcionando! Método: " + request.method)
+    messages.success(request, '✅ Função de teste funcionando!')
+    return redirect('controle_financeiro:dashboard_sincronizacao')
 
+@login_required
+@user_passes_test(is_superuser)
+@require_http_methods(["POST"])
 def sincronizar_usando_funcionalidades_existentes(request):
     """Sincronização usando apenas funcionalidades que já funcionam"""
-    from django.http import HttpResponse
-    return HttpResponse("✅ Função funcionando! Método: " + request.method)
     
     try:
         logger.info("Iniciando sincronização usando funcionalidades existentes...")
