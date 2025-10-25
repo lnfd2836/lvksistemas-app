@@ -61,15 +61,15 @@
                     </form>
 
                     <!-- Informações de Debug -->
-                    {% if user.is_superuser %}
                     <div class="alert alert-info">
-                        <strong>Debug Info:</strong> 
-                        Total de cobranças encontradas: {{ cobrancas|length }}
+                        <strong>Debug Info:</strong><br>
+                        Usuário logado: <strong>{{ debug_user }}</strong> (Superuser: {{ debug_is_superuser }})<br>
+                        Total de cobranças no banco: <strong>{{ debug_total_cobrancas }}</strong><br>
+                        Cobranças na página atual: <strong>{{ cobrancas|length }}</strong>
                         {% if page_obj %}
                             | Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
                         {% endif %}
                     </div>
-                    {% endif %}
 
                     <!-- Tabela Simples -->
                     {% if cobrancas %}

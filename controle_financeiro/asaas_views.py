@@ -246,6 +246,9 @@ def listar_cobrancas_asaas(request):
             'cobrancas': page_obj.object_list,
             'status_filter': status_filter,
             'loja_filter': loja_filter,
+            'debug_user': request.user.username,
+            'debug_is_superuser': request.user.is_superuser,
+            'debug_total_cobrancas': cobrancas.count(),
         }
         
         return render(request, 'controle_financeiro/listar_cobrancas_asaas_simple.html', context)
