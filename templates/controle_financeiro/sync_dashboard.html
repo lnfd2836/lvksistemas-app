@@ -357,36 +357,120 @@
     </div>
 </div>
 
-<!-- Informações do Sistema -->
-<div class="row">
+<!-- System Information -->
+<div class="row mt-4">
     <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Informações do Sistema</h6>
+        <div class="card sync-card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informações do Sistema
+                </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-6">
-                        <h6>🚫 Connection Refused - O que é?</h6>
+                        <h6 class="text-primary">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Sobre Connection Refused
+                        </h6>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-info-circle text-info"></i> Erro quando a API Asaas rejeita conexões</li>
-                            <li><i class="fas fa-clock text-warning"></i> Geralmente temporário (5-10 minutos)</li>
-                            <li><i class="fas fa-server text-danger"></i> Pode indicar sobrecarga ou manutenção</li>
-                            <li><i class="fas fa-shield-alt text-success"></i> Sistema detecta e trata automaticamente</li>
+                            <li class="mb-2">
+                                <i class="bi bi-info-circle text-info me-2"></i>
+                                Erro temporário da API Asaas
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-clock text-warning me-2"></i>
+                                Duração típica: 5-10 minutos
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-server text-danger me-2"></i>
+                                Causa: Sobrecarga ou manutenção
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-shield-check text-success me-2"></i>
+                                Sistema trata automaticamente
+                            </li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h6>✅ Como Resolver</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-wifi text-primary"></i> <strong>1.</strong> Sempre teste conectividade primeiro</li>
-                            <li><i class="fas fa-clock text-info"></i> <strong>2.</strong> Se Connection Refused, aguarde 5-10 min</li>
-                            <li><i class="fas fa-moon text-secondary"></i> <strong>3.</strong> Tente em horários de menor movimento</li>
-                            <li><i class="fas fa-redo text-success"></i> <strong>4.</strong> Se persistir, aguarde mais tempo</li>
-                        </ul>
+                        <h6 class="text-success">
+                            <i class="bi bi-check-circle-fill me-2"></i>Como Resolver
+                        </h6>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="p-2 bg-light rounded">
+                                <i class="bi bi-1-circle text-primary me-2"></i>
+                                <strong>Teste conectividade primeiro</strong>
+                            </div>
+                            <div class="p-2 bg-light rounded">
+                                <i class="bi bi-2-circle text-info me-2"></i>
+                                <strong>Aguarde 5-10 minutos se houver erro</strong>
+                            </div>
+                            <div class="p-2 bg-light rounded">
+                                <i class="bi bi-3-circle text-warning me-2"></i>
+                                <strong>Tente em horários de menor movimento</strong>
+                            </div>
+                            <div class="p-2 bg-light rounded">
+                                <i class="bi bi-4-circle text-success me-2"></i>
+                                <strong>Use a sincronização segura sempre</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Links -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="text-info mb-3">
+                            <i class="bi bi-link-45deg me-2"></i>Links Úteis
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="/financeiro/asaas/testar/" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Testar Integração
+                            </a>
+                            <a href="/financeiro/asaas/configurar/" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-gear me-1"></i>Configurações
+                            </a>
+                            <a href="/financeiro/asaas/webhook-debug/" class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-bug me-1"></i>Debug Webhook
+                            </a>
+                            <a href="/financeiro/sync/problemas/" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Ver Problemas
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh stats every 30 seconds
+    setInterval(function() {
+        fetch('/financeiro/api/sync/stats/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update stats if needed
+                    console.log('Stats updated:', data.data);
+                }
+            })
+            .catch(error => console.log('Stats update failed:', error));
+    }, 30000);
+    
+    // Add loading state to buttons
+    document.querySelectorAll('form button[type="submit"]').forEach(button => {
+        button.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processando...';
+            setTimeout(() => {
+                this.disabled = false;
+            }, 3000);
+        });
+    });
+});
+</script>
+{% endblock %}""

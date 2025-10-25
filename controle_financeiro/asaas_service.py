@@ -582,8 +582,9 @@ class AsaasService:
             return ''
         import re
         numeros = re.findall(r'\d+', endereco)
-        return numeros[0] if numeros else 'S/N'    
-def _fazer_requisicao(self, method, endpoint, **kwargs):
+        return numeros[0] if numeros else 'S/N'
+    
+    def _fazer_requisicao(self, method, endpoint, **kwargs):
         """
         Método helper para fazer requisições à API do Asaas
         
@@ -621,3 +622,78 @@ def _fazer_requisicao(self, method, endpoint, **kwargs):
         except Exception as e:
             logger.error(f"Erro na requisição {method} {endpoint}: {str(e)}")
             return None
+
+    def consultar_cobranca(self, payment_id, timeout=30):
+        """Consulta uma cobrança específica no Asaas (anti-connection refused)"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/payments/{payment_id}",
+                headers=self.headers,
+                timeout=timeout
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Erro ao consultar cobrança {payment_id}: {response.status_code}")
+                return None
+                
+        except requests.exceptions.ConnectionError as e:
+            if "Connection refused" in str(e):
+                logger.warning(f"Connection refused ao consultar cobrança {payment_id}")
+                raise  # Re-raise para tratamento específico
+            else:
+                logger.error(f"Erro de conexão ao consultar cobrança {payment_id}: {str(e)}")
+                return None
+        except requests.exceptions.Timeout:
+            logger.warning(f"Timeout ao consultar cobrança {payment_id}")
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao consultar cobrança {payment_id}: {str(e)}")
+            return None
+    
+    def test_connection_quick(self, timeout=3):
+        """Teste rápido de conexão para detectar connection refused"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/myAccount",
+                headers=self.headers,
+                timeout=timeout
+            )
+            
+            # Qualquer resposta da API (mesmo 401) indica que está acessível
+            return {
+                'accessible': True,
+                'status_code': response.status_code,
+                'connection_refused': False
+            }
+            
+        except requests.exceptions.ConnectionError as e:
+            if "Connection refused" in str(e):
+                return {
+                    'accessible': False,
+                    'status_code': None,
+                    'connection_refused': True,
+                    'error': str(e)
+                }
+            else:
+                return {
+                    'accessible': False,
+                    'status_code': None,
+                    'connection_refused': False,
+                    'error': str(e)
+                }
+        except requests.exceptions.Timeout:
+            return {
+                'accessible': False,
+                'status_code': None,
+                'connection_refused': False,
+                'error': 'Timeout'
+            }
+        except Exception as e:
+            return {
+                'accessible': False,
+                'status_code': None,
+                'connection_refused': False,
+                'error': str(e)
+            }

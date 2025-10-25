@@ -328,12 +328,13 @@ def _criar_cobranca_do_asaas(payment_data, asaas_service):
             return None
         
         # Criar a cobrança
+        from datetime import timezone as dt_timezone
         cobranca = CobrancaAsaas.objects.create(
             asaas_id=payment_data['id'],
             controle_financeiro=controle,
             customer_id=payment_data['customer'],
             valor=Decimal(str(payment_data['value'])),
-            data_vencimento=datetime.fromisoformat(payment_data['dueDate']).replace(tzinfo=timezone.utc),
+            data_vencimento=datetime.fromisoformat(payment_data['dueDate']).replace(tzinfo=dt_timezone.utc),
             descricao=payment_data.get('description', ''),
             status=payment_data['status'],
             external_reference=payment_data.get('externalReference', ''),
