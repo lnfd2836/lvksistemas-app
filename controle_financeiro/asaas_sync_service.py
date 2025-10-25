@@ -834,6 +834,15 @@ class AsaasSyncService:
             'last_error': None
         }
         logger.info("Estatísticas de sincronização resetadas")
+    
+    def get_sync_status(self):
+        """Retorna o status atual da sincronização"""
+        return {
+            'is_running': self.is_running,
+            'sync_interval': self.sync_interval,
+            'last_sync': self.last_sync,
+            'stats': self.sync_stats.copy()
+        }
 
 
 # Instância global do serviço de sincronização
@@ -852,4 +861,5 @@ def stop_sync_service():
 
 def get_sync_service():
     """Retorna a instância do serviço de sincronização"""
+    return sync_service
     return sync_service
