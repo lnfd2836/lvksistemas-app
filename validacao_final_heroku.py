@@ -20,7 +20,8 @@ except Exception as e:
 
 from django.contrib.auth.models import User
 from django.conf import settings
-from lojas.models import Loja, LoginPersonalizado
+from lojas.models import Loja
+from lojas.models_login import LoginPersonalizado
 from lojas.services.isolamento_service import IsolamentoService
 from email_credentials.models import EmailCredential
 
