@@ -1,1 +1,1 @@
-# Middleware package for dashboard app
+# Middleware package for dashboard

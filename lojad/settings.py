@@ -75,11 +75,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Necessário para admin
+    'django.contrib.messages.middleware.MessageMiddleware',  # Necessário para mensagens
+    'dashboard.middleware.super_admin_middleware.SuperAdminMiddleware',  # PRIORIDADE MÁXIMA para super admins
+    'dashboard.middleware.super_admin_middleware.SuperAdminProtectionMiddleware',  # Proteção adicional para super admins
     'email_credentials.db_router.LojaMiddleware',  # Middleware para definir contexto de loja
     'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja
     'lojas.middleware_login_isolado.DatabaseIsolationMiddleware',  # Isolamento de banco por loja
     'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
     'lojas.middleware.LojaMiddleware',
