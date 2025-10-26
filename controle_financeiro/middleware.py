@@ -1,8 +1,8 @@
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.urls import reverse
-from controle_financeiro.models import ControleFinanceiro
 from django.utils import timezone
+from django.db import OperationalError, ProgrammingError
 
 
 class ControleFinanceiroMiddleware:
@@ -24,6 +24,9 @@ class ControleFinanceiroMiddleware:
             request.loja_atual):
             
             try:
+                # Importar o modelo apenas quando necessário para evitar erros de inicialização
+                from controle_financeiro.models import ControleFinanceiro
+                
                 # Busca o controle financeiro da loja
                 controle = ControleFinanceiro.objects.get(loja=request.loja_atual)
                 
@@ -60,8 +63,13 @@ class ControleFinanceiroMiddleware:
                             f'Renove agora para evitar bloqueio.'
                         )
                 
-            except ControleFinanceiro.DoesNotExist:
-                # Se não tem controle financeiro, permite acesso normal
+            except (ImportError, OperationalError, ProgrammingError):
+                # Se a tabela não existe ou há erro de importação, permite acesso normal
+                # Isso acontece durante migrações ou quando o módulo não está configurado
+                pass
+            except Exception:
+                # Para qualquer outro erro, permite acesso normal
+                # Evita quebrar o sistema por problemas no controle financeiro
                 pass
 
         response = self.get_response(request)
