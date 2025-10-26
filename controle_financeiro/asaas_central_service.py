@@ -342,18 +342,21 @@ class AsaasCentralService:
             return None
     
     def _format_phone(self, phone: str) -> str:
-        """Formata telefone para o padrão do Asaas"""
+        """Formata telefone para o padrão do Asaas (sem código do país)"""
         if not phone:
-            return ''
+            return None
         
         # Remove caracteres não numéricos
         phone = ''.join(filter(str.isdigit, phone))
         
-        # Adiciona código do país se necessário
-        if len(phone) == 10:
-            phone = '55' + phone
-        elif len(phone) == 11:
-            phone = '55' + phone
+        # Remove código do país (55) se estiver presente
+        if phone.startswith('55') and len(phone) >= 12:
+            phone = phone[2:]  # Remove o "55" do início
+        
+        # Validar tamanho (deve ter 10 ou 11 dígitos: DDD + número)
+        if len(phone) < 10 or len(phone) > 11:
+            logger.warning(f"Telefone com tamanho inválido: {phone}, retornando None")
+            return None
         
         return phone
     
