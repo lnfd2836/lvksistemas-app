@@ -69,6 +69,10 @@ class ImprovedAuthenticationMiddleware:
             if getattr(request, 'is_webhook', False) or self.is_excluded_path(request.path):
                 return self.get_response(request)
             
+            # CORREÇÃO: Não interceptar a página inicial - deixar o smart_redirect lidar com isso
+            if request.path == '/' or request.path == '':
+                return self.get_response(request)
+            
             # Detecta loops de redirecionamento antes de processar
             if self.detect_potential_loop(request):
                 logger.warning(f"Loop potencial detectado na URL {request.path}")

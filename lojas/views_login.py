@@ -49,7 +49,7 @@ def login_personalizado_loja(request, url_personalizada=None, loja_id=None):
         # Verificar se a loja está ativa
         if loja.status != 'ativa':
             messages.error(request, 'Esta loja está temporariamente indisponível.')
-            return redirect('simple_login')
+            return redirect('root_redirect')
         
         # Se já está autenticado, verificar o tipo de usuário
         if request.user.is_authenticated:

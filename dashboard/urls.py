@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from . import views_debug
-from .simple_login import simple_login
 from .loja_login import loja_login, loja_logout
 
 # Nome da aplicação para namespacing
@@ -16,8 +15,7 @@ urlpatterns = [
     path('loja/', views.dashboard_loja, name='loja'),
     path('loja/<uuid:loja_id>/', views.dashboard_loja, name='loja_especifica'),
     
-    # Autenticação - mantido para compatibilidade
-    path('login/', simple_login, name='login'),
+    # Autenticação - redirecionamento para sistema simplificado
     path('logout/', views.logout_view, name='logout'),
     path('loja/login/', loja_login, name='loja_login'),
     path('loja/logout/', loja_logout, name='loja_logout'),

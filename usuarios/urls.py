@@ -1,10 +1,11 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect
 from . import views
 
 urlpatterns = [
-    # URLs de autenticação padrão do Django
-    path('login/', auth_views.LoginView.as_view(), name='login'),
+    # URLs de autenticação padrão do Django - removido para evitar loops
+    # path('login/', lambda request: redirect('/'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),

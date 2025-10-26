@@ -13,6 +13,7 @@ class LojaMiddleware:
     def __call__(self, request):
         # URLs que não precisam de verificação de loja
         excluded_paths = [
+            '/',  # Página inicial - deixar o smart_redirect lidar com isso
             '/admin/',
             '/login/',
             '/logout/',
@@ -42,14 +43,14 @@ class LojaMiddleware:
                     return redirect('dashboard_loja')
                 except:
                     messages.error(request, 'Você não tem uma loja associada.')
-                    return redirect('login')
+                    return redirect('root_redirect')
         
         # Se o usuário não está autenticado, redireciona para login
         if not request.user.is_authenticated:
             # Não redireciona se está tentando fazer login ou se é webhook do Asaas
             if request.path == '/loja/login/' or '/asaas/webhook' in request.path:
                 return self.get_response(request)
-            return redirect('login')
+            return redirect('root_redirect')
         
         # Se é super usuário, permite acesso a tudo
         if request.user.is_superuser:
@@ -62,6 +63,6 @@ class LojaMiddleware:
         except Loja.DoesNotExist:
             # Se não tem loja associada e não é super usuário, redireciona
             messages.error(request, 'Você não tem permissão para acessar esta área.')
-            return redirect('login')
+            return redirect('root_redirect')
         
         return self.get_response(request)
