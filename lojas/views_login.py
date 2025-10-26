@@ -215,8 +215,9 @@ def processar_login_personalizado(request, loja, login_config):
             else:
                 messages.success(request, f'Bem-vindo(a) à {loja.nome}!')
             
-            # Redirecionar para dashboard da loja
-            return redirect('dashboard:loja')
+            # Redirecionar diretamente para o dashboard da loja específica
+            # Evita problemas com decorators que podem causar duplo redirecionamento
+            return redirect('dashboard:loja_especifica', loja_id=loja.id)
             
         else:
             logger.warning(f"Falha na autenticação - Loja: {loja.nome}, Username: {username}")

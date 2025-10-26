@@ -122,7 +122,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
     # Verificar se o usuário está autenticado
     if not request.user.is_authenticated:
         logger.info("Usuário não autenticado tentando acessar dashboard da loja")
-        return redirect('loja_login')
+        return redirect('simple_login')
     
     try:
         # Verificar se o usuário pode acessar dashboard de loja
