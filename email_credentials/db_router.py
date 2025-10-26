@@ -154,9 +154,16 @@ class LojaMiddleware:
                 return request.user.loja_admin
             
             # Verificar se tem perfil FATESA com loja associada
-            if hasattr(request.user, 'perfil_fatesa') and request.user.perfil_fatesa:
-                if hasattr(request.user.perfil_fatesa, 'loja_associada') and request.user.perfil_fatesa.loja_associada:
-                    return request.user.perfil_fatesa.loja_associada
+            # Usar try-except para evitar erro quando a tabela não existe
+            try:
+                if hasattr(request.user, 'perfil_fatesa'):
+                    perfil = request.user.perfil_fatesa
+                    if perfil and hasattr(perfil, 'loja_associada') and perfil.loja_associada:
+                        return perfil.loja_associada
+            except Exception as e:
+                # Se a tabela não existir ou houver outro erro, apenas ignora
+                # Isso evita que o sistema quebre durante o deploy
+                pass
         
         # Verificar subdomínio ou parâmetro na URL
         # TODO: Implementar lógica de subdomínio se necessário
