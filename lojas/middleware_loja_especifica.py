@@ -105,6 +105,10 @@ class LojaEspecificaMiddleware:
     def _find_loja_by_url(self, url_personalizada):
         """Encontra loja por URL personalizada"""
         
+        # Ignorar se for literal "<url_personalizada>" ou similar
+        if url_personalizada.startswith('<') or url_personalizada in ['<url_personalizada>', 'url_personalizada']:
+            return None
+        
         try:
             # Buscar por URL personalizada
             login_config = LoginPersonalizado.objects.get(
@@ -116,6 +120,10 @@ class LojaEspecificaMiddleware:
         except LoginPersonalizado.DoesNotExist:
             # Tentar buscar por ID se for UUID
             try:
+                # Validar se é um UUID válido antes de tentar buscar
+                from django.core.validators import UUIDValidator
+                validator = UUIDValidator()
+                validator(url_personalizada)
                 return Loja.objects.get(id=url_personalizada, status='ativa')
             except (Loja.DoesNotExist, ValueError):
                 return None
