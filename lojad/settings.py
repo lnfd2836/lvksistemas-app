@@ -65,6 +65,14 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # === MIDDLEWARES EXCLUSIVOS POR GRUPO ===
+    # Grupo 1: Super Admin Exclusivo
+    # 'dashboard.middleware.super_admin_exclusivo.SuperAdminExclusivoMiddleware',  # Temporariamente desabilitado
+    # Bloqueio: Super Admin NÃO pode acessar sistema das lojas
+    'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',
+    # Grupo 2: Asaas Exclusivo
+    'controle_financeiro.middleware.asaas_exclusivo.AsaasExclusivoMiddleware',
+    # === MIDDLEWARES ORIGINAIS ===
     'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
     'controle_financeiro.webhook_middleware.WebhookBypassMiddleware',  # Detecta webhooks primeiro
     'django.middleware.security.SecurityMiddleware',
@@ -87,6 +95,8 @@ MIDDLEWARE = [
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
     'lojas.middleware.LojaMiddleware',
     'controle_financeiro.middleware.ControleFinanceiroMiddleware',
+    # === MIDDLEWARES DINÂMICOS POR LOJA ===
+    # Middlewares de loja são adicionados dinamicamente
 ]
 
 # URLs que devem ser excluídas de todos os middlewares de autenticação
