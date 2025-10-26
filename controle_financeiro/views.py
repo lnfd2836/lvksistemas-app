@@ -166,7 +166,7 @@ def aprovar_pagamento(request, pagamento_id):
         
         return redirect('detalhar_controle_financeiro', controle_id=pagamento.controle_financeiro.id)
     
-    return redirect('dashboard_financeiro')
+    return redirect('controle_financeiro:dashboard_financeiro')
 
 
 @login_required
@@ -186,7 +186,7 @@ def rejeitar_pagamento(request, pagamento_id):
         
         return redirect('detalhar_controle_financeiro', controle_id=pagamento.controle_financeiro.id)
     
-    return redirect('dashboard_financeiro')
+    return redirect('controle_financeiro:dashboard_financeiro')
 
 
 @login_required
@@ -210,7 +210,7 @@ def bloquear_loja(request, controle_id):
         
         return redirect('detalhar_controle_financeiro', controle_id=controle_id)
     
-    return redirect('dashboard_financeiro')
+    return redirect('controle_financeiro:dashboard_financeiro')
 
 
 @login_required
@@ -233,7 +233,7 @@ def desbloquear_loja(request, controle_id):
         
         return redirect('detalhar_controle_financeiro', controle_id=controle_id)
     
-    return redirect('dashboard_financeiro')
+    return redirect('controle_financeiro:dashboard_financeiro')
 
 
 @login_required
@@ -252,7 +252,7 @@ def verificar_vencimentos(request):
             atualizados += 1
     
     messages.success(request, f'{atualizados} controles financeiros atualizados!')
-    return redirect('dashboard_financeiro')
+    return redirect('controle_financeiro:dashboard_financeiro')
 
 
 # Views para clientes (lojas)
