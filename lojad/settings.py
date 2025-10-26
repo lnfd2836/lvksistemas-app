@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
+    'django_celery_beat',  # Para tarefas agendadas do Celery
     'email_credentials',
     'modulos',
     'lojas',
