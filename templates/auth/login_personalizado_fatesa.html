@@ -504,20 +504,6 @@
             </form>
             {% endif %}
             
-            <!-- Links adicionais -->
-            {% if login_config.mostrar_link_recuperar_senha or not is_preview %}
-            <div class="links-container">
-                {% if login_config.mostrar_link_recuperar_senha %}
-                    <a href="{% url 'password_reset' %}">
-                        <i class="fas fa-key me-1"></i>Recuperar Senha
-                    </a>
-                {% endif %}
-                
-                {% if not is_preview %}
-                    <a href="/admin/login/">
-                        <i class="fas fa-cog me-1"></i>Login Administrativo
-                    </a>
-                {% endif %}
             </div>
             {% endif %}
             

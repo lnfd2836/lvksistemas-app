@@ -411,16 +411,6 @@
             </form>
             {% endif %}
             
-            <!-- Links adicionais -->
-            {% if login_config.mostrar_link_recuperar_senha or not is_preview %}
-            <div class="links-container">
-                {% if login_config.mostrar_link_recuperar_senha %}
-                    <a href="{% url 'password_reset' %}">Recuperar Senha</a>
-                {% endif %}
-                
-                {% if not is_preview %}
-                    <a href="/admin/login/">Login Administrativo</a>
-                {% endif %}
             </div>
             {% endif %}
             

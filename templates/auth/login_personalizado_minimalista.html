@@ -283,9 +283,6 @@
 
             <!-- Link de recuperação de senha -->
             {% if login_config.mostrar_link_recuperar_senha and not is_preview %}
-            <div class="forgot-password">
-                <a href="{% url 'password_reset' %}">Esqueci minha senha</a>
-            </div>
             {% endif %}
 
             <!-- Mensagem do rodapé -->
