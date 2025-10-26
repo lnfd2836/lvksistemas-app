@@ -124,12 +124,11 @@
                                 {% endif %}
                             </a>
                             <ul class="dropdown-menu">
-                                {% if user.perfil_fatesa %}
+                                {% comment %}Tentar exibir link de perfil apenas se perfil_fatesa existir{% endcomment %}
                                 <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:meu_perfil' %}">
                                         <i class="bi bi-person me-1"></i> Meu Perfil
                                     </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'dashboard:logout' %}">
                                         <i class="bi bi-box-arrow-right me-1"></i> Sair
                                     </a></li>

@@ -145,8 +145,9 @@ class MandatoryPasswordChangeMiddleware:
                 
                 return False
                 
-            except user.perfil.RelatedObjectDoesNotExist:
-                # Usuário não tem perfil - não precisa trocar senha
+            except Exception as e:
+                # Se houver qualquer erro (incluindo tabela não existir), não força troca de senha
+                logger.warning(f'Erro ao verificar perfil do usuário {user.username}: {e}')
                 return False
             
         except Exception as e:
