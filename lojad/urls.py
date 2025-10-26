@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from dashboard.views import redirect_to_appropriate_dashboard
 from dashboard.smart_redirect import smart_login_redirect, loja_por_codigo, admin_redirect
-from lojas.views_login import login_personalizado_loja, api_validar_url_personalizada
+from lojas.views_login import login_personalizado_loja, api_validar_url_personalizada, recuperar_senha_loja, api_recuperar_senha
 # Webhooks removidos - usando apenas asaas_views.py
 import json
 import logging
@@ -114,6 +114,10 @@ urlpatterns = [
     
     # API para validação
     path('api/validar-url-personalizada/', api_validar_url_personalizada, name='api_validar_url_personalizada'),
+
+    # URLs de recuperação de senha
+    path('recuperar-senha/', recuperar_senha_loja, name='recuperar_senha_loja'),
+    path('api/recuperar-senha/', api_recuperar_senha, name='api_recuperar_senha'),
 ]
 
 if settings.DEBUG:

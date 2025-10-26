@@ -14,6 +14,7 @@ from lojas.models_login import LoginPersonalizado, HistoricoLoginLoja
 from usuarios.models import LogAcesso, SessaoAtiva
 from dashboard.services.authentication import AuthenticationService
 import logging
+from email_credentials.email_credentials_service import EmailCredentialsService
 import json
 
 logger = logging.getLogger(__name__)
@@ -485,3 +486,107 @@ def api_validar_url_personalizada(request):
         
     except Exception as e:
         return JsonResponse({'valida': False, 'erro': 'Erro interno'})
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from email_credentials.email_credentials_service import EmailCredentialsService
+import logging
+import json
+
+logger = logging.getLogger(__name__)
+
+
+def recuperar_senha_loja(request):
+    """
+    View para recuperação de senha nas páginas de login das lojas
+    Usa o sistema de senha provisória existente
+    """
+    
+    if request.method == 'POST':
+        email_or_username = request.POST.get('email_or_username', '').strip()
+        
+        if not email_or_username:
+            messages.error(request, 'Digite seu email ou nome de usuário.')
+            return render(request, 'auth/recuperar_senha_loja.html')
+        
+        try:
+            # Usar o serviço existente de email credentials
+            service = EmailCredentialsService()
+            result = service.generate_and_send_recovery(email_or_username)
+            
+            if result['success']:
+                messages.success(
+                    request, 
+                    'Nova senha provisória enviada por email! '
+                    'Verifique sua caixa de entrada e pasta de spam.'
+                )
+                return render(request, 'auth/recuperar_senha_sucesso.html', {
+                    'email': result['user'].email if result.get('user') else email_or_username
+                })
+            else:
+                if result.get('error') == 'USER_NOT_FOUND':
+                    messages.error(request, 'Email ou usuário não encontrado.')
+                elif result.get('error') == 'RATE_LIMITED':
+                    messages.error(request, 'Muitas tentativas. Tente novamente em 1 hora.')
+                else:
+                    messages.error(request, 'Erro ao enviar email. Tente novamente.')
+                
+        except Exception as e:
+            logger.error(f'Erro na recuperação de senha: {str(e)}')
+            messages.error(request, 'Erro interno. Tente novamente mais tarde.')
+    
+    return render(request, 'auth/recuperar_senha_loja.html')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_recuperar_senha(request):
+    """
+    API para recuperação de senha via AJAX
+    """
+    
+    try:
+        data = json.loads(request.body)
+        email_or_username = data.get('email_or_username', '').strip()
+        
+        if not email_or_username:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email ou usuário é obrigatório.'
+            })
+        
+        # Usar o serviço existente
+        service = EmailCredentialsService()
+        result = service.generate_and_send_recovery(email_or_username)
+        
+        if result['success']:
+            return JsonResponse({
+                'success': True,
+                'message': 'Nova senha enviada por email!'
+            })
+        else:
+            error_messages = {
+                'USER_NOT_FOUND': 'Email ou usuário não encontrado.',
+                'RATE_LIMITED': 'Muitas tentativas. Tente novamente em 1 hora.',
+            }
+            
+            return JsonResponse({
+                'success': False,
+                'message': error_messages.get(result.get('error'), 'Erro ao enviar email.')
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Dados inválidos.'
+        })
+    except Exception as e:
+        logger.error(f'Erro na API de recuperação: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'message': 'Erro interno. Tente novamente.'
+        })
