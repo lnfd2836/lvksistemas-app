@@ -79,17 +79,24 @@ class SuperAdminMiddleware:
         
         path = request.path
         
-        # Verificar se está acessando login personalizado de loja
-        if path.startswith('/login/') and path != '/login/':
-            # É um login personalizado (ex: /login/fatesa-escola-de-ultrassonografia/)
-            logger.warning(f"Super admin {request.user.username} tentando acessar login de loja: {path}")
-            return True
+        # CORREÇÃO: Permitir que super admins VISUALIZEM páginas de login das lojas (GET)
+        # Mas bloquear tentativas de fazer login (POST)
+        if request.method == 'GET':
+            # Super admins podem visualizar páginas de login para administração/teste
+            return False
         
-        # Verificar outros padrões de login de loja
-        for pattern in self.store_login_patterns:
-            if path == pattern:
-                logger.warning(f"Super admin {request.user.username} tentando acessar: {path}")
+        # Bloquear apenas tentativas de POST (fazer login)
+        if request.method == 'POST':
+            # Verificar se está tentando fazer login em loja
+            if path.startswith('/login/') and path != '/login/':
+                logger.warning(f"Super admin {request.user.username} tentando fazer login via loja: {path}")
                 return True
+            
+            # Verificar outros padrões de login de loja
+            for pattern in self.store_login_patterns:
+                if path == pattern:
+                    logger.warning(f"Super admin {request.user.username} tentando fazer login via: {path}")
+                    return True
         
         return False
     
@@ -211,20 +218,23 @@ class SuperAdminProtectionMiddleware:
             return self.get_response(request)
     
     def _is_super_admin_in_store_login(self, request):
-        """Verifica se super admin está em página de login de loja"""
+        """Verifica se super admin está tentando fazer login via loja"""
         
         if not (hasattr(request, 'user') and request.user.is_authenticated and request.user.is_superuser):
             return False
         
         path = request.path
         
-        # Verificar se está em login personalizado de loja
-        if path.startswith('/login/') and path != '/login/':
-            return True
-        
-        # Verificar se está tentando fazer POST em login de loja
-        if request.method == 'POST' and path in ['/loja/login/', '/login/']:
-            return True
+        # CORREÇÃO: Bloquear apenas tentativas de POST (fazer login)
+        # Permitir GET (visualizar página) para administração
+        if request.method == 'POST':
+            # Verificar se está tentando fazer POST em login personalizado de loja
+            if path.startswith('/login/') and path != '/login/':
+                return True
+            
+            # Verificar se está tentando fazer POST em login de loja
+            if path in ['/loja/login/', '/login/']:
+                return True
         
         return False
     

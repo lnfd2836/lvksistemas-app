@@ -78,6 +78,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',  # Necessário para mensagens
     'dashboard.middleware.super_admin_middleware.SuperAdminMiddleware',  # PRIORIDADE MÁXIMA para super admins
     'dashboard.middleware.super_admin_middleware.SuperAdminProtectionMiddleware',  # Proteção adicional para super admins
+    'lojas.middleware_loja_especifica.LojaEspecificaMiddleware',  # Middleware exclusivo para lojas específicas
     'email_credentials.db_router.LojaMiddleware',  # Middleware para definir contexto de loja
     'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja
     'lojas.middleware_login_isolado.DatabaseIsolationMiddleware',  # Isolamento de banco por loja
