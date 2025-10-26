@@ -10,8 +10,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from dashboard.views import redirect_to_appropriate_dashboard
-from dashboard.loja_login import loja_login
-from dashboard.simple_login import simple_login
+from dashboard.smart_redirect import smart_login_redirect, loja_por_codigo, admin_redirect
 from lojas.views_login import login_personalizado_loja, api_validar_url_personalizada
 # Webhooks removidos - usando apenas asaas_views.py
 import json
@@ -83,8 +82,8 @@ urlpatterns = [
     path('webhook-test-simple/', webhook_test_simple, name='webhook_test_simple'),
     
     path('admin/', admin.site.urls),
-    # Root URL redireciona inteligentemente baseado no usuário
-    path('', redirect_to_appropriate_dashboard, name='root_redirect'),
+    # Root URL - redirecionamento inteligente
+    path('', smart_login_redirect, name='root_redirect'),
     
     # URLs principais
     path('dashboard/', include('dashboard.urls')),
@@ -100,13 +99,17 @@ urlpatterns = [
     path('estetica/', estetica_redirect, name='estetica_redirect'),
     path('estetica/<path:path>', lambda request, path: redirect(f'/modulos/estetica/{path}')),
     
-    # URLs de autenticação - ordem importante para evitar conflitos
-    path('login/', simple_login, name='simple_login'),
-    path('loja/login/', loja_login, name='loja_login'),
+    # Sistema de login simplificado
+    path('admin-login/', admin_redirect, name='admin_redirect'),
+    path('loja/<str:codigo_loja>/', loja_por_codigo, name='loja_por_codigo'),
     
-    # Login personalizado por loja
+    # Login personalizado por loja (mantido para compatibilidade)
     path('login/<str:url_personalizada>/', login_personalizado_loja, name='login_personalizado_url'),
     path('login/loja/<uuid:loja_id>/', login_personalizado_loja, name='login_personalizado_id'),
+    
+    # Redirecionamentos para URLs antigas (compatibilidade)
+    path('login/', smart_login_redirect, name='simple_login_redirect'),
+    path('loja/login/', smart_login_redirect, name='loja_login_redirect'),
     
     # API para validação
     path('api/validar-url-personalizada/', api_validar_url_personalizada, name='api_validar_url_personalizada'),

@@ -59,7 +59,7 @@ def login_personalizado_loja(request, url_personalizada=None, loja_id=None):
                 messages.error(request, 'Super administradores devem usar o login exclusivo do sistema.')
                 from django.contrib.auth import logout
                 logout(request)
-                return redirect('simple_login')
+                return redirect('root_redirect')
             
             # Verificar se pode acessar esta loja específica
             if AuthenticationService.can_access_store_dashboard(request.user, loja):
@@ -91,15 +91,15 @@ def login_personalizado_loja(request, url_personalizada=None, loja_id=None):
     except LoginPersonalizado.DoesNotExist:
         logger.error(f"Configuração de login não encontrada para URL: {url_personalizada}")
         messages.error(request, 'Página de login não encontrada.')
-        return redirect('simple_login')
+        return redirect('root_redirect')
     except Loja.DoesNotExist:
         logger.error(f"Loja não encontrada - ID: {loja_id}, URL: {url_personalizada}")
         messages.error(request, 'Loja não encontrada.')
-        return redirect('simple_login')
+        return redirect('root_redirect')
     except Exception as e:
         logger.error(f"Erro no login personalizado: {str(e)}")
         messages.error(request, 'Erro interno. Tente novamente.')
-        return redirect('simple_login')
+        return redirect('root_redirect')
 
 
 def processar_login_personalizado(request, loja, login_config):

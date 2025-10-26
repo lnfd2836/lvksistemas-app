@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Selecione sua Loja - LVK Sistemas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .loja-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .loja-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .loja-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .loja-body {
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-login:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .page-header h1 {
+        color: #2c3e50;
+        font-weight: 300;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-header p {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+    }
+    
+    .admin-link {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #34495e;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    
+    .admin-link:hover {
+        background: #2c3e50;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header">
+        <h1>🏪 Selecione sua Loja</h1>
+        <p>Escolha sua loja para acessar o sistema personalizado</p>
+    </div>
+    
+    {% if lojas_ativas %}
+        <div class="row justify-content-center">
+            {% for loja_info in lojas_ativas %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card loja-card h-100">
+                    <div class="loja-header">
+                        {% if loja_info.login_config.logo %}
+                            <img src="{{ loja_info.login_config.logo.url }}" 
+                                 alt="Logo {{ loja_info.loja.nome }}" 
+                                 style="max-height: 60px; margin-bottom: 1rem;">
+                        {% endif %}
+                        <h4>{{ loja_info.loja.nome }}</h4>
+                        {% if loja_info.loja.tipo_loja %}
+                            <small class="opacity-75">{{ loja_info.loja.tipo_loja.nome|title }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="loja-body">
+                        {% if loja_info.login_config.mensagem_boas_vindas %}
+                            <p class="text-muted mb-3">{{ loja_info.login_config.mensagem_boas_vindas }}</p>
+                        {% endif %}
+                        
+                        <a href="{{ loja_info.login_url }}" class="btn btn-login">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Fazer Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if total_lojas > 1 %}
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                {{ total_lojas }} lojas disponíveis
+            </p>
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <div class="text-center">
+            <div class="alert alert-warning">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>Nenhuma Loja Disponível</h4>
+                <p>Não há lojas ativas no momento. Entre em contato com o suporte.</p>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Link para admin (discreto) -->
+    <a href="/admin/login/" class="admin-link">
+        <i class="fas fa-cog me-1"></i>
+        Admin
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Adicionar efeitos visuais
+document.addEventListener('DOMContentLoaded', function() {
+    // Animação de entrada das cards
+    const cards = document.querySelectorAll('.loja-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}
