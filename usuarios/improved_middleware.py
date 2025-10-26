@@ -156,15 +156,15 @@ class ImprovedAuthenticationMiddleware:
         """
         try:
             # Verifica se não está criando loop para login
-            if not RedirectLoopPreventionService.is_safe_redirect(request, 'simple_login'):
+            if not RedirectLoopPreventionService.is_safe_redirect(request, 'root_redirect'):
                 logger.warning("Loop detectado ao redirecionar usuário não autenticado para login")
                 return RedirectLoopPreventionService.handle_redirect_loop(request, "unauthenticated_loop")
             
-            return redirect('simple_login')
+            return redirect('root_redirect')
             
         except Exception as e:
             logger.error(f"Erro ao manipular usuário não autenticado: {e}")
-            return redirect('simple_login')
+            return redirect('root_redirect')
     
     def handle_invalid_session(self, request) -> HttpResponse:
         """
@@ -200,10 +200,10 @@ class ImprovedAuthenticationMiddleware:
             logout(request)
             
             # Verifica se não está criando loop
-            if not RedirectLoopPreventionService.is_safe_redirect(request, 'simple_login'):
+            if not RedirectLoopPreventionService.is_safe_redirect(request, 'root_redirect'):
                 return RedirectLoopPreventionService.handle_redirect_loop(request, "invalid_session_loop")
             
-            return redirect('simple_login')
+            return redirect('root_redirect')
             
         except Exception as e:
             logger.error(f"Erro ao manipular sessão inválida: {e}")

@@ -120,7 +120,7 @@ class LoginIsoladoMiddleware(MiddlewareMixin):
                     logger.warning(f"Usuário {user.username} tentou acessar loja {current_loja.nome} sem permissão")
                     messages.error(request, 'Acesso negado: Você só pode acessar dados da sua loja.')
                     logout(request)
-                    return redirect('simple_login')
+                    return redirect('root_redirect')
                 
                 # Configurar contexto da loja para isolamento de banco
                 loja_context = IsolamentoService.get_user_loja_context(user)

@@ -74,7 +74,7 @@ def require_loja_access(view_func):
         if not request.user.is_authenticated:
             # Se veio de login personalizado, redirecionar para login simples
             # para evitar loop de redirecionamento
-            return redirect('simple_login')
+            return redirect('root_redirect')
         
         # Super admin sempre tem acesso
         if request.user.is_superuser:
@@ -90,7 +90,7 @@ def require_loja_access(view_func):
             return view_func(request, *args, **kwargs)
         
         messages.error(request, 'Você não tem acesso a esta área.')
-        return redirect('simple_login')
+        return redirect('root_redirect')
     
     return wrapper
 

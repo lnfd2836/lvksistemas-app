@@ -122,7 +122,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
     # Verificar se o usuário está autenticado
     if not request.user.is_authenticated:
         logger.info("Usuário não autenticado tentando acessar dashboard da loja")
-        return redirect('simple_login')
+        return redirect('root_redirect')
     
     try:
         # Verificar se o usuário pode acessar dashboard de loja
@@ -146,7 +146,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
             except Loja.DoesNotExist:
                 logger.error(f"Loja {loja_id} não encontrada")
                 messages.error(request, 'Loja não encontrada.')
-                return redirect('simple_login')
+                return redirect('root_redirect')
         
         # Se foi passada uma loja como parâmetro
         elif loja:

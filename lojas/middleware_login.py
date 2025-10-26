@@ -45,7 +45,7 @@ class LoginRedirectMiddleware:
             if self._is_store_login_path(path):
                 logger.warning(f"Super usuário {request.user.username} redirecionado do login de loja para login super admin")
                 messages.warning(request, 'Super administradores devem usar o login exclusivo do sistema.')
-                return redirect('simple_login')
+                return redirect('/admin/login/')
         
         # Verificar se usuário de loja está tentando acessar login super admin
         elif AuthenticationService.is_store_user_only(request.user):
