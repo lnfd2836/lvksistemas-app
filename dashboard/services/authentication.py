@@ -25,7 +25,7 @@ class AuthenticationService:
     DASHBOARD_URLS = {
         DASHBOARD_SUPER_ADMIN: '/dashboard/',
         DASHBOARD_STORE_ADMIN: '/dashboard/loja/',
-        DASHBOARD_UNAUTHORIZED: '/login/'
+        DASHBOARD_UNAUTHORIZED: '/'  # Página inicial com seleção de lojas
     }
     
     @staticmethod

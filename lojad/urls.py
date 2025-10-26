@@ -101,6 +101,7 @@ urlpatterns = [
     
     # Sistema de login simplificado
     path('admin-login/', admin_redirect, name='admin_redirect'),
+    path('super-admin/', admin_redirect, name='super_admin_redirect'),  # URL alternativa para super admins
     path('loja/<str:codigo_loja>/', loja_por_codigo, name='loja_por_codigo'),
     
     # Login personalizado por loja (mantido para compatibilidade)

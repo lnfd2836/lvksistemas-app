@@ -21,7 +21,8 @@ def smart_login_redirect(request):
     4. Se não tem lojas → redireciona para admin login
     """
     
-    # Se já está autenticado, redirecionar para dashboard apropriado
+    # PRIORIDADE MÁXIMA: Se já está autenticado, redirecionar para dashboard apropriado
+    # Isso deve acontecer ANTES de qualquer verificação de lojas
     if request.user.is_authenticated:
         try:
             dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
@@ -30,6 +31,13 @@ def smart_login_redirect(request):
         except Exception as e:
             logger.error(f"Erro ao determinar dashboard para usuário autenticado: {str(e)}")
             return redirect('dashboard:principal')
+    
+    # CORREÇÃO HEROKU: Verificar se há parâmetro especial para super admin
+    # Isso permite que super admins acessem /admin/login/ mesmo com uma loja ativa
+    if request.GET.get('admin') == '1' or request.GET.get('super') == '1':
+        logger.info("Parâmetro de admin detectado, redirecionando para login de administrador")
+        messages.info(request, 'Acesso de administrador solicitado.')
+        return redirect('/admin/login/')
     
     # Buscar lojas ativas com login personalizado
     try:
@@ -76,10 +84,22 @@ def smart_login_redirect(request):
             return redirect('/admin/login/')
             
         elif len(lojas_com_login) == 1:
-            # Apenas uma loja → redirecionar diretamente
+            # CORREÇÃO HEROKU: Apenas uma loja ativa
+            # Mostrar seleção com opção de admin ao invés de redirecionar diretamente
             loja_info = lojas_com_login[0]
-            logger.info(f"Uma loja encontrada, redirecionando para {loja_info['loja'].nome}")
-            return redirect(loja_info['login_url'])
+            logger.info(f"Uma loja encontrada: {loja_info['loja'].nome}, mostrando seleção com opção de admin")
+            
+            # Adicionar opção de admin à seleção
+            context = {
+                'lojas': lojas_com_login,
+                'total_lojas': 1,
+                'titulo_pagina': 'Acesso ao Sistema',
+                'subtitulo_pagina': 'Escolha como deseja acessar',
+                'mostrar_opcao_admin': True,  # Flag especial para mostrar botão de admin
+                'admin_url': '/admin/login/'
+            }
+            
+            return render(request, 'auth/selecao_loja.html', context)
             
         else:
             # Múltiplas lojas → mostrar seleção
@@ -99,7 +119,9 @@ def mostrar_selecao_loja(request, lojas_com_login):
         'lojas': lojas_com_login,
         'total_lojas': len(lojas_com_login),
         'titulo_pagina': 'Selecione sua Loja',
-        'subtitulo_pagina': 'Escolha a loja para fazer login'
+        'subtitulo_pagina': 'Escolha a loja para fazer login',
+        'mostrar_opcao_admin': True,  # Sempre mostrar opção de admin
+        'admin_url': '/admin/login/'
     }
     
     return render(request, 'auth/selecao_loja.html', context)
