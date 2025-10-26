@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.http import Http404
 from lojas.models import Loja
@@ -12,17 +13,17 @@ logger = logging.getLogger(__name__)
 
 def smart_login_redirect(request):
     """
-    Redirecionamento inteligente baseado no contexto do usuário
+    Página principal do sistema - Login de Super Admin
     
-    Lógica:
+    ARQUITETURA CORRETA:
     1. Se já autenticado → redireciona para dashboard apropriado
-    2. Se tem apenas uma loja ativa → redireciona para login da loja
-    3. Se tem múltiplas lojas → mostra seleção de loja
-    4. Se não tem lojas → redireciona para admin login
+    2. Se não autenticado → MOSTRA formulário de login de super admin
+    
+    A página principal é EXCLUSIVAMENTE para super admins!
+    Lojas têm seus próprios URLs personalizados.
     """
     
-    # PRIORIDADE MÁXIMA: Se já está autenticado, redirecionar para dashboard apropriado
-    # Isso deve acontecer ANTES de qualquer verificação de lojas
+    # Se já está autenticado, redirecionar para dashboard apropriado
     if request.user.is_authenticated:
         try:
             dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
@@ -32,88 +33,165 @@ def smart_login_redirect(request):
             logger.error(f"Erro ao determinar dashboard para usuário autenticado: {str(e)}")
             return redirect('dashboard:principal')
     
-    # CORREÇÃO HEROKU: Verificar se há parâmetro especial para super admin
-    # Isso permite que super admins acessem /admin/login/ mesmo com uma loja ativa
-    if request.GET.get('admin') == '1' or request.GET.get('super') == '1':
-        logger.info("Parâmetro de admin detectado, redirecionando para login de administrador")
-        messages.info(request, 'Acesso de administrador solicitado.')
-        return redirect('/admin/login/')
+    # CORREÇÃO: Mostrar DIRETAMENTE o formulário de login de super admin
+    # Não redirecionar, mas renderizar o template de login
+    logger.info("Exibindo formulário de login de super admin na página principal")
     
-    # Buscar lojas ativas com login personalizado
+    # Processar login se for POST
+    if request.method == 'POST':
+        return processar_login_super_admin(request)
+    
+    # Mostrar formulário de login de super admin
+    context = {
+        'titulo_pagina': 'Login Super Admin - LVK Sistemas',
+        'subtitulo_pagina': 'Acesso exclusivo para administradores do sistema',
+        'is_super_admin_login': True,
+        'login_url': '/',
+        'admin_area': True
+    }
+    
+    return render(request, 'auth/super_admin_login.html', context)
+
+
+def processar_login_super_admin(request):
+    """Processa o login do super admin na página principal"""
+    
+    username = request.POST.get('username', '').strip()
+    password = request.POST.get('password', '')
+    
+    if not username or not password:
+        messages.error(request, 'Por favor, preencha todos os campos.')
+        return render(request, 'auth/super_admin_login.html', {
+            'titulo_pagina': 'Login Super Admin - LVK Sistemas',
+            'subtitulo_pagina': 'Acesso exclusivo para administradores do sistema',
+            'is_super_admin_login': True,
+            'login_url': '/',
+            'admin_area': True
+        })
+    
     try:
-        lojas_ativas = Loja.objects.filter(
-            status='ativa'
-        ).select_related('login_personalizado').order_by('nome')
+        # Tentar autenticar
+        user = authenticate(request, username=username, password=password)
         
-        # Filtrar apenas lojas com login personalizado ativo
-        lojas_com_login = []
-        for loja in lojas_ativas:
+        # Se falhar, tentar com email
+        if user is None and '@' in username:
             try:
-                login_config = loja.login_personalizado
-                if login_config.ativo:
-                    lojas_com_login.append({
-                        'loja': loja,
-                        'login_config': login_config,
-                        'login_url': login_config.get_login_url()
-                    })
-            except LoginPersonalizado.DoesNotExist:
-                # Criar configuração padrão se não existir
-                try:
-                    login_config = LoginPersonalizado.objects.create(
-                        loja=loja,
-                        titulo=f"Login - {loja.nome}",
-                        subtitulo=f"Acesse sua conta na {loja.nome}",
-                        mensagem_boas_vindas=f"Bem-vindo(a) à {loja.nome}!",
-                        tema='padrao',
-                        ativo=True
-                    )
-                    lojas_com_login.append({
-                        'loja': loja,
-                        'login_config': login_config,
-                        'login_url': login_config.get_login_url()
-                    })
-                    logger.info(f"Configuração de login padrão criada para loja {loja.nome}")
-                except Exception as e:
-                    logger.error(f"Erro ao criar login padrão para loja {loja.nome}: {str(e)}")
+                user_obj = User.objects.get(email=username)
+                user = authenticate(request, username=user_obj.username, password=password)
+                logger.debug(f"Tentativa de login com email {username}")
+            except User.DoesNotExist:
+                logger.debug(f"Email {username} não encontrado")
+                pass
         
-        # Decidir redirecionamento baseado no número de lojas
-        if len(lojas_com_login) == 0:
-            # Nenhuma loja ativa → redirecionar para admin
-            logger.info("Nenhuma loja ativa encontrada, redirecionando para admin")
-            messages.info(request, 'Nenhuma loja disponível. Acesse como administrador do sistema.')
-            return redirect('/admin/login/')
+        if user is not None:
+            if not user.is_active:
+                logger.warning(f"Usuário inativo tentou login: {user.username}")
+                messages.error(request, 'Esta conta está desativada.')
+                return render(request, 'auth/super_admin_login.html', {
+                    'titulo_pagina': 'Login Super Admin - LVK Sistemas',
+                    'subtitulo_pagina': 'Acesso exclusivo para administradores do sistema',
+                    'is_super_admin_login': True,
+                    'login_url': '/',
+                    'admin_area': True
+                })
             
-        elif len(lojas_com_login) == 1:
-            # CORREÇÃO HEROKU: Apenas uma loja ativa
-            # Mostrar seleção com opção de admin ao invés de redirecionar diretamente
-            loja_info = lojas_com_login[0]
-            logger.info(f"Uma loja encontrada: {loja_info['loja'].nome}, mostrando seleção com opção de admin")
+            # VERIFICAR SE É SUPER ADMIN
+            if not user.is_superuser:
+                logger.warning(f"Usuário não-super-admin tentou login na página principal: {user.username}")
+                messages.error(request, 'Esta área é exclusiva para super administradores. Use o login da sua loja.')
+                return render(request, 'auth/super_admin_login.html', {
+                    'titulo_pagina': 'Login Super Admin - LVK Sistemas',
+                    'subtitulo_pagina': 'Acesso exclusivo para administradores do sistema',
+                    'is_super_admin_login': True,
+                    'login_url': '/',
+                    'admin_area': True
+                })
             
-            # Adicionar opção de admin à seleção
-            context = {
-                'lojas': lojas_com_login,
-                'total_lojas': 1,
-                'titulo_pagina': 'Acesso ao Sistema',
-                'subtitulo_pagina': 'Escolha como deseja acessar',
-                'mostrar_opcao_admin': True,  # Flag especial para mostrar botão de admin
-                'admin_url': '/admin/login/'
-            }
+            # Fazer login
+            login(request, user)
+            logger.info(f"Login de super admin bem-sucedido: {user.username}")
             
-            return render(request, 'auth/selecao_loja.html', context)
+            # Criar sessão ativa
+            try:
+                from usuarios.models import SessaoAtiva, LogAcesso
+                
+                # Remove sessões antigas
+                SessaoAtiva.objects.filter(user=user).update(ativa=False)
+                
+                # Cria nova sessão
+                session_key = request.session.session_key or f'super-admin-{user.id}'
+                SessaoAtiva.objects.filter(session_key=session_key).delete()
+                
+                SessaoAtiva.objects.create(
+                    user=user,
+                    session_key=session_key,
+                    ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    ativa=True,
+                    is_super_admin=True
+                )
+                
+                # Log de acesso
+                LogAcesso.objects.create(
+                    user=user,
+                    acao='LOGIN_SUPER_ADMIN',
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    sucesso=True,
+                    observacoes='Login via página principal'
+                )
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar sessão para super admin {user.username}: {str(e)}")
+            
+            # Redirecionar para dashboard super admin
+            messages.success(request, f'Bem-vindo, {user.first_name or user.username}!')
+            return redirect('/dashboard/')
             
         else:
-            # Múltiplas lojas → mostrar seleção
-            logger.info(f"{len(lojas_com_login)} lojas encontradas, mostrando seleção")
-            return mostrar_selecao_loja(request, lojas_com_login)
+            logger.warning(f"Falha na autenticação de super admin: {username}")
+            messages.error(request, 'Usuário ou senha incorretos.')
             
     except Exception as e:
-        logger.error(f"Erro no redirecionamento inteligente: {str(e)}")
-        messages.error(request, 'Erro interno. Tente novamente.')
-        return redirect('/admin/login/')
+        logger.error(f"Erro durante login de super admin: {str(e)}")
+        messages.error(request, 'Erro interno durante o login. Tente novamente.')
+    
+    # Retornar formulário com erro
+    return render(request, 'auth/super_admin_login.html', {
+        'titulo_pagina': 'Login Super Admin - LVK Sistemas',
+        'subtitulo_pagina': 'Acesso exclusivo para administradores do sistema',
+        'is_super_admin_login': True,
+        'login_url': '/',
+        'admin_area': True
+    })
 
 
-def mostrar_selecao_loja(request, lojas_com_login):
-    """Mostra página de seleção de loja"""
+def mostrar_selecao_loja(request, lojas_com_login=None):
+    """
+    Mostra página de seleção de loja (apenas quando explicitamente solicitada)
+    Esta função agora é usada apenas para URLs específicas como /lojas/selecionar/
+    """
+    
+    # Se não foram fornecidas lojas, buscar todas as ativas
+    if lojas_com_login is None:
+        try:
+            lojas_ativas = Loja.objects.filter(status='ativa').select_related('login_personalizado').order_by('nome')
+            lojas_com_login = []
+            
+            for loja in lojas_ativas:
+                try:
+                    login_config = loja.login_personalizado
+                    if login_config.ativo:
+                        lojas_com_login.append({
+                            'loja': loja,
+                            'login_config': login_config,
+                            'login_url': login_config.get_login_url()
+                        })
+                except LoginPersonalizado.DoesNotExist:
+                    continue
+        except Exception as e:
+            logger.error(f"Erro ao buscar lojas para seleção: {str(e)}")
+            return redirect('/admin/login/')
     
     context = {
         'lojas': lojas_com_login,
