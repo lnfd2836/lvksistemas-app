@@ -1,0 +1,222 @@
+{% extends 'email_credentials/base.html' %}
+
+{% block header_actions %}
+    <a href="{% url 'email_credentials:listar_usuarios' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Voltar
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-plus"></i>
+                        Criar Novo Usuário
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Dados Pessoais -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3">Dados Pessoais</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">Nome *</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                                           required maxlength="30" value="{{ request.POST.first_name }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Sobrenome *</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                                           required maxlength="150" value="{{ request.POST.last_name }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           required maxlength="254" value="{{ request.POST.email }}">
+                                    <div class="form-text">
+                                        As credenciais serão enviadas para este email.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Dados de Acesso -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3">Dados de Acesso</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Nome de Usuário *</label>
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           required maxlength="150" value="{{ request.POST.username }}"
+                                           pattern="[a-zA-Z0-9@.+_-]+" title="Apenas letras, números e @.+_-">
+                                    <div class="form-text">
+                                        Apenas letras, números e os caracteres @.+_-
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="user_type" class="form-label">Tipo de Usuário *</label>
+                                    <select class="form-select" id="user_type" name="user_type" required>
+                                        {% for value, label in user_types %}
+                                            <option value="{{ value }}" {% if request.POST.user_type == value %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="loja_id" class="form-label">Loja Associada</label>
+                                    <select class="form-select" id="loja_id" name="loja_id">
+                                        <option value="">Nenhuma (Super Admin)</option>
+                                        {% for loja in lojas %}
+                                            <option value="{{ loja.id }}" {% if request.POST.loja_id == loja.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ loja.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Deixe em branco para Super Administradores.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações sobre Senha -->
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Sobre a Senha</h6>
+                            <ul class="mb-0">
+                                <li>Uma senha segura será gerada automaticamente</li>
+                                <li>A senha será enviada por email para o usuário</li>
+                                <li>O usuário deverá alterar a senha no primeiro acesso</li>
+                                <li>Você pode reenviar as credenciais a qualquer momento</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Gerador de Senhas (Preview) -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Preview de Senhas Seguras</h6>
+                                <p class="text-muted small mb-2">
+                                    Exemplos de senhas que serão geradas automaticamente:
+                                </p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-sm btn-outline-primary mb-2" 
+                                                onclick="generatePasswords(3, 12)" data-bs-toggle="modal" data-bs-target="#passwordPreviewModal">
+                                            <i class="bi bi-eye"></i>
+                                            Ver Exemplos
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'email_credentials:listar_usuarios' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-person-plus"></i>
+                                Criar Usuário e Enviar Credenciais
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Preview de Senhas -->
+    <div class="modal fade" id="passwordPreviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Exemplos de Senhas Seguras</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">
+                        Estas são senhas similares às que serão geradas automaticamente:
+                    </p>
+                    <div class="list-group" id="generated-passwords">
+                        <!-- Senhas serão inseridas aqui via JavaScript -->
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="generatePasswords(3, 12)">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Gerar Novos Exemplos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Validação em tempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const userTypeSelect = document.getElementById('user_type');
+        const lojaSelect = document.getElementById('loja_id');
+        
+        function updateLojaRequirement() {
+            const userType = userTypeSelect.value;
+            const lojaGroup = lojaSelect.closest('.mb-3');
+            const lojaLabel = lojaGroup.querySelector('label');
+            
+            if (userType === 'super_admin') {
+                lojaSelect.required = false;
+                lojaLabel.textContent = 'Loja Associada';
+                lojaSelect.value = '';
+            } else {
+                lojaSelect.required = true;
+                lojaLabel.innerHTML = 'Loja Associada *';
+            }
+        }
+        
+        userTypeSelect.addEventListener('change', updateLojaRequirement);
+        updateLojaRequirement(); // Executar na inicialização
+        
+        // Validação de username
+        const usernameInput = document.getElementById('username');
+        usernameInput.addEventListener('input', function() {
+            const value = this.value;
+            const isValid = /^[a-zA-Z0-9@.+_-]*$/.test(value);
+            
+            if (!isValid && value) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+        
+        // Gerar username baseado no nome
+        const firstNameInput = document.getElementById('first_name');
+        const lastNameInput = document.getElementById('last_name');
+        
+        function generateUsername() {
+            const firstName = firstNameInput.value.toLowerCase().replace(/[^a-z]/g, '');
+            const lastName = lastNameInput.value.toLowerCase().replace(/[^a-z]/g, '');
+            
+            if (firstName && lastName && !usernameInput.value) {
+                usernameInput.value = firstName + '.' + lastName;
+            }
+        }
+        
+        firstNameInput.addEventListener('blur', generateUsername);
+        lastNameInput.addEventListener('blur', generateUsername);
+    });
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_fatesa_limpo.html' %}
 
 {% block title %}Criar Nova Avaliação - FATESA{% endblock %}
 {% block page_title %}Criar Nova Avaliação{% endblock %}
@@ -54,15 +54,62 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="{{ form.professores.id_for_label }}" class="form-label">
+                        <label class="form-label">
                             <i class="fas fa-chalkboard-teacher me-1"></i>
-                            {{ form.professores.label }}
+                            Professores
                         </label>
-                        {{ form.professores }}
+                        
+                        <!-- Campo de busca -->
+                        <input type="text" id="busca-professor" class="form-control mb-3" placeholder="🔍 Buscar professor...">
+                        
+                        <!-- Botões de seleção -->
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" id="selecionar-todos">
+                                <i class="fas fa-check-double me-1"></i>Selecionar Todos
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="limpar-selecao">
+                                <i class="fas fa-times me-1"></i>Limpar Seleção
+                            </button>
+                        </div>
+                        
+                        <!-- Container dos professores -->
+                        <div class="professores-container border rounded p-3" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                            {% for professor in professores %}
+                                <div class="form-check mb-2 professor-item">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="professores" 
+                                           value="{{ professor.id }}" 
+                                           id="professor_{{ professor.id }}">
+                                    <label class="form-check-label" for="professor_{{ professor.id }}">
+                                        <i class="fas fa-user-md me-2 text-primary"></i>
+                                        {{ professor.nome }}
+                                        {% if professor.especialidade %}
+                                            <small class="text-muted">- {{ professor.especialidade }}</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            {% empty %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                    <p>Nenhum professor cadastrado</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Contador de selecionados -->
+                        <div id="contador-professores" class="alert alert-warning mt-2">
+                            <i class="fas fa-users me-2"></i>
+                            <span id="contador-texto">Nenhum professor selecionado</span>
+                        </div>
+                        
                         {% if form.professores.errors %}
-                            <div class="text-danger small">{{ form.professores.errors.0 }}</div>
+                            <div class="text-danger small mt-2">{{ form.professores.errors.0 }}</div>
                         {% endif %}
-                        <div class="form-text">Segure Ctrl (ou Cmd no Mac) para selecionar múltiplos professores</div>
+                        
+                        <div class="form-text mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Selecione um ou mais professores que serão avaliados nesta turma
+                        </div>
                     </div>
                     
                     <div class="alert alert-info">
@@ -91,4 +138,171 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos
+    const professoresContainer = document.querySelector('.professores-container');
+    const checkboxes = professoresContainer.querySelectorAll('input[type="checkbox"]');
+    const contadorDiv = document.getElementById('contador-professores');
+    const contadorTexto = document.getElementById('contador-texto');
+    const buscaInput = document.getElementById('busca-professor');
+    const btnSelecionarTodos = document.getElementById('selecionar-todos');
+    const btnLimparSelecao = document.getElementById('limpar-selecao');
+    
+    // Função para atualizar contador
+    function atualizarContador() {
+        const selecionados = Array.from(checkboxes).filter(cb => cb.checked);
+        
+        if (selecionados.length === 0) {
+            contadorTexto.textContent = 'Nenhum professor selecionado';
+            contadorDiv.className = 'alert alert-warning mt-2';
+        } else if (selecionados.length === 1) {
+            contadorTexto.textContent = '1 professor selecionado';
+            contadorDiv.className = 'alert alert-success mt-2';
+        } else {
+            contadorTexto.textContent = `${selecionados.length} professores selecionados`;
+            contadorDiv.className = 'alert alert-success mt-2';
+        }
+    }
+    
+    // Event listeners para checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', atualizarContador);
+    });
+    
+    // Botão selecionar todos
+    btnSelecionarTodos.addEventListener('click', function() {
+        const professoresVisiveis = professoresContainer.querySelectorAll('.professor-item:not([style*="display: none"]) input[type="checkbox"]');
+        professoresVisiveis.forEach(cb => cb.checked = true);
+        atualizarContador();
+    });
+    
+    // Botão limpar seleção
+    btnLimparSelecao.addEventListener('click', function() {
+        checkboxes.forEach(cb => cb.checked = false);
+        atualizarContador();
+    });
+    
+    // Busca de professores
+    buscaInput.addEventListener('input', function() {
+        const termo = this.value.toLowerCase();
+        const professoresItems = professoresContainer.querySelectorAll('.professor-item');
+        
+        professoresItems.forEach(item => {
+            const texto = item.textContent.toLowerCase();
+            if (texto.includes(termo)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Atualizar texto do botão "Selecionar Todos"
+        const professoresVisiveis = professoresContainer.querySelectorAll('.professor-item:not([style*="display: none"])');
+        if (professoresVisiveis.length < checkboxes.length) {
+            btnSelecionarTodos.innerHTML = '<i class="fas fa-check-double me-1"></i>Selecionar Visíveis';
+        } else {
+            btnSelecionarTodos.innerHTML = '<i class="fas fa-check-double me-1"></i>Selecionar Todos';
+        }
+    });
+    
+    // Validação do formulário
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const selecionados = Array.from(checkboxes).filter(cb => cb.checked);
+        
+        if (selecionados.length === 0) {
+            e.preventDefault();
+            
+            // Mostrar alerta mais amigável
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Atenção!</strong> Por favor, selecione pelo menos um professor para a avaliação.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Inserir alerta antes do formulário
+            form.insertBefore(alertDiv, form.firstChild);
+            
+            // Scroll para o topo
+            alertDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            return false;
+        }
+        
+        // Adicionar loading no botão
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Criando Avaliação...';
+        submitBtn.disabled = true;
+        
+        // Se houver erro, restaurar botão após 5 segundos
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 5000);
+    });
+    
+    // Atualizar contador inicial
+    atualizarContador();
+    
+    // Adicionar efeitos visuais nos checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            if (this.checked) {
+                label.style.fontWeight = 'bold';
+                label.style.color = '#0d6efd';
+            } else {
+                label.style.fontWeight = 'normal';
+                label.style.color = '';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.professor-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.professor-item:hover {
+    background-color: #e3f2fd;
+    transform: translateX(5px);
+}
+
+.form-check-input:checked + .form-check-label {
+    color: #0d6efd !important;
+    font-weight: bold !important;
+}
+
+.professores-container {
+    border: 2px solid #dee2e6;
+    transition: border-color 0.3s ease;
+}
+
+.professores-container:hover {
+    border-color: #0d6efd;
+}
+
+#busca-professor {
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+#busca-professor:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+</style>
 {% endblock %}

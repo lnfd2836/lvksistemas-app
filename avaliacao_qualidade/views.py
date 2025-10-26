@@ -303,7 +303,15 @@ def criar_avaliacao(request):
     else:
         form = AvaliacaoConfigForm()
     
-    return render(request, 'avaliacao_qualidade/avaliacoes/criar.html', {'form': form})
+    # Buscar professores ativos
+    professores = Professor.objects.filter(ativo=True).order_by('nome')
+    
+    context = {
+        'form': form,
+        'professores': professores
+    }
+    
+    return render(request, 'avaliacao_qualidade/avaliacoes/criar.html', context)
 
 
 @login_required
@@ -719,20 +727,35 @@ from .forms import CadastroUsuarioForm, EditarUsuarioForm, AlterarSenhaForm
 
 @login_required
 def listar_usuarios(request):
-    """Lista todos os usuários do sistema FATESA"""
+    """Lista usuários do sistema FATESA da loja atual"""
     
     # Verificar permissão
     if not hasattr(request.user, 'perfil_fatesa') or not request.user.perfil_fatesa.pode_gerenciar_usuarios():
         messages.error(request, 'Você não tem permissão para acessar esta página.')
         return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
+    # Identificar a loja atual
+    loja_atual = None
+    if hasattr(request.user, 'loja_admin'):
+        loja_atual = request.user.loja_admin
+    elif hasattr(request, 'loja_atual'):
+        loja_atual = request.loja_atual
+    
     # Filtros
     tipo_perfil = request.GET.get('tipo_perfil', '')
     ativo = request.GET.get('ativo', '')
     busca = request.GET.get('busca', '')
     
-    # Query base
-    usuarios = User.objects.filter(perfil_fatesa__isnull=False).select_related('perfil_fatesa')
+    # Query base - filtrar apenas usuários da loja atual
+    if loja_atual:
+        # Buscar usuários que são admin desta loja ou funcionários desta loja
+        usuarios = User.objects.filter(
+            Q(loja_admin=loja_atual) |  # Admin da loja
+            Q(perfil_fatesa__isnull=False, perfil_fatesa__loja_associada=loja_atual)  # Funcionários da loja
+        ).select_related('perfil_fatesa').distinct()
+    else:
+        # Se não conseguir identificar a loja, mostrar apenas o próprio usuário
+        usuarios = User.objects.filter(id=request.user.id, perfil_fatesa__isnull=False).select_related('perfil_fatesa')
     
     # Aplicar filtros
     if tipo_perfil:
@@ -779,11 +802,18 @@ def cadastrar_usuario(request):
         messages.error(request, 'Você não tem permissão para acessar esta página.')
         return redirect('avaliacao_qualidade:dashboard_avaliacao')
     
+    # Identificar a loja atual
+    loja_atual = None
+    if hasattr(request.user, 'loja_admin'):
+        loja_atual = request.user.loja_admin
+    elif hasattr(request, 'loja_atual'):
+        loja_atual = request.loja_atual
+    
     if request.method == 'POST':
         form = CadastroUsuarioForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
+                user = form.save(loja_associada=loja_atual)
                 messages.success(request, f'Usuário {user.username} cadastrado com sucesso!')
                 return redirect('avaliacao_qualidade:listar_usuarios')
             except Exception as e:
@@ -914,18 +944,35 @@ def meu_perfil(request):
 def alterar_minha_senha(request):
     """Permite ao usuário alterar sua própria senha"""
     
+    # Verificar se tem perfil FATESA
+    if not hasattr(request.user, 'perfil_fatesa'):
+        messages.error(request, 'Perfil não encontrado.')
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
+    
+    perfil = request.user.perfil_fatesa
+    primeira_alteracao = perfil.deve_alterar_senha
+    
     if request.method == 'POST':
         form = AlterarSenhaForm(request.user, request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Senha alterada com sucesso!')
-            return redirect('avaliacao_qualidade:meu_perfil')
+            
+            # Marcar que a senha foi alterada
+            if primeira_alteracao:
+                perfil.deve_alterar_senha = False
+                perfil.save()
+                messages.success(request, 'Senha alterada com sucesso! Agora você pode acessar o sistema normalmente.')
+            else:
+                messages.success(request, 'Senha alterada com sucesso!')
+            
+            return redirect('avaliacao_qualidade:dashboard_avaliacao')
     else:
         form = AlterarSenhaForm(request.user)
     
     context = {
         'form': form,
-        'titulo': 'Alterar Minha Senha',
+        'titulo': 'Alterar Senha' if primeira_alteracao else 'Alterar Minha Senha',
+        'primeira_alteracao': primeira_alteracao,
     }
     
     return render(request, 'avaliacao_qualidade/usuarios/alterar_minha_senha.html', context)
@@ -964,3 +1011,325 @@ def cadastro_publico(request):
     # Por enquanto, redireciona para login
     messages.info(request, 'Entre em contato com a administração para criar sua conta.')
     return redirect('login')
+
+
+# === DASHBOARDS ESPECÍFICOS POR PERFIL ===
+
+from django.contrib.auth.decorators import user_passes_test
+
+
+def is_diretoria(user):
+    """Verifica se o usuário pertence ao grupo Diretoria"""
+    return user.groups.filter(name='Avaliacao_Diretoria').exists()
+
+
+def is_coordenacao(user):
+    """Verifica se o usuário pertence ao grupo Coordenação"""
+    return user.groups.filter(name='Avaliacao_Coordenacao').exists()
+
+
+def is_professor(user):
+    """Verifica se o usuário pertence ao grupo Professor"""
+    return user.groups.filter(name='Avaliacao_Professor').exists()
+
+
+def is_admin_completo(user):
+    """Verifica se o usuário pertence ao grupo Admin Completo"""
+    return user.groups.filter(name='Admin_Completo').exists()
+
+
+@login_required
+@user_passes_test(is_diretoria, login_url='/avaliacao-qualidade/')
+def dashboard_diretoria(request):
+    """Dashboard específico para Diretoria - Visão estratégica e relatórios gerais"""
+    
+    # Estatísticas gerais para diretoria
+    total_cursos = Curso.objects.filter(ativo=True).count()
+    total_coordenadores = Coordenador.objects.filter(ativo=True).count()
+    total_professores = Professor.objects.filter(ativo=True).count()
+    total_avaliacoes = AvaliacaoConfig.objects.count()
+    total_respostas = AvaliacaoResposta.objects.count()
+    
+    # Médias institucionais
+    medias_institucionais = AvaliacaoResposta.objects.aggregate(
+        media_relacionamento=Avg('nota_relacionamento_professor'),
+        media_didatica=Avg('nota_didatica_professor'),
+        media_dominio=Avg('nota_dominio_assunto'),
+        media_teorico=Avg('nota_conteudo_teorico'),
+        media_pratico=Avg('nota_atividade_pratica'),
+        media_administracao=Avg('nota_portaria')
+    )
+    
+    # Calcular média geral institucional
+    medias_valores = [v for v in medias_institucionais.values() if v is not None]
+    media_geral_institucional = sum(medias_valores) / len(medias_valores) if medias_valores else 0
+    
+    # Ranking de cursos por média
+    ranking_cursos = []
+    for curso in Curso.objects.filter(ativo=True):
+        avaliacoes_curso = AvaliacaoConfig.objects.filter(curso=curso)
+        if avaliacoes_curso.exists():
+            respostas_curso = AvaliacaoResposta.objects.filter(avaliacao_config__in=avaliacoes_curso)
+            if respostas_curso.exists():
+                media_curso = respostas_curso.aggregate(
+                    media=Avg('nota_relacionamento_professor')
+                )['media'] or 0
+                
+                ranking_cursos.append({
+                    'curso': curso.nome,
+                    'media': media_curso,
+                    'total_avaliacoes': respostas_curso.count()
+                })
+    
+    ranking_cursos.sort(key=lambda x: x['media'], reverse=True)
+    
+    # Alertas críticos (médias abaixo de 6.0)
+    alertas_criticos = []
+    for resposta in AvaliacaoResposta.objects.all():
+        media_resposta = resposta.get_media_geral()
+        if media_resposta < 6.0:
+            alertas_criticos.append({
+                'curso': resposta.avaliacao_config.curso.nome,
+                'turma': resposta.avaliacao_config.turma,
+                'professor': resposta.avaliacao_config.professor.nome if resposta.avaliacao_config.professor else 'N/A',
+                'media': media_resposta,
+                'data': resposta.data_resposta
+            })
+    
+    # Estatísticas por período (últimos 30 dias)
+    data_limite = timezone.now() - timedelta(days=30)
+    respostas_recentes = AvaliacaoResposta.objects.filter(data_resposta__gte=data_limite)
+    
+    context = {
+        'titulo_dashboard': 'Dashboard Diretoria',
+        'perfil_usuario': 'Diretoria',
+        'total_cursos': total_cursos,
+        'total_coordenadores': total_coordenadores,
+        'total_professores': total_professores,
+        'total_avaliacoes': total_avaliacoes,
+        'total_respostas': total_respostas,
+        'media_geral_institucional': round(media_geral_institucional, 2),
+        'medias_institucionais': medias_institucionais,
+        'ranking_cursos': ranking_cursos[:10],  # Top 10
+        'alertas_criticos': alertas_criticos[:10],  # 10 mais críticos
+        'respostas_mes_atual': respostas_recentes.count(),
+        'pode_exportar': True,
+        'pode_visualizar_todos': True,
+    }
+    
+    return render(request, 'avaliacao_qualidade/dashboards/diretoria.html', context)
+
+
+@login_required
+@user_passes_test(is_coordenacao, login_url='/avaliacao-qualidade/')
+def dashboard_coordenacao(request):
+    """Dashboard específico para Coordenação - Gestão de cursos e professores"""
+    
+    # Estatísticas para coordenação
+    total_cursos = Curso.objects.filter(ativo=True).count()
+    total_professores = Professor.objects.filter(ativo=True).count()
+    avaliacoes_ativas = AvaliacaoConfig.objects.filter(status='ativa').count()
+    
+    # Cursos sob responsabilidade (todos os cursos para coordenação)
+    cursos_responsabilidade = Curso.objects.filter(ativo=True)
+    
+    # Avaliações recentes dos cursos
+    avaliacoes_recentes = AvaliacaoConfig.objects.filter(
+        curso__in=cursos_responsabilidade
+    ).order_by('-data_criacao')[:10]
+    
+    # Professores que precisam de atenção (média < 7.0)
+    professores_atencao = []
+    for professor in Professor.objects.filter(ativo=True):
+        avaliacoes_professor = AvaliacaoConfig.objects.filter(professor=professor)
+        if avaliacoes_professor.exists():
+            respostas_professor = AvaliacaoResposta.objects.filter(
+                avaliacao_config__in=avaliacoes_professor
+            )
+            if respostas_professor.exists():
+                media_professor = respostas_professor.aggregate(
+                    media=Avg('nota_relacionamento_professor')
+                )['media'] or 0
+                
+                if media_professor < 7.0:
+                    professores_atencao.append({
+                        'professor': professor.nome,
+                        'media': media_professor,
+                        'total_avaliacoes': respostas_professor.count()
+                    })
+    
+    # Estatísticas por curso
+    estatisticas_cursos = []
+    for curso in cursos_responsabilidade:
+        avaliacoes_curso = AvaliacaoConfig.objects.filter(curso=curso)
+        respostas_curso = AvaliacaoResposta.objects.filter(avaliacao_config__in=avaliacoes_curso)
+        
+        if respostas_curso.exists():
+            media_curso = respostas_curso.aggregate(
+                media=Avg('nota_relacionamento_professor')
+            )['media'] or 0
+            
+            estatisticas_cursos.append({
+                'curso': curso.nome,
+                'total_avaliacoes': avaliacoes_curso.count(),
+                'total_respostas': respostas_curso.count(),
+                'media': media_curso,
+                'status': 'Bom' if media_curso >= 8.0 else 'Atenção' if media_curso >= 6.0 else 'Crítico'
+            })
+    
+    context = {
+        'titulo_dashboard': 'Dashboard Coordenação',
+        'perfil_usuario': 'Coordenação',
+        'total_cursos': total_cursos,
+        'total_professores': total_professores,
+        'avaliacoes_ativas': avaliacoes_ativas,
+        'cursos_responsabilidade': cursos_responsabilidade.count(),
+        'avaliacoes_recentes': avaliacoes_recentes,
+        'professores_atencao': professores_atencao,
+        'estatisticas_cursos': estatisticas_cursos,
+        'pode_criar_avaliacoes': True,
+        'pode_gerenciar_professores': True,
+        'pode_gerenciar_cursos': True,
+    }
+    
+    return render(request, 'avaliacao_qualidade/dashboards/coordenacao.html', context)
+
+
+@login_required
+@user_passes_test(is_professor, login_url='/avaliacao-qualidade/')
+def dashboard_professor(request):
+    """Dashboard específico para Professor - Visualização das próprias avaliações"""
+    
+    # Tentar encontrar o professor associado ao usuário
+    professor_atual = None
+    try:
+        # Assumindo que existe uma relação entre User e Professor
+        # Isso pode precisar ser ajustado baseado na estrutura real do modelo
+        professor_atual = Professor.objects.filter(
+            # Aqui você precisa definir como associar o usuário ao professor
+            # Por exemplo, se houver um campo user no modelo Professor:
+            # user=request.user
+            # Ou se for por email:
+            email=request.user.email
+        ).first()
+    except:
+        pass
+    
+    if not professor_atual:
+        # Se não encontrar o professor, mostrar mensagem
+        context = {
+            'titulo_dashboard': 'Dashboard Professor',
+            'perfil_usuario': 'Professor',
+            'professor_nao_encontrado': True,
+            'mensagem': 'Perfil de professor não encontrado. Entre em contato com a coordenação.'
+        }
+        return render(request, 'avaliacao_qualidade/dashboards/professor.html', context)
+    
+    # Avaliações do professor
+    avaliacoes_professor = AvaliacaoConfig.objects.filter(professor=professor_atual)
+    total_avaliacoes = avaliacoes_professor.count()
+    
+    # Respostas às avaliações
+    respostas_professor = AvaliacaoResposta.objects.filter(
+        avaliacao_config__in=avaliacoes_professor
+    )
+    total_respostas = respostas_professor.count()
+    
+    # Médias do professor
+    medias_professor = respostas_professor.aggregate(
+        media_relacionamento=Avg('nota_relacionamento_professor'),
+        media_didatica=Avg('nota_didatica_professor'),
+        media_dominio=Avg('nota_dominio_assunto'),
+        media_teorico=Avg('nota_conteudo_teorico'),
+        media_pratico=Avg('nota_atividade_pratica')
+    )
+    
+    # Calcular média geral
+    medias_valores = [v for v in medias_professor.values() if v is not None]
+    media_geral = sum(medias_valores) / len(medias_valores) if medias_valores else 0
+    
+    # Avaliações por curso
+    avaliacoes_por_curso = []
+    cursos_professor = Curso.objects.filter(
+        avaliacaoconfig__professor=professor_atual
+    ).distinct()
+    
+    for curso in cursos_professor:
+        avaliacoes_curso = avaliacoes_professor.filter(curso=curso)
+        respostas_curso = respostas_professor.filter(avaliacao_config__in=avaliacoes_curso)
+        
+        if respostas_curso.exists():
+            media_curso = respostas_curso.aggregate(
+                media=Avg('nota_relacionamento_professor')
+            )['media'] or 0
+            
+            avaliacoes_por_curso.append({
+                'curso': curso.nome,
+                'total_avaliacoes': avaliacoes_curso.count(),
+                'total_respostas': respostas_curso.count(),
+                'media': media_curso,
+                'ultima_avaliacao': avaliacoes_curso.order_by('-data_criacao').first()
+            })
+    
+    # Evolução temporal (últimos 6 meses)
+    evolucao_temporal = []
+    for i in range(6):
+        data_inicio = timezone.now() - timedelta(days=30 * (i + 1))
+        data_fim = timezone.now() - timedelta(days=30 * i)
+        
+        respostas_periodo = respostas_professor.filter(
+            data_resposta__gte=data_inicio,
+            data_resposta__lt=data_fim
+        )
+        
+        if respostas_periodo.exists():
+            media_periodo = respostas_periodo.aggregate(
+                media=Avg('nota_relacionamento_professor')
+            )['media'] or 0
+            
+            evolucao_temporal.append({
+                'periodo': f'{data_inicio.strftime("%m/%Y")}',
+                'media': media_periodo,
+                'total_respostas': respostas_periodo.count()
+            })
+    
+    evolucao_temporal.reverse()  # Ordem cronológica
+    
+    context = {
+        'titulo_dashboard': 'Dashboard Professor',
+        'perfil_usuario': 'Professor',
+        'professor_atual': professor_atual,
+        'total_avaliacoes': total_avaliacoes,
+        'total_respostas': total_respostas,
+        'media_geral': round(media_geral, 2),
+        'medias_professor': medias_professor,
+        'avaliacoes_por_curso': avaliacoes_por_curso,
+        'evolucao_temporal': evolucao_temporal,
+        'avaliacoes_recentes': avaliacoes_professor.order_by('-data_criacao')[:5],
+        'pode_visualizar_proprias': True,
+    }
+    
+    return render(request, 'avaliacao_qualidade/dashboards/professor.html', context)
+
+
+# === MIDDLEWARE DE REDIRECIONAMENTO BASEADO EM PERFIL ===
+
+def dashboard_redirect_by_profile(request):
+    """Redireciona para o dashboard apropriado baseado no perfil do usuário"""
+    
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Verificar grupos do usuário e redirecionar para o dashboard apropriado
+    if request.user.groups.filter(name='Admin_Completo').exists():
+        # Admin completo pode escolher ou ir para dashboard geral
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')
+    elif request.user.groups.filter(name='Avaliacao_Diretoria').exists():
+        return redirect('avaliacao_qualidade:dashboard_diretoria')
+    elif request.user.groups.filter(name='Avaliacao_Coordenacao').exists():
+        return redirect('avaliacao_qualidade:dashboard_coordenacao')
+    elif request.user.groups.filter(name='Avaliacao_Professor').exists():
+        return redirect('avaliacao_qualidade:dashboard_professor')
+    else:
+        # Se não tem grupo específico, vai para dashboard geral
+        return redirect('avaliacao_qualidade:dashboard_avaliacao')

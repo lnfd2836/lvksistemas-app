@@ -7,4 +7,5 @@ class LojasConfig(AppConfig):
     
     def ready(self):
         import lojas.signals
+        import lojas.signals_login
 

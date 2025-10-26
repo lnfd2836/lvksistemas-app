@@ -19,10 +19,11 @@ logger = logging.getLogger(__name__)
 def criar_cobranca_asaas_automatica(sender, instance, created, **kwargs):
     """
     Cria automaticamente uma cobrança do Asaas quando uma loja é criada
+    APENAS se estiver próximo do vencimento (10 dias antes)
     """
     if created:  # Apenas para lojas recém-criadas
         try:
-            logger.info(f"Nova loja criada: {instance.nome}. Gerando cobrança automática do Asaas...")
+            logger.info(f"Nova loja criada: {instance.nome}. Verificando se deve gerar cobrança...")
             
             # Usar get_or_create para evitar duplicatas
             from django.db import transaction
@@ -51,27 +52,35 @@ def criar_cobranca_asaas_automatica(sender, instance, created, **kwargs):
                 else:
                     logger.info(f"Controle financeiro já existe para {instance.nome}")
             
-            # Gerar cobrança via API do Asaas
-            asaas_service = AsaasService()
+            # NOVA LÓGICA: Só gerar cobrança se estiver próximo do vencimento (10 dias)
+            dias_para_vencimento = (controle.data_vencimento.date() - timezone.now().date()).days
             
-            # Verificar se API está funcionando
-            if not asaas_service.validar_configuracao():
-                logger.warning(f"API Asaas não configurada. Cobrança para {instance.nome} não foi gerada.")
-                return
-            
-            # Gerar cobrança
-            resultado = asaas_service.gerar_cobranca_com_pix(
-                controle, 
-                dias_vencimento=30,
-                descricao=f"Primeira mensalidade - {instance.nome}"
-            )
-            
-            if resultado.get('success'):
-                cobranca_id = resultado['cobranca']['id']
-                logger.info(f"✅ Cobrança Asaas {cobranca_id} gerada automaticamente para {instance.nome}")
+            if dias_para_vencimento <= 10:
+                logger.info(f"Loja {instance.nome} vence em {dias_para_vencimento} dias. Gerando cobrança...")
+                
+                # Gerar cobrança via API do Asaas
+                asaas_service = AsaasService()
+                
+                # Verificar se API está funcionando
+                if not asaas_service.validar_configuracao():
+                    logger.warning(f"API Asaas não configurada. Cobrança para {instance.nome} não foi gerada.")
+                    return
+                
+                # Gerar cobrança
+                resultado = asaas_service.gerar_cobranca_com_pix(
+                    controle, 
+                    dias_vencimento=max(1, dias_para_vencimento),
+                    descricao=f"Mensalidade - {instance.nome}"
+                )
+                
+                if resultado.get('success'):
+                    cobranca_id = resultado['cobranca']['id']
+                    logger.info(f"✅ Cobrança Asaas {cobranca_id} gerada automaticamente para {instance.nome}")
+                else:
+                    error_msg = resultado.get('error', 'Erro desconhecido')
+                    logger.error(f"❌ Erro ao gerar cobrança automática para {instance.nome}: {error_msg}")
             else:
-                error_msg = resultado.get('error', 'Erro desconhecido')
-                logger.error(f"❌ Erro ao gerar cobrança automática para {instance.nome}: {error_msg}")
+                logger.info(f"Loja {instance.nome} vence em {dias_para_vencimento} dias. Cobrança será gerada 10 dias antes do vencimento.")
                 
         except Exception as e:
             logger.error(f"❌ Erro no signal de criação de cobrança para {instance.nome}: {str(e)}")
@@ -81,10 +90,11 @@ def criar_cobranca_asaas_automatica(sender, instance, created, **kwargs):
 def gerar_cobranca_ao_criar_controle(sender, instance, created, **kwargs):
     """
     Gera cobrança do Asaas quando um controle financeiro é criado
+    APENAS se estiver próximo do vencimento (10 dias antes)
     """
     if created and instance.status == 'ativo':
         try:
-            logger.info(f"Novo controle financeiro criado para {instance.loja.nome}. Gerando cobrança...")
+            logger.info(f"Novo controle financeiro criado para {instance.loja.nome}. Verificando se deve gerar cobrança...")
             
             # Verificar se já existe cobrança para este controle
             from .models import CobrancaAsaas
@@ -94,23 +104,31 @@ def gerar_cobranca_ao_criar_controle(sender, instance, created, **kwargs):
                 logger.info(f"Cobrança já existe para {instance.loja.nome}")
                 return
             
-            # Gerar cobrança via API do Asaas
-            asaas_service = AsaasService()
+            # NOVA LÓGICA: Só gerar cobrança se estiver próximo do vencimento (10 dias)
+            dias_para_vencimento = (instance.data_vencimento.date() - timezone.now().date()).days
             
-            if asaas_service.validar_configuracao():
-                resultado = asaas_service.gerar_cobranca_com_pix(
-                    instance, 
-                    dias_vencimento=30,
-                    descricao=f"Mensalidade {instance.plano.nome} - {instance.loja.nome}"
-                )
+            if dias_para_vencimento <= 10:
+                logger.info(f"Controle {instance.loja.nome} vence em {dias_para_vencimento} dias. Gerando cobrança...")
                 
-                if resultado.get('success'):
-                    cobranca_id = resultado['cobranca']['id']
-                    logger.info(f"✅ Cobrança {cobranca_id} gerada para controle {instance.id}")
+                # Gerar cobrança via API do Asaas
+                asaas_service = AsaasService()
+                
+                if asaas_service.validar_configuracao():
+                    resultado = asaas_service.gerar_cobranca_com_pix(
+                        instance, 
+                        dias_vencimento=max(1, dias_para_vencimento),
+                        descricao=f"Mensalidade {instance.plano.nome} - {instance.loja.nome}"
+                    )
+                    
+                    if resultado.get('success'):
+                        cobranca_id = resultado['cobranca']['id']
+                        logger.info(f"✅ Cobrança {cobranca_id} gerada para controle {instance.id}")
+                    else:
+                        logger.error(f"❌ Erro ao gerar cobrança para controle {instance.id}")
                 else:
-                    logger.error(f"❌ Erro ao gerar cobrança para controle {instance.id}")
+                    logger.warning(f"API Asaas não configurada para controle {instance.id}")
             else:
-                logger.warning(f"API Asaas não configurada para controle {instance.id}")
+                logger.info(f"Controle {instance.loja.nome} vence em {dias_para_vencimento} dias. Cobrança será gerada 10 dias antes do vencimento.")
                 
         except Exception as e:
             logger.error(f"❌ Erro ao gerar cobrança para controle {instance.id}: {str(e)}")

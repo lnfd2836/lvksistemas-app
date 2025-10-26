@@ -1,0 +1,102 @@
+<!-- Navegação Rápida FATESA -->
+<div class="navegacao-rapida mb-4">
+    <div class="card">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'avaliacao_qualidade:dashboard_fatesa' %}" class="text-decoration-none">
+                                    <i class="fas fa-home me-1"></i>Dashboard
+                                </a>
+                            </li>
+                            {% block breadcrumb %}{% endblock %}
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-plus me-1"></i>Novo
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:criar_avaliacao' %}">
+                                <i class="fas fa-clipboard-check me-2"></i>Avaliação
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:criar_curso' %}">
+                                <i class="fas fa-book me-2"></i>Curso
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:criar_professor' %}">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Professor
+                            </a></li>
+                        </ul>
+                        
+                        <button type="button" class="btn btn-outline-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-list me-1"></i>Ver
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:listar_avaliacoes' %}">
+                                <i class="fas fa-clipboard-list me-2"></i>Avaliações
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:listar_cursos' %}">
+                                <i class="fas fa-book-open me-2"></i>Cursos
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'avaliacao_qualidade:listar_professores' %}">
+                                <i class="fas fa-users me-2"></i>Professores
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.navegacao-rapida .breadcrumb {
+    background: none;
+    padding: 0;
+    margin: 0;
+}
+
+.navegacao-rapida .breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: var(--fatesa-azul-principal);
+    font-weight: bold;
+}
+
+.navegacao-rapida .breadcrumb-item a {
+    color: var(--fatesa-azul-principal);
+    transition: all 0.3s ease;
+}
+
+.navegacao-rapida .breadcrumb-item a:hover {
+    color: var(--fatesa-azul-secundario);
+}
+
+.navegacao-rapida .breadcrumb-item.active {
+    color: var(--fatesa-cinza-medio);
+}
+
+.navegacao-rapida .btn-group .btn {
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.navegacao-rapida .dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+    border: 1px solid rgba(30, 58, 138, 0.1);
+}
+
+.navegacao-rapida .dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.navegacao-rapida .dropdown-item:hover {
+    background: linear-gradient(135deg, var(--fatesa-azul-principal), var(--fatesa-azul-secundario));
+    color: white;
+}
+</style>

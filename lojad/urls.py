@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 from dashboard.views import redirect_to_appropriate_dashboard
 from dashboard.loja_login import loja_login
 from dashboard.simple_login import simple_login
+from lojas.views_login import login_personalizado_loja, api_validar_url_personalizada
 # Webhooks removidos - usando apenas asaas_views.py
 import json
 import logging
@@ -93,6 +94,7 @@ urlpatterns = [
     path('financeiro/', include('controle_financeiro.urls')),
     path('modulos/', include('modulos.urls')),
     path('avaliacao-qualidade/', include('avaliacao_qualidade.urls')),
+    path('credenciais/', include('email_credentials.urls')),
     
     # Redirecionamento para clínica de estética
     path('estetica/', estetica_redirect, name='estetica_redirect'),
@@ -101,6 +103,13 @@ urlpatterns = [
     # URLs de autenticação - ordem importante para evitar conflitos
     path('login/', simple_login, name='simple_login'),
     path('loja/login/', loja_login, name='loja_login'),
+    
+    # Login personalizado por loja
+    path('login/<str:url_personalizada>/', login_personalizado_loja, name='login_personalizado_url'),
+    path('login/loja/<uuid:loja_id>/', login_personalizado_loja, name='login_personalizado_id'),
+    
+    # API para validação
+    path('api/validar-url-personalizada/', api_validar_url_personalizada, name='api_validar_url_personalizada'),
 ]
 
 if settings.DEBUG:

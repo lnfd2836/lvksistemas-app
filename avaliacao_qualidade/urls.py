@@ -33,6 +33,9 @@ urlpatterns = [
     path('dashboard/professor/', views.dashboard_professor, name='dashboard_professor'),
     path('dashboard/diretoria/', views.dashboard_diretoria, name='dashboard_diretoria'),
     
+    # === REDIRECIONAMENTO AUTOMÁTICO ===
+    path('dashboard/redirect/', views.dashboard_redirect_by_profile, name='dashboard_redirect'),
+    
     # === RELATÓRIOS ===
     path('relatorios/<uuid:avaliacao_id>/pdf/', views.exportar_relatorio_pdf, name='exportar_relatorio_pdf'),
     path('relatorios/<uuid:avaliacao_id>/excel/', views.exportar_relatorio_excel, name='exportar_relatorio_excel'),

@@ -44,30 +44,53 @@ class AsaasSyncService:
         Args:
             interval_seconds: Intervalo entre sincronizações em segundos
         """
-        if self.is_running:
-            logger.warning("Sincronização já está marcada como ativa")
+        try:
+            from .models_sync import SyncStatus
+            db_status = SyncStatus.get_current()
+            
+            if db_status.is_running:
+                logger.warning("Sincronização já está marcada como ativa no banco")
+                return False
+            
+            # Marcar como ativo no banco
+            db_status.start_sync(interval_seconds)
+            
+            # Atualizar também em memória
+            self.sync_interval = interval_seconds
+            self.is_running = True
+            self.last_sync = timezone.now()
+            
+            logger.info(f"Sincronização marcada como ativa (intervalo: {interval_seconds}s)")
+            logger.info("HEROKU MODE: Use execução manual ou Celery para sincronização contínua")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao iniciar sincronização: {str(e)}")
             return False
-        
-        # Marcar como ativo (sem threading no Heroku)
-        self.sync_interval = interval_seconds
-        self.is_running = True
-        self.last_sync = timezone.now()
-        
-        logger.info(f"Sincronização marcada como ativa (intervalo: {interval_seconds}s)")
-        logger.info("HEROKU MODE: Use execução manual ou Celery para sincronização contínua")
-        
-        return True
     
     def stop_real_time_sync(self):
         """Para a sincronização em tempo real"""
-        if not self.is_running:
+        try:
+            from .models_sync import SyncStatus
+            db_status = SyncStatus.get_current()
+            
+            if not db_status.is_running:
+                return False
+            
+            # Marcar como parado no banco
+            db_status.stop_sync()
+            
+            # Atualizar também em memória
+            self.is_running = False
+            self.sync_thread = None
+            
+            logger.info("Sincronização em tempo real parada")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao parar sincronização: {str(e)}")
             return False
-        
-        self.is_running = False
-        self.sync_thread = None
-        
-        logger.info("Sincronização em tempo real parada")
-        return True
     
     def _sync_loop(self):
         """Loop principal de sincronização"""
@@ -545,7 +568,7 @@ class AsaasSyncService:
                     controle_financeiro=controle,
                     customer_id=payment_data['customer'],
                     valor=Decimal(str(payment_data['value'])),
-                    data_vencimento=datetime.fromisoformat(payment_data['dueDate']).replace(tzinfo=timezone.utc),
+                    data_vencimento=datetime.fromisoformat(payment_data['dueDate']).replace(tzinfo=timezone.get_current_timezone()),
                     descricao=payment_data.get('description', ''),
                     status=payment_data['status'],
                     external_reference=payment_data.get('externalReference', ''),
@@ -615,23 +638,31 @@ class AsaasSyncService:
         return result
     
     def get_sync_status(self) -> Dict:
-        """Retorna status atual da sincronização"""
-        return {
-            'is_running': self.is_running,
-            'sync_interval': self.sync_interval,
-            'last_sync': self.last_sync,
-            'stats': self.sync_stats.copy(),
-            'thread_alive': False  # No Heroku, usar Celery em vez de threads
-        }
+        """Retorna status atual da sincronização (persistente)"""
+        try:
+            from .models_sync import SyncStatus
+            db_status = SyncStatus.get_current()
+            return db_status.to_dict()
+        except Exception as e:
+            # Fallback para status em memória
+            return {
+                'is_running': self.is_running,
+                'sync_interval': self.sync_interval,
+                'last_sync': self.last_sync,
+                'stats': self.sync_stats.copy(),
+                'thread_alive': False
+            }
     
     def force_sync_now(self) -> Dict:
         """Força uma sincronização imediata (versão Heroku otimizada)"""
         logger.info("Iniciando sincronização forçada")
         try:
+            from .models_sync import SyncStatus
+            
             result = self.sync_all_charges()
             self.last_sync = timezone.now()
             
-            # Atualizar estatísticas
+            # Atualizar estatísticas em memória
             self.sync_stats['total_synced'] += result['total_processed']
             self.sync_stats['updates_found'] += result['updates_made']
             
@@ -639,11 +670,36 @@ class AsaasSyncService:
                 self.sync_stats['errors'] += len(result['errors'])
                 self.sync_stats['last_error'] = result['errors'][-1] if result['errors'] else None
             
+            # Atualizar no banco
+            try:
+                db_status = SyncStatus.get_current()
+                db_status.update_last_sync()
+                db_status.update_stats({
+                    'total_synced': db_status.stats.get('total_synced', 0) + result['total_processed'],
+                    'updates_found': db_status.stats.get('updates_found', 0) + result['updates_made'],
+                    'errors': db_status.stats.get('errors', 0) + len(result['errors']),
+                    'last_error': result['errors'][-1] if result['errors'] else db_status.stats.get('last_error')
+                })
+            except Exception as db_error:
+                logger.warning(f"Erro ao atualizar banco: {str(db_error)}")
+            
             return result
         except Exception as e:
             logger.error(f"Erro na sincronização forçada: {str(e)}")
             self.sync_stats['errors'] += 1
             self.sync_stats['last_error'] = str(e)
+            
+            # Atualizar erro no banco
+            try:
+                from .models_sync import SyncStatus
+                db_status = SyncStatus.get_current()
+                db_status.update_stats({
+                    'errors': db_status.stats.get('errors', 0) + 1,
+                    'last_error': str(e)
+                })
+            except:
+                pass
+            
             return {
                 'total_processed': 0,
                 'updates_made': 0,
@@ -835,16 +891,6 @@ class AsaasSyncService:
         }
         logger.info("Estatísticas de sincronização resetadas")
     
-    def get_sync_status(self):
-        """Retorna o status atual da sincronização"""
-        return {
-            'is_running': self.is_running,
-            'sync_interval': self.sync_interval,
-            'last_sync': self.last_sync,
-            'stats': self.sync_stats.copy()
-        }
-
-
 # Instância global do serviço de sincronização
 sync_service = AsaasSyncService()
 
@@ -861,5 +907,4 @@ def stop_sync_service():
 
 def get_sync_service():
     """Retorna a instância do serviço de sincronização"""
-    return sync_service
     return sync_service

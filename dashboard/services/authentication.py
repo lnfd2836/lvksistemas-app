@@ -73,6 +73,8 @@ class AuthenticationService:
     def can_access_store_dashboard(user: User, store: Optional[Loja] = None) -> bool:
         """
         Verifica se o usuário pode acessar o dashboard de loja.
+        IMPORTANTE: Super usuários NÃO podem acessar dashboards de loja via login personalizado.
+        Eles devem usar o login super admin exclusivo.
         
         Args:
             user: Instância do usuário Django
@@ -85,10 +87,11 @@ class AuthenticationService:
             return False
         
         try:
-            # Super usuários sempre podem acessar
+            # Super usuários NÃO podem acessar via login de loja
+            # Eles devem usar o login super admin exclusivo
             if user.is_superuser:
-                logger.debug(f"Super usuário {user.username} pode acessar qualquer dashboard de loja")
-                return True
+                logger.debug(f"Super usuário {user.username} deve usar login super admin, não login de loja")
+                return False
             
             # Verifica se o usuário tem loja associada
             user_store = AuthenticationService.get_user_store(user)
@@ -172,6 +175,61 @@ class AuthenticationService:
         except Exception as e:
             logger.error(f"Erro geral ao buscar loja do usuário {user.username}: {str(e)}")
             return None
+    
+    @staticmethod
+    def is_store_user_only(user: User) -> bool:
+        """
+        Verifica se o usuário é exclusivamente um usuário de loja (não super admin).
+        
+        Args:
+            user: Instância do usuário Django
+            
+        Returns:
+            bool: True se o usuário é apenas de loja (admin ou funcionário)
+        """
+        if not user or not user.is_authenticated:
+            return False
+        
+        # Super usuários não são usuários de loja
+        if user.is_superuser:
+            return False
+        
+        # Verificar se é admin de loja ou funcionário
+        user_store = AuthenticationService.get_user_store(user)
+        return user_store is not None
+    
+    @staticmethod
+    def get_user_access_level(user: User) -> str:
+        """
+        Determina o nível de acesso do usuário.
+        
+        Args:
+            user: Instância do usuário Django
+            
+        Returns:
+            str: Nível de acesso ('super_admin', 'store_admin', 'store_employee', 'unauthorized')
+        """
+        if not user or not user.is_authenticated:
+            return 'unauthorized'
+        
+        if user.is_superuser:
+            return 'super_admin'
+        
+        # Verificar se é admin de loja
+        try:
+            if hasattr(user, 'loja_admin') and user.loja_admin:
+                return 'store_admin'
+        except:
+            pass
+        
+        # Verificar se é funcionário
+        try:
+            if hasattr(user, 'funcionario') and user.funcionario and user.funcionario.ativo:
+                return 'store_employee'
+        except:
+            pass
+        
+        return 'unauthorized'
     
     @staticmethod
     def validate_user_permissions(user: User, required_permission: str) -> bool:

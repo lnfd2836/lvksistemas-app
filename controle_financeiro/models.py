@@ -483,3 +483,5 @@ class NotificacaoFinanceira(models.Model):
     
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.controle_financeiro.loja.nome}"
+# Importar modelos de sincronização
+from .models_sync import SyncStatus

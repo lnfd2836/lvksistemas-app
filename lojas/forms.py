@@ -20,11 +20,25 @@ class LojaForm(forms.ModelForm):
         help_text="Escolha o plano comercial que será associado à loja"
     )
     
+    # Opções de dia de vencimento
+    DIA_VENCIMENTO_CHOICES = [(i, f'Dia {i}') for i in range(1, 29)]
+    
+    dia_vencimento = forms.ChoiceField(
+        choices=DIA_VENCIMENTO_CHOICES,
+        required=False,
+        initial=10,  # Padrão dia 10
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'dia_vencimento'
+        }),
+        help_text="Escolha o dia do mês para vencimento das mensalidades (recomendado: dia 10)"
+    )
+    
     class Meta:
         model = Loja
         fields = [
             'nome', 'cnpj', 'email', 'telefone', 'endereco', 
-            'cidade', 'estado', 'cep', 'status', 'tipo_loja', 'plano_comercial'
+            'cidade', 'estado', 'cep', 'status', 'tipo_loja', 'plano_comercial', 'dia_vencimento'
         ]
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from .models import Loja, Cliente, Produto, Venda, ItemVenda, BackupLoja
+from .models_login import LoginPersonalizado, HistoricoLoginLoja
 from usuarios.models import PerfilUsuario, LogAcesso, SessaoAtiva
 from dashboard.models import DashboardStats, Notificacao
 
@@ -241,6 +242,61 @@ class NotificacaoAdmin(admin.ModelAdmin):
         }),
         ('Status', {
             'fields': ('lida', 'data_criacao', 'data_leitura')
+        })
+    )
+
+
+@admin.register(LoginPersonalizado)
+class LoginPersonalizadoAdmin(admin.ModelAdmin):
+    list_display = ('loja', 'titulo', 'tema', 'url_personalizada', 'ativo', 'data_criacao')
+    list_filter = ('tema', 'ativo', 'data_criacao')
+    search_fields = ('loja__nome', 'titulo', 'url_personalizada')
+    readonly_fields = ('data_criacao', 'data_atualizacao')
+    fieldsets = (
+        ('Loja', {
+            'fields': ('loja',)
+        }),
+        ('Configurações Básicas', {
+            'fields': ('titulo', 'subtitulo', 'tema', 'url_personalizada', 'ativo')
+        }),
+        ('Aparência', {
+            'fields': ('logo', 'imagem_fundo', 'cor_primaria', 'cor_secundaria', 'cor_fundo', 'cor_texto')
+        }),
+        ('Exibição', {
+            'fields': ('mostrar_logo', 'mostrar_nome_loja', 'permitir_lembrar_senha', 'mostrar_link_recuperar_senha')
+        }),
+        ('Mensagens', {
+            'fields': ('mensagem_boas_vindas', 'mensagem_rodape')
+        }),
+        ('CSS Personalizado', {
+            'fields': ('css_personalizado',),
+            'classes': ('collapse',)
+        }),
+        ('Controle', {
+            'fields': ('data_criacao', 'data_atualizacao')
+        })
+    )
+
+
+@admin.register(HistoricoLoginLoja)
+class HistoricoLoginLojaAdmin(admin.ModelAdmin):
+    list_display = ('loja', 'usuario', 'sucesso', 'ip_address', 'navegador', 'dispositivo', 'data_tentativa')
+    list_filter = ('sucesso', 'metodo_login', 'navegador', 'dispositivo', 'data_tentativa')
+    search_fields = ('loja__nome', 'usuario', 'ip_address')
+    readonly_fields = ('data_tentativa',)
+    fieldsets = (
+        ('Login', {
+            'fields': ('loja', 'usuario', 'sucesso', 'metodo_login')
+        }),
+        ('Localização', {
+            'fields': ('ip_address', 'navegador', 'dispositivo')
+        }),
+        ('Detalhes Técnicos', {
+            'fields': ('user_agent',),
+            'classes': ('collapse',)
+        }),
+        ('Controle', {
+            'fields': ('data_tentativa',)
         })
     )
 

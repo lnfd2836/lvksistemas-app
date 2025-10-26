@@ -16,11 +16,36 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=Loja)
 def enviar_email_criacao_loja(sender, instance, created, **kwargs):
     """
-    Envia email quando uma nova loja é criada
+    Envia email quando uma nova loja é criada e cria perfil FATESA se necessário
     """
     if created:
         try:
             logger.info(f"Processando criação da loja: {instance.nome} ({instance.email})")
+            
+            # Garantir vinculação correta do admin à loja (isolamento total)
+            if instance.admin_user:
+                try:
+                    from .utils.admin_vinculacao import vincular_admin_loja, criar_perfil_fatesa_se_necessario
+                    
+                    # Vincular admin à loja
+                    resultado_vinculacao = vincular_admin_loja(instance, instance.admin_user)
+                    if resultado_vinculacao['success']:
+                        logger.info(f"✅ {resultado_vinculacao['message']}")
+                    else:
+                        logger.warning(f"⚠️  {resultado_vinculacao['message']}")
+                    
+                    # Criar perfil FATESA se for a loja específica
+                    resultado_fatesa = criar_perfil_fatesa_se_necessario(instance, instance.admin_user)
+                    if resultado_fatesa['success']:
+                        logger.info(f"✅ {resultado_fatesa['message']}")
+                        if resultado_fatesa.get('perfil_criado'):
+                            logger.info(f"🎓 Perfil FATESA ID {resultado_fatesa.get('perfil_id')} criado para loja {instance.nome}")
+                    else:
+                        logger.error(f"❌ {resultado_fatesa['message']}")
+                        
+                except Exception as vinculacao_error:
+                    logger.error(f"❌ Erro na vinculação automática para loja {instance.nome}: {vinculacao_error}")
+                    # Não falha a criação da loja por causa disso
             
             # Envia email com credenciais para o administrador da loja
             try:

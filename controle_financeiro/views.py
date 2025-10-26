@@ -450,11 +450,116 @@ def executar_rotinas_financeiras(request):
     """Executa rotinas financeiras automáticas"""
     if request.method == 'POST':
         try:
-            # Verificar vencimentos
+            # 1. Verificar vencimentos
             verificar_vencimentos(request)
             
-            messages.success(request, 'Rotinas financeiras executadas com sucesso!')
+            # 2. Gerar cobranças automáticas (10 dias antes do vencimento)
+            resultado_cobrancas = gerar_cobrancas_automaticas_asaas()
+            
+            if resultado_cobrancas['geradas'] > 0:
+                messages.success(
+                    request, 
+                    f'Rotinas executadas! {resultado_cobrancas["geradas"]} cobranças geradas, '
+                    f'{resultado_cobrancas["ja_existem"]} já existiam.'
+                )
+            else:
+                messages.success(request, 'Rotinas financeiras executadas com sucesso!')
+                
         except Exception as e:
             messages.error(request, f'Erro ao executar rotinas: {e}')
     
     return redirect('controle_financeiro:dashboard_financeiro')
+
+
+def gerar_cobrancas_automaticas_asaas(dias_antecedencia=10):
+    """
+    Gera cobranças automáticas via Asaas para lojas que vencem em X dias
+    """
+    from .asaas_central_service import AsaasCentralService
+    from .models import CobrancaAsaas
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Data limite para gerar cobranças
+        data_limite = timezone.now().date() + timedelta(days=dias_antecedencia)
+        
+        # Buscar controles financeiros que precisam de cobrança
+        controles = ControleFinanceiro.objects.filter(
+            status='ativo',
+            data_vencimento__date__lte=data_limite,
+            loja__status='ativa'
+        ).select_related('loja', 'plano')
+        
+        geradas = 0
+        ja_existem = 0
+        erros = []
+        
+        asaas_service = AsaasCentralService()
+        
+        for controle in controles:
+            try:
+                # Verificar se já existe cobrança ativa para este controle
+                cobranca_existente = CobrancaAsaas.objects.filter(
+                    controle_financeiro=controle,
+                    status__in=['PENDING', 'CONFIRMED', 'RECEIVED']
+                ).first()
+                
+                if cobranca_existente:
+                    ja_existem += 1
+                    logger.info(f'Cobrança já existe para {controle.loja.nome}: {cobranca_existente.asaas_id}')
+                    continue
+                
+                # Calcular dias para vencimento
+                dias_para_vencimento = (controle.data_vencimento.date() - timezone.now().date()).days
+                dias_vencimento = max(1, dias_para_vencimento)  # Mínimo 1 dia
+                
+                # Gerar cobrança via Asaas
+                cobranca_data = asaas_service.gerar_cobranca_loja(controle, dias_vencimento)
+                
+                if cobranca_data:
+                    # Salvar cobrança no banco local
+                    CobrancaAsaas.objects.create(
+                        asaas_id=cobranca_data['id'],
+                        controle_financeiro=controle,
+                        customer_id=cobranca_data['customer'],
+                        valor=cobranca_data['value'],
+                        data_vencimento=timezone.datetime.fromisoformat(cobranca_data['dueDate']).replace(tzinfo=timezone.get_current_timezone()),
+                        descricao=cobranca_data['description'],
+                        status=cobranca_data['status'],
+                        invoice_url=cobranca_data.get('invoiceUrl', ''),
+                        bank_slip_url=cobranca_data.get('bankSlipUrl', ''),
+                        invoice_number=cobranca_data.get('invoiceNumber', ''),
+                        external_reference=cobranca_data.get('externalReference', ''),
+                        api_response=cobranca_data
+                    )
+                    
+                    geradas += 1
+                    logger.info(f'Cobrança gerada para {controle.loja.nome}: {cobranca_data["id"]}')
+                else:
+                    erros.append(f'Erro ao gerar cobrança para {controle.loja.nome}')
+                    
+            except Exception as e:
+                erro_msg = f'Erro ao processar {controle.loja.nome}: {str(e)}'
+                erros.append(erro_msg)
+                logger.error(erro_msg)
+        
+        resultado = {
+            'total_verificados': controles.count(),
+            'geradas': geradas,
+            'ja_existem': ja_existem,
+            'erros': erros
+        }
+        
+        logger.info(f'Cobranças automáticas: {geradas} geradas, {ja_existem} já existiam, {len(erros)} erros')
+        return resultado
+        
+    except Exception as e:
+        logger.error(f'Erro geral ao gerar cobranças automáticas: {str(e)}')
+        return {
+            'total_verificados': 0,
+            'geradas': 0,
+            'ja_existem': 0,
+            'erros': [str(e)]
+        }

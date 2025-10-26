@@ -1,1 +1,1 @@
-# Management package for lojas app
+# Management commands for lojas app

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
+    'email_credentials',
     'modulos',
     'lojas',
     'usuarios',
@@ -66,12 +67,16 @@ MIDDLEWARE = [
     'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
     'controle_financeiro.webhook_middleware.WebhookBypassMiddleware',  # Detecta webhooks primeiro
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para arquivos estáticos
     'dashboard.middleware.error_capture.ErrorCaptureMiddleware',  # Captura de erros deve ser primeiro
     'dashboard.middleware.middleware_profiler.MiddlewareProfiler',  # Profiling de middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Necessário para admin
+    'email_credentials.db_router.LojaMiddleware',  # Middleware para definir contexto de loja
+    'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja
+    'lojas.middleware_login_isolado.DatabaseIsolationMiddleware',  # Isolamento de banco por loja
     'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -114,12 +119,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lojad.wsgi.application'
 
-# Database
+# Database Configuration
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')
     )
 }
+
+# Configurar bancos individuais das lojas dinamicamente
+def setup_loja_databases():
+    """Configura bancos individuais para cada loja"""
+    try:
+        from lojas.models import Loja
+        from email_credentials.database_config import loja_db_config
+        
+        # Adicionar configurações de banco para cada loja
+        for loja in Loja.objects.filter(status='ativa'):
+            db_alias = f"loja_{loja.id}"
+            if db_alias not in DATABASES:
+                DATABASES[db_alias] = loja_db_config(loja.id)
+                
+    except Exception as e:
+        # Durante migrações iniciais, as tabelas podem não existir ainda
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Configuração de bancos de loja adiada: {str(e)}")
+
+# Executar configuração de bancos (se as tabelas existirem)
+setup_loja_databases()
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -179,19 +206,62 @@ CACHES = {
 }
 
 # Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
-EMAIL_USE_SSL = env('EMAIL_USE_SSL', default=False)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+if DEBUG and not env('EMAIL_HOST_USER', default=''):
+    # Para desenvolvimento sem credenciais de email, usar console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # Para produção ou desenvolvimento com credenciais
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = env('EMAIL_PORT', default=587)
+    EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+    EMAIL_USE_SSL = env('EMAIL_USE_SSL', default=False)
+    EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@lvksistemas.com.br')
 SERVER_EMAIL = env('SERVER_EMAIL', default='noreply@lvksistemas.com.br')
 
 # Session Configuration
 SESSION_COOKIE_AGE = 3600  # 1 hour
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Database Routers for multi-database support
+DATABASE_ROUTERS = [
+    'lojas.database_router_isolado.LojaIsoladaDBRouter',  # Router principal para isolamento
+    'email_credentials.db_router.LojaDBRouter',  # Router secundário para compatibilidade
+]
+
+# Email Credentials Configuration
+EMAIL_CREDENTIALS_CONFIG = {
+    'ENABLED': True,
+    'FALLBACK_TO_SCREEN': True,
+    'PASSWORD_LENGTH': 12,
+    'PASSWORD_EXPIRY_DAYS': 30,
+    'RECOVERY_RATE_LIMIT': 3,  # per hour
+    'MAX_RETRIES': 3,
+    'RETRY_DELAY': 1,  # seconds
+    'TEMPLATES': {
+        'super_admin': 'email_credentials/super_admin_credentials.html',
+        'loja_admin': 'email_credentials/loja_admin_credentials.html',
+        'loja_user': 'email_credentials/loja_user_credentials.html',
+        'recovery': 'email_credentials/password_recovery.html'
+    },
+    'EMAIL_SUBJECTS': {
+        'super_admin': 'Credenciais Super Admin - LVK Sistemas',
+        'loja_admin': 'Credenciais Admin - {loja_nome}',
+        'loja_user': 'Credenciais de Acesso - {loja_nome}',
+        'recovery': 'Recuperação de Senha - LVK Sistemas'
+    }
+}
+
+# Email Credentials specific settings
+EMAIL_CREDENTIALS_FROM = env('EMAIL_CREDENTIALS_FROM', default=DEFAULT_FROM_EMAIL)
+EMAIL_CREDENTIALS_REPLY_TO = env('EMAIL_CREDENTIALS_REPLY_TO', default='suporte@lvksistemas.com.br')
+
+# Site configuration
+SITE_NAME = 'LVK Sistemas'
+SITE_URL = env('SITE_URL', default='http://localhost:8000')
+SUPPORT_EMAIL = env('SUPPORT_EMAIL', default='suporte@lvksistemas.com.br')
 
 # Heroku Configuration
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

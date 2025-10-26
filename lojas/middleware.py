@@ -23,6 +23,7 @@ class LojaMiddleware:
             '/lojas/criar/',
             '/loja/login/',  # Adiciona login específico da loja
             '/financeiro/asaas/webhook/',  # Webhook do Asaas não precisa de autenticação
+            '/avaliacao-qualidade/',  # Sistema FATESA de avaliação de qualidade
             '/static/',
             '/media/',
         ]

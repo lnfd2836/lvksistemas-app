@@ -1,5 +1,6 @@
 from django.urls import path, include
 from . import views
+from . import views_login
 
 app_name = 'lojas'
 
@@ -51,4 +52,9 @@ urlpatterns = [
     
     # URLs administrativas (super admin)
     path('admin/', include('lojas.urls_admin')),
+    
+    # Login personalizado por loja
+    path('<uuid:loja_id>/login/gerenciar/', views_login.gerenciar_login_personalizado, name='gerenciar_login_personalizado'),
+    path('<uuid:loja_id>/login/preview/', views_login.preview_login_personalizado, name='preview_login_personalizado'),
+    path('<uuid:loja_id>/login/historico/', views_login.historico_login_loja, name='historico_login_loja'),
 ]

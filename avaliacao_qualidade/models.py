@@ -35,6 +35,22 @@ class PerfilUsuario(models.Model):
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
     
+    # Associação com loja (para isolamento de dados)
+    loja_associada = models.ForeignKey(
+        'lojas.Loja',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='perfis_fatesa',
+        verbose_name="Loja Associada"
+    )
+    
+    # Controle de primeira senha
+    deve_alterar_senha = models.BooleanField(
+        default=True,
+        verbose_name="Deve alterar senha no próximo login"
+    )
+    
     # Campos específicos para coordenadores
     cursos_coordenados = models.ManyToManyField(
         'Curso', 

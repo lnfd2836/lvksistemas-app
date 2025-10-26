@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Logins - {{ loja.nome }}{% endblock %}
+{% block page_title %}Histórico de Logins{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-sucesso {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-falha {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .device-icon {
+        font-size: 1.2rem;
+        margin-right: 5px;
+    }
+    
+    .filters-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .ip-address {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Histórico de Logins</h2>
+            <p class="text-muted mb-0">{{ loja.nome }}</p>
+        </div>
+        <div>
+            <a href="{% url 'lojas:gerenciar_login_personalizado' loja.id %}" class="btn btn-primary">
+                <i class="fas fa-cog me-2"></i>Configurar Login
+            </a>
+            <a href="{% url 'dashboard:loja' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <i class="fas fa-sign-in-alt fa-2x mb-2"></i>
+                <h4>{{ historico|length }}</h4>
+                <small>Tentativas Recentes</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4>{{ historico|length }}</h4>
+                <small>Logins Bem-sucedidos</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <i class="fas fa-times-circle fa-2x mb-2"></i>
+                <h4>0</h4>
+                <small>Tentativas Falhadas</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h4>{{ historico|length }}</h4>
+                <small>Usuários Únicos</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filters-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="usuario" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="usuario" name="usuario" 
+                       value="{{ filtro_usuario }}" placeholder="Nome do usuário">
+            </div>
+            <div class="col-md-3">
+                <label for="sucesso" class="form-label">Status</label>
+                <select class="form-select" id="sucesso" name="sucesso">
+                    <option value="">Todos</option>
+                    <option value="sim" {% if filtro_sucesso == 'sim' %}selected{% endif %}>Sucesso</option>
+                    <option value="nao" {% if filtro_sucesso == 'nao' %}selected{% endif %}>Falha</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'lojas:historico_login_loja' loja.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tabela de Histórico -->
+    <div class="table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="fas fa-history me-2"></i>Últimas 100 Tentativas
+            </h5>
+            <div class="text-muted">
+                <small>Atualizado em tempo real</small>
+            </div>
+        </div>
+        
+        {% if historico %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Usuário</th>
+                        <th>Status</th>
+                        <th>IP</th>
+                        <th>Dispositivo</th>
+                        <th>Navegador</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in historico %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ item.data_tentativa|date:"d/m/Y" }}</div>
+                            <small class="text-muted">{{ item.data_tentativa|time:"H:i:s" }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ item.usuario }}</div>
+                        </td>
+                        <td>
+                            {% if item.sucesso %}
+                                <span class="status-badge status-sucesso">
+                                    <i class="fas fa-check me-1"></i>Sucesso
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-falha">
+                                    <i class="fas fa-times me-1"></i>Falha
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="ip-address">{{ item.ip_address }}</span>
+                        </td>
+                        <td>
+                            {% if item.dispositivo == 'Mobile' %}
+                                <i class="fas fa-mobile-alt device-icon text-primary"></i>
+                            {% elif item.dispositivo == 'Tablet' %}
+                                <i class="fas fa-tablet-alt device-icon text-info"></i>
+                            {% else %}
+                                <i class="fas fa-desktop device-icon text-secondary"></i>
+                            {% endif %}
+                            {{ item.dispositivo|default:"Desktop" }}
+                        </td>
+                        <td>
+                            {% if item.navegador == 'Chrome' %}
+                                <i class="fab fa-chrome text-warning me-1"></i>
+                            {% elif item.navegador == 'Firefox' %}
+                                <i class="fab fa-firefox text-danger me-1"></i>
+                            {% elif item.navegador == 'Safari' %}
+                                <i class="fab fa-safari text-info me-1"></i>
+                            {% elif item.navegador == 'Edge' %}
+                                <i class="fab fa-edge text-primary me-1"></i>
+                            {% else %}
+                                <i class="fas fa-globe me-1"></i>
+                            {% endif %}
+                            {{ item.navegador|default:"Outro" }}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ item.metodo_login }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum histórico encontrado</h5>
+            <p class="text-muted">
+                {% if filtro_usuario or filtro_sucesso %}
+                    Nenhuma tentativa de login corresponde aos filtros aplicados.
+                {% else %}
+                    Ainda não há tentativas de login registradas para esta loja.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Informações Adicionais -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>URL de Login:</strong> 
+                            {% if loja.login_personalizado.url_personalizada %}
+                                <code>{{ request.get_host }}/login/{{ loja.login_personalizado.url_personalizada }}/</code>
+                            {% else %}
+                                <code>{{ request.get_host }}/login/loja/{{ loja.id }}/</code>
+                            {% endif %}
+                        </li>
+                        <li><strong>Status:</strong> 
+                            {% if loja.login_personalizado.ativo %}
+                                <span class="text-success">Ativo</span>
+                            {% else %}
+                                <span class="text-danger">Inativo</span>
+                            {% endif %}
+                        </li>
+                        <li><strong>Tema:</strong> {{ loja.login_personalizado.get_tema_display }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Segurança
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Monitoramento:</strong> <span class="text-success">Ativo</span></li>
+                        <li><strong>Logs:</strong> Últimas 100 tentativas</li>
+                        <li><strong>Retenção:</strong> 90 dias</li>
+                        <li><strong>Alertas:</strong> Configurados</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-refresh da página a cada 30 segundos
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+    
+    // Tooltip para IPs
+    document.querySelectorAll('.ip-address').forEach(function(element) {
+        element.title = 'Clique para copiar';
+        element.style.cursor = 'pointer';
+        element.addEventListener('click', function() {
+            navigator.clipboard.writeText(this.textContent);
+            // Feedback visual
+            const original = this.textContent;
+            this.textContent = 'Copiado!';
+            setTimeout(() => {
+                this.textContent = original;
+            }, 1000);
+        });
+    });
+    
+    // Destacar tentativas falhadas
+    document.querySelectorAll('.status-falha').forEach(function(element) {
+        element.closest('tr').style.backgroundColor = 'rgba(248, 215, 218, 0.3)';
+    });
+</script>
+{% endblock %}

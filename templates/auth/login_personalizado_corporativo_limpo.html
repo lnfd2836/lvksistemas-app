@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if login_config.titulo %}{{ login_config.titulo }}{% else %}Login{% endif %} - {{ loja.nome }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            {% for var, value in css_variaveis.items %}
+            {{ var }}: {{ value }};
+            {% endfor %}
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            {% if login_config.imagem_fundo %}
+            background-image: url('{{ login_config.imagem_fundo.url }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            {% endif %}
+        }
+        
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(44, 62, 80, 0.1), rgba(52, 73, 94, 0.1));
+        }
+        
+        .login-card {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-top: 4px solid var(--cor-primaria);
+            position: relative;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cor-primaria), var(--cor-secundaria));
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo-container img {
+            max-height: 60px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+        
+        .loja-nome {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--cor-primaria);
+            margin: 15px 0 5px;
+            letter-spacing: 0.5px;
+        }
+        
+        .login-titulo {
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--cor-primaria);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .login-subtitulo {
+            color: var(--cor-secundaria);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            text-align: center;
+            font-weight: 300;
+        }
+        
+        .mensagem-boas-vindas {
+            background: var(--cor-primaria);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 0.9rem;
+            border-left: 4px solid var(--cor-secundaria);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--cor-texto);
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-control {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        .form-control:focus {
+            border-color: var(--cor-primaria);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+            background: white;
+        }
+        
+        .btn-login {
+            background: var(--cor-primaria);
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-login:hover {
+            background: var(--cor-secundaria);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .checkbox-container label {
+            font-size: 0.9rem;
+            color: var(--cor-texto);
+            cursor: pointer;
+        }
+        
+        .links-container {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .links-container a {
+            color: var(--cor-primaria);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        
+        .links-container a:hover {
+            text-decoration: underline;
+            color: var(--cor-secundaria);
+        }
+        
+        .mensagem-rodape {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: var(--cor-secundaria);
+            font-size: 0.8rem;
+            font-weight: 300;
+        }
+        
+        .alert {
+            border-radius: 4px;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        
+        .preview-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--cor-primaria);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Animações sutis */
+        .login-card {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .form-group {
+            animation: fadeIn 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+        
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .btn-login { animation-delay: 0.4s; }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* CSS personalizado da loja */
+        {{ login_config.css_personalizado|safe }}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        {% if is_preview %}
+        <div class="preview-badge">
+            <i class="fas fa-eye"></i> Preview
+        </div>
+        {% endif %}
+        
+        <div class="login-card">
+            <!-- Logo (se configurado) -->
+            {% if login_config.mostrar_logo and login_config.logo %}
+            <div class="logo-container">
+                <img src="{{ login_config.logo.url }}" alt="Logo" class="logo">
+            </div>
+            {% endif %}
+            
+            <!-- Nome da Loja (se configurado) -->
+            {% if login_config.mostrar_nome_loja %}
+            <div class="logo-container">
+                <h2 class="loja-nome">{{ loja.nome }}</h2>
+            </div>
+            {% endif %}
+            
+            <!-- Título (se configurado) -->
+            {% if login_config.titulo %}
+            <div>
+                <h1 class="login-titulo">{{ login_config.titulo }}</h1>
+            </div>
+            {% endif %}
+            
+            <!-- Subtítulo (se configurado) -->
+            {% if login_config.subtitulo %}
+            <div>
+                <p class="login-subtitulo">{{ login_config.subtitulo }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Mensagem de Boas-vindas -->
+            {% if login_config.mensagem_boas_vindas and not is_preview %}
+                <div class="mensagem-boas-vindas">
+                    {{ login_config.mensagem_boas_vindas }}
+                </div>
+            {% endif %}
+            
+            <!-- Mensagens de erro/sucesso -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Formulário de Login -->
+            {% if not is_preview %}
+            <form method="post" action="{{ login_config.get_login_url }}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">Usuário</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="username"
+                           name="username"
+                           placeholder="Digite seu usuário ou email"
+                           required
+                           autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password"
+                           name="password"
+                           placeholder="Digite sua senha"
+                           required
+                           autocomplete="current-password">
+                </div>
+                
+                {% if login_config.permitir_lembrar_senha %}
+                <div class="checkbox-container">
+                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <label for="remember_me">Manter-me conectado</label>
+                </div>
+                {% endif %}
+                
+                <button type="submit" class="btn-login">Acessar Sistema</button>
+            </form>
+            {% else %}
+            <!-- Formulário de Preview (desabilitado) -->
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" 
+                           class="form-control" 
+                           placeholder="Digite seu usuário ou email"
+                           disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Senha</label>
+                    <input type="password" 
+                           class="form-control" 
+                           placeholder="Digite sua senha"
+                           disabled>
+                </div>
+                
+                {% if login_config.permitir_lembrar_senha %}
+                <div class="checkbox-container">
+                    <input type="checkbox" disabled>
+                    <label>Manter-me conectado</label>
+                </div>
+                {% endif %}
+                
+                <button type="button" class="btn-login" disabled>Acessar Sistema</button>
+            </form>
+            {% endif %}
+            
+            <!-- Links adicionais -->
+            {% if login_config.mostrar_link_recuperar_senha or not is_preview %}
+            <div class="links-container">
+                {% if login_config.mostrar_link_recuperar_senha %}
+                    <a href="{% url 'password_reset' %}">Recuperar Senha</a>
+                {% endif %}
+                
+                {% if not is_preview %}
+                    <a href="{% url 'simple_login' %}">Login Administrativo</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Mensagem do Rodapé -->
+            {% if login_config.mensagem_rodape %}
+            <div class="mensagem-rodape">
+                {{ login_config.mensagem_rodape }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Auto-focus no primeiro campo
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstInput = document.querySelector('input[type="text"]:not([disabled])');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+        
+        // Validação do formulário
+        {% if not is_preview %}
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const username = document.querySelector('input[name="username"]').value.trim();
+                const password = document.querySelector('input[name="password"]').value;
+                
+                if (!username || !password) {
+                    e.preventDefault();
+                    alert('Por favor, preencha todos os campos.');
+                    return false;
+                }
+            });
+        }
+        {% endif %}
+        
+        // Efeitos de hover nos inputs
+        document.querySelectorAll('.form-control').forEach(function(input) {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+                this.parentElement.style.transition = 'transform 0.2s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

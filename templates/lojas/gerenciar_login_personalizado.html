@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Login Personalizado - {{ loja.nome }}{% endblock %}
+{% block page_title %}Configurar Login Personalizado{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .config-section {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .color-input {
+        width: 60px;
+        height: 40px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .preview-container {
+        position: sticky;
+        top: 20px;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .preview-frame {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .btn-preview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+    }
+    
+    .btn-preview:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        color: white;
+    }
+    
+    .url-preview {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 0.9rem;
+        margin-top: 10px;
+    }
+    
+    .tema-preview {
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .tema-preview:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+    }
+    
+    .tema-preview.selected {
+        border-color: #007bff;
+        background: rgba(0, 123, 255, 0.1);
+    }
+    
+    .file-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #007bff;
+        background: rgba(0, 123, 255, 0.05);
+    }
+    
+    .file-upload-area.dragover {
+        border-color: #007bff;
+        background: rgba(0, 123, 255, 0.1);
+    }
+    
+    .current-image {
+        max-width: 150px;
+        max-height: 100px;
+        object-fit: contain;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Formulário de Configuração -->
+        <div class="col-lg-8">
+            <form method="post" enctype="multipart/form-data" id="configForm">
+                {% csrf_token %}
+                
+                <!-- Informações Básicas -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="titulo" class="form-label">Título da Página</label>
+                                <input type="text" class="form-control" id="titulo" name="titulo" 
+                                       value="{{ login_config.titulo }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subtitulo" class="form-label">Subtítulo</label>
+                                <input type="text" class="form-control" id="subtitulo" name="subtitulo" 
+                                       value="{{ login_config.subtitulo }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="url_personalizada" class="form-label">URL Personalizada</label>
+                        <input type="text" class="form-control" id="url_personalizada" name="url_personalizada" 
+                               value="{{ login_config.url_personalizada }}" 
+                               placeholder="minha-loja">
+                        <div class="form-text">
+                            Deixe em branco para gerar automaticamente. Apenas letras, números e hífens.
+                        </div>
+                        <div class="url-preview">
+                            URL de acesso: <span id="url-display">{{ request.get_host }}/login/{{ login_config.url_personalizada }}/</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tema e Aparência -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-palette me-2"></i>Tema e Aparência
+                    </h3>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Tema</label>
+                        <div class="row">
+                            {% for tema_value, tema_nome in temas %}
+                            <div class="col-md-3 mb-3">
+                                <div class="tema-preview {% if login_config.tema == tema_value %}selected{% endif %}" 
+                                     data-tema="{{ tema_value }}">
+                                    <input type="radio" name="tema" value="{{ tema_value }}" 
+                                           {% if login_config.tema == tema_value %}checked{% endif %} 
+                                           style="display: none;">
+                                    <div class="text-center">
+                                        <i class="fas fa-desktop fa-2x mb-2"></i>
+                                        <div class="fw-bold">{{ tema_nome }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="cor_primaria" class="form-label">Cor Primária</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="color-input me-2" id="cor_primaria" 
+                                           name="cor_primaria" value="{{ login_config.cor_primaria }}">
+                                    <input type="text" class="form-control" 
+                                           value="{{ login_config.cor_primaria }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="cor_secundaria" class="form-label">Cor Secundária</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="color-input me-2" id="cor_secundaria" 
+                                           name="cor_secundaria" value="{{ login_config.cor_secundaria }}">
+                                    <input type="text" class="form-control" 
+                                           value="{{ login_config.cor_secundaria }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="cor_fundo" class="form-label">Cor de Fundo</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="color-input me-2" id="cor_fundo" 
+                                           name="cor_fundo" value="{{ login_config.cor_fundo }}">
+                                    <input type="text" class="form-control" 
+                                           value="{{ login_config.cor_fundo }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="cor_texto" class="form-label">Cor do Texto</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="color-input me-2" id="cor_texto" 
+                                           name="cor_texto" value="{{ login_config.cor_texto }}">
+                                    <input type="text" class="form-control" 
+                                           value="{{ login_config.cor_texto }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Imagens -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-images me-2"></i>Imagens
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logo" class="form-label">Logo da Loja</label>
+                                <div class="file-upload-area" onclick="document.getElementById('logo').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                    <div>Clique para selecionar ou arraste uma imagem</div>
+                                    <small class="text-muted">PNG, JPG, SVG até 2MB</small>
+                                </div>
+                                <input type="file" class="form-control d-none" id="logo" name="logo" 
+                                       accept="image/*">
+                                {% if login_config.logo %}
+                                    <div class="text-center">
+                                        <img src="{{ login_config.logo.url }}" alt="Logo atual" class="current-image">
+                                        <div class="small text-muted mt-1">Logo atual</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="imagem_fundo" class="form-label">Imagem de Fundo</label>
+                                <div class="file-upload-area" onclick="document.getElementById('imagem_fundo').click()">
+                                    <i class="fas fa-image fa-2x mb-2"></i>
+                                    <div>Clique para selecionar ou arraste uma imagem</div>
+                                    <small class="text-muted">PNG, JPG até 5MB</small>
+                                </div>
+                                <input type="file" class="form-control d-none" id="imagem_fundo" name="imagem_fundo" 
+                                       accept="image/*">
+                                {% if login_config.imagem_fundo %}
+                                    <div class="text-center">
+                                        <img src="{{ login_config.imagem_fundo.url }}" alt="Fundo atual" class="current-image">
+                                        <div class="small text-muted mt-1">Fundo atual</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configurações de Exibição -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-eye me-2"></i>Configurações de Exibição
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="mostrar_logo" 
+                                       name="mostrar_logo" {% if login_config.mostrar_logo %}checked{% endif %}>
+                                <label class="form-check-label" for="mostrar_logo">
+                                    Mostrar Logo
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="mostrar_nome_loja" 
+                                       name="mostrar_nome_loja" {% if login_config.mostrar_nome_loja %}checked{% endif %}>
+                                <label class="form-check-label" for="mostrar_nome_loja">
+                                    Mostrar Nome da Loja
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="permitir_lembrar_senha" 
+                                       name="permitir_lembrar_senha" {% if login_config.permitir_lembrar_senha %}checked{% endif %}>
+                                <label class="form-check-label" for="permitir_lembrar_senha">
+                                    Permitir "Lembrar de Mim"
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="mostrar_link_recuperar_senha" 
+                                       name="mostrar_link_recuperar_senha" {% if login_config.mostrar_link_recuperar_senha %}checked{% endif %}>
+                                <label class="form-check-label" for="mostrar_link_recuperar_senha">
+                                    Mostrar Link "Esqueci Minha Senha"
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="ativo" 
+                               name="ativo" {% if login_config.ativo %}checked{% endif %}>
+                        <label class="form-check-label" for="ativo">
+                            <strong>Login Personalizado Ativo</strong>
+                        </label>
+                        <div class="form-text">
+                            Desmarque para desativar temporariamente o login personalizado
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mensagens -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-comment me-2"></i>Mensagens Personalizadas
+                    </h3>
+                    
+                    <div class="mb-3">
+                        <label for="mensagem_boas_vindas" class="form-label">Mensagem de Boas-vindas</label>
+                        <textarea class="form-control" id="mensagem_boas_vindas" name="mensagem_boas_vindas" 
+                                  rows="3" placeholder="Bem-vindo(a) à nossa loja!">{{ login_config.mensagem_boas_vindas }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mensagem_rodape" class="form-label">Mensagem do Rodapé</label>
+                        <textarea class="form-control" id="mensagem_rodape" name="mensagem_rodape" 
+                                  rows="2" placeholder="© 2024 - Todos os direitos reservados">{{ login_config.mensagem_rodape }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- CSS Personalizado -->
+                <div class="config-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-code me-2"></i>CSS Personalizado
+                    </h3>
+                    
+                    <div class="mb-3">
+                        <label for="css_personalizado" class="form-label">CSS Adicional</label>
+                        <textarea class="form-control" id="css_personalizado" name="css_personalizado" 
+                                  rows="8" placeholder="/* Seu CSS personalizado aqui */">{{ login_config.css_personalizado }}</textarea>
+                        <div class="form-text">
+                            Use este campo para adicionar estilos CSS personalizados avançados
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="config-section">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-lg me-2">
+                                <i class="fas fa-save me-2"></i>Salvar Configurações
+                            </button>
+                            <button type="button" class="btn btn-preview btn-lg" onclick="atualizarPreview()">
+                                <i class="fas fa-eye me-2"></i>Atualizar Preview
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{% url 'lojas:historico_login_loja' loja.id %}" class="btn btn-outline-info">
+                                <i class="fas fa-history me-2"></i>Histórico de Logins
+                            </a>
+                            <a href="{% url 'dashboard:loja' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Preview -->
+        <div class="col-lg-4">
+            <div class="preview-container">
+                <h4 class="mb-3">
+                    <i class="fas fa-desktop me-2"></i>Preview
+                </h4>
+                <iframe id="previewFrame" class="preview-frame" 
+                        src="{% url 'lojas:preview_login_personalizado' loja.id %}"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Atualizar preview da URL
+    document.getElementById('url_personalizada').addEventListener('input', function() {
+        const url = this.value || 'url-da-loja';
+        document.getElementById('url-display').textContent = 
+            `${window.location.host}/login/${url}/`;
+    });
+    
+    // Seleção de tema
+    document.querySelectorAll('.tema-preview').forEach(function(tema) {
+        tema.addEventListener('click', function() {
+            document.querySelectorAll('.tema-preview').forEach(t => t.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+        });
+    });
+    
+    // Sincronizar color inputs com text inputs
+    document.querySelectorAll('.color-input').forEach(function(colorInput) {
+        const textInput = colorInput.nextElementSibling;
+        
+        colorInput.addEventListener('change', function() {
+            textInput.value = this.value;
+        });
+        
+        textInput.addEventListener('change', function() {
+            if (this.value.match(/^#[0-9A-F]{6}$/i)) {
+                colorInput.value = this.value;
+            }
+        });
+    });
+    
+    // Drag and drop para upload de arquivos
+    document.querySelectorAll('.file-upload-area').forEach(function(area) {
+        area.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        area.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+        
+        area.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const input = this.parentElement.querySelector('input[type="file"]');
+                input.files = files;
+                
+                // Mostrar preview da imagem
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        let preview = area.parentElement.querySelector('.current-image');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.className = 'current-image';
+                            area.parentElement.appendChild(preview);
+                        }
+                        preview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    });
+    
+    // Atualizar preview
+    function atualizarPreview() {
+        document.getElementById('previewFrame').src = 
+            `{% url 'lojas:preview_login_personalizado' loja.id %}?t=${Date.now()}`;
+    }
+    
+    // Auto-salvar (opcional)
+    let autoSaveTimeout;
+    document.getElementById('configForm').addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(function() {
+            // Aqui você pode implementar auto-save via AJAX se desejar
+        }, 2000);
+    });
+    
+    // Validação do formulário
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        const titulo = document.getElementById('titulo').value.trim();
+        if (!titulo) {
+            e.preventDefault();
+            alert('O título da página é obrigatório.');
+            document.getElementById('titulo').focus();
+            return false;
+        }
+    });
+</script>
+{% endblock %}

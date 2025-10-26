@@ -19,6 +19,14 @@ def get_or_create_plano_financeiro_from_comercial(plano_comercial):
         PlanoFinanceiro: The corresponding financial plan
     """
     try:
+        # Verificar se plano_comercial não é None
+        if not plano_comercial:
+            raise ValueError("PlanoComercial não pode ser None")
+        
+        # Verificar se tem os atributos necessários
+        if not hasattr(plano_comercial, 'nome') or not plano_comercial.nome:
+            raise ValueError("PlanoComercial deve ter um nome válido")
+        
         # Try to find existing PlanoFinanceiro with same name and price
         plano_financeiro = PlanoFinanceiro.objects.filter(
             nome=plano_comercial.nome,
@@ -31,7 +39,7 @@ def get_or_create_plano_financeiro_from_comercial(plano_comercial):
         # Create new PlanoFinanceiro based on PlanoComercial
         plano_financeiro = PlanoFinanceiro.objects.create(
             nome=plano_comercial.nome,
-            descricao=plano_comercial.descricao,
+            descricao=plano_comercial.descricao or f"Plano {plano_comercial.nome}",
             valor_mensal=plano_comercial.preco_mensal,
             dias_trial=30,  # Default trial period
             ativo=plano_comercial.status == 'ativo'
@@ -73,13 +81,14 @@ def sync_plano_financeiro_with_comercial(plano_comercial):
         raise Exception(f"Error syncing PlanoFinanceiro with PlanoComercial: {str(e)}")
 
 
-def create_both_financial_records(loja, plano_comercial):
+def create_both_financial_records(loja, plano_comercial, dia_vencimento=None):
     """
     Creates both ControleFinanceiro and AssinaturaLoja records for a store.
     
     Args:
         loja (Loja): The store to create records for
         plano_comercial (PlanoComercial): The selected commercial plan
+        dia_vencimento (int): Dia do mês para vencimento (1-28, opcional)
         
     Returns:
         tuple: (ControleFinanceiro, AssinaturaLoja) instances
@@ -87,12 +96,40 @@ def create_both_financial_records(loja, plano_comercial):
     from controle_financeiro.models import ControleFinanceiro
     from planos.models import AssinaturaLoja
     from django.utils import timezone
-    from datetime import timedelta
+    from datetime import timedelta, datetime
+    import logging
+    
+    logger = logging.getLogger(__name__)
     
     try:
         with transaction.atomic():
+            # Validar plano_comercial
+            if not plano_comercial:
+                raise ValueError("É obrigatório selecionar um plano comercial")
+            
+            logger.info(f"Criando registros financeiros para loja {loja.nome} com plano {plano_comercial.nome}")
+            
             # Get or create corresponding PlanoFinanceiro
             plano_financeiro = get_or_create_plano_financeiro_from_comercial(plano_comercial)
+            
+            # Calcular data de vencimento
+            data_atual = timezone.now()
+            if dia_vencimento and 1 <= dia_vencimento <= 28:
+                # Usar o dia específico escolhido pelo cliente
+                try:
+                    data_vencimento = data_atual.replace(day=dia_vencimento)
+                    # Se o dia já passou neste mês, usar o próximo mês
+                    if data_vencimento <= data_atual:
+                        if data_vencimento.month == 12:
+                            data_vencimento = data_vencimento.replace(year=data_vencimento.year + 1, month=1)
+                        else:
+                            data_vencimento = data_vencimento.replace(month=data_vencimento.month + 1)
+                except ValueError:
+                    # Se o dia não existe no mês (ex: 31 em fevereiro), usar o último dia do mês
+                    data_vencimento = data_atual + timedelta(days=30)
+            else:
+                # Usar 30 dias a partir de hoje como padrão
+                data_vencimento = data_atual + timedelta(days=30)
             
             # Create ControleFinanceiro (usar get_or_create para evitar duplicatas)
             controle_financeiro, controle_created = ControleFinanceiro.objects.get_or_create(
@@ -101,10 +138,14 @@ def create_both_financial_records(loja, plano_comercial):
                     'plano': plano_financeiro,
                     'status': 'ativa',
                     'valor_mensal': plano_comercial.preco_mensal,
-                    'data_inicio': timezone.now(),
-                    'data_vencimento': timezone.now() + timedelta(days=30)
+                    'data_inicio': data_atual,
+                    'data_vencimento': data_vencimento,
+                    'dia_vencimento': dia_vencimento or data_vencimento.day
                 }
             )
+            
+            if not controle_created:
+                logger.info(f"ControleFinanceiro já existia para loja {loja.nome}")
             
             # Create AssinaturaLoja (usar get_or_create para evitar duplicatas)
             assinatura_loja, assinatura_created = AssinaturaLoja.objects.get_or_create(
@@ -113,13 +154,18 @@ def create_both_financial_records(loja, plano_comercial):
                     'plano': plano_comercial,
                     'status': 'ativa',
                     'tipo_pagamento': 'mensal',
-                    'data_vencimento': timezone.now() + timedelta(days=30)
+                    'data_vencimento': data_vencimento
                 }
             )
             
+            if not assinatura_created:
+                logger.info(f"AssinaturaLoja já existia para loja {loja.nome}")
+            
+            logger.info(f"Registros financeiros criados com sucesso para {loja.nome}")
             return controle_financeiro, assinatura_loja
             
     except Exception as e:
+        logger.error(f"Erro ao criar registros financeiros para {loja.nome}: {str(e)}")
         raise Exception(f"Error creating financial records: {str(e)}")
 
 

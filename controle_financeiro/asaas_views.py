@@ -58,7 +58,7 @@ def gerar_cobranca_asaas(request, controle_id):
                     controle_financeiro=controle,
                     customer_id=cobranca_data['customer'],
                     valor=cobranca_data['value'],
-                    data_vencimento=timezone.datetime.fromisoformat(cobranca_data['dueDate']).replace(tzinfo=timezone.utc),
+                    data_vencimento=timezone.datetime.fromisoformat(cobranca_data['dueDate']).replace(tzinfo=timezone.get_current_timezone()),
                     descricao=cobranca_data['description'],
                     status=cobranca_data['status'],
                     invoice_url=cobranca_data.get('invoiceUrl', ''),

@@ -1,7 +1,11 @@
 """
-Tasks do Celery para controle financeiro e sincronização Asaas
+Tasks automáticas para o sistema financeiro
 """
+from django.utils import timezone
+from datetime import timedelta
+from .models import ControleFinanceiro, CobrancaAsaas
 
+# Importações condicionais para Celery
 try:
     from celery import shared_task
     CELERY_AVAILABLE = True

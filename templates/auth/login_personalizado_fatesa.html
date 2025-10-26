@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Acadêmico FATESA</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts - Inter (similar ao site FATESA) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            {% for var, value in css_variaveis.items %}
+            {{ var }}: {{ value }};
+            {% endfor %}
+            
+            /* Cores baseadas no site oficial da FATESA */
+            --fatesa-azul-principal: #1e3a8a;
+            --fatesa-azul-secundario: #3b82f6;
+            --fatesa-verde-accent: #10b981;
+            --fatesa-cinza-claro: #f8fafc;
+            --fatesa-cinza-medio: #64748b;
+            --fatesa-cinza-escuro: #1e293b;
+            --fatesa-branco: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--fatesa-azul-principal) 0%, var(--fatesa-azul-secundario) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            {% if login_config.imagem_fundo %}
+            background-image: url('{{ login_config.imagem_fundo.url }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            {% endif %}
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+        }
+        
+        .login-card {
+            background: var(--fatesa-branco);
+            border-radius: 16px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 60px rgba(30, 58, 138, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--fatesa-azul-principal), var(--fatesa-verde-accent));
+        }
+        
+        .fatesa-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .fatesa-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--fatesa-azul-principal), var(--fatesa-azul-secundario));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 32px rgba(30, 58, 138, 0.3);
+        }
+        
+        .fatesa-logo i {
+            font-size: 36px;
+            color: var(--fatesa-branco);
+        }
+        
+        .fatesa-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--fatesa-cinza-escuro);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .fatesa-subtitle {
+            font-size: 16px;
+            color: var(--fatesa-cinza-medio);
+            font-weight: 400;
+            line-height: 1.5;
+        }
+        
+        .mensagem-boas-vindas {
+            background: linear-gradient(135deg, var(--fatesa-azul-principal), var(--fatesa-azul-secundario));
+            color: var(--fatesa-branco);
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--fatesa-cinza-escuro);
+            margin-bottom: 8px;
+            display: block;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 16px;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--fatesa-cinza-claro);
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+        
+        .form-control:focus {
+            border-color: var(--fatesa-azul-principal);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+            background: var(--fatesa-branco);
+            transform: translateY(-1px);
+        }
+        
+        .form-control::placeholder {
+            color: var(--fatesa-cinza-medio);
+            font-weight: 400;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, var(--fatesa-azul-principal), var(--fatesa-azul-secundario));
+            border: none;
+            border-radius: 12px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--fatesa-branco);
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(30, 58, 138, 0.4);
+        }
+        
+        .btn-login:hover::before {
+            left: 100%;
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .checkbox-container label {
+            font-size: 14px;
+            color: var(--fatesa-cinza-escuro);
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .links-container {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .links-container a {
+            color: var(--fatesa-azul-principal);
+            text-decoration: none;
+            font-size: 14px;
+            margin: 0 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .links-container a:hover {
+            color: var(--fatesa-azul-secundario);
+            text-decoration: underline;
+        }
+        
+        .mensagem-rodape {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            color: var(--fatesa-cinza-medio);
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            font-size: 14px;
+            border: none;
+            font-weight: 500;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-left: 4px solid var(--fatesa-verde-accent);
+        }
+        
+        .preview-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--fatesa-azul-principal);
+            color: var(--fatesa-branco);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Animações */
+        .login-card {
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .form-group {
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: both;
+        }
+        
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .btn-login { animation-delay: 0.4s; }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsividade */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            
+            .fatesa-title {
+                font-size: 24px;
+            }
+            
+            .fatesa-logo {
+                width: 64px;
+                height: 64px;
+            }
+            
+            .fatesa-logo i {
+                font-size: 28px;
+            }
+        }
+        
+        /* Efeitos de glassmorphism */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        /* CSS personalizado da loja */
+        {{ login_config.css_personalizado|safe }}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        {% if is_preview %}
+        <div class="preview-badge">
+            <i class="fas fa-eye"></i> Preview
+        </div>
+        {% endif %}
+        
+        <div class="login-card">
+            <!-- Header FATESA -->
+            <div class="fatesa-header">
+                {% if login_config.mostrar_logo and login_config.logo %}
+                    <div class="fatesa-logo">
+                        <img src="{{ login_config.logo.url }}" alt="Logo FATESA" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                {% else %}
+                    <div class="fatesa-logo">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                {% endif %}
+                
+                <h1 class="fatesa-title">FATESA</h1>
+                <p class="fatesa-subtitle">Portal Acadêmico</p>
+            </div>
+            
+            <!-- Título personalizado (se configurado) -->
+            {% if login_config.titulo %}
+            <div class="text-center mb-4">
+                <h2 style="font-size: 20px; font-weight: 600; color: var(--fatesa-cinza-escuro);">{{ login_config.titulo }}</h2>
+            </div>
+            {% endif %}
+            
+            <!-- Subtítulo (se configurado) -->
+            {% if login_config.subtitulo %}
+            <div class="text-center mb-4">
+                <p style="color: var(--fatesa-cinza-medio); font-size: 14px;">{{ login_config.subtitulo }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Mensagem de Boas-vindas -->
+            {% if login_config.mensagem_boas_vindas and not is_preview %}
+                <div class="mensagem-boas-vindas">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    {{ login_config.mensagem_boas_vindas }}
+                </div>
+            {% endif %}
+            
+            <!-- Mensagens de erro/sucesso -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        {% if message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Formulário de Login -->
+            {% if not is_preview %}
+            <form method="post" action="{{ login_config.get_login_url }}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user me-2"></i>Usuário ou Email
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="username"
+                           name="username"
+                           placeholder="Digite seu usuário ou email"
+                           required
+                           autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock me-2"></i>Senha
+                    </label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password"
+                           name="password"
+                           placeholder="Digite sua senha"
+                           required
+                           autocomplete="current-password">
+                </div>
+                
+                {% if login_config.permitir_lembrar_senha %}
+                <div class="checkbox-container">
+                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <label for="remember_me">Manter-me conectado</label>
+                </div>
+                {% endif %}
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Acessar Portal
+                </button>
+            </form>
+            {% else %}
+            <!-- Formulário de Preview (desabilitado) -->
+            <form>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Usuário ou Email
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           placeholder="Digite seu usuário ou email"
+                           disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock me-2"></i>Senha
+                    </label>
+                    <input type="password" 
+                           class="form-control" 
+                           placeholder="Digite sua senha"
+                           disabled>
+                </div>
+                
+                {% if login_config.permitir_lembrar_senha %}
+                <div class="checkbox-container">
+                    <input type="checkbox" disabled>
+                    <label>Manter-me conectado</label>
+                </div>
+                {% endif %}
+                
+                <button type="button" class="btn-login" disabled>
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Acessar Portal
+                </button>
+            </form>
+            {% endif %}
+            
+            <!-- Links adicionais -->
+            {% if login_config.mostrar_link_recuperar_senha or not is_preview %}
+            <div class="links-container">
+                {% if login_config.mostrar_link_recuperar_senha %}
+                    <a href="{% url 'password_reset' %}">
+                        <i class="fas fa-key me-1"></i>Recuperar Senha
+                    </a>
+                {% endif %}
+                
+                {% if not is_preview %}
+                    <a href="{% url 'simple_login' %}">
+                        <i class="fas fa-cog me-1"></i>Login Administrativo
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Mensagem do Rodapé -->
+            {% if login_config.mensagem_rodape %}
+            <div class="mensagem-rodape">
+                <i class="fas fa-shield-alt me-2"></i>
+                {{ login_config.mensagem_rodape }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Auto-focus no primeiro campo
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstInput = document.querySelector('input[type="text"]:not([disabled])');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 300);
+            }
+        });
+        
+        // Validação do formulário
+        {% if not is_preview %}
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const username = document.querySelector('input[name="username"]').value.trim();
+                const password = document.querySelector('input[name="password"]').value;
+                
+                if (!username || !password) {
+                    e.preventDefault();
+                    
+                    // Criar alerta personalizado
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Por favor, preencha todos os campos.';
+                    
+                    const form = document.querySelector('form');
+                    form.insertBefore(alertDiv, form.firstChild);
+                    
+                    // Remover alerta após 5 segundos
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 5000);
+                    
+                    return false;
+                }
+                
+                // Adicionar loading no botão
+                const btn = document.querySelector('.btn-login');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
+                btn.disabled = true;
+            });
+        }
+        {% endif %}
+        
+        // Efeitos de interação
+        document.querySelectorAll('.form-control').forEach(function(input) {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+                this.parentElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+        
+        // Animação de entrada dos elementos
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+        
+        document.querySelectorAll('.form-group, .btn-login').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

@@ -132,81 +132,53 @@ def criar_loja(request):
                 
                 logger.info(f"Perfil criado para usuário da loja {loja.nome}: {admin_user.username}")
                 
+                # Obter dia de vencimento escolhido pelo cliente
+                dia_vencimento = form.cleaned_data.get('dia_vencimento', None)
+                if dia_vencimento:
+                    dia_vencimento = int(dia_vencimento)  # Converter para inteiro
+                
                 # Cria ambos os registros financeiros usando o plano selecionado
                 try:
                     from lojas.utils.plan_mapping import create_both_financial_records
-                    controle_financeiro, assinatura_loja = create_both_financial_records(loja, plano_comercial)
+                    controle_financeiro, assinatura_loja = create_both_financial_records(
+                        loja, plano_comercial, dia_vencimento
+                    )
                     
-                    # Gera boleto automaticamente usando o serviço correto
-                    configuracao_boleto = ConfiguracaoBoleto.objects.filter(ativo=True).first()
-                    if configuracao_boleto:
-                        try:
-                            # Verificar se é Caixa Econômica Federal
-                            if configuracao_boleto.codigo_banco == "104":
-                                # Usar serviço específico da Caixa
-                                from controle_financeiro.boleto_caixa_service import BoletoCaixaService
-                                
-                                caixa_service = BoletoCaixaService()
-                                dados_boleto = caixa_service.gerar_boleto_caixa(controle_financeiro, configuracao_boleto, dias_vencimento=7)
-                                
-                                # Verificar se o boleto foi validado com sucesso
-                                if not dados_boleto.get('is_valid', False):
-                                    validation_errors = dados_boleto.get('validation_result', {}).get('errors', [])
-                                    error_msg = '; '.join(validation_errors) if validation_errors else 'Erro de validação desconhecido'
-                                    raise ValueError(f"Boleto gerado é inválido: {error_msg}")
-                                
-                                # Criar boleto com dados válidos da Caixa
-                                boleto = BoletoGerado.objects.create(
-                                    controle_financeiro=controle_financeiro,
-                                    configuracao=configuracao_boleto,
-                                    numero_boleto=dados_boleto['numero_boleto'],
-                                    linha_digitavel=dados_boleto['linha_digitavel'],
-                                    codigo_barras=dados_boleto['codigo_barras'],
-                                    valor=dados_boleto['valor'],
-                                    data_vencimento=dados_boleto['data_vencimento'],
-                                    status='pendente'
-                                )
-                                
-                                print(f"DEBUG: Boleto da Caixa gerado com sucesso para {loja.nome}: {boleto.numero_boleto}")
-                                
-                            else:
-                                # Lógica para outros bancos (mantida para compatibilidade)
-                                numero_boleto = f"BOL{timezone.now().strftime('%Y%m%d%H%M%S')}"
-                                linha_digitavel = f"23791{configuracao_boleto.agencia.zfill(4)}{configuracao_boleto.conta.zfill(8)}{numero_boleto.zfill(10)}"
-                                codigo_barras = linha_digitavel.replace(' ', '')
-                                
-                                # Cria o boleto
-                                boleto = BoletoGerado.objects.create(
-                                    controle_financeiro=controle_financeiro,
-                                    configuracao=configuracao_boleto,
-                                    numero_boleto=numero_boleto,
-                                    linha_digitavel=linha_digitavel,
-                                    codigo_barras=codigo_barras,
-                                    valor=plano_comercial.preco_mensal,
-                                    data_vencimento=timezone.now() + timedelta(days=7),
-                                    status='pendente'
-                                )
-                                
-                        except Exception as boleto_error:
-                            # Se houver erro na geração do boleto, log mas não falha a criação da loja
-                            logger.error(f"Erro ao gerar boleto para loja {loja.nome}: {str(boleto_error)}")
-                            print(f"DEBUG: Erro na geração de boleto para {loja.nome}: {str(boleto_error)}")
-                            import traceback
-                            traceback.print_exc()
-                            boleto = None
+                    # Gera cobrança automaticamente usando o Asaas centralizado
+                    try:
+                        from controle_financeiro.asaas_central_service import AsaasCentralService
                         
-                        # Cria notificação sobre o boleto (se foi criado com sucesso)
-                        if boleto:
+                        asaas_service = AsaasCentralService()
+                        
+                        # Testar conexão primeiro
+                        conexao_test = asaas_service.testar_conexao()
+                        if not conexao_test['success']:
+                            logger.warning(f"Problema na conexão Asaas: {conexao_test['message']}")
+                        
+                        # Gerar cobrança no Asaas
+                        dias_vencimento = 7  # Padrão 7 dias para primeira cobrança
+                        cobranca_asaas = asaas_service.gerar_cobranca_loja(controle_financeiro, dias_vencimento)
+                        
+                        if cobranca_asaas:
+                            logger.info(f"Cobrança Asaas gerada com sucesso para {loja.nome}: {cobranca_asaas['id']}")
+                            
+                            # Criar notificação sobre a cobrança
                             try:
+                                from dashboard.models import Notificacao
                                 Notificacao.objects.create(
-                                    titulo=f"Boleto gerado para {loja.nome}",
-                                    mensagem=f"Boleto {boleto.numero_boleto} gerado automaticamente. Valor: R$ {boleto.valor}",
+                                    titulo=f"Cobrança gerada para {loja.nome}",
+                                    mensagem=f"Cobrança Asaas {cobranca_asaas['id']} gerada automaticamente. Valor: R$ {controle_financeiro.valor_mensal}",
                                     tipo='info',
                                     prioridade='media',
                                     usuario=request.user
                                 )
-                            except:
-                                pass
+                            except Exception as notif_error:
+                                logger.warning(f"Erro ao criar notificação: {str(notif_error)}")
+                        
+                    except Exception as asaas_error:
+                        # Se houver erro na geração da cobrança, log mas não falha a criação da loja
+                        logger.error(f"Erro ao gerar cobrança Asaas para loja {loja.nome}: {str(asaas_error)}")
+                        # A loja é criada mesmo se a cobrança falhar
                     
                 except Exception as e:
                     # Log do erro e reverte a transação

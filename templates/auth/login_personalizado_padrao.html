@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ login_config.titulo|default:"Login" }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: {{ login_config.cor_primaria|default:"#007bff" }};
+            --secondary-color: {{ login_config.cor_secundaria|default:"#6c757d" }};
+            --background-color: {{ login_config.cor_fundo|default:"#f8f9fa" }};
+            --text-color: {{ login_config.cor_texto|default:"#333333" }};
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            {% if login_config.imagem_fundo %}
+            background-image: url('{{ login_config.imagem_fundo.url }}');
+            background-size: cover;
+            background-position: center;
+            {% endif %}
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 8px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            padding: 0.75rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .btn-login {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .btn-login:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .welcome-message {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .footer-message {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        /* CSS Personalizado */
+        {{ login_config.css_personalizado|safe }}
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo -->
+            {% if login_config.mostrar_logo and login_config.logo %}
+            <div class="logo-container">
+                <img src="{{ login_config.logo.url }}" alt="Logo" class="logo">
+            </div>
+            {% endif %}
+
+            <!-- Header -->
+            <div class="login-header">
+                <h2 class="login-title">{{ login_config.titulo|default:"Login" }}</h2>
+                {% if login_config.subtitulo %}
+                <p class="login-subtitle">{{ login_config.subtitulo }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Mensagem de Boas-vindas -->
+            {% if login_config.mensagem_boas_vindas %}
+            <div class="welcome-message">
+                {{ login_config.mensagem_boas_vindas }}
+            </div>
+            {% endif %}
+
+            <!-- Mensagens de erro -->
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        {{ error }}<br>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Formulário de Login -->
+            {% if not is_preview %}
+            <form method="post" action="{{ login_config.get_login_url }}">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuário</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+
+                {% if login_config.permitir_lembrar_senha %}
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">
+                        Lembrar de mim
+                    </label>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary btn-login">Entrar</button>
+            </form>
+            {% else %}
+            <!-- Preview Mode -->
+            <div class="mb-3">
+                <label class="form-label">Usuário</label>
+                <input type="text" class="form-control" placeholder="seu.usuario" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control" placeholder="••••••••" disabled>
+            </div>
+
+            {% if login_config.permitir_lembrar_senha %}
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" disabled>
+                <label class="form-check-label">
+                    Lembrar de mim
+                </label>
+            </div>
+            {% endif %}
+
+            <button type="button" class="btn btn-primary btn-login" disabled>Entrar</button>
+            {% endif %}
+
+            <!-- Link de recuperação de senha -->
+            {% if login_config.mostrar_link_recuperar_senha and not is_preview %}
+            <div class="forgot-password">
+                <a href="{% url 'password_reset' %}">Esqueci minha senha</a>
+            </div>
+            {% endif %}
+
+            <!-- Mensagem do rodapé -->
+            {% if login_config.mensagem_rodape %}
+            <div class="footer-message">
+                {{ login_config.mensagem_rodape }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

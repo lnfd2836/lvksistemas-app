@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Validação de Isolamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Validação de Isolamento por Loja
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Erro: {{ error }}
+                        </div>
+                    {% else %}
+                        <!-- Status do Sistema -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h5><i class="fas fa-info-circle"></i> Status do Sistema</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled">
+                                            <li><strong>Loja Atual:</strong> {{ status.current_loja_id|default:"Nenhuma" }}</li>
+                                            <li><strong>Bancos Configurados:</strong> {{ status.configured_loja_databases }}</li>
+                                            <li><strong>Lojas Ativas:</strong> {{ status.active_lojas }}</li>
+                                            <li><strong>Isolamento Ativo:</strong> 
+                                                {% if status.isolation_active %}
+                                                    <span class="badge badge-success">Sim</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">Não</span>
+                                                {% endif %}
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5><i class="fas fa-user"></i> Contexto do Usuário</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if loja_context %}
+                                            <ul class="list-unstyled">
+                                                <li><strong>Tipo:</strong> 
+                                                    {% if loja_context.is_super_admin %}
+                                                        <span class="badge badge-danger">Super Admin</span>
+                                                    {% else %}
+                                                        <span class="badge badge-info">Usuário de Loja</span>
+                                                    {% endif %}
+                                                </li>
+                                                {% if not loja_context.is_super_admin %}
+                                                    <li><strong>Loja:</strong> {{ loja_context.loja_nome }}</li>
+                                                    <li><strong>ID da Loja:</strong> {{ loja_context.loja_id }}</li>
+                                                    <li><strong>Banco:</strong> {{ loja_context.db_alias }}</li>
+                                                {% endif %}
+                                            </ul>
+                                        {% else %}
+                                            <p class="text-muted">Contexto não disponível</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Teste de Acesso -->
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning">
+                                <h5><i class="fas fa-key"></i> Teste de Acesso às Lojas</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if access_results %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Loja</th>
+                                                    <th>Pode Acessar</th>
+                                                    <th>É Sua Loja</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for loja_key, result in access_results.items %}
+                                                    <tr>
+                                                        <td>{{ result.nome }}</td>
+                                                        <td>
+                                                            {% if result.can_access %}
+                                                                <span class="badge badge-success">Sim</span>
+                                                            {% else %}
+                                                                <span class="badge badge-danger">Não</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if result.is_own_loja %}
+                                                                <span class="badge badge-primary">Sim</span>
+                                                            {% else %}
+                                                                <span class="badge badge-secondary">Não</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if result.error %}
+                                                                <span class="text-danger">{{ result.error }}</span>
+                                                            {% else %}
+                                                                <span class="text-success">OK</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Nenhum resultado de teste disponível</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Bancos Configurados -->
+                        {% if status.loja_databases %}
+                            <div class="card border-success mt-3">
+                                <div class="card-header bg-success text-white">
+                                    <h5><i class="fas fa-database"></i> Bancos de Dados Configurados</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for db in status.loja_databases %}
+                                            <div class="col-md-3 mb-2">
+                                                <span class="badge badge-outline-success">{{ db }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Ações -->
+                        <div class="mt-4">
+                            <a href="{% url 'dashboard:index' %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                            </a>
+                            
+                            <button onclick="location.reload()" class="btn btn-secondary">
+                                <i class="fas fa-sync"></i> Atualizar
+                            </button>
+                            
+                            {% if user.is_superuser %}
+                                <a href="/admin/" class="btn btn-warning">
+                                    <i class="fas fa-cog"></i> Admin
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh a cada 30 segundos
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

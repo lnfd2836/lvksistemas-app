@@ -8,7 +8,7 @@ from .models import (
 )
 
 
-class CadastroUsuarioForm(UserCreationForm):
+class CadastroUsuarioForm(forms.ModelForm):
     """Formulário para cadastro de usuários do sistema FATESA"""
     
     email = forms.EmailField(
@@ -53,7 +53,7 @@ class CadastroUsuarioForm(UserCreationForm):
     )
     
     cursos_coordenados = forms.ModelMultipleChoiceField(
-        queryset=Curso.objects.filter(ativo=True),
+        queryset=None,  # Será definido no __init__
         required=False,
         widget=forms.CheckboxSelectMultiple(attrs={
             'class': 'form-check-input'
@@ -62,7 +62,7 @@ class CadastroUsuarioForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -71,15 +71,13 @@ class CadastroUsuarioForm(UserCreationForm):
         }
     
     def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.fields['password1'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Digite a senha'
-        })
-        self.fields['password2'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Confirme a senha'
-        })
+        super().__init__(*args, **kwargs)
+        # Definir queryset para cursos coordenados
+        try:
+            self.fields['cursos_coordenados'].queryset = Curso.objects.filter(ativo=True)
+        except Exception:
+            # Se houver erro ao acessar o banco, usar queryset vazio
+            self.fields['cursos_coordenados'].queryset = Curso.objects.none()
     
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -102,11 +100,19 @@ class CadastroUsuarioForm(UserCreationForm):
         
         return cleaned_data
     
-    def save(self, commit=True):
+    def save(self, commit=True, loja_associada=None):
+        import secrets
+        import string
+        from django.conf import settings
+        
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['nome_completo'].split()[0]
         user.last_name = ' '.join(self.cleaned_data['nome_completo'].split()[1:])
+        
+        # Gerar senha provisória
+        senha_provisoria = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+        user.set_password(senha_provisoria)
         
         if commit:
             user.save()
@@ -117,14 +123,69 @@ class CadastroUsuarioForm(UserCreationForm):
                 tipo_perfil=self.cleaned_data['tipo_perfil'],
                 nome_completo=self.cleaned_data['nome_completo'],
                 telefone=self.cleaned_data.get('telefone', ''),
-                especialidade=self.cleaned_data.get('especialidade', '')
+                especialidade=self.cleaned_data.get('especialidade', ''),
+                loja_associada=loja_associada
             )
             
             # Adicionar cursos coordenados se for coordenador
             if self.cleaned_data.get('cursos_coordenados'):
                 perfil.cursos_coordenados.set(self.cleaned_data['cursos_coordenados'])
+            
+            # Enviar email com credenciais
+            self.enviar_email_credenciais(user, senha_provisoria, loja_associada)
         
         return user
+    
+    def enviar_email_credenciais(self, user, senha_provisoria, loja_associada):
+        """Envia email com as credenciais de acesso"""
+        
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        try:
+            nome_loja = loja_associada.nome if loja_associada else "Sistema FATESA"
+            
+            assunto = f"Credenciais de Acesso - {nome_loja}"
+            
+            mensagem = f"""
+Olá {user.first_name},
+
+Suas credenciais de acesso ao Sistema FATESA foram criadas:
+
+🏪 Loja: {nome_loja}
+👤 Usuário: {user.username}
+🔑 Senha: {senha_provisoria}
+🌐 Acesso: http://localhost:8000/avaliacao-qualidade/
+
+⚠️ IMPORTANTE:
+- Esta é uma senha provisória
+- Altere sua senha no primeiro acesso
+- Mantenha suas credenciais em segurança
+
+Para acessar o sistema:
+1. Acesse o link acima
+2. Faça login com suas credenciais
+3. Altere sua senha no menu "Meu Perfil"
+
+Em caso de dúvidas, entre em contato com o administrador.
+
+Atenciosamente,
+Equipe FATESA
+            """
+            
+            send_mail(
+                assunto,
+                mensagem,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            
+            print(f"✅ Email enviado para {user.email} com credenciais de acesso")
+            
+        except Exception as e:
+            print(f"⚠️ Erro ao enviar email para {user.email}: {str(e)}")
+            print(f"Credenciais: {user.username} / {senha_provisoria}")
 
 
 class EditarUsuarioForm(forms.ModelForm):
@@ -168,7 +229,7 @@ class EditarUsuarioForm(forms.ModelForm):
     )
     
     cursos_coordenados = forms.ModelMultipleChoiceField(
-        queryset=Curso.objects.filter(ativo=True),
+        queryset=None,  # Será definido no __init__
         required=False,
         widget=forms.CheckboxSelectMultiple(attrs={
             'class': 'form-check-input'
@@ -194,6 +255,13 @@ class EditarUsuarioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.perfil = kwargs.pop('perfil', None)
         super().__init__(*args, **kwargs)
+        
+        # Definir queryset para cursos coordenados
+        try:
+            self.fields['cursos_coordenados'].queryset = Curso.objects.filter(ativo=True)
+        except Exception:
+            # Se houver erro ao acessar o banco, usar queryset vazio
+            self.fields['cursos_coordenados'].queryset = Curso.objects.none()
         
         if self.perfil:
             self.fields['nome_completo'].initial = self.perfil.nome_completo
@@ -237,6 +305,7 @@ class AlterarSenhaForm(forms.Form):
     """Formulário para alterar senha do usuário"""
     
     senha_atual = forms.CharField(
+        required=False,  # Será obrigatório apenas se não for primeira alteração
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Digite a senha atual'
@@ -244,9 +313,10 @@ class AlterarSenhaForm(forms.Form):
     )
     
     nova_senha = forms.CharField(
+        min_length=8,
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Digite a nova senha'
+            'placeholder': 'Digite a nova senha (mín. 8 caracteres)'
         })
     )
     
@@ -260,11 +330,24 @@ class AlterarSenhaForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
+        
+        # Verificar se é primeira alteração
+        self.primeira_alteracao = False
+        if hasattr(user, 'perfil_fatesa') and user.perfil_fatesa.deve_alterar_senha:
+            self.primeira_alteracao = True
+            # Na primeira alteração, não precisa da senha atual
+            self.fields['senha_atual'].widget = forms.HiddenInput()
+        else:
+            self.fields['senha_atual'].required = True
     
     def clean_senha_atual(self):
         senha_atual = self.cleaned_data.get('senha_atual')
-        if not self.user.check_password(senha_atual):
-            raise ValidationError('Senha atual incorreta.')
+        
+        # Se não é primeira alteração, validar senha atual
+        if not self.primeira_alteracao and senha_atual:
+            if not self.user.check_password(senha_atual):
+                raise ValidationError('Senha atual incorreta.')
+        
         return senha_atual
     
     def clean(self):
@@ -275,6 +358,11 @@ class AlterarSenhaForm(forms.Form):
         if nova_senha and confirmar_senha:
             if nova_senha != confirmar_senha:
                 raise ValidationError('As senhas não coincidem.')
+        
+        # Validar força da senha
+        if nova_senha:
+            if len(nova_senha) < 8:
+                raise ValidationError('A senha deve ter pelo menos 8 caracteres.')
         
         return cleaned_data
     

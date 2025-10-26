@@ -1,0 +1,272 @@
+{% extends 'email_credentials/base.html' %}
+
+{% block header_actions %}
+    <div class="btn-group" role="group">
+        <a href="{% url 'email_credentials:criar_usuario' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i>
+            Criar Usuário
+        </a>
+        <a href="{% url 'email_credentials:logs_email' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-envelope-check"></i>
+            Ver Logs
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                Total de Usuários
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {{ stats.total_users|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                Lojas Ativas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {{ stats.total_lojas|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-shop fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                Emails Enviados (30d)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {{ stats.emails_sent_30d|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-envelope-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                Senhas Provisórias
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {{ stats.users_with_provisional|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-key fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Emails Recentes -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Emails Recentes</h6>
+                    <a href="{% url 'email_credentials:logs_email' %}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_emails %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Para</th>
+                                        <th>Assunto</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for email in recent_emails %}
+                                        <tr>
+                                            <td>{{ email.to_email }}</td>
+                                            <td>{{ email.subject|truncatechars:40 }}</td>
+                                            <td>
+                                                {% if email.success %}
+                                                    <span class="badge bg-success">Enviado</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Falhou</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ email.sent_at|date:"d/m H:i" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">Nenhum email enviado recentemente.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuários Recentes -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Usuários Recentes</h6>
+                    <a href="{% url 'email_credentials:listar_usuarios' %}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_users %}
+                        {% for user in recent_users %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="avatar me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        {{ user.first_name|first|default:user.username|first|upper }}
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                    {% if user.extended_profile %}
+                                        <br><small class="badge bg-secondary">{{ user.extended_profile.get_user_type_display }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">Nenhum usuário criado recentemente.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Ações Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'email_credentials:criar_usuario' %}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-person-plus d-block mb-2" style="font-size: 2rem;"></i>
+                                Criar Usuário
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'email_credentials:listar_usuarios' %}" class="btn btn-outline-info w-100">
+                                <i class="bi bi-people d-block mb-2" style="font-size: 2rem;"></i>
+                                Gerenciar Usuários
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'email_credentials:logs_email' %}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-envelope-check d-block mb-2" style="font-size: 2rem;"></i>
+                                Logs de Email
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-warning w-100" onclick="generatePasswords(5, 12)" data-bs-toggle="modal" data-bs-target="#passwordModal">
+                                <i class="bi bi-key d-block mb-2" style="font-size: 2rem;"></i>
+                                Gerar Senhas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Geração de Senhas -->
+    <div class="modal fade" id="passwordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Senhas Geradas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label">Quantidade:</label>
+                                <select class="form-select" id="passwordCount">
+                                    <option value="3">3 senhas</option>
+                                    <option value="5" selected>5 senhas</option>
+                                    <option value="10">10 senhas</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Comprimento:</label>
+                                <select class="form-select" id="passwordLength">
+                                    <option value="8">8 caracteres</option>
+                                    <option value="12" selected>12 caracteres</option>
+                                    <option value="16">16 caracteres</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary mt-2" onclick="generateNewPasswords()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Gerar Novas
+                        </button>
+                    </div>
+                    <div class="list-group" id="generated-passwords">
+                        <!-- Senhas serão inseridas aqui via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function generateNewPasswords() {
+        const count = document.getElementById('passwordCount').value;
+        const length = document.getElementById('passwordLength').value;
+        generatePasswords(count, length);
+    }
+</script>
+{% endblock %}
