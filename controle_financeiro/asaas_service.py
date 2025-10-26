@@ -244,6 +244,32 @@ class AsaasService:
             logger.error(f"Erro ao processar cliente no Asaas: {str(e)}")
             return None
     
+
+    def validar_banco_loja(self, controle_financeiro):
+        """
+        Valida se o banco da loja foi criado antes de gerar boleto
+        
+        Args:
+            controle_financeiro: Instância do ControleFinanceiro
+            
+        Returns:
+            bool: True se banco existe, False caso contrário
+        """
+        loja = controle_financeiro.loja
+        
+        if not loja.db_name:
+            logger.error(f"Loja {loja.nome} não possui código de banco (db_name)")
+            return False
+        
+        # Verificar se o banco foi criado (pode ser implementado conforme necessário)
+        # Por enquanto, verificamos se db_name existe
+        if len(loja.db_name.strip()) < 5:
+            logger.error(f"Código do banco da loja {loja.nome} é inválido: {loja.db_name}")
+            return False
+        
+        logger.info(f"Banco da loja {loja.nome} validado: {loja.db_name}")
+        return True
+
     def gerar_cobranca_com_pix(self, controle_financeiro, dias_vencimento=30, descricao=None):
         """
         Gera cobrança no Asaas com boleto e PIX
@@ -260,6 +286,10 @@ class AsaasService:
         # Validar configuração
         if not self.validar_configuracao():
             raise ValueError("Configuração da API Asaas inválida")
+        
+        # Validar se banco da loja foi criado
+        if not self.validar_banco_loja(controle_financeiro):
+            raise ValueError(f"Banco da loja {controle_financeiro.loja.nome} não foi criado. Código: {controle_financeiro.loja.db_name}")
         
         # Criar/atualizar cliente
         cliente = self.criar_cliente(controle_financeiro)
@@ -280,7 +310,7 @@ class AsaasService:
             'value': float(controle_financeiro.valor_mensal),
             'dueDate': data_vencimento.strftime('%Y-%m-%d'),
             'description': descricao,
-            'externalReference': f"CF_{controle_financeiro.id}_{int(timezone.now().timestamp())}",
+            'externalReference': f"CF_{controle_financeiro.id}_{controle_financeiro.loja.db_name}_{int(timezone.now().timestamp())}",
             
             # Configurações do boleto
             'installmentCount': 1,

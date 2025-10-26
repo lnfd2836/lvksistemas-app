@@ -440,3 +440,11 @@ if 'DYNO' in os.environ:
     # Update all loggers to use only console handler
     for logger_name in LOGGING['loggers']:
         LOGGING['loggers'][logger_name]['handlers'] = ['console']
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Configure conforme seu Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Sao_Paulo'

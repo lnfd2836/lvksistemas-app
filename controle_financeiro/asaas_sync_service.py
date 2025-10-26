@@ -218,6 +218,18 @@ class AsaasSyncService:
                 logger.error(f"Erro ao sincronizar cobranças existentes: {str(e)}")
                 result['errors'].append(f"Erro cobranças existentes: {str(e)}")
             
+
+            # 3. Verificar cobranças excluídas (se API estiver acessível)
+            try:
+                deleted_result = self._check_deleted_charges()
+                result['deleted_found'] = deleted_result['deleted_found']
+                result['deleted_removed'] = deleted_result['deleted_removed']
+                result['errors'].extend(deleted_result['errors'])
+                logger.info(f"Verificação de exclusões: {deleted_result['deleted_found']} encontradas, {deleted_result['deleted_removed']} removidas")
+            except Exception as e:
+                logger.error(f"Erro ao verificar cobranças excluídas: {str(e)}")
+                result['errors'].append(f"Erro verificação exclusões: {str(e)}")
+            
             logger.info(f"Sincronização limitada concluída: {result}")
             
         except Exception as e:
@@ -831,6 +843,70 @@ class AsaasSyncService:
             error_msg = f"Erro ao buscar cobranças locais: {str(e)}"
             logger.error(error_msg)
             result['errors'].append(error_msg)
+        
+        return result
+
+
+    def _check_deleted_charges(self) -> Dict:
+        """Verifica cobranças que foram excluídas no Asaas"""
+        result = {
+            'deleted_found': 0,
+            'deleted_removed': 0,
+            'errors': []
+        }
+        
+        try:
+            # Buscar cobranças locais dos últimos 30 dias
+            data_limite = timezone.now() - timedelta(days=30)
+            cobrancas_locais = CobrancaAsaas.objects.filter(
+                data_criacao__gte=data_limite
+            ).exclude(
+                status__in=['RECEIVED', 'CONFIRMED', 'REFUNDED']
+            )
+            
+            logger.info(f"Verificando {len(cobrancas_locais)} cobranças locais para exclusões...")
+            
+            for cobranca in cobrancas_locais:
+                try:
+                    # Tentar consultar a cobrança no Asaas
+                    response = requests.get(
+                        f"{self.asaas_service.base_url}/payments/{cobranca.asaas_id}",
+                        headers=self.asaas_service.headers,
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 404:
+                        # Cobrança foi excluída do Asaas
+                        logger.warning(f"Cobrança {cobranca.asaas_id} foi excluída do Asaas")
+                        result['deleted_found'] += 1
+                        
+                        # Adicionar observação e excluir
+                        cobranca.observacoes += f"\n{timezone.now().strftime('%d/%m/%Y %H:%M')}: Cobrança excluída do Asaas - removida automaticamente"
+                        cobranca.save()
+                        cobranca.delete()
+                        
+                        result['deleted_removed'] += 1
+                        logger.info(f"Cobrança {cobranca.asaas_id} removida do sistema local")
+                        
+                    elif response.status_code == 401:
+                        logger.error("Erro de autenticação - verificar API key")
+                        break
+                        
+                except requests.exceptions.ConnectionError as e:
+                    if "Connection refused" in str(e):
+                        logger.warning("Connection refused - parando verificação de exclusões")
+                        break
+                    else:
+                        logger.warning(f"Erro de conexão para {cobranca.asaas_id}: {str(e)}")
+                        result['errors'].append(f"Conexão falhou para {cobranca.asaas_id}")
+                        
+                except Exception as e:
+                    logger.warning(f"Erro ao verificar cobrança {cobranca.asaas_id}: {str(e)}")
+                    result['errors'].append(f"Erro em {cobranca.asaas_id}: {str(e)}")
+        
+        except Exception as e:
+            logger.error(f"Erro ao verificar cobranças excluídas: {str(e)}")
+            result['errors'].append(f"Erro geral: {str(e)}")
         
         return result
 

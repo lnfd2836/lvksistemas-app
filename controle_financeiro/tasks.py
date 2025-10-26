@@ -346,3 +346,81 @@ def executar_rotinas_continuas():
     except Exception as e:
         logger.error(f"Erro nas rotinas contínuas: {str(e)}")
         raise
+
+"""
+Tasks do Celery para processamento automático de notificações
+"""
+
+from celery import shared_task
+from django.utils import timezone
+from .email_notification_service import email_service
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task
+def processar_notificacoes_boleto():
+    """
+    Task para processar notificações de boletos automaticamente
+    Deve ser executada diariamente
+    """
+    try:
+        logger.info("Iniciando processamento automático de notificações de boleto")
+        
+        enviados = email_service.processar_notificacoes_pendentes()
+        
+        logger.info(f"Processamento automático concluído: {enviados} emails enviados")
+        
+        return {
+            'success': True,
+            'emails_enviados': enviados,
+            'timestamp': timezone.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro no processamento automático de notificações: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e),
+            'timestamp': timezone.now().isoformat()
+        }
+
+
+@shared_task
+def enviar_boleto_especifico(cobranca_id, dias_antecedencia=10):
+    """
+    Task para enviar boleto específico por email
+    
+    Args:
+        cobranca_id: ID da cobrança
+        dias_antecedencia: Dias de antecedência (padrão: 10)
+    """
+    try:
+        from .models import CobrancaAsaas
+        
+        cobranca = CobrancaAsaas.objects.get(id=cobranca_id)
+        
+        sucesso = email_service.enviar_boleto_por_email(cobranca, dias_antecedencia)
+        
+        return {
+            'success': sucesso,
+            'cobranca_id': str(cobranca_id),
+            'asaas_id': cobranca.asaas_id,
+            'timestamp': timezone.now().isoformat()
+        }
+        
+    except CobrancaAsaas.DoesNotExist:
+        logger.error(f"Cobrança {cobranca_id} não encontrada")
+        return {
+            'success': False,
+            'error': 'Cobrança não encontrada',
+            'cobranca_id': str(cobranca_id)
+        }
+    except Exception as e:
+        logger.error(f"Erro ao enviar boleto específico {cobranca_id}: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e),
+            'cobranca_id': str(cobranca_id)
+        }

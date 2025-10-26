@@ -66,6 +66,13 @@ app.conf.beat_schedule = {
             'expires': 900,  # Expira em 15 minutos se não executar
         }
     },
+    'processar-notificacoes-boleto': {
+        'task': 'controle_financeiro.tasks.processar_notificacoes_boleto',
+        'schedule': 86400.0,  # 24 horas - executa diariamente
+        'options': {
+            'expires': 3600,  # Expira em 1 hora se não executar
+        }
+    },
 }
 
 @app.task(bind=True)
