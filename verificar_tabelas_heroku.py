@@ -18,7 +18,8 @@ def main():
     
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'avaliacao_qualidade%';")
+        # Query para PostgreSQL
+        cursor.execute("SELECT tablename FROM pg_tables WHERE tablename LIKE 'avaliacao_qualidade%';")
         tables = cursor.fetchall()
         
         print(f"Tabelas encontradas: {len(tables)}")
