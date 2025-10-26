@@ -178,8 +178,12 @@ def dashboard_loja(request, loja=None, loja_id=None):
             return redirect('login')
     
         # VERIFICAR SE É UMA LOJA DO TIPO CONTROLE DE QUALIDADE (FATESA)
-        if target_loja.tipo_loja and target_loja.tipo_loja.nome == "controle_qualidade":
-            return dashboard_fatesa(request, target_loja)
+        try:
+            if target_loja.tipo_loja and target_loja.tipo_loja.nome == "controle_qualidade":
+                return dashboard_fatesa(request, target_loja)
+        except Exception as e:
+            # Se houver erro ao acessar tipo_loja (por exemplo, tabela não existe), continua normalmente
+            logger.warning(f"Erro ao verificar tipo_loja para loja {target_loja.nome}: {str(e)}")
     
         # Obter contexto do dashboard
         dashboard_context = AuthenticationService.get_dashboard_context(request.user)
@@ -922,3 +926,75 @@ def dashboard_fatesa(request, loja):
             'receita_hoje': 0,
         }
         return render(request, 'dashboard/loja.html', context)
+
+@login_required
+def dashboard_fatesa(request, loja):
+    """Dashboard personalizado para lojas do tipo controle de qualidade (FATESA)"""
+    
+    try:
+        # Verificar se o usuário pode acessar esta loja
+        if not AuthenticationService.can_access_store_dashboard(request.user, loja):
+            logger.warning(f"Usuário {request.user.username} tentou acessar loja FATESA {loja.nome} sem permissão")
+            messages.error(request, 'Você não tem permissão para acessar esta loja.')
+            return redirect('login')
+        
+        # Obter contexto do dashboard
+        dashboard_context = AuthenticationService.get_dashboard_context(request.user)
+        
+        # Estatísticas específicas para controle de qualidade
+        context = {
+            'loja': loja,
+            'is_fatesa': True,
+            'page_title': f'Dashboard - {loja.nome}',
+            'user_type': dashboard_context['user_type'],
+            'can_access_store': dashboard_context['can_access_store'],
+        }
+        
+        # Tentar obter dados específicos do módulo de avaliação de qualidade
+        try:
+            from avaliacao_qualidade.models import Curso, Professor, Avaliacao
+            
+            # Estatísticas básicas
+            total_cursos = Curso.objects.filter(loja=loja).count()
+            total_professores = Professor.objects.filter(loja=loja).count()
+            total_avaliacoes = Avaliacao.objects.filter(curso__loja=loja).count()
+            
+            # Adicionar ao contexto
+            context.update({
+                'total_cursos': total_cursos,
+                'total_professores': total_professores,
+                'total_avaliacoes': total_avaliacoes,
+                'modulo_ativo': 'avaliacao_qualidade',
+            })
+            
+        except Exception as e:
+            logger.warning(f"Erro ao obter dados de avaliação de qualidade para loja {loja.nome}: {str(e)}")
+            # Continuar com contexto básico
+            context.update({
+                'total_cursos': 0,
+                'total_professores': 0,
+                'total_avaliacoes': 0,
+                'modulo_ativo': 'avaliacao_qualidade',
+            })
+        
+        # Usar template específico do FATESA se existir
+        template_paths = [
+            'avaliacao_qualidade/dashboard_fatesa.html',
+            'dashboard/loja_fatesa.html',
+            'dashboard/loja.html'  # Fallback
+        ]
+        
+        for template_path in template_paths:
+            try:
+                return render(request, template_path, context)
+            except Exception:
+                continue
+        
+        # Se nenhum template funcionar, usar o padrão
+        logger.warning(f"Nenhum template específico encontrado para FATESA, usando template padrão")
+        return render(request, 'dashboard/loja.html', context)
+                
+    except Exception as e:
+        logger.error(f"Erro no dashboard FATESA para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'Erro interno ao carregar dashboard da loja. Tente novamente.')
+        return redirect('login')
