@@ -69,9 +69,9 @@ MIDDLEWARE = [
     # Grupo 1: Super Admin Exclusivo
     # 'dashboard.middleware.super_admin_exclusivo.SuperAdminExclusivoMiddleware',  # Temporariamente desabilitado
     # Bloqueio: Super Admin NÃO pode acessar sistema das lojas
-    'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',
+    # 'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',  # Temporariamente desabilitado
     # Grupo 2: Asaas Exclusivo
-    'controle_financeiro.middleware.asaas_exclusivo.AsaasExclusivoMiddleware',
+    # 'controle_financeiro.middleware.asaas_exclusivo.AsaasExclusivoMiddleware',  # Temporariamente desabilitado
     # === MIDDLEWARES ORIGINAIS ===
     'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
     'controle_financeiro.webhook_middleware.WebhookBypassMiddleware',  # Detecta webhooks primeiro
