@@ -1,0 +1,131 @@
+<form method="post" action="{% url 'lojas:salvar_config_produto' loja.id %}" class="config-form">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Campos Obrigatórios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="nome" id="campo_nome" 
+                               {% if 'nome' in config_produto.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="campo_nome">Nome do Produto</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="preco" id="campo_preco"
+                               {% if 'preco' in config_produto.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="campo_preco">Preço</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="categoria" id="campo_categoria"
+                               {% if 'categoria' in config_produto.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="campo_categoria">Categoria</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="codigo" id="campo_codigo"
+                               {% if 'codigo' in config_produto.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="campo_codigo">Código</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Configurações de Preço</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="permite_preco_zero" 
+                               id="permite_preco_zero" {% if config_produto.permite_preco_zero %}checked{% endif %}>
+                        <label class="form-check-label" for="permite_preco_zero">
+                            Permitir preço zero
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="preco_minimo" class="form-label">Preço Mínimo</label>
+                        <input type="number" class="form-control" name="preco_minimo" 
+                               id="preco_minimo" step="0.01" 
+                               value="{{ config_produto.preco_minimo|default:'' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="preco_maximo" class="form-label">Preço Máximo</label>
+                        <input type="number" class="form-control" name="preco_maximo" 
+                               id="preco_maximo" step="0.01"
+                               value="{{ config_produto.preco_maximo|default:'' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Configurações de Estoque</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="controla_estoque" 
+                               id="controla_estoque" {% if config_produto.controla_estoque %}checked{% endif %}>
+                        <label class="form-check-label" for="controla_estoque">
+                            Controlar estoque
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="alerta_estoque_baixo" 
+                               id="alerta_estoque_baixo" {% if config_produto.alerta_estoque_baixo %}checked{% endif %}>
+                        <label class="form-check-label" for="alerta_estoque_baixo">
+                            Alertar estoque baixo
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="estoque_minimo_padrao" class="form-label">Estoque Mínimo Padrão</label>
+                        <input type="number" class="form-control" name="estoque_minimo_padrao" 
+                               id="estoque_minimo_padrao" 
+                               value="{{ config_produto.estoque_minimo_padrao }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Configurações de Código</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="gera_codigo_automatico" 
+                               id="gera_codigo_automatico" {% if config_produto.gera_codigo_automatico %}checked{% endif %}>
+                        <label class="form-check-label" for="gera_codigo_automatico">
+                            Gerar código automaticamente
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="prefixo_codigo" class="form-label">Prefixo do Código</label>
+                        <input type="text" class="form-control" name="prefixo_codigo" 
+                               id="prefixo_codigo" maxlength="10"
+                               value="{{ config_produto.prefixo_codigo }}">
+                        <div class="form-text">Ex: PROD, ITEM, etc.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Salvar Configurações de Produto
+            </button>
+        </div>
+    </div>
+</form>

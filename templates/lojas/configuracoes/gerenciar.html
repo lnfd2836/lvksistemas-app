@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Configurações - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs me-2"></i>
+                        Configurações da Loja: {{ loja.nome }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'lojas:detalhar_loja' loja.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Navegação por abas -->
+                    <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="produto-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#produto" type="button" role="tab">
+                                <i class="fas fa-box me-1"></i>Produtos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cliente-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#cliente" type="button" role="tab">
+                                <i class="fas fa-users me-1"></i>Clientes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="venda-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#venda" type="button" role="tab">
+                                <i class="fas fa-shopping-cart me-1"></i>Vendas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#dashboard" type="button" role="tab">
+                                <i class="fas fa-chart-bar me-1"></i>Dashboard
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Conteúdo das abas -->
+                    <div class="tab-content mt-3" id="configTabsContent">
+                        <!-- Configurações de Produto -->
+                        <div class="tab-pane fade show active" id="produto" role="tabpanel">
+                            {% include 'lojas/configuracoes/produto.html' %}
+                        </div>
+                        
+                        <!-- Configurações de Cliente -->
+                        <div class="tab-pane fade" id="cliente" role="tabpanel">
+                            {% include 'lojas/configuracoes/cliente.html' %}
+                        </div>
+                        
+                        <!-- Configurações de Venda -->
+                        <div class="tab-pane fade" id="venda" role="tabpanel">
+                            {% include 'lojas/configuracoes/venda.html' %}
+                        </div>
+                        
+                        <!-- Configurações de Dashboard -->
+                        <div class="tab-pane fade" id="dashboard" role="tabpanel">
+                            {% include 'lojas/configuracoes/dashboard.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Salvar configurações via AJAX
+    $('.config-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var url = form.attr('action');
+        var data = form.serialize();
+        
+        $.post(url, data)
+            .done(function(response) {
+                toastr.success('Configurações salvas com sucesso!');
+            })
+            .fail(function() {
+                toastr.error('Erro ao salvar configurações.');
+            });
+    });
+});
+</script>
+{% endblock %}

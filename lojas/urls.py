@@ -1,6 +1,7 @@
 from django.urls import path, include
 from . import views
 from . import views_login
+from . import views_configuracoes
 
 app_name = 'lojas'
 
@@ -52,6 +53,14 @@ urlpatterns = [
     
     # URLs administrativas (super admin)
     path('admin/', include('lojas.urls_admin')),
+    
+    # Configurações individuais por loja
+    path('<uuid:loja_id>/configuracoes/', views_configuracoes.gerenciar_configuracoes_loja, name='configuracoes'),
+    path('<uuid:loja_id>/configuracoes/produto/', views_configuracoes.salvar_configuracao_produto, name='salvar_config_produto'),
+    path('<uuid:loja_id>/configuracoes/cliente/', views_configuracoes.salvar_configuracao_cliente, name='salvar_config_cliente'),
+    path('<uuid:loja_id>/configuracoes/venda/', views_configuracoes.salvar_configuracao_venda, name='salvar_config_venda'),
+    path('<uuid:loja_id>/configuracoes/dashboard/', views_configuracoes.salvar_configuracao_dashboard, name='salvar_config_dashboard'),
+    path('<uuid:loja_id>/configuracoes/preview-dashboard/', views_configuracoes.preview_dashboard, name='preview_dashboard'),
     
     # Login personalizado por loja
     path('<uuid:loja_id>/login/gerenciar/', views_login.gerenciar_login_personalizado, name='gerenciar_login_personalizado'),
