@@ -166,11 +166,17 @@ class SuperAdminMiddleware:
             logger.info(f"Super admin {request.user.username} redirecionado da página inicial para dashboard")
             return redirect('/dashboard/')
         
-        # Se está tentando acessar área de loja, redirecionar para admin
-        if path.startswith('/loja/'):
-            logger.warning(f"Super admin {request.user.username} tentou acessar área de loja: {path}")
+        # Permitir que super admins acessem lojas para administração
+        if path.startswith('/lojas/'):
+            logger.info(f"Super admin {request.user.username} acessando administração de lojas: {path}")
+            # Permitir acesso para administração de lojas
+            return self.get_response(request)
+        
+        # Se está tentando acessar área operacional de loja específica, redirecionar
+        if path.startswith('/loja/') and not path.startswith('/lojas/'):
+            logger.warning(f"Super admin {request.user.username} tentou acessar área operacional de loja: {path}")
             try:
-                messages.info(request, 'Você foi redirecionado para a área administrativa.')
+                messages.info(request, 'Super admins administram lojas através do painel administrativo.')
             except:
                 pass  # Ignorar erro de mensagens
             return redirect('/admin/')

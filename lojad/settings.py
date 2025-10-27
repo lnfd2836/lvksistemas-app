@@ -69,7 +69,7 @@ MIDDLEWARE = [
     # Grupo 1: Super Admin Exclusivo
     # 'dashboard.middleware.super_admin_exclusivo.SuperAdminExclusivoMiddleware',  # Temporariamente desabilitado
     # Bloqueio: Super Admin NÃO pode acessar sistema das lojas
-    # 'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',  # Temporariamente desabilitado
+    # # 'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',  # Removido - bloqueava super admin  # Temporariamente desabilitado
     # Grupo 2: Asaas Exclusivo
     # 'controle_financeiro.middleware.asaas_exclusivo.AsaasExclusivoMiddleware',  # Temporariamente desabilitado
     # === MIDDLEWARES ORIGINAIS ===

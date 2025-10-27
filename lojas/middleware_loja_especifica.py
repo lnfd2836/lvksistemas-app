@@ -172,11 +172,13 @@ class LojaEspecificaMiddleware:
             return self._mostrar_login_loja(request, loja, login_config)
         
         try:
-            # Bloquear super admins de fazer login via loja
+            # Permitir que super admins visualizem páginas de login para administração
             if request.user.is_authenticated and request.user.is_superuser:
-                logger.warning(f"Super admin {request.user.username} tentou fazer login via loja {loja.nome}")
-                messages.error(request, 'Super administradores devem usar o login exclusivo do sistema.')
-                return redirect('/admin/')
+                logger.info(f"Super admin {request.user.username} visualizando login da loja {loja.nome} para administração")
+                # Permitir visualização mas não login
+                if request.method == 'POST':
+                    messages.info(request, 'Super administradores não fazem login via loja. Use o painel administrativo.')
+                    return redirect('/admin/')
             
             # Tentar autenticar
             user = authenticate(request, username=username, password=password)
