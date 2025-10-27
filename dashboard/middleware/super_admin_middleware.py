@@ -191,7 +191,12 @@ class SuperAdminMiddleware:
         if self._is_authenticated_super_admin(request):
             logger.error(f"Exceção para super admin {request.user.username}: {str(exception)}")
             
-            # Se não está em área administrativa, redirecionar
+            # PERMITIR que super admins vejam erros em /lojas/ para debug
+            if request.path.startswith('/lojas/'):
+                logger.info(f"Permitindo que super admin veja erro em {request.path}")
+                return None  # Deixar Django tratar o erro normalmente
+            
+            # Se não está em área administrativa (exceto /lojas/), redirecionar
             if not request.path.startswith('/admin/'):
                 messages.error(request, 'Ocorreu um erro. Você foi redirecionado para a área administrativa.')
                 return redirect('/admin/')

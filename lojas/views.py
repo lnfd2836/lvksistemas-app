@@ -248,50 +248,86 @@ def editar_loja(request, loja_id):
 def detalhar_loja(request, loja_id):
     """Detalha uma loja específica"""
     
-    loja = get_object_or_404(Loja, id=loja_id)
-    
-    # Estatísticas da loja
-    total_clientes = Cliente.objects.filter(loja=loja).count()
-    total_produtos = Produto.objects.filter(loja=loja).count()
-    total_vendas = Venda.objects.filter(loja=loja).count()
-    
-    # Vendas recentes
-    vendas_recentes = Venda.objects.filter(loja=loja).order_by('-data_venda')[:10]
-    
-    # Backups da loja
-    backups = BackupLoja.objects.filter(loja=loja).order_by('-data_backup')[:5]
-    
-    # Informações do plano comercial
-    assinatura = None
-    plano = None
-    dias_vencimento = 0
-    limites_atingidos = {}
-    
     try:
-        from planos.models import AssinaturaLoja
-        assinatura = AssinaturaLoja.objects.filter(loja=loja, status='ativa').first()
-        if assinatura:
-            plano = assinatura.plano
-            dias_vencimento = assinatura.dias_para_vencimento()
-            limites_atingidos = assinatura.verificar_limites()
+        loja = get_object_or_404(Loja, id=loja_id)
+        
+        # Estatísticas da loja (com tratamento de erro)
+        total_clientes = 0
+        total_produtos = 0
+        total_vendas = 0
+        vendas_recentes = []
+        backups = []
+        
+        try:
+            total_clientes = Cliente.objects.filter(loja=loja).count()
+        except Exception as e:
+            logger.warning(f"Erro ao contar clientes da loja {loja.nome}: {str(e)}")
+        
+        try:
+            total_produtos = Produto.objects.filter(loja=loja).count()
+        except Exception as e:
+            logger.warning(f"Erro ao contar produtos da loja {loja.nome}: {str(e)}")
+        
+        try:
+            total_vendas = Venda.objects.filter(loja=loja).count()
+        except Exception as e:
+            logger.warning(f"Erro ao contar vendas da loja {loja.nome}: {str(e)}")
+        
+        # Vendas recentes (com tratamento de erro)
+        try:
+            vendas_recentes = Venda.objects.filter(loja=loja).order_by('-data_venda')[:10]
+        except Exception as e:
+            logger.warning(f"Erro ao buscar vendas recentes da loja {loja.nome}: {str(e)}")
+            vendas_recentes = []
+        
+        # Backups da loja (com tratamento de erro)
+        try:
+            backups = BackupLoja.objects.filter(loja=loja).order_by('-data_backup')[:5]
+        except Exception as e:
+            logger.warning(f"Erro ao buscar backups da loja {loja.nome}: {str(e)}")
+            backups = []
+        
+        # Informações do plano comercial
+        assinatura = None
+        plano = None
+        dias_vencimento = 0
+        limites_atingidos = {}
+        
+        try:
+            from planos.models import AssinaturaLoja
+            assinatura = AssinaturaLoja.objects.filter(loja=loja, status='ativa').first()
+            if assinatura:
+                plano = assinatura.plano
+                try:
+                    dias_vencimento = assinatura.dias_para_vencimento()
+                except:
+                    dias_vencimento = 0
+                try:
+                    limites_atingidos = assinatura.verificar_limites()
+                except:
+                    limites_atingidos = {}
+        except Exception as e:
+            logger.warning(f"Erro ao buscar informações do plano para loja {loja.nome}: {str(e)}")
+        
+        context = {
+            'loja': loja,
+            'total_clientes': total_clientes,
+            'total_produtos': total_produtos,
+            'total_vendas': total_vendas,
+            'vendas_recentes': vendas_recentes,
+            'backups': backups,
+            'assinatura': assinatura,
+            'plano': plano,
+            'dias_vencimento': dias_vencimento,
+            'limites_atingidos': limites_atingidos,
+        }
+        
+        return render(request, 'lojas/detalhar.html', context)
+        
     except Exception as e:
-        logger.warning(f"Erro ao buscar informações do plano para loja {loja.nome}: {str(e)}")
-        # Valores padrão já definidos acima
-    
-    context = {
-        'loja': loja,
-        'total_clientes': total_clientes,
-        'total_produtos': total_produtos,
-        'total_vendas': total_vendas,
-        'vendas_recentes': vendas_recentes,
-        'backups': backups,
-        'assinatura': assinatura,
-        'plano': plano,
-        'dias_vencimento': dias_vencimento,
-        'limites_atingidos': limites_atingidos,
-    }
-    
-    return render(request, 'lojas/detalhar.html', context)
+        logger.error(f"Erro crítico ao detalhar loja {loja_id}: {str(e)}")
+        messages.error(request, f'Erro ao carregar detalhes da loja: {str(e)}')
+        return redirect('lojas:listar_lojas')
 
 
 

@@ -43,8 +43,8 @@ def main():
         ("git add .", "Adicionando arquivos ao git"),
         ("git commit -m 'Fix: Corrigir middleware que bloqueava super admin de acessar lojas'", "Fazendo commit das correções"),
         ("git push heroku main", "Fazendo push para o Heroku"),
-        ("heroku run python manage.py migrate", "Executando migrações no Heroku"),
-        ("heroku run python manage.py collectstatic --noinput", "Coletando arquivos estáticos"),
+        ("heroku run python manage.py migrate --app lvksistemas-app", "Executando migrações no Heroku"),
+        ("heroku run python manage.py collectstatic --noinput --app lvksistemas-app", "Coletando arquivos estáticos"),
     ]
     
     success_count = 0
