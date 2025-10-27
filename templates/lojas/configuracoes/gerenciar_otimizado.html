@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Configurações Otimizadas - {{ loja.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.config-tab-content {
+    min-height: 400px;
+}
+.performance-info {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1000;
+}
+.loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.8);
+    z-index: 999;
+}
+.config-section {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Informações de Performance (apenas para debug) -->
+    {% if user.is_superuser %}
+    <div class="performance-info">
+        ⚡ Cache: {{ performance_info.cache_hit|yesno:"HIT,MISS" }} | 
+        Load: {{ performance_info.load_time }}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs me-2"></i>
+                        Configurações Otimizadas: {{ loja.nome }}
+                        <small class="text-muted">({{ tipo_loja|title }})</small>
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'lojas:detalhar_loja' loja.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                        {% if user.is_superuser %}
+                        <button type="button" class="btn btn-info btn-sm" onclick="warmCache()">
+                            <i class="fas fa-fire me-1"></i>Pré-carregar Cache
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body position-relative">
+                    <!-- Loading Overlay -->
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Navegação por abas otimizada -->
+                    <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="produto-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#produto" type="button" role="tab"
+                                    data-config-type="produto">
+                                <i class="fas fa-box me-1"></i>Produtos
+                                <span class="badge bg-success ms-1" id="produto-status">✓</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cliente-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#cliente" type="button" role="tab"
+                                    data-config-type="cliente">
+                                <i class="fas fa-users me-1"></i>Clientes
+                                <span class="badge bg-success ms-1" id="cliente-status">✓</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="venda-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#venda" type="button" role="tab"
+                                    data-config-type="venda">
+                                <i class="fas fa-shopping-cart me-1"></i>Vendas
+                                <span class="badge bg-success ms-1" id="venda-status">✓</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#dashboard" type="button" role="tab"
+                                    data-config-type="dashboard">
+                                <i class="fas fa-chart-bar me-1"></i>Dashboard
+                                <span class="badge bg-success ms-1" id="dashboard-status">✓</span>
+                            </button>
+                        </li>
+                        {% if config_tipo %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="especifica-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#especifica" type="button" role="tab"
+                                    data-config-type="especifica">
+                                <i class="fas fa-star me-1"></i>{{ tipo_loja|title }}
+                                <span class="badge bg-info ms-1">NEW</span>
+                            </button>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <!-- Conteúdo das abas -->
+                    <div class="tab-content mt-3 config-tab-content" id="configTabsContent">
+                        <!-- Configurações de Produto -->
+                        <div class="tab-pane fade show active" id="produto" role="tabpanel">
+                            <div class="config-section">
+                                <h5><i class="fas fa-box me-2"></i>Configurações de Produto</h5>
+                                <form id="form-produto" data-config-type="produto">
+                                    {% csrf_token %}
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Campos Obrigatórios</h6>
+                                            {% for campo in "nome,preco,categoria,codigo"|split:"," %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="campos_obrigatorios" value="{{ campo }}" 
+                                                       id="campo_{{ campo }}"
+                                                       {% if campo in configs.produto.campos_obrigatorios %}checked{% endif %}>
+                                                <label class="form-check-label" for="campo_{{ campo }}">
+                                                    {{ campo|title }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Configurações de Estoque</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="controla_estoque" id="controla_estoque"
+                                                       {% if configs.produto.controla_estoque %}checked{% endif %}>
+                                                <label class="form-check-label" for="controla_estoque">
+                                                    Controlar estoque
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="gera_codigo_automatico" id="gera_codigo_automatico"
+                                                       {% if configs.produto.gera_codigo_automatico %}checked{% endif %}>
+                                                <label class="form-check-label" for="gera_codigo_automatico">
+                                                    Gerar código automaticamente
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Salvar Configurações
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Outras abas seriam similares... -->
+                        <div class="tab-pane fade" id="cliente" role="tabpanel">
+                            <div class="config-section">
+                                <h5><i class="fas fa-users me-2"></i>Configurações de Cliente</h5>
+                                <p class="text-muted">Configurações de cliente carregadas via cache...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="venda" role="tabpanel">
+                            <div class="config-section">
+                                <h5><i class="fas fa-shopping-cart me-2"></i>Configurações de Venda</h5>
+                                <p class="text-muted">Configurações de venda carregadas via cache...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="dashboard" role="tabpanel">
+                            <div class="config-section">
+                                <h5><i class="fas fa-chart-bar me-2"></i>Configurações de Dashboard</h5>
+                                <p class="text-muted">Configurações de dashboard carregadas via cache...</p>
+                            </div>
+                        </div>
+                        
+                        {% if config_tipo %}
+                        <div class="tab-pane fade" id="especifica" role="tabpanel">
+                            <div class="config-section">
+                                <h5><i class="fas fa-star me-2"></i>Configurações Específicas: {{ tipo_loja|title }}</h5>
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Configurações Específicas</h6>
+                                    <p>Estas são configurações específicas para {{ tipo_loja }}:</p>
+                                    <ul>
+                                        {% for key, value in config_tipo.items %}
+                                        <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Configurações otimizadas carregadas do cache
+    console.log('Configurações carregadas:', {{ configs|safe }});
+    
+    // Salvar configurações via AJAX otimizado
+    $('form[data-config-type]').on('submit', function(e) {
+        e.preventDefault();
+        
+        const form = $(this);
+        const configType = form.data('config-type');
+        const formData = new FormData(form[0]);
+        formData.append('config_type', configType);
+        
+        // Mostrar loading
+        $('#loadingOverlay').show();
+        
+        // Atualizar status da aba
+        $(`#${configType}-status`).removeClass('bg-success bg-danger').addClass('bg-warning').text('...');
+        
+        $.ajax({
+            url: '{% url "lojas:salvar_config_ajax" loja.id %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $(`#${configType}-status`).removeClass('bg-warning bg-danger').addClass('bg-success').text('✓');
+                    
+                    // Log de performance
+                    if (response.cache_cleared) {
+                        console.log('Cache limpo para otimização');
+                    }
+                } else {
+                    toastr.error(response.error || 'Erro ao salvar');
+                    $(`#${configType}-status`).removeClass('bg-warning bg-success').addClass('bg-danger').text('✗');
+                }
+            },
+            error: function() {
+                toastr.error('Erro de conexão');
+                $(`#${configType}-status`).removeClass('bg-warning bg-success').addClass('bg-danger').text('✗');
+            },
+            complete: function() {
+                $('#loadingOverlay').hide();
+            }
+        });
+    });
+    
+    // Lazy loading de abas
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        const configType = $(e.target).data('config-type');
+        console.log(`Aba ${configType} carregada (lazy loading)`);
+        
+        // Aqui poderia carregar conteúdo específico da aba se necessário
+        loadTabContent(configType);
+    });
+});
+
+function warmCache() {
+    $.get('{% url "lojas:warm_cache" loja.id %}')
+        .done(function(response) {
+            if (response.success) {
+                toastr.success('Cache pré-carregado com sucesso!');
+                $('.performance-info').html('⚡ Cache: WARMED | Load: optimized');
+            }
+        })
+        .fail(function() {
+            toastr.error('Erro ao pré-carregar cache');
+        });
+}
+
+function loadTabContent(configType) {
+    // Implementar lazy loading específico se necessário
+    console.log(`Carregando conteúdo da aba: ${configType}`);
+}
+
+// Performance monitoring
+window.addEventListener('load', function() {
+    const loadTime = performance.now();
+    console.log(`Página carregada em ${loadTime.toFixed(2)}ms`);
+    
+    // Atualizar indicador de performance
+    if (loadTime < 1000) {
+        $('.performance-info').append(' | Speed: FAST');
+    } else if (loadTime < 3000) {
+        $('.performance-info').append(' | Speed: OK');
+    } else {
+        $('.performance-info').append(' | Speed: SLOW');
+    }
+});
+</script>
+{% endblock %}

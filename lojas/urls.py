@@ -2,6 +2,7 @@ from django.urls import path, include
 from . import views
 from . import views_login
 from . import views_configuracoes
+from . import views_configuracoes_otimizadas
 
 app_name = 'lojas'
 
@@ -61,6 +62,13 @@ urlpatterns = [
     path('<uuid:loja_id>/configuracoes/venda/', views_configuracoes.salvar_configuracao_venda, name='salvar_config_venda'),
     path('<uuid:loja_id>/configuracoes/dashboard/', views_configuracoes.salvar_configuracao_dashboard, name='salvar_config_dashboard'),
     path('<uuid:loja_id>/configuracoes/preview-dashboard/', views_configuracoes.preview_dashboard, name='preview_dashboard'),
+    
+    # URLs otimizadas (Fase 2)
+    path('<uuid:loja_id>/configuracoes-otimizadas/', views_configuracoes_otimizadas.gerenciar_configuracoes_otimizado, name='configuracoes_otimizadas'),
+    path('<uuid:loja_id>/configuracoes/ajax/', views_configuracoes_otimizadas.salvar_configuracao_ajax, name='salvar_config_ajax'),
+    path('<uuid:loja_id>/configuracoes/summary/', views_configuracoes_otimizadas.get_config_summary, name='config_summary'),
+    path('<uuid:loja_id>/configuracoes/warm-cache/', views_configuracoes_otimizadas.warm_cache_configs, name='warm_cache'),
+    path('configuracoes/defaults/<str:tipo_loja>/', views_configuracoes_otimizadas.get_default_configs_by_type, name='default_configs'),
     
     # Login personalizado por loja
     path('<uuid:loja_id>/login/gerenciar/', views_login.gerenciar_login_personalizado, name='gerenciar_login_personalizado'),

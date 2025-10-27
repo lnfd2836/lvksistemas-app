@@ -200,6 +200,47 @@ class ConfiguracaoVenda(models.Model):
         return f"Config Vendas - {self.loja.nome}"
 
 
+
+    
+    # === OTIMIZAÇÕES DE PERFORMANCE ===
+    
+    @classmethod
+    def get_cached_config(cls, loja_id):
+        """Obtém configuração com cache"""
+        from django.core.cache import cache
+        
+        cache_key = f"{cls.__name__.lower()}_{loja_id}"
+        config = cache.get(cache_key)
+        
+        if config is None:
+            try:
+                config = cls.objects.select_related('loja').get(loja_id=loja_id)
+                # Cache por 1 hora
+                cache.set(cache_key, config, 3600)
+            except cls.DoesNotExist:
+                # Criar configuração padrão se não existir
+                from .models import Loja
+                loja = Loja.objects.get(id=loja_id)
+                config = cls.objects.create(loja=loja)
+                cache.set(cache_key, config, 3600)
+        
+        return config
+    
+    def save(self, *args, **kwargs):
+        """Override save para limpar cache"""
+        super().save(*args, **kwargs)
+        # Limpar cache quando salvar
+        from django.core.cache import cache
+        cache_key = f"{self.__class__.__name__.lower()}_{self.loja_id}"
+        cache.delete(cache_key)
+    
+    class Meta:
+        # Adicionar índices para performance
+        indexes = [
+            models.Index(fields=['loja']),
+            models.Index(fields=['data_atualizacao']),
+        ]
+
 class ConfiguracaoDashboard(models.Model):
     """Configurações do dashboard para cada loja"""
     
