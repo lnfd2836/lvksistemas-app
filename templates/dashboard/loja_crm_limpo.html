@@ -1,0 +1,223 @@
+{% extends 'base_crm_limpo.html' %}
+
+{% block title %}Dashboard - {{ loja.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .crm-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 15px;
+    }
+
+    .crm-module {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .crm-module:hover {
+        border-color: #667eea;
+        transform: translateY(-3px);
+    }
+
+    .crm-module i {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+    }
+
+    .crm-module h5 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .crm-module p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-crm {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-crm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .section-title {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding-bottom: 0.5rem;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Título da Loja -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <div class="crm-header">
+            <h1 class="display-5 mb-2">
+                <i class="fas fa-chart-line me-3"></i>
+                {{ loja.nome }}
+            </h1>
+            <p class="lead mb-0">Sistema CRM de Vendas</p>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos CRM - Funcionalidades Principais -->
+{% if modulos_loja %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="section-title">
+            <i class="fas fa-rocket me-2"></i>
+            Funcionalidades CRM
+        </h2>
+    </div>
+
+    {% for modulo in modulos_loja %}
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="crm-module">
+            <i class="{{ modulo.icone }}"></i>
+            <h5>{{ modulo.nome }}</h5>
+            <p>{{ modulo.descricao }}</p>
+            <a href="{{ modulo.url }}" class="btn btn-crm">
+                <i class="fas fa-arrow-right me-1"></i>
+                Acessar
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Estatísticas CRM -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Leads Ativos</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_leads|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-plus" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Orçamentos</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_orcamentos|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-invoice-dollar" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Propostas</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_propostas|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-handshake" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Contratos</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_contratos|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-contract" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações do Sistema CRM -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                        <h6>Gestão de Leads</h6>
+                        <p class="text-muted small">Controle completo do funil de vendas</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-file-invoice fa-2x text-success mb-2"></i>
+                        <h6>Orçamentos Automáticos</h6>
+                        <p class="text-muted small">Geração e envio automático de orçamentos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-handshake fa-2x text-info mb-2"></i>
+                        <h6>Propostas Comerciais</h6>
+                        <p class="text-muted small">Criação e acompanhamento de propostas</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+                        <h6>Relatórios Detalhados</h6>
+                        <p class="text-muted small">Análise completa de performance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

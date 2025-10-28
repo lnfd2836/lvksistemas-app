@@ -42,6 +42,11 @@ class SuperAdminMiddleware:
             '/login/',  # Exceto quando é redirecionamento inteligente
             '/loja/login/',
         ]
+        
+        # URLs do dashboard que super admins PODEM acessar
+        self.allowed_dashboard_paths = [
+            '/dashboard/',
+        ]
     
     def __call__(self, request):
         """
@@ -79,6 +84,10 @@ class SuperAdminMiddleware:
         
         path = request.path
         
+        # CORREÇÃO: Permitir acesso completo a URLs do dashboard
+        if path.startswith('/dashboard/'):
+            return False
+        
         # CORREÇÃO: Permitir que super admins VISUALIZEM páginas de login das lojas (GET)
         # Mas bloquear tentativas de fazer login (POST)
         if request.method == 'GET':
@@ -114,7 +123,11 @@ class SuperAdminMiddleware:
         if path == '/' or path == '':
             return True
         
-        # Se está tentando acessar URLs de loja
+        # CORREÇÃO: Não redirecionar se está acessando qualquer URL do dashboard
+        if path.startswith('/dashboard/'):
+            return False
+        
+        # Se está tentando acessar URLs de loja (exceto admin)
         if path.startswith('/loja/') and not path.startswith('/loja/admin/'):
             return True
         
@@ -172,7 +185,13 @@ class SuperAdminMiddleware:
             # Permitir acesso para administração de lojas
             return self.get_response(request)
         
-        # Se está tentando acessar área operacional de loja específica, redirecionar
+        # CORREÇÃO: Permitir que super admins acessem páginas de login das lojas para administração/teste
+        if path.startswith('/dashboard/loja/login'):
+            logger.info(f"Super admin {request.user.username} acessando página de login da loja para administração")
+            # Permitir acesso para que super admins possam visualizar e testar login das lojas
+            return self.get_response(request)
+        
+        # Se está tentando acessar área operacional de loja específica (exceto login), redirecionar
         if path.startswith('/loja/') and not path.startswith('/lojas/'):
             logger.warning(f"Super admin {request.user.username} tentou acessar área operacional de loja: {path}")
             try:

@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     'planos',
     'controle_financeiro',
     'avaliacao_qualidade',
+    'controle_qualidade_comercial',  # Controle de Qualidade Comercial
+    'crm_vendas',  # Sistema CRM de Vendas
 ]
 
 MIDDLEWARE = [
@@ -84,11 +86,11 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Necessário para admin
     'django.contrib.messages.middleware.MessageMiddleware',  # Necessário para mensagens
-    'dashboard.middleware.super_admin_middleware.SuperAdminMiddleware',  # PRIORIDADE MÁXIMA para super admins
+    'dashboard.middleware.super_admin_middleware.SuperAdminMiddleware',  # PRIORIDADE MÁXIMA para super admins - CORRIGIDO
     'dashboard.middleware.super_admin_middleware.SuperAdminProtectionMiddleware',  # Proteção adicional para super admins
-    'lojas.middleware_loja_especifica.LojaEspecificaMiddleware',  # Middleware exclusivo para lojas específicas
+    # 'lojas.middleware_loja_especifica.LojaEspecificaMiddleware',  # Middleware exclusivo para lojas específicas - DESABILITADO (CAUSA PROBLEMAS)
     'email_credentials.db_router.LojaMiddleware',  # Middleware para definir contexto de loja
-    'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja
+    'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja - CORRIGIDO
     'lojas.middleware_login_isolado.DatabaseIsolationMiddleware',  # Isolamento de banco por loja
     'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

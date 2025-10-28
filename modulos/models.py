@@ -5,7 +5,7 @@ import uuid
 
 
 class TipoLoja(models.Model):
-    """Modelo para tipos de loja (conveniência, roupas, tintas, etc.)"""
+    """Modelo simplificado para categorização de tipos de loja"""
     
     TIPO_CHOICES = [
         ('conveniencia', 'Loja de Conveniência'),
@@ -18,7 +18,9 @@ class TipoLoja(models.Model):
         ('casa_construcao', 'Casa e Construção'),
         ('livraria', 'Livraria'),
         ('clinica_estetica', 'Clínica de Estética'),
-        ('controle_qualidade', 'Controle de Qualidade'),
+        ('avaliacao_fatesa', 'Avaliação Educacional - FATESA'),
+        ('dashboard_comercial', 'Dashboard Comercial e Qualidade'),
+        ('crm_vendas', 'CRM de Vendas'),
         ('outros', 'Outros'),
     ]
     
@@ -28,31 +30,6 @@ class TipoLoja(models.Model):
     icone = models.CharField(max_length=50, default='fas fa-store', verbose_name="Ícone")
     cor_primaria = models.CharField(max_length=7, default='#007bff', verbose_name="Cor Primária")
     cor_secundaria = models.CharField(max_length=7, default='#6c757d', verbose_name="Cor Secundária")
-    
-    # Configurações específicas do tipo
-    tem_categoria_produto = models.BooleanField(default=True, verbose_name="Tem Categoria de Produto")
-    tem_marca_produto = models.BooleanField(default=True, verbose_name="Tem Marca de Produto")
-    tem_tamanho_produto = models.BooleanField(default=False, verbose_name="Tem Tamanho de Produto")
-    tem_cor_produto = models.BooleanField(default=False, verbose_name="Tem Cor de Produto")
-    tem_peso_produto = models.BooleanField(default=False, verbose_name="Tem Peso de Produto")
-    tem_volume_produto = models.BooleanField(default=False, verbose_name="Tem Volume de Produto")
-    tem_data_validade = models.BooleanField(default=False, verbose_name="Tem Data de Validade")
-    tem_codigo_barras = models.BooleanField(default=True, verbose_name="Tem Código de Barras")
-    tem_estoque_minimo = models.BooleanField(default=True, verbose_name="Tem Estoque Mínimo")
-    
-    # Campos específicos para clientes
-    tem_data_nascimento_cliente = models.BooleanField(default=True, verbose_name="Cliente: Data de Nascimento")
-    tem_sexo_cliente = models.BooleanField(default=True, verbose_name="Cliente: Sexo")
-    tem_cpf_cliente = models.BooleanField(default=True, verbose_name="Cliente: CPF")
-    tem_rg_cliente = models.BooleanField(default=False, verbose_name="Cliente: RG")
-    tem_cnpj_cliente = models.BooleanField(default=False, verbose_name="Cliente: CNPJ")
-    tem_crm_cliente = models.BooleanField(default=False, verbose_name="Cliente: CRM")
-    
-    # Campos específicos para vendas
-    tem_desconto_venda = models.BooleanField(default=True, verbose_name="Venda: Desconto")
-    tem_taxa_entrega = models.BooleanField(default=False, verbose_name="Venda: Taxa de Entrega")
-    tem_mesa_venda = models.BooleanField(default=False, verbose_name="Venda: Mesa")
-    tem_garcom_venda = models.BooleanField(default=False, verbose_name="Venda: Garçom")
     
     # Status
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
@@ -66,29 +43,10 @@ class TipoLoja(models.Model):
     def __str__(self):
         return self.get_nome_display()
     
-    def get_configuracoes(self):
-        """Retorna as configurações do tipo de loja"""
-        return {
-            'categoria_produto': self.tem_categoria_produto,
-            'marca_produto': self.tem_marca_produto,
-            'tamanho_produto': self.tem_tamanho_produto,
-            'cor_produto': self.tem_cor_produto,
-            'peso_produto': self.tem_peso_produto,
-            'volume_produto': self.tem_volume_produto,
-            'data_validade': self.tem_data_validade,
-            'codigo_barras': self.tem_codigo_barras,
-            'estoque_minimo': self.tem_estoque_minimo,
-            'data_nascimento_cliente': self.tem_data_nascimento_cliente,
-            'sexo_cliente': self.tem_sexo_cliente,
-            'cpf_cliente': self.tem_cpf_cliente,
-            'rg_cliente': self.tem_rg_cliente,
-            'cnpj_cliente': self.tem_cnpj_cliente,
-            'crm_cliente': self.tem_crm_cliente,
-            'desconto_venda': self.tem_desconto_venda,
-            'taxa_entrega': self.tem_taxa_entrega,
-            'mesa_venda': self.tem_mesa_venda,
-            'garcom_venda': self.tem_garcom_venda,
-        }
+    @property
+    def nome_display(self):
+        """Retorna o nome amigável do tipo"""
+        return self.get_nome_display()
 
 
 class ModuloLoja(models.Model):
@@ -110,6 +68,115 @@ class ModuloLoja(models.Model):
     
     def __str__(self):
         return f"{self.tipo_loja.get_nome_display()} - {self.nome}"
+
+
+class ConfiguracaoTipoLoja(models.Model):
+    """Configurações padrão para cada tipo de loja"""
+    
+    CATEGORIA_CONFIG_CHOICES = [
+        ('produto', 'Configurações de Produto'),
+        ('cliente', 'Configurações de Cliente'),
+        ('venda', 'Configurações de Venda'),
+        ('dashboard', 'Configurações de Dashboard'),
+        ('sistema', 'Configurações de Sistema'),
+    ]
+    
+    TIPO_VALOR_CHOICES = [
+        ('boolean', 'Sim/Não'),
+        ('texto', 'Texto'),
+        ('numero', 'Número'),
+        ('decimal', 'Decimal'),
+        ('lista', 'Lista de Opções'),
+        ('json', 'JSON'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tipo_loja = models.ForeignKey(TipoLoja, on_delete=models.CASCADE, related_name='configuracoes_padrao')
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CONFIG_CHOICES, verbose_name="Categoria")
+    chave = models.CharField(max_length=100, verbose_name="Chave da Configuração")
+    nome_exibicao = models.CharField(max_length=200, verbose_name="Nome para Exibição")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    tipo_valor = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, verbose_name="Tipo do Valor")
+    valor_padrao = models.TextField(blank=True, verbose_name="Valor Padrão")
+    opcoes_disponiveis = models.TextField(blank=True, verbose_name="Opções Disponíveis (uma por linha)")
+    obrigatorio = models.BooleanField(default=False, verbose_name="Obrigatório")
+    editavel_loja = models.BooleanField(default=True, verbose_name="Loja pode editar")
+    ordem = models.IntegerField(default=0, verbose_name="Ordem de Exibição")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    
+    class Meta:
+        verbose_name = "Configuração Padrão do Tipo de Loja"
+        verbose_name_plural = "Configurações Padrão dos Tipos de Loja"
+        ordering = ['categoria', 'ordem', 'nome_exibicao']
+        unique_together = ['tipo_loja', 'chave']
+    
+    def __str__(self):
+        return f"{self.tipo_loja.get_nome_display()} - {self.nome_exibicao}"
+    
+    def get_opcoes_list(self):
+        """Retorna as opções disponíveis como lista"""
+        if self.opcoes_disponiveis:
+            return [opcao.strip() for opcao in self.opcoes_disponiveis.split('\n') if opcao.strip()]
+        return []
+    
+    def get_valor_formatado(self):
+        """Retorna o valor padrão formatado conforme o tipo"""
+        if self.tipo_valor == 'boolean':
+            return self.valor_padrao.lower() in ['true', '1', 'sim', 'yes']
+        elif self.tipo_valor in ['numero', 'decimal']:
+            try:
+                return float(self.valor_padrao) if self.valor_padrao else 0
+            except ValueError:
+                return 0
+        elif self.tipo_valor == 'json':
+            try:
+                import json
+                return json.loads(self.valor_padrao) if self.valor_padrao else {}
+            except json.JSONDecodeError:
+                return {}
+        else:
+            return self.valor_padrao
+
+
+class ConfiguracaoLoja(models.Model):
+    """Configurações específicas de cada loja (baseadas no tipo de loja)"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loja = models.ForeignKey('lojas.Loja', on_delete=models.CASCADE, related_name='configuracoes_especificas')
+    configuracao_tipo = models.ForeignKey(ConfiguracaoTipoLoja, on_delete=models.CASCADE, verbose_name="Configuração do Tipo")
+    valor_personalizado = models.TextField(blank=True, verbose_name="Valor Personalizado")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    data_atualizacao = models.DateTimeField(auto_now=True, verbose_name="Última Atualização")
+    
+    class Meta:
+        verbose_name = "Configuração da Loja"
+        verbose_name_plural = "Configurações das Lojas"
+        unique_together = ['loja', 'configuracao_tipo']
+    
+    def __str__(self):
+        return f"{self.loja.nome} - {self.configuracao_tipo.nome_exibicao}"
+    
+    def get_valor_efetivo(self):
+        """Retorna o valor efetivo (personalizado ou padrão)"""
+        if self.valor_personalizado:
+            # Aplicar formatação conforme o tipo
+            if self.configuracao_tipo.tipo_valor == 'boolean':
+                return self.valor_personalizado.lower() in ['true', '1', 'sim', 'yes']
+            elif self.configuracao_tipo.tipo_valor in ['numero', 'decimal']:
+                try:
+                    return float(self.valor_personalizado)
+                except ValueError:
+                    return self.configuracao_tipo.get_valor_formatado()
+            elif self.configuracao_tipo.tipo_valor == 'json':
+                try:
+                    import json
+                    return json.loads(self.valor_personalizado)
+                except json.JSONDecodeError:
+                    return self.configuracao_tipo.get_valor_formatado()
+            else:
+                return self.valor_personalizado
+        else:
+            return self.configuracao_tipo.get_valor_formatado()
 
 
 class CampoPersonalizado(models.Model):

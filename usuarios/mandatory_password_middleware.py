@@ -38,6 +38,11 @@ class MandatoryPasswordChangeMiddleware:
             '/usuarios/password-reset/',
             '/usuarios/password-reset/done/',
             '/usuarios/reset/',
+            # URLs públicas do CRM
+            '/crm/orcamento/',
+            '/crm/proposta/',
+            '/crm/contrato/',
+            '/crm/email/',
         ]
         
         # Prefixos de URLs que devem ser isentos
@@ -48,6 +53,10 @@ class MandatoryPasswordChangeMiddleware:
             '/api/',  # Todas as APIs
             '/asaas-webhook',  # Webhooks do Asaas
             '/usuarios/reset/',  # Para URLs de reset com tokens
+            '/crm/orcamento/',  # URLs públicas do CRM
+            '/crm/proposta/',   # URLs públicas do CRM
+            '/crm/contrato/',   # URLs públicas do CRM
+            '/crm/email/',      # URLs de tracking do CRM
         ]
     
     def __call__(self, request):

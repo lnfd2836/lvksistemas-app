@@ -17,13 +17,25 @@ def loja_login(request):
     # Se já está autenticado, verificar se pode acessar dashboard de loja
     if request.user.is_authenticated:
         try:
-            if AuthenticationService.can_access_store_dashboard(request.user):
-                dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
-                logger.info(f"Usuário {request.user.username} já autenticado, redirecionando para {dashboard_url}")
-                return redirect(dashboard_url)
+            # CORREÇÃO: Super admins podem visualizar a página de login da loja para administração/teste
+            # Não devem ser redirecionados automaticamente
+            if request.user.is_superuser:
+                logger.info(f"Super usuário {request.user.username} acessando página de login da loja para administração")
+                # Permitir que super admins vejam a página de login
+                pass
+            elif AuthenticationService.can_access_store_dashboard(request.user):
+                # CORREÇÃO: Redirecionar para dashboard específico da loja em vez de genérico
+                user_store = AuthenticationService.get_user_store(request.user)
+                if user_store:
+                    dashboard_url = f'/dashboard/loja/{user_store.id}/'
+                    logger.info(f"Usuário {request.user.username} já autenticado, redirecionando para dashboard da loja {user_store.nome}")
+                    return redirect(dashboard_url)
+                else:
+                    dashboard_url = '/dashboard/loja/'
+                    logger.info(f"Usuário {request.user.username} já autenticado, redirecionando para {dashboard_url}")
+                    return redirect(dashboard_url)
             else:
                 # Se não pode acessar loja, permite visualizar página de login
-                # para que super usuários possam testar credenciais de loja
                 logger.info(f"Usuário {request.user.username} autenticado mas sem acesso à loja, mostrando página de login")
                 pass
         except Exception as e:
@@ -136,9 +148,15 @@ def loja_login(request):
                             logger.error(f"Erro ao criar sessão da loja para usuário {user.username}: {str(e)}")
                             # Continua normalmente mesmo se houver erro na sessão
                         
-                        # Redirecionar para dashboard apropriado
-                        dashboard_url = AuthenticationService.determine_user_dashboard(user)
-                        return redirect(dashboard_url)
+                        # CORREÇÃO: Redirecionar para dashboard específico da loja
+                        user_store = AuthenticationService.get_user_store(user)
+                        if user_store:
+                            dashboard_url = f'/dashboard/loja/{user_store.id}/'
+                            logger.info(f"Login bem-sucedido, redirecionando para dashboard da loja {user_store.nome}")
+                            return redirect(dashboard_url)
+                        else:
+                            # Fallback para dashboard genérico
+                            return redirect('/dashboard/loja/')
                         
                     else:
                         # Usuário não tem acesso à loja
@@ -218,6 +236,30 @@ def loja_logout(request):
         logger.error(f"Erro durante logout da loja para usuário {request.user.username}: {str(e)}")
         messages.info(request, 'Logout realizado.')
     
+    # CORREÇÃO: Redirecionar para login personalizado da loja específica
+    user_store_before_logout = None
+    try:
+        user_store_before_logout = AuthenticationService.get_user_store(request.user)
+    except:
+        pass
+    
     from django.contrib.auth import logout
     logout(request)
-    return redirect('loja_login')
+    
+    # Se tinha loja associada, redirecionar para login personalizado da loja
+    if user_store_before_logout:
+        try:
+            from lojas.models_login import LoginPersonalizado
+            login_config = LoginPersonalizado.objects.get(loja=user_store_before_logout, ativo=True)
+            logger.info(f"Redirecionando logout para login personalizado da loja {user_store_before_logout.nome}")
+            return redirect(login_config.get_login_url())
+        except LoginPersonalizado.DoesNotExist:
+            logger.warning(f"Login personalizado não encontrado para loja {user_store_before_logout.nome}")
+            # Fallback para login genérico da loja
+            return redirect('dashboard:loja_login')
+        except Exception as e:
+            logger.error(f"Erro ao redirecionar para login personalizado: {str(e)}")
+            return redirect('dashboard:loja_login')
+    
+    # Fallback para login genérico
+    return redirect('dashboard:loja_login')

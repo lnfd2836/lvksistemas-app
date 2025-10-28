@@ -49,7 +49,7 @@ def require_permission(module, action, redirect_url='dashboard:loja', ajax_respo
             if not request.user.is_authenticated:
                 if ajax_response:
                     return JsonResponse({'error': 'Usuário não autenticado'}, status=401)
-                return redirect('loja_login')
+                return redirect('dashboard:loja_login')
             
             if not user_has_permission(request.user, module, action):
                 logger.warning(
@@ -103,7 +103,7 @@ class PermissionMixin:
     
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('loja_login')
+            return redirect('dashboard:loja_login')
         
         if self.required_permission:
             module, action = self.required_permission
@@ -119,7 +119,7 @@ class LojaAccessMixin:
     
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('loja_login')
+            return redirect('dashboard:loja_login')
         
         # Super admin sempre tem acesso
         if request.user.is_superuser:

@@ -1,0 +1,326 @@
+{% extends 'base_crm_limpo.html' %}
+
+{% block title %}CRM de Vendas - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Dashboard CRM de Vendas
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:criar_lead' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Novo Lead
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Estatísticas -->
+                    <div class="row">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ stats.total_leads }}</h3>
+                                    <p>Total de Leads</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <a href="{% url 'crm_vendas:listar_leads' %}" class="small-box-footer">
+                                    Ver todos <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ stats.leads_qualificados }}</h3>
+                                    <p>Leads Qualificados</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <a href="{% url 'crm_vendas:listar_leads' %}?status=qualificado" class="small-box-footer">
+                                    Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ stats.orcamentos_enviados }}</h3>
+                                    <p>Orçamentos Enviados</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="small-box-footer">
+                                    Ver orçamentos <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>R$ {{ stats.valor_pipeline|floatformat:0 }}</h3>
+                                    <p>Pipeline de Vendas</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <a href="{% url 'crm_vendas:relatorios' %}" class="small-box-footer">
+                                    Ver relatórios <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conteúdo Principal -->
+                    <div class="row mt-4">
+                        <!-- Leads Recentes -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users me-2"></i>
+                                        Leads Recentes
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if leads_recentes %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nome</th>
+                                                        <th>Empresa</th>
+                                                        <th>Status</th>
+                                                        <th>Valor</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for lead in leads_recentes %}
+                                                    <tr>
+                                                        <td>
+                                                            <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}">
+                                                                {{ lead.nome }}
+                                                            </a>
+                                                        </td>
+                                                        <td>{{ lead.empresa|default:"-" }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{% if lead.status == 'novo' %}info{% elif lead.status == 'qualificado' %}success{% elif lead.status == 'fechado_ganho' %}primary{% else %}secondary{% endif %}">
+                                                                {{ lead.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>R$ {{ lead.valor_estimado|floatformat:2 }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Nenhum lead encontrado.</p>
+                                        <a href="{% url 'crm_vendas:criar_lead' %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus me-1"></i>Criar Primeiro Lead
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Orçamentos Pendentes -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-file-invoice me-2"></i>
+                                        Orçamentos Pendentes
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if orcamentos_pendentes %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Número</th>
+                                                        <th>Cliente</th>
+                                                        <th>Valor</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for orcamento in orcamentos_pendentes %}
+                                                    <tr>
+                                                        <td>
+                                                            <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}">
+                                                                {{ orcamento.numero }}
+                                                            </a>
+                                                        </td>
+                                                        <td>{{ orcamento.lead.nome }}</td>
+                                                        <td>R$ {{ orcamento.total|floatformat:2 }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{% if orcamento.status == 'enviado' %}warning{% elif orcamento.status == 'visualizado' %}info{% else %}secondary{% endif %}">
+                                                                {{ orcamento.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Nenhum orçamento pendente.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Atividades Recentes -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-history me-2"></i>
+                                        Atividades Recentes
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if atividades %}
+                                        <div class="timeline">
+                                            {% for atividade in atividades %}
+                                            <div class="timeline-item">
+                                                <div class="timeline-marker bg-{% if atividade.tipo == 'email' %}info{% elif atividade.tipo == 'telefone' %}success{% elif atividade.tipo == 'reuniao' %}warning{% else %}secondary{% endif %}">
+                                                    <i class="fas fa-{% if atividade.tipo == 'email' %}envelope{% elif atividade.tipo == 'telefone' %}phone{% elif atividade.tipo == 'reuniao' %}handshake{% else %}comment{% endif %}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <h6 class="timeline-title">{{ atividade.assunto }}</h6>
+                                                    <p class="timeline-description">
+                                                        <strong>{{ atividade.lead.nome }}</strong> - {{ atividade.descricao }}
+                                                    </p>
+                                                    <small class="text-muted">
+                                                        {{ atividade.data_contato|date:"d/m/Y H:i" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Nenhuma atividade recente.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.small-box {
+    border-radius: 10px;
+    position: relative;
+    display: block;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.small-box > .inner {
+    padding: 10px;
+}
+
+.small-box > .small-box-footer {
+    position: relative;
+    text-align: center;
+    padding: 3px 0;
+    color: #fff;
+    color: rgba(255,255,255,0.8);
+    display: block;
+    z-index: 10;
+    background: rgba(0,0,0,0.1);
+    text-decoration: none;
+}
+
+.small-box > .small-box-footer:hover {
+    color: #fff;
+    background: rgba(0,0,0,0.15);
+}
+
+.small-box .icon {
+    transition: all .3s linear;
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    z-index: 0;
+    font-size: 90px;
+    color: rgba(0,0,0,0.15);
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.timeline-description {
+    margin: 0 0 5px 0;
+    font-size: 13px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Atualizar estatísticas a cada 30 segundos
+    setInterval(function() {
+        // Implementar atualização via AJAX se necessário
+        console.log('Dashboard CRM Felix carregado');
+    }, 30000);
+});
+</script>
+{% endblock %}

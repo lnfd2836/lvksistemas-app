@@ -98,6 +98,9 @@ class ConfiguracaoCliente(models.Model):
     # Configurações de cadastro
     permite_auto_cadastro = models.BooleanField(default=True)
     aprova_automaticamente = models.BooleanField(default=True)
+    # permite_duplicatas = models.BooleanField(default=False)
+    # historico_compras = models.BooleanField(default=True)
+    # notificacoes_email = models.BooleanField(default=False)
     
     # Campos personalizados
     campos_personalizados = models.JSONField(
@@ -314,6 +317,14 @@ class ConfiguracaoDashboard(models.Model):
     class Meta:
         verbose_name = "Configuração de Dashboard"
         verbose_name_plural = "Configurações de Dashboard"
+    
+    def get_periodo_padrao_display(self):
+        """Retorna o nome amigável do período padrão"""
+        return dict(self._meta.get_field('periodo_padrao').choices).get(self.periodo_padrao, self.periodo_padrao)
+    
+    def get_tema_cores_display(self):
+        """Retorna o nome amigável do tema de cores"""
+        return dict(self._meta.get_field('tema_cores').choices).get(self.tema_cores, self.tema_cores)
     
     def __str__(self):
         return f"Config Dashboard - {self.loja.nome}"

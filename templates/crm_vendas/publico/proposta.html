@@ -1,0 +1,226 @@
+{% extends 'crm_vendas/publico/base_publico.html' %}
+
+{% block title %}Proposta {{ proposta.numero }} - CRM{% endblock %}
+
+{% block header_title %}Proposta {{ proposta.numero }}{% endblock %}
+{% block header_subtitle %}Proposta Comercial{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Status da Proposta -->
+        <div class="text-center mb-4">
+            {% if proposta.status == 'aprovada' %}
+                <span class="status-badge status-aprovado">
+                    <i class="fas fa-check-circle me-2"></i>Aprovada
+                </span>
+            {% elif proposta.status == 'rejeitada' %}
+                <span class="status-badge status-rejeitado">
+                    <i class="fas fa-times-circle me-2"></i>Rejeitada
+                </span>
+            {% elif proposta.status == 'em_analise' %}
+                <span class="status-badge status-pendente">
+                    <i class="fas fa-search me-2"></i>Em Análise
+                </span>
+            {% else %}
+                <span class="status-badge status-pendente">
+                    <i class="fas fa-clock me-2"></i>Aguardando Análise
+                </span>
+            {% endif %}
+        </div>
+        
+        <!-- Informações da Proposta -->
+        <div class="documento-info">
+            <h3><i class="fas fa-info-circle me-2"></i>Informações da Proposta</h3>
+            
+            <div class="info-item">
+                <span class="info-label">Número:</span>
+                <span class="info-value">{{ proposta.numero }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Título:</span>
+                <span class="info-value">{{ proposta.titulo }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Cliente:</span>
+                <span class="info-value">{{ proposta.lead.nome }}</span>
+            </div>
+            
+            {% if proposta.lead.empresa %}
+            <div class="info-item">
+                <span class="info-label">Empresa:</span>
+                <span class="info-value">{{ proposta.lead.empresa }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <span class="info-label">Data de Criação:</span>
+                <span class="info-value">{{ proposta.data_criacao|date:"d/m/Y" }}</span>
+            </div>
+            
+            {% if proposta.prazo_execucao %}
+            <div class="info-item">
+                <span class="info-label">Prazo de Execução:</span>
+                <span class="info-value">{{ proposta.prazo_execucao }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <span class="info-label">Valor Proposto:</span>
+                <span class="info-value">
+                    <strong style="font-size: 1.2em; color: #27ae60;">
+                        R$ {{ proposta.valor_proposto|floatformat:2 }}
+                    </strong>
+                </span>
+            </div>
+        </div>
+        
+        <!-- Resumo Executivo -->
+        {% if proposta.resumo_executivo %}
+        <div class="documento-info">
+            <h3><i class="fas fa-clipboard-list me-2"></i>Resumo Executivo</h3>
+            <div class="text-justify">{{ proposta.resumo_executivo|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Objetivos -->
+        {% if proposta.objetivos %}
+        <div class="documento-info">
+            <h3><i class="fas fa-bullseye me-2"></i>Objetivos</h3>
+            <div class="text-justify">{{ proposta.objetivos|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Metodologia -->
+        {% if proposta.metodologia %}
+        <div class="documento-info">
+            <h3><i class="fas fa-cogs me-2"></i>Metodologia</h3>
+            <div class="text-justify">{{ proposta.metodologia|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Cronograma -->
+        {% if proposta.cronograma %}
+        <div class="documento-info">
+            <h3><i class="fas fa-calendar-alt me-2"></i>Cronograma</h3>
+            <div class="text-justify">{{ proposta.cronograma|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Condições de Pagamento -->
+        {% if proposta.condicoes_pagamento %}
+        <div class="documento-info">
+            <h3><i class="fas fa-credit-card me-2"></i>Condições de Pagamento</h3>
+            <div class="text-justify">{{ proposta.condicoes_pagamento|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Observações -->
+        {% if proposta.observacoes %}
+        <div class="documento-info">
+            <h3><i class="fas fa-sticky-note me-2"></i>Observações</h3>
+            <div class="text-justify">{{ proposta.observacoes|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Ações -->
+        {% if proposta.status not in 'aprovada,rejeitada' %}
+        <div class="text-center mt-4">
+            <form method="post" id="formProposta">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="" id="inputAcao">
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-aprovar me-md-2" onclick="aprovarProposta()">
+                        <i class="fas fa-handshake me-2"></i>
+                        <span class="btn-text">Aceitar Proposta</span>
+                        <span class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Processando...
+                        </span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-warning me-md-2" onclick="solicitarRevisao()">
+                        <i class="fas fa-edit me-2"></i>Solicitar Revisão
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-danger" onclick="rejeitarProposta()">
+                        <i class="fas fa-times me-2"></i>Rejeitar
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        
+        <!-- Proposta já processada -->
+        {% if proposta.status == 'aprovada' %}
+        <div class="alert alert-success text-center mt-4">
+            <i class="fas fa-handshake fa-2x mb-3"></i>
+            <h4>Proposta Aceita!</h4>
+            <p class="mb-0">Obrigado por aceitar nossa proposta. Entraremos em contato para dar início ao projeto e elaborar o contrato.</p>
+        </div>
+        {% endif %}
+        
+        {% if proposta.status == 'rejeitada' %}
+        <div class="alert alert-warning text-center mt-4">
+            <i class="fas fa-times-circle fa-2x mb-3"></i>
+            <h4>Proposta Rejeitada</h4>
+            <p class="mb-0">Agradecemos seu interesse. Caso deseje discutir alterações, entre em contato conosco.</p>
+        </div>
+        {% endif %}
+        
+        {% if proposta.status == 'em_analise' %}
+        <div class="alert alert-info text-center mt-4">
+            <i class="fas fa-search fa-2x mb-3"></i>
+            <h4>Proposta em Análise</h4>
+            <p class="mb-0">Sua solicitação de revisão foi recebida. Entraremos em contato em breve com as alterações solicitadas.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aprovarProposta() {
+    if (confirm('Tem certeza que deseja aceitar esta proposta?')) {
+        document.getElementById('inputAcao').value = 'aprovar';
+        
+        // Mostrar loading
+        const btn = document.querySelector('.btn-aprovar');
+        const btnText = btn.querySelector('.btn-text');
+        const loading = btn.querySelector('.loading');
+        
+        btnText.style.display = 'none';
+        loading.classList.add('show');
+        btn.disabled = true;
+        
+        document.getElementById('formProposta').submit();
+    }
+}
+
+function solicitarRevisao() {
+    const observacoes = prompt('Por favor, descreva as alterações que gostaria de ver na proposta:');
+    if (observacoes && observacoes.trim()) {
+        document.getElementById('inputAcao').value = 'revisar';
+        
+        // Adicionar campo com observações
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'observacoes_revisao';
+        input.value = observacoes;
+        document.getElementById('formProposta').appendChild(input);
+        
+        document.getElementById('formProposta').submit();
+    }
+}
+
+function rejeitarProposta() {
+    if (confirm('Tem certeza que deseja rejeitar esta proposta?')) {
+        document.getElementById('inputAcao').value = 'rejeitar';
+        document.getElementById('formProposta').submit();
+    }
+}
+</script>
+{% endblock %}

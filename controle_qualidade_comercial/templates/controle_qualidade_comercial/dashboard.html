@@ -1,0 +1,348 @@
+{% extends 'controle_qualidade_comercial/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Dashboard</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Dashboard - Controle de Qualidade Comercial
+        </h1>
+    </div>
+</div>
+
+<!-- Cards de Métricas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Produtos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-produtos">
+                            {{ total_produtos }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-box fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Vendas do Mês
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="vendas-mes">
+                            {{ vendas_mes.total|default:0 }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Estoque Baixo
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="estoque-baixo">
+                            {{ estoque_baixo }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Taxa de Aprovação
+                        </div>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col-auto">
+                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800" id="taxa-aprovacao">
+                                    {{ taxa_aprovacao }}%
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="progress progress-sm mr-2">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ taxa_aprovacao }}%" 
+                                         aria-valuenow="{{ taxa_aprovacao }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row">
+    <!-- Vendas Diárias -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Vendas Diárias (Últimos 7 dias)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="vendasChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Produtos -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Top Produtos</h6>
+            </div>
+            <div class="card-body">
+                <div id="top-produtos-list">
+                    <!-- Carregado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reclamações e Qualidade -->
+<div class="row">
+    <!-- Reclamações por Tipo -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Reclamações por Tipo</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="reclamacoesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evolução da Qualidade -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Evolução da Qualidade</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="qualidadeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ações Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'controle_qualidade_comercial:criar_produto' %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus me-2"></i>Novo Produto
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'controle_qualidade_comercial:criar_venda' %}" class="btn btn-success btn-block">
+                            <i class="fas fa-shopping-cart me-2"></i>Nova Venda
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'controle_qualidade_comercial:criar_inspecao_qualidade' %}" class="btn btn-info btn-block">
+                            <i class="fas fa-clipboard-check me-2"></i>Nova Inspeção
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'controle_qualidade_comercial:criar_reclamacao' %}" class="btn btn-warning btn-block">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Nova Reclamação
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Carregar dados dos gráficos
+    carregarVendasDiarias();
+    carregarTopProdutos();
+    carregarReclamacoesTipo();
+    carregarEvolucaoQualidade();
+    
+    // Atualizar métricas a cada 30 segundos
+    setInterval(atualizarMetricas, 30000);
+});
+
+function atualizarMetricas() {
+    $.get('{% url "controle_qualidade_comercial:api_metricas" %}')
+        .done(function(data) {
+            $('#total-produtos').text(data.produtos.total);
+            $('#vendas-mes').text(data.vendas.total_mes);
+            $('#estoque-baixo').text(data.produtos.estoque_baixo);
+            $('#taxa-aprovacao').text(data.qualidade.taxa_aprovacao + '%');
+        });
+}
+
+function carregarVendasDiarias() {
+    $.get('{% url "controle_qualidade_comercial:api_vendas_diarias" %}')
+        .done(function(data) {
+            const ctx = document.getElementById('vendasChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.data).toLocaleDateString('pt-BR')),
+                    datasets: [{
+                        label: 'Vendas',
+                        data: data.map(item => item.total_vendas),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+}
+
+function carregarTopProdutos() {
+    $.get('{% url "controle_qualidade_comercial:api_top_produtos" %}')
+        .done(function(data) {
+            let html = '';
+            data.forEach(function(produto, index) {
+                html += `
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <span class="badge bg-primary">${index + 1}</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${produto.nome}</div>
+                            <small class="text-muted">SKU: ${produto.sku}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">${produto.total_vendido}</div>
+                            <small class="text-muted">vendidos</small>
+                        </div>
+                    </div>
+                `;
+            });
+            $('#top-produtos-list').html(html);
+        });
+}
+
+function carregarReclamacoesTipo() {
+    $.get('{% url "controle_qualidade_comercial:api_reclamacoes_tipo" %}')
+        .done(function(data) {
+            const ctx = document.getElementById('reclamacoesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.tipo_reclamacao),
+                    datasets: [{
+                        data: data.map(item => item.total),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+}
+
+function carregarEvolucaoQualidade() {
+    $.get('{% url "controle_qualidade_comercial:api_evolucao_qualidade" %}')
+        .done(function(data) {
+            const ctx = document.getElementById('qualidadeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.mes).toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})),
+                    datasets: [{
+                        label: 'Taxa de Aprovação (%)',
+                        data: data.map(item => item.taxa_aprovacao),
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        });
+}
+</script>
+{% endblock %}

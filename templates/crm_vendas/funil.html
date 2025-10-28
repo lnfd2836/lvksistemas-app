@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Funil de Vendas - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-funnel-dollar me-2"></i>
+                        Funil de Vendas
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:relatorios' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar aos Relatórios
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Funil Visual -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="funil-container">
+                                <!-- Leads Novos -->
+                                <div class="funil-stage stage-1">
+                                    <div class="funil-header">
+                                        <h4><i class="fas fa-user-plus me-2"></i>Leads Novos</h4>
+                                        <span class="badge bg-info">{{ funil.leads_novos }}</span>
+                                    </div>
+                                    <div class="funil-bar" style="width: 100%;">
+                                        <div class="funil-percentage">100%</div>
+                                    </div>
+                                </div>
+
+                                <!-- Leads Qualificados -->
+                                <div class="funil-stage stage-2">
+                                    <div class="funil-header">
+                                        <h4><i class="fas fa-user-check me-2"></i>Qualificados</h4>
+                                        <span class="badge bg-primary">{{ funil.leads_qualificados }}</span>
+                                    </div>
+                                    <div class="funil-bar" data-width="{% if funil.leads_novos > 0 %}{% widthratio funil.leads_qualificados funil.leads_novos 100 %}{% else %}0{% endif %}">
+                                        <div class="funil-percentage">
+                                            {% if funil.leads_novos > 0 %}
+                                            {% widthratio funil.leads_qualificados funil.leads_novos 100 %}%
+                                            {% else %}
+                                            0%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Leads Interessados -->
+                                <div class="funil-stage stage-3">
+                                    <div class="funil-header">
+                                        <h4><i class="fas fa-heart me-2"></i>Interessados</h4>
+                                        <span class="badge bg-warning">{{ funil.leads_interessados }}</span>
+                                    </div>
+                                    <div class="funil-bar" data-width="{% if funil.leads_novos > 0 %}{% widthratio funil.leads_interessados funil.leads_novos 100 %}{% else %}0{% endif %}">
+                                        <div class="funil-percentage">
+                                            {% if funil.leads_novos > 0 %}
+                                            {% widthratio funil.leads_interessados funil.leads_novos 100 %}%
+                                            {% else %}
+                                            0%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Em Negociação -->
+                                <div class="funil-stage stage-4">
+                                    <div class="funil-header">
+                                        <h4><i class="fas fa-handshake me-2"></i>Negociação</h4>
+                                        <span class="badge bg-orange">{{ funil.em_negociacao }}</span>
+                                    </div>
+                                    <div class="funil-bar" data-width="{% if funil.leads_novos > 0 %}{% widthratio funil.em_negociacao funil.leads_novos 100 %}{% else %}0{% endif %}">
+                                        <div class="funil-percentage">
+                                            {% if funil.leads_novos > 0 %}
+                                            {% widthratio funil.em_negociacao funil.leads_novos 100 %}%
+                                            {% else %}
+                                            0%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Fechados Ganhos -->
+                                <div class="funil-stage stage-5">
+                                    <div class="funil-header">
+                                        <h4><i class="fas fa-trophy me-2"></i>Fechados</h4>
+                                        <span class="badge bg-success">{{ funil.fechados_ganhos }}</span>
+                                    </div>
+                                    <div class="funil-bar" data-width="{% if funil.leads_novos > 0 %}{% widthratio funil.fechados_ganhos funil.leads_novos 100 %}{% else %}0{% endif %}">
+                                        <div class="funil-percentage">
+                                            {% if funil.leads_novos > 0 %}
+                                            {% widthratio funil.fechados_ganhos funil.leads_novos 100 %}%
+                                            {% else %}
+                                            0%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="row mt-5">
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3>
+                                        {% if funil.leads_novos > 0 %}
+                                        {% widthratio funil.fechados_ganhos funil.leads_novos 100 %}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </h3>
+                                    <p class="mb-0">Taxa de Conversão</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3>{{ funil.leads_novos }}</h3>
+                                    <p class="mb-0">Total de Leads</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3>{{ funil.fechados_perdidos }}</h3>
+                                    <p class="mb-0">Perdidos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análise Detalhada -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Análise do Funil</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Estágio</th>
+                                                    <th>Quantidade</th>
+                                                    <th>% do Total</th>
+                                                    <th>Taxa de Conversão</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><i class="fas fa-user-plus me-2"></i>Leads Novos</td>
+                                                    <td>{{ funil.leads_novos }}</td>
+                                                    <td>100%</td>
+                                                    <td>-</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><i class="fas fa-user-check me-2"></i>Qualificados</td>
+                                                    <td>{{ funil.leads_qualificados }}</td>
+                                                    <td>
+                                                        {% if funil.leads_novos > 0 %}
+                                                        {% widthratio funil.leads_qualificados funil.leads_novos 100 %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if funil.leads_novos > 0 %}
+                                                        {% widthratio funil.leads_qualificados funil.leads_novos 100 %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><i class="fas fa-heart me-2"></i>Interessados</td>
+                                                    <td>{{ funil.leads_interessados }}</td>
+                                                    <td>
+                                                        {% if funil.leads_novos > 0 %}
+                                                        {% widthratio funil.leads_interessados funil.leads_novos 100 %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if funil.leads_qualificados > 0 %}
+                                                        {% widthratio funil.leads_interessados funil.leads_qualificados
+                                                        100 %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><i class="fas fa-handshake me-2"></i>Negociação</td>
+                                                    <td>{{ funil.em_negociacao }}</td>
+                                                    <td>
+                                                        {% if funil.leads_novos > 0 %}
+                                                        {% widthratio funil.em_negociacao funil.leads_novos 100 %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if funil.leads_interessados > 0 %}
+                                                        {% widthratio funil.em_negociacao funil.leads_interessados 100
+                                                        %}%
+                                                        {% else %}
+                                                        0%
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr class="table-success">
+                                                    <td><strong><i class="fas fa-trophy me-2"></i>Fechados</strong></td>
+                                                    <td><strong>{{ funil.fechados_ganhos }}</strong></td>
+                                                    <td>
+                                                        <strong>
+                                                            {% if funil.leads_novos > 0 %}
+                                                            {% widthratio funil.fechados_ganhos funil.leads_novos 100
+                                                            %}%
+                                                            {% else %}
+                                                            0%
+                                                            {% endif %}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {% if funil.em_negociacao > 0 %}
+                                                            {% widthratio funil.fechados_ganhos funil.em_negociacao 100
+                                                            %}%
+                                                            {% else %}
+                                                            0%
+                                                            {% endif %}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar larguras dinamicamente às barras do funil
+    const bars = document.querySelectorAll('.funil-bar[data-width]');
+    bars.forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .funil-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .funil-stage {
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .funil-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .funil-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .funil-bar {
+        height: 50px;
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        border-radius: 25px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .funil-bar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .stage-2 .funil-bar {
+        background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    }
+
+    .stage-3 .funil-bar {
+        background: linear-gradient(45deg, #f39c12, #e67e22);
+    }
+
+    .stage-4 .funil-bar {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+    }
+
+    .stage-5 .funil-bar {
+        background: linear-gradient(45deg, #27ae60, #229954);
+    }
+
+    .funil-percentage {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .bg-orange {
+        background-color: #f39c12 !important;
+    }
+
+    @media (max-width: 768px) {
+        .funil-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .funil-header .badge {
+            margin-top: 5px;
+        }
+    }
+</style>
+{% endblock %}

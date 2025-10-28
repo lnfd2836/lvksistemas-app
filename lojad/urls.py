@@ -93,7 +93,9 @@ urlpatterns = [
     path('financeiro/', include('controle_financeiro.urls')),
     path('modulos/', include('modulos.urls')),
     path('avaliacao-qualidade/', include('avaliacao_qualidade.urls')),
+    path('controle-qualidade-comercial/', include('controle_qualidade_comercial.urls')),  # Controle de Qualidade Comercial
     path('credenciais/', include('email_credentials.urls')),
+    path('crm/', include('crm_vendas.urls')),  # CRM de Vendas
     
     # Redirecionamento para clínica de estética
     path('estetica/', estetica_redirect, name='estetica_redirect'),
@@ -110,7 +112,7 @@ urlpatterns = [
     
     # Redirecionamentos para URLs antigas (compatibilidade)
     path('login/', smart_login_redirect, name='simple_login_redirect'),
-    path('loja/login/', smart_login_redirect, name='loja_login_redirect'),
+    # path('loja/login/', smart_login_redirect, name='loja_login_redirect'),  # REMOVIDO: Conflitava com dashboard/loja/login/
     
     # API para validação
     path('api/validar-url-personalizada/', api_validar_url_personalizada, name='api_validar_url_personalizada'),

@@ -201,14 +201,13 @@ def criar_loja(request):
                 except:
                     pass  # Ignora erro se não conseguir criar notificação
                 
-                # O email será enviado pelo signal automaticamente
-                # Aqui apenas informamos o sucesso da criação
+                # O email com login personalizado será enviado pelo signal automaticamente
                 messages.success(
                     request, 
                     f'Loja "{loja.nome}" criada com sucesso com o plano {plano_comercial.nome}! '
-                    f'Credenciais de acesso: Email: {loja.email} | '
-                    f'Senha provisória: {loja.senha_provisoria} | '
-                    f'IMPORTANTE: O usuário deve alterar a senha no primeiro acesso.'
+                    f'📧 Email com link de acesso personalizado enviado para: {loja.email} | '
+                    f'🔑 Senha provisória: {loja.senha_provisoria} | '
+                    f'⚠️ IMPORTANTE: O usuário deve alterar a senha no primeiro acesso.'
                 )
                 
                 return redirect('lojas:listar_lojas')
@@ -1215,6 +1214,39 @@ def alterar_status_pedido(request, pedido_id):
             messages.success(request, f'Status do Pedido {pedido.numero_pedido} alterado para {pedido.get_status_display()}.')
     
     return redirect('lojas:detalhar_pedido', pedido_id=pedido.id)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def acessar_login_personalizado(request, loja_id):
+    """Redireciona para o login personalizado da loja"""
+    
+    loja = get_object_or_404(Loja, id=loja_id)
+    
+    try:
+        # Buscar configuração de login personalizado
+        from .models_login import LoginPersonalizado
+        login_config = LoginPersonalizado.objects.get(loja=loja, ativo=True)
+        
+        # Redirecionar para o login personalizado
+        return redirect(login_config.get_login_url())
+        
+    except LoginPersonalizado.DoesNotExist:
+        # Se não existe login personalizado, criar um
+        try:
+            from .signals import criar_login_personalizado
+            login_config = criar_login_personalizado(loja)
+            
+            messages.success(request, f'Login personalizado criado para {loja.nome}!')
+            return redirect(login_config.get_login_url())
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar login personalizado: {str(e)}')
+            return redirect('lojas:detalhar_loja', loja_id=loja.id)
+    
+    except Exception as e:
+        messages.error(request, f'Erro ao acessar login da loja: {str(e)}')
+        return redirect('lojas:detalhar_loja', loja_id=loja.id)
 
 
 @login_required

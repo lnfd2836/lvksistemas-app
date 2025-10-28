@@ -44,13 +44,13 @@ class AuthenticationService:
             return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_UNAUTHORIZED]
         
         try:
-            # Verifica se é super usuário - sempre vai para dashboard super admin
+            # PRIORIDADE 1: Super usuários sempre vão para dashboard super admin
+            # Mesmo que tenham loja associada, super admins têm prioridade
             if user.is_superuser:
                 logger.info(f"Super usuário {user.username} detectado - redirecionando para dashboard super admin")
-                # Super admins sempre vão para o dashboard principal, independente de ter loja
                 return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_SUPER_ADMIN]
             
-            # Verifica se é administrador de loja
+            # PRIORIDADE 2: Administradores de loja (apenas usuários não-super)
             elif AuthenticationService.can_access_store_dashboard(user):
                 user_store = AuthenticationService.get_user_store(user)
                 if user_store:
@@ -60,7 +60,7 @@ class AuthenticationService:
                     logger.warning(f"Usuário {user.username} deveria ter loja mas não foi encontrada")
                     return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_UNAUTHORIZED]
             
-            # Usuário comum sem permissões especiais
+            # PRIORIDADE 3: Usuário comum sem permissões especiais
             else:
                 logger.info(f"Usuário {user.username} sem permissões de dashboard")
                 return AuthenticationService.DASHBOARD_URLS[AuthenticationService.DASHBOARD_UNAUTHORIZED]
@@ -73,8 +73,7 @@ class AuthenticationService:
     def can_access_store_dashboard(user: User, store: Optional[Loja] = None) -> bool:
         """
         Verifica se o usuário pode acessar o dashboard de loja.
-        IMPORTANTE: Super usuários NÃO podem acessar dashboards de loja via login personalizado.
-        Eles devem usar o login super admin exclusivo.
+        Super usuários NÃO podem acessar dashboards de loja - eles devem usar o dashboard super admin.
         
         Args:
             user: Instância do usuário Django
@@ -87,10 +86,10 @@ class AuthenticationService:
             return False
         
         try:
-            # Super usuários NÃO podem acessar via login de loja
-            # Eles devem usar o login super admin exclusivo
+            # Super usuários NÃO podem acessar dashboards de loja
+            # Eles devem usar exclusivamente o dashboard super admin
             if user.is_superuser:
-                logger.debug(f"Super usuário {user.username} deve usar login super admin, não login de loja")
+                logger.debug(f"Super usuário {user.username} não pode acessar dashboard de loja - deve usar dashboard super admin")
                 return False
             
             # Verifica se o usuário tem loja associada
@@ -269,6 +268,7 @@ class AuthenticationService:
     def get_user_type(user: User) -> str:
         """
         Determina o tipo do usuário para fins de logging e debugging.
+        IMPORTANTE: Super admins sempre têm prioridade, mesmo se tiverem loja associada.
         
         Args:
             user: Instância do usuário Django
@@ -280,17 +280,27 @@ class AuthenticationService:
             return 'anonymous'
         
         try:
-            # Super admin sempre tem prioridade, mesmo com loja associada
+            # PRIORIDADE 1: Super admin sempre tem prioridade máxima
+            # Mesmo que tenha loja associada, continua sendo super_admin
             if user.is_superuser:
                 return 'super_admin'
+            
+            # PRIORIDADE 2: Admin de loja (apenas para usuários não-super)
             elif hasattr(user, 'loja_admin') and user.loja_admin:
                 return 'store_admin'
+            
+            # PRIORIDADE 3: Funcionário ativo
             elif hasattr(user, 'funcionario') and user.funcionario and user.funcionario.ativo:
                 return 'funcionario'
+            
+            # PRIORIDADE 4: Verificar se pode acessar dashboard de loja (fallback)
             elif AuthenticationService.can_access_store_dashboard(user):
                 return 'store_admin'
+            
+            # PRIORIDADE 5: Usuário regular sem permissões especiais
             else:
                 return 'regular_user'
+                
         except Exception as e:
             logger.error(f"Erro ao determinar tipo do usuário {user.username}: {str(e)}")
             return 'unknown'

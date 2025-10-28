@@ -1,0 +1,233 @@
+{% extends 'controle_qualidade_comercial/base.html' %}
+
+{% block title %}Editar Produto{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'controle_qualidade_comercial:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'controle_qualidade_comercial:listar_produtos' %}">Produtos</a></li>
+        <li class="breadcrumb-item active">Editar: {{ produto.nome }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">
+            <i class="fas fa-edit me-2"></i>
+            Editar Produto: {{ produto.nome }}
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Informações do Produto</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="nome" class="form-label">Nome do Produto *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ produto.nome }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sku" class="form-label">SKU</label>
+                            <input type="text" class="form-control" id="sku" name="sku" value="{{ produto.sku }}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="codigo_barras" class="form-label">Código de Barras</label>
+                            <input type="text" class="form-control" id="codigo_barras" name="codigo_barras" value="{{ produto.codigo_barras }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="">Selecione uma categoria</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if produto.categoria.id == categoria.id %}selected{% endif %}>
+                                        {{ categoria.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="fornecedor" class="form-label">Fornecedor</label>
+                            <select class="form-select" id="fornecedor" name="fornecedor">
+                                <option value="">Selecione um fornecedor</option>
+                                {% for fornecedor in fornecedores %}
+                                    <option value="{{ fornecedor.id }}" {% if produto.fornecedor.id == fornecedor.id %}selected{% endif %}>
+                                        {{ fornecedor.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="ativo" name="ativo" {% if produto.ativo %}checked{% endif %}>
+                                <label class="form-check-label" for="ativo">
+                                    Produto Ativo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="preco_custo" class="form-label">Preço de Custo</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="preco_custo" name="preco_custo" 
+                                       step="0.01" min="0" value="{{ produto.preco_custo }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="preco_venda" class="form-label">Preço de Venda</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="preco_venda" name="preco_venda" 
+                                       step="0.01" min="0" value="{{ produto.preco_venda }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="estoque_atual" class="form-label">Estoque Atual</label>
+                            <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" 
+                                   min="0" value="{{ produto.estoque_atual }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="estoque_minimo" class="form-label">Estoque Mínimo</label>
+                            <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" 
+                                   min="0" value="{{ produto.estoque_minimo }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3">{{ produto.descricao }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'controle_qualidade_comercial:detalhar_produto' produto.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Informações Adicionais</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Criado em:</dt>
+                    <dd class="col-sm-6">{{ produto.created_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    <dt class="col-sm-6">Atualizado em:</dt>
+                    <dd class="col-sm-6">{{ produto.updated_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    <dt class="col-sm-6">ID:</dt>
+                    <dd class="col-sm-6"><small class="text-muted">{{ produto.id }}</small></dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Ações</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'controle_qualidade_comercial:criar_inspecao_qualidade' %}?produto={{ produto.id }}" 
+                       class="btn btn-outline-info">
+                        <i class="fas fa-clipboard-check me-2"></i>Nova Inspeção
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" 
+                            onclick="confirmarExclusao('{{ produto.id }}', '{{ produto.nome }}')">
+                        <i class="fas fa-trash me-2"></i>Excluir Produto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalExclusao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o produto <strong id="nome-produto"></strong>?</p>
+                <p class="text-danger"><small>Esta ação não pode ser desfeita e removerá todos os dados relacionados.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" id="form-exclusao" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarExclusao(produtoId, nomeProduto) {
+    $('#nome-produto').text(nomeProduto);
+    $('#form-exclusao').attr('action', `/produtos/${produtoId}/excluir/`);
+    $('#modalExclusao').modal('show');
+}
+
+$(document).ready(function() {
+    // Calcular margem de lucro em tempo real
+    $('#preco_custo, #preco_venda').on('input', function() {
+        const custo = parseFloat($('#preco_custo').val()) || 0;
+        const venda = parseFloat($('#preco_venda').val()) || 0;
+        
+        if (custo > 0 && venda > 0) {
+            const margem = ((venda - custo) / custo * 100).toFixed(1);
+            
+            // Remover indicador anterior
+            $('.margem-lucro').remove();
+            
+            // Adicionar indicador de margem
+            const cor = margem > 30 ? 'success' : margem > 15 ? 'warning' : 'danger';
+            $('#preco_venda').after(`
+                <small class="text-${cor} margem-lucro">
+                    Margem: ${margem}%
+                </small>
+            `);
+        }
+    });
+    
+    // Trigger inicial
+    $('#preco_custo').trigger('input');
+});
+</script>
+{% endblock %}

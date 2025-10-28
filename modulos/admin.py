@@ -15,30 +15,19 @@ class TipoLojaAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('nome', 'descricao', 'icone', 'cor_primaria', 'cor_secundaria', 'ativo')
+            'fields': ('nome', 'descricao', 'ativo')
         }),
-        ('Configurações de Produto', {
-            'fields': (
-                'tem_categoria_produto', 'tem_marca_produto', 'tem_tamanho_produto',
-                'tem_cor_produto', 'tem_peso_produto', 'tem_volume_produto',
-                'tem_data_validade', 'tem_codigo_barras', 'tem_estoque_minimo'
-            ),
-            'classes': ('collapse',)
+        ('Aparência', {
+            'fields': ('icone', 'cor_primaria', 'cor_secundaria'),
+            'description': 'Configure a aparência visual do tipo de loja'
         }),
-        ('Configurações de Cliente', {
-            'fields': (
-                'tem_data_nascimento_cliente', 'tem_sexo_cliente', 'tem_cpf_cliente',
-                'tem_rg_cliente', 'tem_cnpj_cliente'
-            ),
-            'classes': ('collapse',)
-        }),
-        ('Configurações de Venda', {
-            'fields': (
-                'tem_desconto_venda', 'tem_taxa_entrega', 'tem_mesa_venda', 'tem_garcom_venda'
-            ),
-            'classes': ('collapse',)
-        })
     )
+    
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(self.readonly_fields)
+        if obj:  # Editando
+            readonly.append('nome')  # Não permitir alterar o nome após criação
+        return readonly
 
 
 @admin.register(ModuloLoja)

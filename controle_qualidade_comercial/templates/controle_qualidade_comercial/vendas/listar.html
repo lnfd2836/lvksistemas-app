@@ -1,0 +1,240 @@
+{% extends 'controle_qualidade_comercial/base.html' %}
+
+{% block title %}Vendas{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'controle_qualidade_comercial:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Vendas</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Vendas
+            </h1>
+            <a href="{% url 'controle_qualidade_comercial:criar_venda' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nova Venda
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Número da Venda</label>
+                <input type="text" class="form-control" name="numero" value="{{ request.GET.numero }}" placeholder="Número da venda">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if request.GET.status == "pendente" %}selected{% endif %}>Pendente</option>
+                    <option value="concluida" {% if request.GET.status == "concluida" %}selected{% endif %}>Concluída</option>
+                    <option value="cancelada" {% if request.GET.status == "cancelada" %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Início</label>
+                <input type="date" class="form-control" name="data_inicio" value="{{ request.GET.data_inicio }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Fim</label>
+                <input type="date" class="form-control" name="data_fim" value="{{ request.GET.data_fim }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'controle_qualidade_comercial:listar_vendas' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Vendas -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Vendas</h5>
+        <div>
+            <a href="{% url 'controle_qualidade_comercial:exportar_dados' 'vendas' %}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-download me-1"></i>Exportar CSV
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if vendas %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th>Valor Total</th>
+                            <th>Forma Pagamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venda in vendas %}
+                            <tr>
+                                <td>
+                                    <strong>{{ venda.numero_venda }}</strong>
+                                </td>
+                                <td>{{ venda.created_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {{ venda.cliente_nome|default:"-" }}
+                                    {% if venda.cliente_cpf %}
+                                        <br><small class="text-muted">{{ venda.cliente_cpf }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ venda.vendedor.get_full_name|default:venda.vendedor.username }}</td>
+                                <td>
+                                    <strong>R$ {{ venda.valor_final|floatformat:2 }}</strong>
+                                    {% if venda.desconto > 0 %}
+                                        <br><small class="text-muted">Desc: R$ {{ venda.desconto|floatformat:2 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ venda.get_forma_pagamento_display }}</td>
+                                <td>
+                                    {% if venda.status == 'concluida' %}
+                                        <span class="badge bg-success">{{ venda.get_status_display }}</span>
+                                    {% elif venda.status == 'pendente' %}
+                                        <span class="badge bg-warning">{{ venda.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ venda.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'controle_qualidade_comercial:detalhar_venda' venda.id %}" 
+                                           class="btn btn-outline-info" title="Visualizar">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if venda.status == 'pendente' %}
+                                            <a href="{% url 'controle_qualidade_comercial:editar_venda' venda.id %}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
+                                                data-bs-toggle="dropdown" title="Mais opções">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="imprimirVenda('{{ venda.id }}')">
+                                                <i class="fas fa-print me-2"></i>Imprimir
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="enviarPorEmail('{{ venda.id }}')">
+                                                <i class="fas fa-envelope me-2"></i>Enviar por Email
+                                            </a></li>
+                                            {% if venda.status == 'pendente' %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="cancelarVenda('{{ venda.id }}')">
+                                                    <i class="fas fa-times me-2"></i>Cancelar Venda
+                                                </a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Resumo -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h5>{{ vendas|length }}</h5>
+                                    <small class="text-muted">Total de Vendas</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5>R$ {% widthratio vendas|length 1 1 as total_valor %}{{ total_valor|floatformat:2 }}</h5>
+                                    <small class="text-muted">Valor Total</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5>R$ 0,00</h5>
+                                    <small class="text-muted">Ticket Médio</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5>0</h5>
+                                    <small class="text-muted">Vendas Hoje</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma venda encontrada</h5>
+                <p class="text-muted">Comece registrando sua primeira venda.</p>
+                <a href="{% url 'controle_qualidade_comercial:criar_venda' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Nova Venda
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function imprimirVenda(vendaId) {
+    window.open(`/vendas/${vendaId}/?print=1`, '_blank');
+}
+
+function enviarPorEmail(vendaId) {
+    // Implementar envio por email
+    showNotification('Funcionalidade em desenvolvimento', 'info');
+}
+
+function cancelarVenda(vendaId) {
+    if (confirm('Tem certeza que deseja cancelar esta venda?')) {
+        $.post(`/vendas/${vendaId}/cancelar/`)
+            .done(function(data) {
+                if (data.success) {
+                    showNotification('Venda cancelada com sucesso', 'success');
+                    location.reload();
+                } else {
+                    showNotification('Erro ao cancelar venda', 'danger');
+                }
+            })
+            .fail(function() {
+                showNotification('Erro de conexão', 'danger');
+            });
+    }
+}
+
+$(document).ready(function() {
+    // Busca em tempo real
+    $('#search-vendas').on('input', function() {
+        const query = $(this).val().toLowerCase();
+        $('tbody tr').each(function() {
+            const text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(query));
+        });
+    });
+});
+</script>
+{% endblock %}

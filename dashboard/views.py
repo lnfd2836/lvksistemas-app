@@ -26,7 +26,7 @@ def redirect_to_appropriate_dashboard(request):
     Pode ser usada como view padrão para redirecionamentos.
     """
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect('/')
     
     try:
         dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
@@ -35,7 +35,7 @@ def redirect_to_appropriate_dashboard(request):
     except Exception as e:
         logger.error(f"Erro ao determinar dashboard para redirecionamento do usuário {request.user.username}: {str(e)}")
         messages.error(request, 'Erro ao determinar dashboard apropriado.')
-        return redirect('login')
+        return redirect('/')
 
 
 def require_store_access(view_func):
@@ -44,11 +44,11 @@ def require_store_access(view_func):
     """
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('loja_login')
+            return redirect('dashboard:loja_login')
         
         if not AuthenticationService.can_access_store_dashboard(request.user):
             messages.error(request, 'Você não tem permissão para acessar esta área.')
-            return redirect('login')
+            return redirect('/')
         
         return view_func(request, *args, **kwargs)
     return wrapper
@@ -89,12 +89,12 @@ def dashboard_principal(request):
         # Usuário sem permissões adequadas
         logger.warning(f"Usuário {request.user.username} tentou acessar dashboard principal sem permissões adequadas")
         messages.error(request, 'Você não tem permissão para acessar o dashboard.')
-        return redirect('login')
+        return redirect('/')
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard principal para usuário {request.user.username}: {str(e)}")
         messages.error(request, 'Erro interno. Tente novamente.')
-        return redirect('login')
+        return redirect('/')
 
 
 @login_required
@@ -129,7 +129,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
         if not AuthenticationService.can_access_store_dashboard(request.user):
             logger.warning(f"Usuário {request.user.username} tentou acessar dashboard de loja sem permissão")
             messages.error(request, 'Você não tem permissão para acessar o dashboard da loja.')
-            return redirect('login')
+            return redirect('/')
         
         # Determinar qual loja usar
         target_loja = None
@@ -142,7 +142,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
                 if not AuthenticationService.can_access_store_dashboard(request.user, target_loja):
                     logger.warning(f"Usuário {request.user.username} tentou acessar loja {loja_id} sem permissão")
                     messages.error(request, 'Você não tem permissão para acessar esta loja.')
-                    return redirect('login')
+                    return redirect('/')
             except Loja.DoesNotExist:
                 logger.error(f"Loja {loja_id} não encontrada")
                 messages.error(request, 'Loja não encontrada.')
@@ -153,7 +153,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
             if not AuthenticationService.can_access_store_dashboard(request.user, loja):
                 logger.warning(f"Usuário {request.user.username} tentou acessar loja {loja.id} sem permissão")
                 messages.error(request, 'Você não tem permissão para acessar esta loja.')
-                return redirect('login')
+                return redirect('/')
             target_loja = loja
         
         # Se não foi especificada loja, obter a loja do usuário
@@ -169,13 +169,13 @@ def dashboard_loja(request, loja=None, loja_id=None):
                 else:
                     logger.error(f"Usuário {request.user.username} deveria ter loja mas não foi encontrada")
                     messages.error(request, 'Nenhuma loja associada ao seu usuário.')
-                    return redirect('login')
+                    return redirect('/')
         
         # Verificar se a loja foi encontrada
         if not target_loja:
             logger.error(f"Nenhuma loja válida encontrada para usuário {request.user.username}")
             messages.error(request, 'Erro ao determinar loja para acesso.')
-            return redirect('login')
+            return redirect('/')
     
         # VERIFICAR SE É UMA LOJA DO TIPO CONTROLE DE QUALIDADE (FATESA)
         try:
@@ -184,6 +184,8 @@ def dashboard_loja(request, loja=None, loja_id=None):
         except Exception as e:
             # Se houver erro ao acessar tipo_loja (por exemplo, tabela não existe), continua normalmente
             logger.warning(f"Erro ao verificar tipo_loja para loja {target_loja.nome}: {str(e)}")
+    
+
     
         # Obter contexto do dashboard
         dashboard_context = AuthenticationService.get_dashboard_context(request.user)
@@ -302,12 +304,17 @@ def dashboard_loja(request, loja=None, loja_id=None):
         }
         
         logger.info(f"Dashboard da loja {target_loja.nome} carregado para usuário {request.user.username}")
-        return render(request, 'dashboard/loja.html', context)
+        
+        # Usar template específico para a loja Felix (sem barra superior)
+        if str(target_loja.id) == "feeac6c9-0af3-4885-9592-9c6cd196d39c":
+            return render(request, 'dashboard/loja_crm_limpo.html', context)
+        else:
+            return render(request, 'dashboard/loja.html', context)
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")
         messages.error(request, 'Erro interno ao carregar dashboard da loja. Tente novamente.')
-        return redirect('login')
+        return redirect('/')
 
 
 @login_required
@@ -936,7 +943,7 @@ def dashboard_fatesa(request, loja):
         if not AuthenticationService.can_access_store_dashboard(request.user, loja):
             logger.warning(f"Usuário {request.user.username} tentou acessar loja FATESA {loja.nome} sem permissão")
             messages.error(request, 'Você não tem permissão para acessar esta loja.')
-            return redirect('login')
+            return redirect('/')
         
         # Obter contexto do dashboard
         dashboard_context = AuthenticationService.get_dashboard_context(request.user)
@@ -997,4 +1004,4 @@ def dashboard_fatesa(request, loja):
     except Exception as e:
         logger.error(f"Erro no dashboard FATESA para loja {loja.nome}: {str(e)}")
         messages.error(request, 'Erro interno ao carregar dashboard da loja. Tente novamente.')
-        return redirect('login')
+        return redirect('/')

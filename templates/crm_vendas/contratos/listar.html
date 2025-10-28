@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Contratos - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-contract me-2"></i>
+                        Contratos
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:criar_contrato' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Novo Contrato
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente</th>
+                                        <th>Título</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrato in page_obj %}
+                                    <tr>
+                                        <td>{{ contrato.numero }}</td>
+                                        <td>{{ contrato.lead.nome }}</td>
+                                        <td>{{ contrato.titulo }}</td>
+                                        <td>R$ {{ contrato.valor_contrato|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge bg-success">{{ contrato.get_status_display }}</span>
+                                        </td>
+                                        <td>{{ contrato.data_criacao|date:"d/m/Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhum contrato encontrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

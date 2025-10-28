@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Propostas - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-handshake me-2"></i>
+                        Propostas
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:criar_proposta' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Nova Proposta
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente</th>
+                                        <th>Título</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for proposta in page_obj %}
+                                    <tr>
+                                        <td>{{ proposta.numero }}</td>
+                                        <td>{{ proposta.lead.nome }}</td>
+                                        <td>{{ proposta.titulo }}</td>
+                                        <td>R$ {{ proposta.valor_proposto|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge bg-warning">{{ proposta.get_status_display }}</span>
+                                        </td>
+                                        <td>{{ proposta.data_criacao|date:"d/m/Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhuma proposta encontrada.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

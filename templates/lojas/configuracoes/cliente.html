@@ -1,0 +1,137 @@
+<form method="post" action="{% url 'lojas:salvar_config_cliente' loja.id %}" class="config-form">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Campos Obrigatórios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="nome" id="cliente_campo_nome" 
+                               {% if 'nome' in config_cliente.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="cliente_campo_nome">Nome Completo</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="cpf_cnpj" id="cliente_campo_cpf_cnpj"
+                               {% if 'cpf_cnpj' in config_cliente.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="cliente_campo_cpf_cnpj">CPF/CNPJ</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="telefone" id="cliente_campo_telefone"
+                               {% if 'telefone' in config_cliente.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="cliente_campo_telefone">Telefone</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="email" id="cliente_campo_email"
+                               {% if 'email' in config_cliente.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="cliente_campo_email">E-mail</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="campos_obrigatorios" 
+                               value="endereco" id="cliente_campo_endereco"
+                               {% if 'endereco' in config_cliente.campos_obrigatorios %}checked{% endif %}>
+                        <label class="form-check-label" for="cliente_campo_endereco">Endereço Completo</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Validações</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="exige_cpf_cnpj" 
+                               id="exige_cpf_cnpj" {% if config_cliente.exige_cpf_cnpj %}checked{% endif %}>
+                        <label class="form-check-label" for="exige_cpf_cnpj">
+                            Exigir CPF/CNPJ
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="valida_cpf_cnpj" 
+                               id="valida_cpf_cnpj" {% if config_cliente.valida_cpf_cnpj %}checked{% endif %}>
+                        <label class="form-check-label" for="valida_cpf_cnpj">
+                            Validar CPF/CNPJ
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="exige_telefone" 
+                               id="exige_telefone" {% if config_cliente.exige_telefone %}checked{% endif %}>
+                        <label class="form-check-label" for="exige_telefone">
+                            Exigir telefone
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="exige_email" 
+                               id="exige_email" {% if config_cliente.exige_email %}checked{% endif %}>
+                        <label class="form-check-label" for="exige_email">
+                            Exigir e-mail
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="exige_endereco" 
+                               id="exige_endereco" {% if config_cliente.exige_endereco %}checked{% endif %}>
+                        <label class="form-check-label" for="exige_endereco">
+                            Exigir endereço completo
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Segmentação de Clientes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="usa_segmentacao" 
+                               id="usa_segmentacao" {% if config_cliente.usa_segmentacao %}checked{% endif %}>
+                        <label class="form-check-label" for="usa_segmentacao">
+                            Usar segmentação de clientes
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="segmentos_disponiveis" class="form-label">Segmentos Disponíveis</label>
+                        <textarea class="form-control" name="segmentos_disponiveis" 
+                                  id="segmentos_disponiveis" rows="4"
+                                  placeholder="Digite os segmentos separados por vírgula">{% if config_cliente.segmentos_disponiveis %}{{ config_cliente.segmentos_disponiveis|join:", " }}{% endif %}</textarea>
+                        <div class="form-text">Ex: VIP, Premium, Regular, Novo Cliente</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Configurações Adicionais</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Configurações adicionais serão implementadas em versões futuras.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Salvar Configurações de Cliente
+            </button>
+        </div>
+    </div>
+</form>

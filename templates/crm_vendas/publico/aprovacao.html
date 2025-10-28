@@ -1,0 +1,186 @@
+{% extends 'crm_vendas/publico/base_publico.html' %}
+
+{% block title %}
+    {% if aprovado %}Orçamento Aprovado{% else %}Aprovar Orçamento{% endif %} - CRM
+{% endblock %}
+
+{% block header_title %}
+    {% if aprovado %}
+        <i class="fas fa-check-circle me-2"></i>Aprovado!
+    {% else %}
+        Orçamento {{ orcamento.numero }}
+    {% endif %}
+{% endblock %}
+
+{% block header_subtitle %}
+    {% if aprovado %}
+        Orçamento aprovado com sucesso
+    {% else %}
+        Confirmação de Aprovação
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% if aprovado %}
+            <!-- Orçamento já aprovado -->
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                
+                <h2 class="text-success mb-4">Orçamento Aprovado!</h2>
+                
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-info-circle me-2"></i>Próximos Passos</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-check me-2"></i>Seu orçamento foi aprovado com sucesso</li>
+                        <li><i class="fas fa-check me-2"></i>Nossa equipe foi notificada automaticamente</li>
+                        <li><i class="fas fa-check me-2"></i>Entraremos em contato em até 24 horas</li>
+                        <li><i class="fas fa-check me-2"></i>Iniciaremos o processo de execução do projeto</li>
+                    </ul>
+                </div>
+                
+                <div class="documento-info">
+                    <h4>Resumo do Orçamento Aprovado</h4>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Número:</span>
+                        <span class="info-value">{{ orcamento.numero }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Cliente:</span>
+                        <span class="info-value">{{ orcamento.lead.nome }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Valor Total:</span>
+                        <span class="info-value">
+                            <strong style="color: #27ae60; font-size: 1.2em;">
+                                R$ {{ orcamento.total|floatformat:2 }}
+                            </strong>
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Data de Aprovação:</span>
+                        <span class="info-value">{{ orcamento.data_resposta|date:"d/m/Y às H:i" }}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <p class="text-muted">
+                        <i class="fas fa-envelope me-2"></i>
+                        Você receberá um email de confirmação em breve com todos os detalhes.
+                    </p>
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- Formulário de aprovação -->
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-file-invoice-dollar text-primary" style="font-size: 3rem;"></i>
+                </div>
+                
+                <h3 class="mb-4">Confirmar Aprovação do Orçamento</h3>
+                
+                <div class="documento-info text-start">
+                    <h5>Detalhes do Orçamento</h5>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Número:</span>
+                        <span class="info-value">{{ orcamento.numero }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Descrição:</span>
+                        <span class="info-value">{{ orcamento.descricao|truncatewords:20 }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Valor Total:</span>
+                        <span class="info-value">
+                            <strong style="color: #27ae60; font-size: 1.2em;">
+                                R$ {{ orcamento.total|floatformat:2 }}
+                            </strong>
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Validade:</span>
+                        <span class="info-value">{{ orcamento.data_validade|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>Importante</h6>
+                    <p class="mb-0">
+                        Ao aprovar este orçamento, você está concordando com os valores, 
+                        condições e prazos estabelecidos. Nossa equipe entrará em contato 
+                        para dar início ao projeto.
+                    </p>
+                </div>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmAprovacao" required>
+                        <label class="form-check-label" for="confirmAprovacao">
+                            <strong>
+                                Confirmo que li e concordo com todos os termos deste orçamento
+                            </strong>
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-aprovar me-md-2" id="btnAprovar" disabled>
+                            <i class="fas fa-check me-2"></i>
+                            <span class="btn-text">Confirmar Aprovação</span>
+                            <span class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Processando...
+                            </span>
+                        </button>
+                        
+                        <a href="{% url 'crm_vendas:visualizar_orcamento_publico' orcamento.id %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar ao Orçamento
+                        </a>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not aprovado %}
+<script>
+// Habilitar botão apenas quando checkbox estiver marcado
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmAprovacao');
+    const btnAprovar = document.getElementById('btnAprovar');
+    
+    checkbox.addEventListener('change', function() {
+        btnAprovar.disabled = !checkbox.checked;
+    });
+    
+    // Mostrar loading ao submeter
+    document.querySelector('form').addEventListener('submit', function() {
+        const btn = btnAprovar;
+        const btnText = btn.querySelector('.btn-text');
+        const loading = btn.querySelector('.loading');
+        
+        btnText.style.display = 'none';
+        loading.classList.add('show');
+        btn.disabled = true;
+        checkbox.disabled = true;
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

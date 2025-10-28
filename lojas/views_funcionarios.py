@@ -24,7 +24,7 @@ def require_loja_admin(view_func):
     """Decorator para views que requerem acesso de administrador de loja"""
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('loja_login')
+            return redirect('dashboard:loja_login')
         
         # Verifica se é super admin ou admin de loja
         if not (request.user.is_superuser or hasattr(request.user, 'loja_admin')):

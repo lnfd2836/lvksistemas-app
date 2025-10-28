@@ -1,0 +1,210 @@
+{% extends 'crm_vendas/publico/base_publico.html' %}
+
+{% block title %}Orçamento {{ orcamento.numero }} - CRM{% endblock %}
+
+{% block header_title %}Orçamento {{ orcamento.numero }}{% endblock %}
+{% block header_subtitle %}Visualização e Aprovação{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Status do Orçamento -->
+        <div class="text-center mb-4">
+            {% if orcamento.status == 'aprovado' %}
+                <span class="status-badge status-aprovado">
+                    <i class="fas fa-check-circle me-2"></i>Aprovado
+                </span>
+            {% elif orcamento.status == 'rejeitado' %}
+                <span class="status-badge status-rejeitado">
+                    <i class="fas fa-times-circle me-2"></i>Rejeitado
+                </span>
+            {% else %}
+                <span class="status-badge status-pendente">
+                    <i class="fas fa-clock me-2"></i>Aguardando Aprovação
+                </span>
+            {% endif %}
+        </div>
+        
+        <!-- Informações do Orçamento -->
+        <div class="documento-info">
+            <h3><i class="fas fa-info-circle me-2"></i>Informações do Orçamento</h3>
+            
+            <div class="info-item">
+                <span class="info-label">Número:</span>
+                <span class="info-value">{{ orcamento.numero }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Cliente:</span>
+                <span class="info-value">{{ orcamento.lead.nome }}</span>
+            </div>
+            
+            {% if orcamento.lead.empresa %}
+            <div class="info-item">
+                <span class="info-label">Empresa:</span>
+                <span class="info-value">{{ orcamento.lead.empresa }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <span class="info-label">Data de Criação:</span>
+                <span class="info-value">{{ orcamento.data_criacao|date:"d/m/Y" }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Validade:</span>
+                <span class="info-value">{{ orcamento.data_validade|date:"d/m/Y" }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Valor Total:</span>
+                <span class="info-value">
+                    <strong style="font-size: 1.2em; color: #27ae60;">
+                        R$ {{ orcamento.total|floatformat:2 }}
+                    </strong>
+                </span>
+            </div>
+        </div>
+        
+        <!-- Descrição -->
+        {% if orcamento.descricao %}
+        <div class="documento-info">
+            <h3><i class="fas fa-file-text me-2"></i>Descrição</h3>
+            <p class="mb-0">{{ orcamento.descricao|linebreaks }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Itens do Orçamento -->
+        {% if orcamento.itens.exists %}
+        <div class="documento-info">
+            <h3><i class="fas fa-list me-2"></i>Itens do Orçamento</h3>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Qtd</th>
+                            <th>Unidade</th>
+                            <th>Valor Unit.</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in orcamento.itens.all %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.descricao }}</strong>
+                                {% if item.detalhes %}
+                                    <br><small class="text-muted">{{ item.detalhes }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantidade }}</td>
+                            <td>{{ item.unidade }}</td>
+                            <td>R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                            <td><strong>R$ {{ item.valor_total|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-success">
+                            <th colspan="4">Total Geral:</th>
+                            <th>R$ {{ orcamento.total|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Observações -->
+        {% if orcamento.observacoes %}
+        <div class="documento-info">
+            <h3><i class="fas fa-sticky-note me-2"></i>Observações</h3>
+            <p class="mb-0">{{ orcamento.observacoes|linebreaks }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Ações -->
+        {% if orcamento.status not in 'aprovado,rejeitado' %}
+        <div class="text-center mt-4">
+            <form method="post" action="{% url 'crm_vendas:aprovar_orcamento_publico' orcamento.id %}" id="formAprovacao">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="aprovar" id="inputAcao">
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-aprovar me-md-2" onclick="aprovarOrcamento()">
+                        <i class="fas fa-check me-2"></i>
+                        <span class="btn-text">Aprovar Orçamento</span>
+                        <span class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Processando...
+                        </span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-danger" onclick="rejeitarOrcamento()">
+                        <i class="fas fa-times me-2"></i>Rejeitar
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        
+        <!-- Orçamento já processado -->
+        {% if orcamento.status == 'aprovado' %}
+        <div class="alert alert-success text-center mt-4">
+            <i class="fas fa-check-circle fa-2x mb-3"></i>
+            <h4>Orçamento Aprovado!</h4>
+            <p class="mb-0">Obrigado por aprovar nosso orçamento. Entraremos em contato em breve para dar continuidade ao projeto.</p>
+            {% if orcamento.data_resposta %}
+                <small class="text-muted d-block mt-2">
+                    Aprovado em {{ orcamento.data_resposta|date:"d/m/Y às H:i" }}
+                </small>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if orcamento.status == 'rejeitado' %}
+        <div class="alert alert-warning text-center mt-4">
+            <i class="fas fa-times-circle fa-2x mb-3"></i>
+            <h4>Orçamento Rejeitado</h4>
+            <p class="mb-0">Agradecemos seu interesse. Caso deseje fazer alguma alteração, entre em contato conosco.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aprovarOrcamento() {
+    if (confirm('Tem certeza que deseja aprovar este orçamento?')) {
+        document.getElementById('inputAcao').value = 'aprovar';
+        
+        // Mostrar loading
+        const btn = document.querySelector('.btn-aprovar');
+        const btnText = btn.querySelector('.btn-text');
+        const loading = btn.querySelector('.loading');
+        
+        btnText.style.display = 'none';
+        loading.classList.add('show');
+        btn.disabled = true;
+        
+        document.getElementById('formAprovacao').submit();
+    }
+}
+
+function rejeitarOrcamento() {
+    if (confirm('Tem certeza que deseja rejeitar este orçamento?')) {
+        document.getElementById('inputAcao').value = 'rejeitar';
+        document.getElementById('formAprovacao').submit();
+    }
+}
+
+// Auto-refresh para tracking
+setTimeout(function() {
+    // Registrar visualização via pixel de tracking
+    const img = new Image();
+    img.src = '{% url "crm_vendas:track_email" orcamento.id %}';
+}, 1000);
+</script>
+{% endblock %}

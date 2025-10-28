@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Controle de Qualidade Comercial{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .metric-card.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .metric-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .metric-card.info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-chart-line"></i>
+                Dashboard - Controle de Qualidade Comercial
+            </h1>
+            <p class="text-muted">{{ loja.nome }}</p>
+        </div>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total de Produtos</h6>
+                        <h3>{{ total_produtos }}</h3>
+                    </div>
+                    <div>
+                        <i class="fas fa-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="metric-card success">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Vendas do Mês</h6>
+                        <h3>{{ vendas_mes.total|default:0 }}</h3>
+                        <small>R$ {{ vendas_mes.valor_total|default:0|floatformat:2 }}</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
+       
+        <div class="col-md-3">
+            <div class="metric-card warning">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Estoque Baixo</h6>
+                        <h3>{{ estoque_baixo }}</h3>
+                        <small>produtos</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="metric-card info">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Taxa de Aprovação</h6>
+                        <h3>{{ taxa_aprovacao }}%</h3>
+                        <small>{{ total_inspecoes }} inspeções</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos e Relatórios -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-bar"></i> Vendas Diárias (Últimos 7 dias)</h5>
+                <canvas id="vendasDiariasChart" height="200"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-pie"></i> Reclamações por Tipo</h5>
+                <canvas id="reclamacoesTipoChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-trophy"></i> Top 10 Produtos Mais Vendidos</h5>
+                <div id="topProdutosList"></div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-line"></i> Evolução da Qualidade</h5>
+                <canvas id="evolucaoQualidadeChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reclamações Abertas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h5><i class="fas fa-exclamation-circle"></i> Reclamações Abertas: {{ reclamacoes_abertas }}</h5>
+                {% if reclamacoes_abertas > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        Existem {{ reclamacoes_abertas }} reclamações que precisam de atenção.
+                        <a href="#" class="btn btn-sm btn-warning ms-2">Ver Reclamações</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        Parabéns! Não há reclamações abertas no momento.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar dados dos gráficos
+    carregarVendasDiarias();
+    carregarTopProdutos();
+    carregarReclamacoesTipo();
+    carregarEvolucaoQualidade();
+});
+
+function carregarVendasDiarias() {
+    fetch('{% url "controle_qualidade_comercial:api_vendas_diarias" %}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('vendasDiariasChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.data).toLocaleDateString('pt-BR')),
+                    datasets: [{
+                        label: 'Vendas',
+                        data: data.map(item => item.total_vendas),
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+}
+
+function carregarTopProdutos() {
+    fetch('{% url "controle_qualidade_comercial:api_top_produtos" %}')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('topProdutosList');
+            let html = '<div class="list-group">';
+            
+            data.forEach((produto, index) => {
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${index + 1}. ${produto.nome}</strong>
+                            <br><small class="text-muted">SKU: ${produto.sku}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary">${produto.total_vendido} unidades</span>
+                            <br><small>R$ ${produto.valor_total.toFixed(2)}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        });
+}
+
+function carregarReclamacoesTipo() {
+    fetch('{% url "controle_qualidade_comercial:api_reclamacoes_tipo" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                document.getElementById('reclamacoesTipoChart').parentElement.innerHTML = 
+                    '<h5><i class="fas fa-chart-pie"></i> Reclamações por Tipo</h5><p class="text-muted">Nenhuma reclamação nos últimos 30 dias.</p>';
+                return;
+            }
+            
+            const ctx = document.getElementById('reclamacoesTipoChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.tipo_reclamacao.replace('_', ' ').toUpperCase()),
+                    datasets: [{
+                        data: data.map(item => item.total),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+}
+
+function carregarEvolucaoQualidade() {
+    fetch('{% url "controle_qualidade_comercial:api_evolucao_qualidade" %}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('evolucaoQualidadeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.mes).toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})),
+                    datasets: [{
+                        label: 'Taxa de Aprovação (%)',
+                        data: data.map(item => item.taxa_aprovacao),
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        });
+}
+</script>
+{% endblock %}

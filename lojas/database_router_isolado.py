@@ -37,6 +37,7 @@ class LojaIsoladaDBRouter:
         'controle_financeiro',
         'avaliacao_qualidade',
         'modulos',
+        'lojas',  # Adicionar modelos de loja para teste
     }
     
     def db_for_read(self, model, **hints):
@@ -143,31 +144,48 @@ class LojaIsoladaDBRouter:
             # Verificar contexto da thread
             thread = threading.current_thread()
             
-            # Verificar se há contexto de banco definido
+            # Prioridade 1: Verificar contexto de banco (db_context)
             if hasattr(thread, 'db_context') and hasattr(thread.db_context, 'db_alias'):
                 db_alias = thread.db_context.db_alias
                 
                 # Verificar se o banco existe na configuração
                 if db_alias in settings.DATABASES:
-                    logger.debug(f"Usando banco isolado: {db_alias}")
+                    logger.debug(f"Router: Usando banco isolado via db_context: {db_alias}")
                     return db_alias
+                else:
+                    logger.warning(f"Router: Banco {db_alias} não encontrado na configuração")
             
-            # Verificar contexto de loja
+            # Prioridade 2: Verificar contexto de loja (loja_context)
             if hasattr(thread, 'loja_context') and hasattr(thread.loja_context, 'loja_id'):
                 loja_id = thread.loja_context.loja_id
                 db_alias = f"loja_{loja_id}"
                 
                 # Verificar se o banco existe na configuração
                 if db_alias in settings.DATABASES:
-                    logger.debug(f"Usando banco da loja: {db_alias}")
+                    logger.debug(f"Router: Usando banco da loja via loja_context: {db_alias}")
+                    return db_alias
+                else:
+                    logger.warning(f"Router: Banco {db_alias} não encontrado na configuração")
+            
+            # Prioridade 3: Verificar contexto de loja via ID direto
+            if hasattr(thread, 'loja_id'):
+                loja_id = thread.loja_id
+                db_alias = f"loja_{loja_id}"
+                
+                if db_alias in settings.DATABASES:
+                    logger.debug(f"Router: Usando banco via loja_id direto: {db_alias}")
                     return db_alias
             
+            # Debug: Listar todos os atributos da thread para diagnóstico
+            thread_attrs = [attr for attr in dir(thread) if not attr.startswith('_')]
+            logger.debug(f"Router: Atributos da thread: {thread_attrs}")
+            
             # Fallback para banco principal
-            logger.debug("Nenhum contexto de loja encontrado, usando banco principal")
+            logger.debug("Router: Nenhum contexto de loja encontrado, usando banco principal")
             return 'default'
             
         except Exception as e:
-            logger.error(f"Erro ao obter banco da loja: {str(e)}")
+            logger.error(f"Router: Erro ao obter banco da loja: {str(e)}")
             return 'default'
 
 

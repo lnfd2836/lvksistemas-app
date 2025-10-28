@@ -45,6 +45,93 @@
                     </div>
                 </div>
 
+                <!-- Informações do Login Personalizado -->
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-success mb-3">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Login Personalizado
+                        </h6>
+                    </div>
+
+                    {% if loja.login_personalizado %}
+                    <div class="col-md-8">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>URL Personalizada:</strong></p>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">{{ request.get_host }}</span>
+                                            <input type="text" class="form-control" 
+                                                   value="{{ loja.login_personalizado.get_login_url }}" 
+                                                   readonly id="loginUrl">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="copyLoginUrl()" title="Copiar URL">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <p><strong>Tema:</strong> 
+                                            <span class="badge bg-info">{{ loja.login_personalizado.get_tema_display }}</span>
+                                        </p>
+                                        <p><strong>Status:</strong> 
+                                            <span class="badge bg-{% if loja.login_personalizado.ativo %}success{% else %}danger{% endif %}">
+                                                {% if loja.login_personalizado.ativo %}Ativo{% else %}Inativo{% endif %}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Título:</strong> {{ loja.login_personalizado.titulo }}</p>
+                                        <p><strong>Subtítulo:</strong> {{ loja.login_personalizado.subtitulo|default:"Não definido" }}</p>
+                                        <p><strong>Criado em:</strong> {{ loja.login_personalizado.data_criacao|date:"d/m/Y H:i" }}</p>
+                                        <p><strong>Atualizado em:</strong> {{ loja.login_personalizado.data_atualizacao|date:"d/m/Y H:i" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid gap-2">
+                            <a href="{{ loja.login_personalizado.get_login_url }}" 
+                               class="btn btn-success" target="_blank">
+                                <i class="bi bi-box-arrow-up-right me-2"></i>
+                                Acessar Login
+                            </a>
+                            <a href="{% url 'lojas:gerenciar_login_personalizado' loja.id %}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-gear me-2"></i>
+                                Configurar
+                            </a>
+                            <a href="{% url 'lojas:preview_login_personalizado' loja.id %}" 
+                               class="btn btn-outline-info" target="_blank">
+                                <i class="bi bi-eye me-2"></i>
+                                Visualizar
+                            </a>
+                            <a href="{% url 'lojas:historico_login_loja' loja.id %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Histórico
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Login personalizado não configurado!</strong>
+                            <p class="mb-2">Esta loja ainda não possui um login personalizado configurado.</p>
+                            <a href="{% url 'lojas:gerenciar_login_personalizado' loja.id %}" 
+                               class="btn btn-warning btn-sm">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Criar Login Personalizado
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
                 <!-- Informações do Plano Comercial -->
                 {% if plano %}
                 <hr>
@@ -339,7 +426,7 @@
                             {% if user.is_superuser %}
                             <!-- Links para Super Usuário -->
                             <div class="col-md-6 mb-2">
-                                <a href="{% url 'loja_login' %}" class="btn btn-primary w-100" target="_blank">
+                                <a href="{% url 'dashboard:loja_login' %}" class="btn btn-primary w-100" target="_blank">
                                     <i class="fas fa-sign-in-alt me-1"></i>
                                     Login da Loja (Para Administrador)
                                 </a>
@@ -617,6 +704,71 @@
             console.error('Erro ao copiar senha:', err);
             alert('Erro ao copiar senha. Tente selecionar e copiar manualmente.');
         }
+    }
+
+    function copyLoginUrl() {
+        const loginInput = document.getElementById('loginUrl');
+        const fullUrl = 'https://{{ request.get_host }}' + loginInput.value;
+        
+        // Criar elemento temporário para copiar
+        const tempInput = document.createElement('input');
+        tempInput.value = fullUrl;
+        document.body.appendChild(tempInput);
+        
+        // Selecionar e copiar
+        tempInput.select();
+        tempInput.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            
+            // Feedback visual
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check"></i>';
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+            
+            // Mostrar toast
+            showToast('URL copiada para a área de transferência!', 'success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Erro ao copiar URL:', err);
+            showToast('Erro ao copiar URL. Tente selecionar e copiar manualmente.', 'error');
+        }
+        
+        // Remover elemento temporário
+        document.body.removeChild(tempInput);
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Remover toast após 4 segundos
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 4000);
     }
 </script>
 {% endblock %}

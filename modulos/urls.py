@@ -11,4 +11,7 @@ urlpatterns = [
     
     # URLs da Clínica de Estética
     path('estetica/', include('modulos.urls_estetica')),
+    
+    # URLs do CRM de Vendas
+    path('crm/', include('modulos.urls_crm')),
 ]

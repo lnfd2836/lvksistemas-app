@@ -48,6 +48,9 @@ class LojaEspecificaMiddleware:
     
     def _is_loja_login_url(self, path):
         """Verifica se é uma URL de login de loja"""
+        # CORREÇÃO: Não interceptar URLs do dashboard
+        if path.startswith('/dashboard/'):
+            return False
         return path.startswith('/login/') and path != '/login/'
     
     def _handle_loja_login(self, request):

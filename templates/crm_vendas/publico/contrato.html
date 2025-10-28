@@ -1,0 +1,299 @@
+{% extends 'crm_vendas/publico/base_publico.html' %}
+
+{% block title %}Contrato {{ contrato.numero }} - CRM{% endblock %}
+
+{% block header_title %}Contrato {{ contrato.numero }}{% endblock %}
+{% block header_subtitle %}Assinatura Digital{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Status do Contrato -->
+        <div class="text-center mb-4">
+            {% if contrato.status == 'assinado_cliente' %}
+                <span class="status-badge status-assinado">
+                    <i class="fas fa-signature me-2"></i>Assinado pelo Cliente
+                </span>
+            {% elif contrato.status == 'assinado_empresa' %}
+                <span class="status-badge status-assinado">
+                    <i class="fas fa-signature me-2"></i>Assinado pela Empresa
+                </span>
+            {% elif contrato.status == 'ativo' %}
+                <span class="status-badge status-aprovado">
+                    <i class="fas fa-check-circle me-2"></i>Contrato Ativo
+                </span>
+            {% else %}
+                <span class="status-badge status-pendente">
+                    <i class="fas fa-pen me-2"></i>Aguardando Assinatura
+                </span>
+            {% endif %}
+        </div>
+        
+        <!-- Informações do Contrato -->
+        <div class="documento-info">
+            <h3><i class="fas fa-info-circle me-2"></i>Informações do Contrato</h3>
+            
+            <div class="info-item">
+                <span class="info-label">Número:</span>
+                <span class="info-value">{{ contrato.numero }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Título:</span>
+                <span class="info-value">{{ contrato.titulo }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Cliente:</span>
+                <span class="info-value">{{ contrato.lead.nome }}</span>
+            </div>
+            
+            {% if contrato.lead.empresa %}
+            <div class="info-item">
+                <span class="info-label">Empresa:</span>
+                <span class="info-value">{{ contrato.lead.empresa }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <span class="info-label">Data de Criação:</span>
+                <span class="info-value">{{ contrato.data_criacao|date:"d/m/Y" }}</span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Período de Vigência:</span>
+                <span class="info-value">
+                    {{ contrato.data_inicio|date:"d/m/Y" }} até {{ contrato.data_fim|date:"d/m/Y" }}
+                    ({{ contrato.prazo_meses }} meses)
+                </span>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Valor Total:</span>
+                <span class="info-value">
+                    <strong style="font-size: 1.2em; color: #27ae60;">
+                        R$ {{ contrato.valor_total|floatformat:2 }}
+                    </strong>
+                </span>
+            </div>
+        </div>
+        
+        <!-- Objeto do Contrato -->
+        {% if contrato.objeto %}
+        <div class="documento-info">
+            <h3><i class="fas fa-file-contract me-2"></i>Objeto do Contrato</h3>
+            <div class="text-justify">{{ contrato.objeto|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Cláusulas -->
+        {% if contrato.clausulas %}
+        <div class="documento-info">
+            <h3><i class="fas fa-list-ol me-2"></i>Cláusulas Contratuais</h3>
+            <div class="text-justify">{{ contrato.clausulas|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Forma de Pagamento -->
+        {% if contrato.forma_pagamento %}
+        <div class="documento-info">
+            <h3><i class="fas fa-credit-card me-2"></i>Forma de Pagamento</h3>
+            <div class="text-justify">{{ contrato.forma_pagamento|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Condições Especiais -->
+        {% if contrato.condicoes_especiais %}
+        <div class="documento-info">
+            <h3><i class="fas fa-star me-2"></i>Condições Especiais</h3>
+            <div class="text-justify">{{ contrato.condicoes_especiais|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Histórico de Assinaturas -->
+        {% if contrato.assinado_cliente_em or contrato.assinado_empresa_em %}
+        <div class="documento-info">
+            <h3><i class="fas fa-history me-2"></i>Histórico de Assinaturas</h3>
+            
+            {% if contrato.assinado_cliente_em %}
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-user me-2"></i>Assinado pelo Cliente:
+                </span>
+                <span class="info-value">
+                    <i class="fas fa-check text-success me-2"></i>
+                    {{ contrato.assinado_cliente_em|date:"d/m/Y às H:i" }}
+                </span>
+            </div>
+            {% endif %}
+            
+            {% if contrato.assinado_empresa_em %}
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-building me-2"></i>Assinado pela Empresa:
+                </span>
+                <span class="info-value">
+                    <i class="fas fa-check text-success me-2"></i>
+                    {{ contrato.assinado_empresa_em|date:"d/m/Y às H:i" }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Ações de Assinatura -->
+        {% if contrato.status not in 'assinado_cliente,ativo,cancelado' %}
+        <div class="text-center mt-4">
+            <!-- Aviso Legal -->
+            <div class="alert alert-info mb-4">
+                <h5><i class="fas fa-info-circle me-2"></i>Assinatura Digital</h5>
+                <p class="mb-2">
+                    Ao clicar em "Assinar Digitalmente", você está concordando com todos os termos e condições 
+                    descritos neste contrato. Esta assinatura tem validade jurídica equivalente à assinatura manuscrita.
+                </p>
+                <small class="text-muted">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Sua assinatura será registrada com data, hora e endereço IP para garantir a autenticidade.
+                </small>
+            </div>
+            
+            <!-- Formulário de Assinatura -->
+            <form method="post" id="formAssinatura">
+                {% csrf_token %}
+                
+                <!-- Confirmação de Leitura -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmLeitura" required>
+                    <label class="form-check-label" for="confirmLeitura">
+                        <strong>Declaro que li e compreendi todos os termos deste contrato</strong>
+                    </label>
+                </div>
+                
+                <!-- Confirmação de Concordância -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="confirmConcordancia" required>
+                    <label class="form-check-label" for="confirmConcordancia">
+                        <strong>Concordo com todos os termos e condições estabelecidos</strong>
+                    </label>
+                </div>
+                
+                <!-- Botão de Assinatura -->
+                <button type="button" class="btn btn-assinar" onclick="assinarContrato()" id="btnAssinar" disabled>
+                    <i class="fas fa-signature me-2"></i>
+                    <span class="btn-text">Assinar Digitalmente</span>
+                    <span class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Processando Assinatura...
+                    </span>
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        
+        <!-- Contrato já assinado -->
+        {% if contrato.status == 'assinado_cliente' %}
+        <div class="alert alert-success text-center mt-4">
+            <i class="fas fa-signature fa-2x mb-3"></i>
+            <h4>Contrato Assinado com Sucesso!</h4>
+            <p class="mb-0">
+                Seu contrato foi assinado digitalmente em {{ contrato.assinado_cliente_em|date:"d/m/Y às H:i" }}.
+                Aguarde a assinatura da empresa para que o contrato entre em vigor.
+            </p>
+        </div>
+        {% endif %}
+        
+        {% if contrato.status == 'ativo' %}
+        <div class="alert alert-success text-center mt-4">
+            <i class="fas fa-check-circle fa-2x mb-3"></i>
+            <h4>Contrato Ativo!</h4>
+            <p class="mb-0">
+                Este contrato está ativo e em vigor. Todas as partes assinaram o documento.
+            </p>
+            <div class="mt-3">
+                <small class="text-muted">
+                    Cliente: {{ contrato.assinado_cliente_em|date:"d/m/Y às H:i" }}<br>
+                    Empresa: {{ contrato.assinado_empresa_em|date:"d/m/Y às H:i" }}
+                </small>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if contrato.status == 'cancelado' %}
+        <div class="alert alert-warning text-center mt-4">
+            <i class="fas fa-ban fa-2x mb-3"></i>
+            <h4>Contrato Cancelado</h4>
+            <p class="mb-0">Este contrato foi cancelado e não está mais em vigor.</p>
+        </div>
+        {% endif %}
+        
+        <!-- Download do PDF -->
+        {% if contrato.arquivo_pdf %}
+        <div class="text-center mt-4">
+            <a href="{{ contrato.arquivo_pdf.url }}" class="btn btn-outline-primary" target="_blank">
+                <i class="fas fa-download me-2"></i>Baixar PDF do Contrato
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Habilitar botão apenas quando ambos checkboxes estiverem marcados
+document.addEventListener('DOMContentLoaded', function() {
+    const checkLeitura = document.getElementById('confirmLeitura');
+    const checkConcordancia = document.getElementById('confirmConcordancia');
+    const btnAssinar = document.getElementById('btnAssinar');
+    
+    if (checkLeitura && checkConcordancia && btnAssinar) {
+        function verificarCheckboxes() {
+            btnAssinar.disabled = !(checkLeitura.checked && checkConcordancia.checked);
+        }
+        
+        checkLeitura.addEventListener('change', verificarCheckboxes);
+        checkConcordancia.addEventListener('change', verificarCheckboxes);
+    }
+});
+
+function assinarContrato() {
+    // Confirmação final
+    const confirmacao = confirm(
+        'ATENÇÃO: Você está prestes a assinar digitalmente este contrato.\n\n' +
+        'Esta ação é IRREVERSÍVEL e tem validade jurídica.\n\n' +
+        'Tem certeza que deseja prosseguir com a assinatura?'
+    );
+    
+    if (confirmacao) {
+        // Mostrar loading
+        const btn = document.getElementById('btnAssinar');
+        const btnText = btn.querySelector('.btn-text');
+        const loading = btn.querySelector('.loading');
+        
+        btnText.style.display = 'none';
+        loading.classList.add('show');
+        btn.disabled = true;
+        
+        // Desabilitar checkboxes
+        document.getElementById('confirmLeitura').disabled = true;
+        document.getElementById('confirmConcordancia').disabled = true;
+        
+        // Submeter formulário
+        document.getElementById('formAssinatura').submit();
+    }
+}
+
+// Prevenir saída acidental da página durante assinatura
+let assinandoContrato = false;
+
+document.getElementById('formAssinatura')?.addEventListener('submit', function() {
+    assinandoContrato = true;
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (assinandoContrato) {
+        e.preventDefault();
+        e.returnValue = 'Sua assinatura está sendo processada. Tem certeza que deseja sair?';
+    }
+});
+</script>
+{% endblock %}

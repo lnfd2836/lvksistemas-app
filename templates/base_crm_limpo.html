@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRM - Sistema de Vendas{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        :root {
+            /* Cores CRM */
+            --crm-azul-principal: #667eea;
+            --crm-azul-secundario: #764ba2;
+            --crm-verde-accent: #10b981;
+            --crm-cinza-claro: #f8fafc;
+            --crm-cinza-medio: #64748b;
+            --crm-cinza-escuro: #1e293b;
+            --crm-branco: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--crm-cinza-claro) 0%, #ffffff 100%);
+            min-height: 100vh;
+            color: var(--crm-cinza-escuro);
+        }
+
+        .main-content {
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container-fluid {
+            padding: 0;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.08);
+            border-radius: 12px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--crm-azul-principal), var(--crm-azul-secundario));
+            color: var(--crm-branco);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+            border: none;
+            margin-bottom: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--crm-verde-accent), #059669);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .stat-card.info {
+            background: linear-gradient(135deg, var(--crm-azul-secundario), #2563eb);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--crm-azul-principal), var(--crm-azul-secundario));
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-left-color: var(--crm-verde-accent);
+            color: #065f46;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-left-color: var(--crm-azul-secundario);
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-left-color: #dc2626;
+            color: #991b1b;
+        }
+
+        /* Barra superior minimalista */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.05);
+        }
+
+        .top-bar .btn {
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        /* Container de mensagens */
+        .messages-container {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 400px;
+        }
+
+        .messages-container .alert {
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo para conteúdo principal */
+        .content-wrapper {
+            padding: 2rem;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 1rem;
+        }
+
+        /* Animações suaves */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 1rem;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Barra superior minimalista com logout -->
+    <div class="top-bar">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    <span class="fw-bold text-primary">CRM Vendas</span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ user.username|truncatechars:20 }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'dashboard:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Sair
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i
+                    class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="main-content">
+            <div class="content-wrapper fade-in">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Scripts CRM -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function (alert) {
+                setTimeout(function () {
+                    if (alert && !alert.classList.contains('fade')) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
+
+            // Smooth scroll para links internos
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Confirmação para ações de exclusão
+            document.querySelectorAll('.btn-danger, .delete-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    if (!confirm('Tem certeza que deseja realizar esta ação?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Loading state para formulários
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function () {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processando...';
+                    }
+                });
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

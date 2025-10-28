@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Preview Dashboard - {{ loja.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-preview {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    
+    .widget-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .widget-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .metric-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+    
+    .chart-placeholder {
+        height: 300px;
+        background: linear-gradient(45deg, #f1f2f6, #ddd);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-style: italic;
+    }
+    
+    /* Temas de cores */
+    .tema-azul .widget-card { border-left: 4px solid #3498db; }
+    .tema-verde .widget-card { border-left: 4px solid #2ecc71; }
+    .tema-roxo .widget-card { border-left: 4px solid #9b59b6; }
+    .tema-escuro .widget-card { 
+        background: #2c3e50; 
+        color: white; 
+        border-left: 4px solid #e74c3c; 
+    }
+    .tema-escuro .metric-value { color: white; }
+    .tema-escuro .metric-label { color: #bdc3c7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-preview tema-{{ config.tema_cores }}">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Dashboard Preview - {{ loja.nome }}
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Período: {{ config.get_periodo_padrao_display }} | 
+                            Layout: {{ config.layout_colunas }} colunas |
+                            Tema: {{ config.get_tema_cores_display }}
+                        </p>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="window.close()">
+                            <i class="fas fa-times me-1"></i>Fechar Preview
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Widgets Grid -->
+        <div class="row">
+            {% if 'vendas_hoje' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value text-success">R$ {{ dados.vendas_hoje|floatformat:2 }}</div>
+                        <div class="metric-label">Vendas de Hoje</div>
+                        <small class="text-muted">
+                            <i class="fas fa-arrow-up text-success"></i> +15% vs ontem
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'vendas_mes' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value text-primary">R$ {{ dados.vendas_mes|floatformat:2 }}</div>
+                        <div class="metric-label">Vendas do Mês</div>
+                        <small class="text-muted">
+                            <i class="fas fa-arrow-up text-success"></i> +8% vs mês anterior
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'clientes_novos' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value text-info">{{ dados.clientes_novos }}</div>
+                        <div class="metric-label">Clientes Novos</div>
+                        <small class="text-muted">Este mês</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'produtos_mais_vendidos' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-trophy me-1"></i>Produtos Mais Vendidos
+                        </h6>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>Produto A</span>
+                                <span class="badge bg-primary">45 vendas</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>Produto B</span>
+                                <span class="badge bg-primary">32 vendas</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>Produto C</span>
+                                <span class="badge bg-primary">28 vendas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'estoque_baixo' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body">
+                        <h6 class="card-title text-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Estoque Baixo
+                        </h6>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>Produto X</span>
+                                <span class="badge bg-warning">3 unidades</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>Produto Y</span>
+                                <span class="badge bg-danger">1 unidade</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'metas_vendas' in config.widgets_habilitados %}
+            <div class="col-lg-{% if config.layout_colunas == 2 %}6{% elif config.layout_colunas == 3 %}4{% elif config.layout_colunas == 4 %}3{% else %}12{% endif %} col-md-6 col-sm-12">
+                <div class="card widget-card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-target me-1"></i>Meta de Vendas
+                        </h6>
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-success" style="width: 75%">75%</div>
+                        </div>
+                        <small class="text-muted">R$ 26.250 de R$ 35.000</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Gráficos -->
+        {% if config.graficos_habilitados %}
+        <div class="row mt-4">
+            {% if 'vendas_tempo' in config.graficos_habilitados %}
+            <div class="col-lg-8 col-md-12">
+                <div class="card widget-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-1"></i>Vendas ao Longo do Tempo
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line fa-3x mb-2"></i>
+                                <br>Gráfico de Vendas ao Longo do Tempo
+                                <br><small>Dados simulados para preview</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'produtos_categoria' in config.graficos_habilitados %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card widget-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-pie me-1"></i>Vendas por Categoria
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder">
+                            <div class="text-center">
+                                <i class="fas fa-chart-pie fa-2x mb-2"></i>
+                                <br>Gráfico de Pizza
+                                <br><small>Categorias</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if 'formas_pagamento' in config.graficos_habilitados %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card widget-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-donut me-1"></i>Formas de Pagamento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder">
+                            <div class="text-center">
+                                <i class="fas fa-credit-card fa-2x mb-2"></i>
+                                <br>Gráfico de Rosca
+                                <br><small>Pagamentos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Métricas Principais -->
+        {% if config.metricas_principais %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card widget-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-tachometer-alt me-1"></i>Métricas Principais
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            {% if 'faturamento' in config.metricas_principais %}
+                            <div class="col-md-3">
+                                <div class="metric-value text-success">R$ 35.000</div>
+                                <div class="metric-label">Faturamento</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if 'ticket_medio' in config.metricas_principais %}
+                            <div class="col-md-3">
+                                <div class="metric-value text-info">R$ 125</div>
+                                <div class="metric-label">Ticket Médio</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if 'quantidade_vendas' in config.metricas_principais %}
+                            <div class="col-md-3">
+                                <div class="metric-value text-primary">280</div>
+                                <div class="metric-label">Vendas</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if 'crescimento' in config.metricas_principais %}
+                            <div class="col-md-3">
+                                <div class="metric-value text-success">+12%</div>
+                                <div class="metric-label">Crescimento</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Aviso de Preview -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Preview Mode:</strong> Este é um preview das configurações do dashboard. 
+                    Os dados mostrados são simulados para demonstração. 
+                    No dashboard real, serão exibidos os dados reais da sua loja.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Simular dados dinâmicos no preview
+    setInterval(function() {
+        $('.metric-value').each(function() {
+            $(this).addClass('animate__animated animate__pulse');
+            setTimeout(() => {
+                $(this).removeClass('animate__animated animate__pulse');
+            }, 1000);
+        });
+    }, 5000);
+});
+</script>
+{% endblock %}

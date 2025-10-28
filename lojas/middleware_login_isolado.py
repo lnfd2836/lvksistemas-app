@@ -2,11 +2,13 @@
 Middleware para garantir isolamento completo de acesso por loja
 """
 import logging
+import threading
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
+from django.conf import settings
 from .models import Loja
 from .models_login import LoginPersonalizado
 from .services.isolamento_service import IsolamentoService
@@ -53,6 +55,13 @@ class LoginIsoladoMiddleware(MiddlewareMixin):
             '/password_reset/',
             '/api/',
             '/webhook/',
+            '/dashboard/loja/login/',  # Login do dashboard da loja
+            '/dashboard/loja/login',   # Login do dashboard da loja (sem barra final)
+            '/dashboard/loja/logout/',  # Logout do dashboard da loja
+            '/crm/orcamento/',  # URLs públicas do CRM
+            '/crm/proposta/',   # URLs públicas do CRM
+            '/crm/contrato/',   # URLs públicas do CRM
+            '/crm/email/',      # URLs de tracking do CRM
         ]
         
         path = request.path
@@ -228,6 +237,7 @@ class DatabaseIsolationMiddleware(MiddlewareMixin):
             if loja_atual:
                 # Definir banco da loja no contexto
                 db_alias = f"loja_{loja_atual.id}"
+                loja_id = str(loja_atual.id)
                 
                 # Verificar se o banco existe
                 from django.conf import settings
@@ -235,12 +245,31 @@ class DatabaseIsolationMiddleware(MiddlewareMixin):
                     # Definir no contexto da thread para o router
                     import threading
                     thread = threading.current_thread()
+                    
+                    # Contexto principal de banco (db_context)
                     if not hasattr(thread, 'db_context'):
                         thread.db_context = type('DBContext', (), {})()
                     thread.db_context.db_alias = db_alias
-                    thread.db_context.loja_id = str(loja_atual.id)
+                    thread.db_context.loja_id = loja_id
                     
-                    logger.debug(f"Banco isolado definido: {db_alias} para loja {loja_atual.nome}")
+                    # Contexto alternativo de loja (loja_context)
+                    if not hasattr(thread, 'loja_context'):
+                        thread.loja_context = type('LojaContext', (), {})()
+                    thread.loja_context.loja_id = loja_id
+                    
+                    # Contexto direto (loja_id)
+                    thread.loja_id = loja_id
+                    
+                    logger.debug(f"Middleware: Contexto definido - DB: {db_alias}, Loja: {loja_atual.nome}")
+                    logger.debug(f"Middleware: Banco existe na configuração: {db_alias in settings.DATABASES}")
+                else:
+                    logger.error(f"Middleware: Banco {db_alias} NÃO encontrado na configuração para loja {loja_atual.nome}")
+                    # Tentar garantir que o banco existe
+                    from .database_router_isolado import ensure_loja_database_exists
+                    if ensure_loja_database_exists(loja_id):
+                        logger.info(f"Middleware: Banco {db_alias} criado dinamicamente")
+            else:
+                logger.debug("Middleware: Nenhuma loja atual identificada")
         
         except Exception as e:
             logger.error(f"Erro no middleware de isolamento de banco: {str(e)}")
@@ -276,9 +305,27 @@ class DatabaseIsolationMiddleware(MiddlewareMixin):
             if hasattr(request, 'loja_atual'):
                 return request.loja_atual
             
+            # Verificar contexto da thread (definido por outros middlewares)
+            thread = threading.current_thread()
+            if hasattr(thread, 'loja_atual'):
+                return thread.loja_atual
+            
             # Se usuário está autenticado, buscar sua loja
-            if request.user.is_authenticated:
-                return AuthenticationService.get_user_store(request.user)
+            if request.user.is_authenticated and not request.user.is_superuser:
+                loja = AuthenticationService.get_user_store(request.user)
+                if loja:
+                    # Definir no contexto para próximas chamadas
+                    request.loja_atual = loja
+                    thread.loja_atual = loja
+                    return loja
+            
+            # Para testes ou casos especiais, usar primeira loja disponível
+            # (apenas em desenvolvimento)
+            if settings.DEBUG:
+                primeira_loja = Loja.objects.filter(status='ativa').first()
+                if primeira_loja:
+                    logger.debug(f"Middleware: Usando primeira loja disponível para teste: {primeira_loja.nome}")
+                    return primeira_loja
             
             return None
             

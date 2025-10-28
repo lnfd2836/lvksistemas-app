@@ -1,0 +1,550 @@
+"""
+Views do CRM de Vendas
+"""
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.db.models import Q, Sum, Count
+from django.utils import timezone
+from django.core.paginator import Paginator
+import logging
+
+from .models import Lead, Orcamento, ItemOrcamento, Proposta, Contrato, HistoricoContato, EmailLog
+from .services.email_service import EmailService, EmailTrackingService
+from .services.pdf_service import PDFService
+from lojas.models import Loja
+
+logger = logging.getLogger(__name__)
+
+
+@login_required
+def dashboard_crm(request):
+    """Dashboard principal do CRM"""
+    
+    # Filtrar por loja se não for super admin
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+        orcamentos = Orcamento.objects.all()
+        propostas = Proposta.objects.all()
+        contratos = Contrato.objects.all()
+    else:
+        # Buscar loja do usuário
+        try:
+            loja = request.user.loja_admin
+        except:
+            loja = None
+        
+        if not loja:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+        
+        leads = Lead.objects.filter(loja=loja)
+        orcamentos = Orcamento.objects.filter(loja=loja)
+        propostas = Proposta.objects.filter(loja=loja)
+        contratos = Contrato.objects.filter(loja=loja)
+    
+    # Estatísticas
+    stats = {
+        'total_leads': leads.count(),
+        'leads_novos': leads.filter(status='novo').count(),
+        'leads_qualificados': leads.filter(status='qualificado').count(),
+        'orcamentos_enviados': orcamentos.filter(status='enviado').count(),
+        'orcamentos_aprovados': orcamentos.filter(status='aprovado').count(),
+        'propostas_enviadas': propostas.filter(status='enviada').count(),
+        'contratos_ativos': contratos.filter(status='ativo').count(),
+        'valor_pipeline': leads.aggregate(total=Sum('valor_estimado'))['total'] or 0,
+        'valor_orcamentos': orcamentos.aggregate(total=Sum('total'))['total'] or 0,
+    }
+    
+    # Leads recentes
+    leads_recentes = leads.order_by('-data_criacao')[:5]
+    
+    # Orcamentos pendentes
+    orcamentos_pendentes = orcamentos.filter(status__in=['enviado', 'visualizado']).order_by('-data_envio')[:5]
+    
+    # Atividades recentes
+    atividades = HistoricoContato.objects.filter(
+        lead__in=leads
+    ).order_by('-data_contato')[:10]
+    
+    context = {
+        'stats': stats,
+        'leads_recentes': leads_recentes,
+        'orcamentos_pendentes': orcamentos_pendentes,
+        'atividades': atividades,
+    }
+    
+    # Usar template específico para a loja Felix (sem barra superior)
+    if not request.user.is_superuser:
+        try:
+            loja = request.user.loja_admin
+            if loja and str(loja.id) == "feeac6c9-0af3-4885-9592-9c6cd196d39c":
+                context['loja'] = loja
+                return render(request, 'crm_vendas/dashboard_felix.html', context)
+        except:
+            pass
+    
+    return render(request, 'crm_vendas/dashboard.html', context)
+
+
+@login_required
+def listar_leads(request):
+    """Lista todos os leads"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            leads = Lead.objects.filter(loja=loja)
+        except:
+            leads = Lead.objects.none()
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        leads = leads.filter(status=status_filter)
+    
+    origem_filter = request.GET.get('origem')
+    if origem_filter:
+        leads = leads.filter(origem=origem_filter)
+    
+    search = request.GET.get('search')
+    if search:
+        leads = leads.filter(
+            Q(nome__icontains=search) |
+            Q(email__icontains=search) |
+            Q(empresa__icontains=search)
+        )
+    
+    # Paginação
+    paginator = Paginator(leads.order_by('-data_criacao'), 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'origem_filter': origem_filter,
+        'search': search,
+        'status_choices': Lead.STATUS_CHOICES,
+        'origem_choices': Lead.ORIGEM_CHOICES,
+    }
+    
+    return render(request, 'crm_vendas/leads/listar.html', context)
+
+
+@login_required
+def criar_lead(request):
+    """Cria um novo lead"""
+    
+    if request.method == 'POST':
+        try:
+            # Obter loja
+            if request.user.is_superuser:
+                loja_id = request.POST.get('loja')
+                loja = get_object_or_404(Loja, id=loja_id)
+            else:
+                loja = request.user.loja_admin
+            
+            # Criar lead
+            lead = Lead.objects.create(
+                nome=request.POST.get('nome'),
+                email=request.POST.get('email'),
+                telefone=request.POST.get('telefone', ''),
+                empresa=request.POST.get('empresa', ''),
+                cargo=request.POST.get('cargo', ''),
+                endereco=request.POST.get('endereco', ''),
+                cidade=request.POST.get('cidade', ''),
+                estado=request.POST.get('estado', ''),
+                cep=request.POST.get('cep', ''),
+                origem=request.POST.get('origem', 'site'),
+                valor_estimado=request.POST.get('valor_estimado', 0),
+                probabilidade=request.POST.get('probabilidade', 50),
+                observacoes=request.POST.get('observacoes', ''),
+                responsavel=request.user,
+                loja=loja
+            )
+            
+            messages.success(request, f'Lead {lead.nome} criado com sucesso!')
+            return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar lead: {str(e)}')
+    
+    # Buscar lojas para super admin
+    lojas = Loja.objects.all() if request.user.is_superuser else None
+    
+    context = {
+        'lojas': lojas,
+        'origem_choices': Lead.ORIGEM_CHOICES,
+    }
+    
+    return render(request, 'crm_vendas/leads/criar.html', context)
+
+
+@login_required
+def detalhar_lead(request, lead_id):
+    """Mostra detalhes de um lead"""
+    
+    lead = get_object_or_404(Lead, id=lead_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and lead.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para acessar este lead.')
+        return redirect('crm_vendas:listar_leads')
+    
+    # Buscar dados relacionados
+    orcamentos = lead.orcamentos.all().order_by('-data_criacao')
+    propostas = lead.propostas.all().order_by('-data_criacao')
+    contratos = lead.contratos.all().order_by('-data_criacao')
+    historico = lead.historico_contatos.all().order_by('-data_contato')
+    emails = lead.emails_enviados.all().order_by('-data_envio')
+    
+    context = {
+        'lead': lead,
+        'orcamentos': orcamentos,
+        'propostas': propostas,
+        'contratos': contratos,
+        'historico': historico,
+        'emails': emails,
+        'status_choices': Lead.STATUS_CHOICES,
+    }
+    
+    return render(request, 'crm_vendas/leads/detalhar.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def enviar_orcamento(request, orcamento_id):
+    """Envia orçamento por email"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        return JsonResponse({'success': False, 'error': 'Sem permissão'})
+    
+    try:
+        # Enviar email
+        sucesso = EmailService.enviar_orcamento(orcamento)
+        
+        if sucesso:
+            return JsonResponse({
+                'success': True,
+                'message': f'Orçamento {orcamento.numero} enviado com sucesso!'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro ao enviar email'
+            })
+            
+    except Exception as e:
+        logger.error(f"Erro ao enviar orçamento {orcamento_id}: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@login_required
+def gerar_pdf_orcamento(request, orcamento_id):
+    """Gera e retorna PDF do orçamento"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        messages.error(request, 'Sem permissão')
+        return redirect('crm_vendas:listar_orcamentos')
+    
+    try:
+        pdf_content = PDFService.gerar_orcamento_pdf(orcamento)
+        
+        if pdf_content:
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Orcamento_{orcamento.numero}.pdf"'
+            return response
+        else:
+            messages.error(request, 'Erro ao gerar PDF')
+            return redirect('crm_vendas:detalhar_orcamento', orcamento_id=orcamento_id)
+            
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF do orçamento {orcamento_id}: {e}")
+        messages.error(request, f'Erro ao gerar PDF: {str(e)}')
+        return redirect('crm_vendas:detalhar_orcamento', orcamento_id=orcamento_id)
+
+
+@csrf_exempt
+def visualizar_orcamento_publico(request, orcamento_id):
+    """Visualização pública do orçamento (para clientes)"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Registrar visualização
+    if not orcamento.data_visualizacao:
+        orcamento.data_visualizacao = timezone.now()
+        orcamento.status = 'visualizado'
+        orcamento.save()
+    
+    context = {
+        'orcamento': orcamento,
+        'itens': orcamento.itens.all(),
+        'is_public_view': True,
+    }
+    
+    return render(request, 'crm_vendas/publico/orcamento.html', context)
+
+
+@csrf_exempt
+def aprovar_orcamento_publico(request, orcamento_id):
+    """Aprovação pública do orçamento (para clientes)"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    if request.method == 'POST':
+        acao = request.POST.get('acao', 'aprovar')
+        
+        if acao == 'aprovar':
+            # Aprovar orçamento
+            orcamento.status = 'aprovado'
+            orcamento.data_resposta = timezone.now()
+            orcamento.save()
+            
+            # Atualizar lead
+            orcamento.lead.status = 'fechado_ganho'
+            orcamento.lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=orcamento.lead,
+                tipo='email',
+                assunto='Orçamento Aprovado',
+                descricao=f'Cliente aprovou o orçamento {orcamento.numero}',
+                resultado='Orçamento aprovado pelo cliente',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, 'Orçamento aprovado com sucesso! Entraremos em contato em breve.')
+            
+        elif acao == 'rejeitar':
+            # Rejeitar orçamento
+            orcamento.status = 'rejeitado'
+            orcamento.data_resposta = timezone.now()
+            orcamento.save()
+            
+            # Atualizar lead
+            orcamento.lead.status = 'fechado_perdido'
+            orcamento.lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=orcamento.lead,
+                tipo='email',
+                assunto='Orçamento Rejeitado',
+                descricao=f'Cliente rejeitou o orçamento {orcamento.numero}',
+                resultado='Orçamento rejeitado pelo cliente',
+                data_contato=timezone.now()
+            )
+            
+            messages.info(request, 'Orçamento rejeitado. Agradecemos seu interesse.')
+    
+    context = {
+        'orcamento': orcamento,
+        'aprovado': orcamento.status == 'aprovado',
+    }
+    
+    return render(request, 'crm_vendas/publico/aprovacao.html', context)
+
+
+def track_email_abertura(request, orcamento_id):
+    """Tracking de abertura de email (pixel invisível)"""
+    
+    try:
+        # Buscar email log pelo orçamento
+        email_log = EmailLog.objects.filter(orcamento_id=orcamento_id).first()
+        
+        if email_log:
+            ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
+            EmailTrackingService.registrar_abertura(email_log.token_rastreamento, ip_address)
+    
+    except Exception as e:
+        logger.error(f"Erro no tracking de email: {e}")
+    
+    # Retornar pixel transparente 1x1
+    from django.http import HttpResponse
+    import base64
+    
+    # Pixel transparente em base64
+    pixel_data = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')
+    
+    response = HttpResponse(pixel_data, content_type='image/png')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+
+# Views básicas para outras funcionalidades
+@login_required
+def listar_orcamentos(request):
+    """Lista orçamentos"""
+    return render(request, 'crm_vendas/orcamentos/listar.html')
+
+@login_required
+def listar_propostas(request):
+    """Lista propostas"""
+    return render(request, 'crm_vendas/propostas/listar.html')
+
+@login_required
+def listar_contratos(request):
+    """Lista contratos"""
+    return render(request, 'crm_vendas/contratos/listar.html')
+
+@login_required
+def relatorios_crm(request):
+    """Relatórios do CRM"""
+    return render(request, 'crm_vendas/relatorios/index.html')
+
+# Placeholder views (implementar conforme necessário)
+def criar_orcamento(request): pass
+def detalhar_orcamento(request, orcamento_id): pass
+def editar_orcamento(request, orcamento_id): pass
+def criar_proposta(request): pass
+def detalhar_proposta(request, proposta_id): pass
+def enviar_proposta(request, proposta_id): pass
+def criar_contrato(request): pass
+def detalhar_contrato(request, contrato_id): pass
+def enviar_contrato(request, contrato_id): pass
+def editar_lead(request, lead_id): pass
+def registrar_contato(request, lead_id): pass
+@csrf_exempt
+def visualizar_proposta_publico(request, proposta_id):
+    """Visualização pública da proposta (para clientes)"""
+    
+    proposta = get_object_or_404(Proposta, id=proposta_id)
+    
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'aprovar':
+            proposta.status = 'aprovada'
+            proposta.data_resposta = timezone.now()
+            proposta.save()
+            
+            # Atualizar lead
+            proposta.lead.status = 'proposta_aceita'
+            proposta.lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=proposta.lead,
+                tipo='email',
+                assunto='Proposta Aceita',
+                descricao=f'Cliente aceitou a proposta {proposta.numero}',
+                resultado='Proposta aceita pelo cliente',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, 'Proposta aceita com sucesso! Entraremos em contato para elaborar o contrato.')
+            
+        elif acao == 'rejeitar':
+            proposta.status = 'rejeitada'
+            proposta.data_resposta = timezone.now()
+            proposta.save()
+            
+            # Atualizar lead
+            proposta.lead.status = 'fechado_perdido'
+            proposta.lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=proposta.lead,
+                tipo='email',
+                assunto='Proposta Rejeitada',
+                descricao=f'Cliente rejeitou a proposta {proposta.numero}',
+                resultado='Proposta rejeitada pelo cliente',
+                data_contato=timezone.now()
+            )
+            
+            messages.info(request, 'Proposta rejeitada. Agradecemos seu interesse.')
+            
+        elif acao == 'revisar':
+            proposta.status = 'em_analise'
+            proposta.save()
+            
+            observacoes = request.POST.get('observacoes_revisao', '')
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=proposta.lead,
+                tipo='email',
+                assunto='Solicitação de Revisão',
+                descricao=f'Cliente solicitou revisão da proposta {proposta.numero}',
+                resultado=f'Revisão solicitada: {observacoes}',
+                data_contato=timezone.now()
+            )
+            
+            messages.info(request, 'Solicitação de revisão enviada. Entraremos em contato em breve.')
+    
+    context = {
+        'proposta': proposta,
+    }
+    
+    return render(request, 'crm_vendas/publico/proposta.html', context)
+@csrf_exempt
+def assinar_contrato_publico(request, contrato_id):
+    """Assinatura digital pública do contrato (para clientes)"""
+    
+    contrato = get_object_or_404(Contrato, id=contrato_id)
+    
+    if request.method == 'POST':
+        # Verificar se já foi assinado
+        if contrato.assinado_cliente_em:
+            messages.warning(request, 'Este contrato já foi assinado por você.')
+        else:
+            # Registrar assinatura do cliente
+            contrato.assinado_cliente_em = timezone.now()
+            contrato.status = 'assinado_cliente'
+            contrato.save()
+            
+            # Atualizar lead
+            contrato.lead.status = 'fechado_ganho'
+            contrato.lead.save()
+            
+            # Registrar no histórico
+            ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', 'N/A'))
+            user_agent = request.META.get('HTTP_USER_AGENT', 'N/A')
+            
+            HistoricoContato.objects.create(
+                lead=contrato.lead,
+                tipo='outros',
+                assunto='Contrato Assinado Digitalmente',
+                descricao=f'Cliente assinou digitalmente o contrato {contrato.numero}',
+                resultado=f'Assinatura digital realizada. IP: {ip_address}',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, 'Contrato assinado digitalmente com sucesso!')
+            
+            # Se a empresa já assinou, ativar o contrato
+            if contrato.assinado_empresa_em:
+                contrato.status = 'ativo'
+                contrato.save()
+                
+                messages.success(request, 'Contrato está agora ativo! Todas as partes assinaram.')
+    
+    context = {
+        'contrato': contrato,
+    }
+    
+    return render(request, 'crm_vendas/publico/contrato.html', context)
+def track_email_clique(request, token): pass
+def relatorio_funil_vendas(request): pass
+def relatorio_performance(request): pass

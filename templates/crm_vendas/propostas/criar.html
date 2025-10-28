@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Criar Proposta - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-handshake me-2"></i>
+                        Criar Proposta
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lead_id" class="form-label">Lead</label>
+                                    <select name="lead_id" id="lead_id" class="form-select" required>
+                                        <option value="">Selecione um lead</option>
+                                        {% for lead in leads %}
+                                        <option value="{{ lead.id }}">{{ lead.nome }} - {{ lead.empresa }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="titulo" class="form-label">Título</label>
+                                    <input type="text" name="titulo" id="titulo" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea name="descricao" id="descricao" class="form-control" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="valor_proposto" class="form-label">Valor Proposto</label>
+                                    <input type="number" name="valor_proposto" id="valor_proposto" class="form-control" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="prazo_execucao" class="form-label">Prazo de Execução</label>
+                                    <input type="text" name="prazo_execucao" id="prazo_execucao" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="condicoes_pagamento" class="form-label">Condições de Pagamento</label>
+                            <textarea name="condicoes_pagamento" id="condicoes_pagamento" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'crm_vendas:listar_propostas' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Criar Proposta</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

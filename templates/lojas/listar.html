@@ -165,6 +165,7 @@
                         <th>Tipo de Loja</th>
                         <th>CNPJ</th>
                         <th>Email</th>
+                        <th>Link Personalizado</th>
                         <th>Status</th>
                         <th>Data Criação</th>
                         <th>Ações</th>
@@ -198,6 +199,22 @@
                         <td>{{ loja.cnpj }}</td>
                         <td>{{ loja.email }}</td>
                         <td>
+                            {% if loja.login_personalizado %}
+                                <div class="d-flex align-items-center">
+                                    <code class="text-success me-2">/login/{{ loja.login_personalizado.url_personalizada }}/</code>
+                                    <button class="btn btn-sm btn-outline-secondary" 
+                                            onclick="copyToClipboard('{{ request.get_host }}{{ loja.login_personalizado.get_login_url }}')"
+                                            title="Copiar link completo">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="bi bi-exclamation-triangle"></i> Não configurado
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <span
                                 class="badge bg-{% if loja.status == 'ativa' %}success{% elif loja.status == 'inativa' %}secondary{% else %}warning{% endif %}">
                                 {{ loja.get_status_display }}
@@ -215,9 +232,9 @@
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 {% if loja.tipo_loja %}
-                                <a href="{% url 'dashboard:loja_especifica' loja.id %}"
-                                    class="btn btn-sm btn-outline-info" title="Dashboard da loja">
-                                    <i class="bi bi-speedometer2"></i>
+                                <a href="{% url 'lojas:acessar_login_personalizado' loja.id %}"
+                                    class="btn btn-sm btn-outline-success" title="Acessar Login da Loja" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right"></i> Login
                                 </a>
                                 {% endif %}
                                 <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir loja"
@@ -229,7 +246,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-4">
+                        <td colspan="8" class="text-center py-4">
                             <i class="bi bi-shop" style="font-size: 3rem; color: #6c757d;"></i>
                             <p class="mt-2 text-muted">Nenhuma loja encontrada</p>
                         </td>
@@ -302,4 +319,44 @@
     </div>
 </div>
 {% endfor %}
+
+<script>
+function copyToClipboard(text) {
+    // Criar elemento temporário
+    const tempInput = document.createElement('input');
+    tempInput.value = 'https://' + text;
+    document.body.appendChild(tempInput);
+    
+    // Selecionar e copiar
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); // Para mobile
+    document.execCommand('copy');
+    
+    // Remover elemento temporário
+    document.body.removeChild(tempInput);
+    
+    // Mostrar feedback
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                Link copiado para a área de transferência!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Remover toast após 3 segundos
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
 {% endblock %}

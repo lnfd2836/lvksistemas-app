@@ -1,0 +1,35 @@
+Orçamento {{ orcamento.numero }} - {{ loja.nome }}
+
+Olá {{ lead.nome }},
+
+Segue em anexo o orçamento solicitado conforme nossa conversa.
+
+VALOR TOTAL: R$ {{ orcamento.total|floatformat:2 }}
+
+Detalhes:
+- Título: {{ orcamento.titulo }}
+- Condições de Pagamento: {{ orcamento.condicoes_pagamento }}
+- Prazo de Entrega: {{ orcamento.prazo_entrega }}
+- Validade: {{ orcamento.validade_dias }} dias
+
+{% if orcamento.descricao %}
+Observações:
+{{ orcamento.descricao }}
+{% endif %}
+
+Para visualizar o orçamento completo, acesse:
+{{ link_visualizacao }}
+
+Para aprovar o orçamento, acesse:
+{{ link_aprovacao }}
+
+Caso tenha alguma dúvida, não hesite em entrar em contato.
+
+Atenciosamente,
+{{ loja.nome }}
+{% if loja.telefone %}Telefone: {{ loja.telefone }}{% endif %}
+Email: {{ loja.email }}
+
+---
+Este email foi enviado automaticamente pelo sistema CRM.
+Data de envio: {{ data_envio|date:"d/m/Y H:i" }}

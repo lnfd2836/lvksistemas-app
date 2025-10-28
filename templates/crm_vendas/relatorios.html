@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Relatórios - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Relatórios CRM
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Leads por Status -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Leads por Status</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% for status, count in leads_por_status.items %}
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>{{ status }}</span>
+                                        <span class="badge bg-primary">{{ count }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Taxa de Conversão -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Taxa de Conversão - Este Mês</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <h2 class="text-success">{{ taxa_conversao }}%</h2>
+                                    <p class="text-muted">
+                                        {{ conversao_mes }} de {{ total_leads_mes }} leads convertidos
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Ações Rápidas</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:relatorio_funil' %}" class="btn btn-outline-primary btn-block">
+                                                <i class="fas fa-funnel-dollar me-2"></i>
+                                                Funil de Vendas
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-success btn-block">
+                                                <i class="fas fa-users me-2"></i>
+                                                Todos os Leads
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-warning btn-block">
+                                                <i class="fas fa-file-invoice me-2"></i>
+                                                Orçamentos
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-outline-info btn-block">
+                                                <i class="fas fa-tachometer-alt me-2"></i>
+                                                Dashboard
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

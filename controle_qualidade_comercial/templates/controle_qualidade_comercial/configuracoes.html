@@ -1,0 +1,222 @@
+{% extends 'controle_qualidade_comercial/base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'controle_qualidade_comercial:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Configurações</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">
+            <i class="fas fa-cog me-2"></i>
+            Configurações do Sistema
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Configurações Gerais</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h6 class="text-primary">Alertas de Estoque</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="alerta_estoque_baixo" name="alerta_estoque_baixo" checked>
+                            <label class="form-check-label" for="alerta_estoque_baixo">
+                                Alertar quando estoque estiver baixo
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email_estoque_baixo" name="email_estoque_baixo">
+                            <label class="form-check-label" for="email_estoque_baixo">
+                                Enviar email quando estoque estiver baixo
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-primary">Controle de Qualidade</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="nota_minima_aprovacao" class="form-label">Nota mínima para aprovação</label>
+                                <select class="form-select" id="nota_minima_aprovacao" name="nota_minima_aprovacao">
+                                    <option value="3" selected>3 - Satisfatório</option>
+                                    <option value="4">4 - Bom</option>
+                                    <option value="5">5 - Excelente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inspecao_obrigatoria" class="form-label">Inspeção obrigatória</label>
+                                <select class="form-select" id="inspecao_obrigatoria" name="inspecao_obrigatoria">
+                                    <option value="false">Não</option>
+                                    <option value="true">Sim</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-primary">Reclamações</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="prazo_resolucao" class="form-label">Prazo padrão para resolução (dias)</label>
+                                <input type="number" class="form-control" id="prazo_resolucao" name="prazo_resolucao" value="7" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="auto_protocolo" class="form-label">Gerar protocolo automaticamente</label>
+                                <select class="form-select" id="auto_protocolo" name="auto_protocolo">
+                                    <option value="true" selected>Sim</option>
+                                    <option value="false">Não</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-primary">Relatórios</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="relatorio_automatico" name="relatorio_automatico">
+                            <label class="form-check-label" for="relatorio_automatico">
+                                Gerar relatórios automáticos mensais
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="backup_automatico" name="backup_automatico">
+                            <label class="form-check-label" for="backup_automatico">
+                                Backup automático semanal
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Configurações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Backup e Exportação</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" onclick="gerarBackup()">
+                        <i class="fas fa-download me-2"></i>Gerar Backup
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="exportarTodosDados()">
+                        <i class="fas fa-file-export me-2"></i>Exportar Todos os Dados
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="limparCache()">
+                        <i class="fas fa-broom me-2"></i>Limpar Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Informações do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Versão:</dt>
+                    <dd class="col-sm-6">1.0.0</dd>
+                    
+                    <dt class="col-sm-6">Loja:</dt>
+                    <dd class="col-sm-6">{{ loja.nome }}</dd>
+                    
+                    <dt class="col-sm-6">Usuários:</dt>
+                    <dd class="col-sm-6">{{ loja.usuarios.count }}</dd>
+                    
+                    <dt class="col-sm-6">Último Backup:</dt>
+                    <dd class="col-sm-6">Nunca</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Suporte</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Precisa de ajuda? Entre em contato:</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-envelope me-2"></i>suporte@lvksistemas.com</li>
+                    <li><i class="fas fa-phone me-2"></i>(11) 9999-9999</li>
+                    <li><i class="fas fa-globe me-2"></i>www.lvksistemas.com</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function gerarBackup() {
+    showLoading($('#btn-backup'));
+    
+    $.post('{% url "controle_qualidade_comercial:backup_dados" %}')
+        .done(function(data, textStatus, xhr) {
+            // Criar link de download
+            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Backup gerado com sucesso!', 'success');
+        })
+        .fail(function() {
+            showNotification('Erro ao gerar backup', 'danger');
+        })
+        .always(function() {
+            hideLoading($('#btn-backup'));
+        });
+}
+
+function exportarTodosDados() {
+    const tipos = ['produtos', 'vendas', 'qualidade', 'reclamacoes'];
+    
+    tipos.forEach(function(tipo) {
+        setTimeout(function() {
+            window.open(`{% url "controle_qualidade_comercial:exportar_dados" "TIPO" %}`.replace('TIPO', tipo), '_blank');
+        }, 500);
+    });
+    
+    showNotification('Exportação iniciada. Verifique os downloads.', 'info');
+}
+
+function limparCache() {
+    if (confirm('Tem certeza que deseja limpar o cache? Isso pode afetar a performance temporariamente.')) {
+        // Limpar localStorage
+        localStorage.clear();
+        
+        // Limpar sessionStorage
+        sessionStorage.clear();
+        
+        showNotification('Cache limpo com sucesso!', 'success');
+    }
+}
+</script>
+{% endblock %}

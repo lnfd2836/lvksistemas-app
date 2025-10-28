@@ -18,6 +18,7 @@ urlpatterns = [
     # Autenticação - redirecionamento para sistema simplificado
     path('logout/', views.logout_view, name='logout'),
     path('loja/login/', loja_login, name='loja_login'),
+    path('loja/login', loja_login, name='loja_login_no_slash'),  # URL sem barra final
     path('loja/logout/', loja_logout, name='loja_logout'),
     
     # APIs e AJAX

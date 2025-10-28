@@ -27,6 +27,9 @@ def gerenciar_configuracoes_loja(request, loja_id):
         messages.error(request, 'Você não tem permissão para acessar esta loja.')
         return redirect('lojas:listar_lojas')
     
+    # Para simplificar, vamos usar o banco padrão por enquanto
+    # TODO: Implementar isolamento completo de banco posteriormente
+    
     # Buscar ou criar configurações
     config_produto, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
     config_cliente, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)

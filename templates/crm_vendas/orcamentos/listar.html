@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Orçamentos - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
+                        Orçamentos
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:criar_orcamento' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Novo Orçamento
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for orcamento in page_obj %}
+                                    <tr>
+                                        <td>{{ orcamento.numero }}</td>
+                                        <td>{{ orcamento.lead.nome }}</td>
+                                        <td>R$ {{ orcamento.total|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ orcamento.get_status_display }}</span>
+                                        </td>
+                                        <td>{{ orcamento.data_criacao|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">Ver</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhum orçamento encontrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

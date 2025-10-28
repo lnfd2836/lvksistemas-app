@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sua Loja foi Criada - Acesso Personalizado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #007bff;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #007bff;
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #28a745;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .loja-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .credentials-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 3px solid #007bff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .personalized-login {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 3px solid #28a745;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .credential-item {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border-left: 5px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+            font-size: 14px;
+        }
+        .value {
+            color: #007bff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        .personalized-url {
+            font-size: 18px;
+            color: #28a745;
+            font-weight: bold;
+            word-break: break-all;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px dashed #28a745;
+            margin: 15px 0;
+        }
+        .warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            color: #856404;
+        }
+        .warning-icon {
+            color: #f39c12;
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 25px 0;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #856404;
+        }
+        .success-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏪 Sistema LVK</div>
+            <h1 class="title">🎉 Sua Loja foi Criada!</h1>
+            <div class="subtitle">✨ Com Acesso Personalizado Exclusivo</div>
+            <div class="success-badge">🚀 PRONTO PARA USO</div>
+        </div>
+
+        <p style="font-size: 18px; text-align: center; color: #28a745; font-weight: bold;">
+            Parabéns! Sua loja <strong>{{ loja.nome }}</strong> foi criada com sucesso e já está disponível!
+        </p>
+
+        <div class="personalized-login">
+            <h3 style="margin-top: 0; color: #28a745; font-size: 22px;">
+                🔗 Seu Link de Acesso Personalizado
+            </h3>
+            <p style="margin: 15px 0; color: #495057;">
+                Este é seu link <strong>exclusivo</strong> de acesso. Salve nos favoritos!
+            </p>
+            <div class="personalized-url">
+                {{ login_url_personalizada }}
+            </div>
+            <p style="font-size: 14px; color: #6c757d; margin-top: 15px;">
+                💡 <strong>Dica:</strong> Este link é único da sua loja e pode ser compartilhado com sua equipe
+            </p>
+        </div>
+
+        <div class="loja-info">
+            <h3 style="margin-top: 0; color: #007bff; font-size: 20px;">🏪 Informações da Loja</h3>
+            
+            <div class="credential-item">
+                <div class="label">🏪 Nome da Loja:</div>
+                <div class="value">{{ loja.nome }}</div>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">📄 CNPJ:</div>
+                <div class="value">{{ loja.cnpj }}</div>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">📧 Email:</div>
+                <div class="value">{{ loja.email }}</div>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">📱 Telefone:</div>
+                <div class="value">{{ loja.telefone }}</div>
+            </div>
+        </div>
+
+        <div class="credentials-box">
+            <h3 style="margin-top: 0; color: #007bff; font-size: 20px;">🔑 Credenciais de Acesso</h3>
+            
+            <div class="credential-item">
+                <div class="label">👤 Nome de Usuário:</div>
+                <div class="value">{{ loja.email }}</div>
+                <small style="color: #6c757d;">Use o email da loja como usuário</small>
+            </div>
+            
+            <div class="credential-item">
+                <div class="label">🔐 Senha Provisória:</div>
+                <div class="value">{{ senha_provisoria }}</div>
+                <small style="color: #dc3545;">⚠️ Deve ser alterada no primeiro acesso</small>
+            </div>
+        </div>
+
+        <div class="warning">
+            <span class="warning-icon">⚠️</span>
+            <strong>IMPORTANTE - SEGURANÇA:</strong>
+            <ul style="margin: 10px 0; padding-left: 30px;">
+                <li>Esta é uma <span class="highlight">senha provisória</span></li>
+                <li>Você <strong>DEVE</strong> alterá-la no primeiro login</li>
+                <li>Mantenha suas credenciais em local seguro</li>
+                <li>Não compartilhe a senha com terceiros</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h4 style="margin-top: 0; color: #007bff; font-size: 18px;">📋 Como Acessar Sua Loja:</h4>
+            <ol style="font-size: 16px; line-height: 1.8;">
+                <li>Clique no botão abaixo ou acesse: <br><code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">{{ login_url_personalizada }}</code></li>
+                <li>Use <strong>{{ loja.email }}</strong> como usuário</li>
+                <li>Use a senha provisória: <strong>{{ senha_provisoria }}</strong></li>
+                <li>Altere sua senha quando solicitado</li>
+                <li>Explore todas as funcionalidades disponíveis!</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ login_url_personalizada }}" class="button">
+                🚀 Acessar Minha Loja Agora
+            </a>
+        </div>
+
+        <div class="info-box" style="border-color: #17a2b8; background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
+            <h4 style="margin-top: 0; color: #17a2b8; font-size: 18px;">🎯 Próximos Passos:</h4>
+            <ul style="font-size: 16px; line-height: 1.8;">
+                <li>✅ Configure os dados da sua loja</li>
+                <li>✅ Cadastre seus produtos</li>
+                <li>✅ Adicione clientes</li>
+                <li>✅ Comece a registrar vendas</li>
+                <li>✅ Explore o sistema de qualidade</li>
+            </ul>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+            <h4 style="color: #495057; margin-top: 0;">💬 Precisa de Ajuda?</h4>
+            <p style="margin: 10px 0; color: #6c757d;">Nossa equipe está pronta para ajudar!</p>
+            <p style="margin: 5px 0;"><strong>📧 Email:</strong> suporte@lvksistemas.com.br</p>
+            <p style="margin: 5px 0;"><strong>📱 WhatsApp:</strong> (11) 99999-9999</p>
+            <p style="margin: 5px 0;"><strong>🌐 Site:</strong> www.lvksistemas.com.br</p>
+        </div>
+
+        <div class="footer">
+            <p><strong>🏪 Sistema LVK - Gestão Inteligente de Lojas</strong></p>
+            <p style="margin: 10px 0;">Este é um email automático enviado pelo sistema.</p>
+            <p style="margin: 10px 0;">Se você não solicitou esta loja, entre em contato conosco imediatamente.</p>
+            <p style="margin: 10px 0; color: #28a745; font-weight: bold;">
+                🔗 Seu link personalizado: {{ login_personalizado.url_personalizada }}
+            </p>
+            <p style="font-size: 12px; color: #adb5bd;">
+                © {{ "now"|date:"Y" }} LVK Sistemas - Todos os direitos reservados
+            </p>
+        </div>
+    </div>
+</body>
+</html>
