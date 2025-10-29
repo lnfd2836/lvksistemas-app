@@ -35,14 +35,9 @@ def listar_lojas(request):
             messages.error(request, 'Você não tem uma loja associada.')
             return redirect('login')
     
-    # Buscar lojas sem fazer join com tipo_loja (pode não existir tabela)
-    try:
-        # Tenta fazer select_related se a tabela existir
-        lojas = Loja.objects.select_related('tipo_loja').all().order_by('-data_criacao')
-    except (DatabaseError, ProgrammingError):
-        # Se falhar, busca sem relacionamento
-        logger.warning("Tabela modulos_tipoloja não existe, buscando lojas sem tipo_loja")
-        lojas = Loja.objects.all().order_by('-data_criacao')
+    # Buscar lojas - usar defer para evitar carregar tipo_loja se a tabela não existir
+    # Isso previne que o Django tente fazer query quando o template acessar loja.tipo_loja
+    lojas = Loja.objects.defer('tipo_loja').all().order_by('-data_criacao')
     
     # Filtros
     status_filter = request.GET.get('status')
