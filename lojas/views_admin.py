@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, DatabaseError, ProgrammingError
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -143,9 +143,11 @@ def coletar_estatisticas_loja(loja):
 def executar_exclusao_loja(request, loja):
     """Executa a exclusão completa da loja e todos os seus dados"""
     
+    nome_loja = loja.nome
+    loja_id = str(loja.id)
+    
     try:
         with transaction.atomic():
-            nome_loja = loja.nome
             admin_user = loja.admin_user
             
             logger.info(f"Iniciando exclusão da loja {nome_loja} por super admin {request.user.username}")
@@ -210,21 +212,8 @@ def executar_exclusao_loja(request, loja):
                 Mesa.objects.filter(loja=loja).delete()
             
             # 2. Excluir a loja (isso NÃO exclui mais o admin_user devido ao SET_NULL)
-            # Protege contra erro de CASCADE se a tabela ConfiguracaoLoja não existir
-            try:
-                loja.delete()
-            except (DatabaseError, ProgrammingError) as e:
-                error_msg = str(e)
-                if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
-                    # Se o erro for relacionado à tabela não existir, tenta excluir sem CASCADE
-                    # Excluindo diretamente via SQL para evitar o CASCADE
-                    from django.db import connection
-                    with connection.cursor() as cursor:
-                        cursor.execute("DELETE FROM lojas_loja WHERE id = %s", [str(loja.id)])
-                    logger.warning(f"Loja excluída via SQL direto devido à tabela modulos_configuracaoloja não existir.")
-                else:
-                    # Se for outro erro, propaga
-                    raise
+            # Como já excluímos manualmente as ConfiguracaoLoja, o CASCADE não deve tentar excluir novamente
+            loja.delete()
             
             # 3. Log detalhado da exclusão
             logger.info(f"""
@@ -250,8 +239,26 @@ def executar_exclusao_loja(request, loja):
             
             return redirect('admin:lojas_loja_changelist')
             
+    except (DatabaseError, ProgrammingError) as e:
+        error_msg = str(e)
+        if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
+            # Se o erro for de tabela não existir, tenta excluir novamente após o rollback
+            try:
+                # Tenta excluir novamente usando QuerySet após o rollback da transação
+                Loja.objects.filter(id=loja_id).delete()
+                logger.warning(f"Loja excluída via QuerySet após erro de tabela modulos_configuracaoloja não existir.")
+                messages.success(request, f'Loja "{nome_loja}" excluída com sucesso!')
+                return redirect('admin:lojas_loja_changelist')
+            except Exception as e2:
+                logger.error(f"Erro ao excluir loja {nome_loja} na segunda tentativa: {e2}")
+                messages.error(request, f'Erro ao excluir a loja: {str(e2)}. Verifique os logs.')
+        else:
+            logger.error(f"Erro ao excluir loja {nome_loja}: {e}")
+            messages.error(request, f'Erro ao excluir a loja: {str(e)}. Verifique os logs.')
+        return redirect('admin:lojas_loja_changelist')
+            
     except Exception as e:
-        logger.error(f"Erro ao excluir loja {loja.nome}: {e}")
+        logger.error(f"Erro ao excluir loja {loja.nome if 'loja' in locals() else 'desconhecida'}: {e}")
         messages.error(
             request, 
             f'Erro ao excluir a loja: {str(e)}. '
@@ -290,18 +297,8 @@ def exclusao_rapida_loja(request, loja_id):
             except Exception as e:
                 logger.warning(f"Não foi possível excluir configurações da loja {loja.nome}: {e}")
             
-            # Exclui a loja com proteção contra erro de CASCADE
-            try:
-                loja.delete()
-            except (DatabaseError, ProgrammingError) as e:
-                error_msg = str(e)
-                if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
-                    from django.db import connection
-                    with connection.cursor() as cursor:
-                        cursor.execute("DELETE FROM lojas_loja WHERE id = %s", [str(loja.id)])
-                    logger.warning(f"Loja excluída via SQL direto devido à tabela modulos_configuracaoloja não existir.")
-                else:
-                    raise
+            # Exclui a loja
+            loja.delete()
             
             logger.info(f"Exclusão rápida da loja {nome_loja} por {request.user.username}")
         

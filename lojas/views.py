@@ -626,23 +626,8 @@ def excluir_loja(request, loja_id):
                     admin_user.delete()
                 
                 # 8. Exclui a loja
-                # Protege contra erro de CASCADE se a tabela ConfiguracaoLoja não existir
-                try:
-                    loja.delete()
-                except (DatabaseError, ProgrammingError) as e:
-                    error_msg = str(e)
-                    if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
-                        # Se o erro for relacionado à tabela não existir, tenta excluir sem CASCADE
-                        # Excluindo diretamente via SQL para evitar o CASCADE
-                        from django.db import connection
-                        with connection.cursor() as cursor:
-                            cursor.execute("DELETE FROM lojas_loja WHERE id = %s", [str(loja.id)])
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Loja excluída via SQL direto devido à tabela modulos_configuracaoloja não existir.")
-                    else:
-                        # Se for outro erro, propaga
-                        raise
+                # Como já excluímos manualmente as ConfiguracaoLoja, o CASCADE não deve tentar excluir novamente
+                loja.delete()
                 
                 # Cria notificação de sucesso
                 try:
@@ -659,7 +644,30 @@ def excluir_loja(request, loja_id):
                 messages.success(request, f'Loja {nome_loja} excluída com sucesso!')
                 return redirect('lojas:listar_lojas')
                 
+        except (DatabaseError, ProgrammingError) as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            error_msg = str(e)
+            loja_id_str = str(loja.id)
+            if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
+                # Se o erro for de tabela não existir, tenta excluir novamente após o rollback
+                try:
+                    Loja.objects.filter(id=loja_id_str).delete()
+                    logger.warning(f"Loja excluída via QuerySet após erro de tabela modulos_configuracaoloja não existir.")
+                    messages.success(request, f'Loja {nome_loja} excluída com sucesso!')
+                    return redirect('lojas:listar_lojas')
+                except Exception as e2:
+                    logger.error(f"Erro ao excluir loja {nome_loja} na segunda tentativa: {e2}")
+                    messages.error(request, f'Erro ao excluir a loja: {str(e2)}. Verifique os logs.')
+            else:
+                logger.error(f"Erro ao excluir loja {nome_loja}: {e}")
+                messages.error(request, f'Erro ao excluir a loja: {str(e)}. Verifique os logs.')
+            return redirect('lojas:listar_lojas')
+                
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erro ao excluir loja {loja.nome if 'loja' in locals() else 'desconhecida'}: {e}")
             messages.error(request, f'Erro ao excluir loja: {str(e)}')
             return redirect('lojas:listar_lojas')
     
