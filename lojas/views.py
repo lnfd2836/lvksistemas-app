@@ -797,8 +797,26 @@ def excluir_loja(request, loja_id):
                     Cliente.objects.filter(loja=loja).delete()
                     BackupLoja.objects.filter(loja=loja).delete()
                     Notificacao.objects.filter(loja=loja).delete()
-                    if admin_user:
-                        admin_user.delete()
+                    # Tenta excluir admin_user, mas verifica se ainda tem ID válido
+                    # O admin_user original pode ter sido afetado pela primeira tentativa
+                    try:
+                        admin_user_id_to_delete = None
+                        # Tenta usar o ID original se ainda tiver
+                        if admin_user and admin_user.id is not None:
+                            admin_user_id_to_delete = admin_user.id
+                        else:
+                            # Tenta obter ID diretamente da loja
+                            loja.refresh_from_db(fields=['admin_user_id'])
+                            admin_user_id_to_delete = loja.admin_user_id
+                        
+                        if admin_user_id_to_delete:
+                            from django.contrib.auth.models import User
+                            # Obtém usuário diretamente do banco para garantir que existe
+                            user_to_delete = User.objects.filter(id=admin_user_id_to_delete).first()
+                            if user_to_delete and user_to_delete.id is not None:
+                                user_to_delete.delete()
+                    except Exception as user_error:
+                        logger.warning(f"Erro ao excluir admin_user na segunda tentativa: {user_error}")
                     loja.delete()
                     
                     logger.warning(f"Loja excluída manualmente após erro de tabela modulos_configuracaoloja não existir.")

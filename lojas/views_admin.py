@@ -307,6 +307,11 @@ def executar_exclusao_loja(request, loja):
                     ItemPedido.objects.filter(pedido__loja=loja).delete()
                     Pedido.objects.filter(loja=loja).delete()
                     Mesa.objects.filter(loja=loja).delete()
+                # Verifica se admin_user ainda existe e tem ID válido antes de excluir
+                # Como o relacionamento usa SET_NULL, não precisamos excluir o admin_user
+                # Mas se quisermos excluir, precisamos verificar se ainda tem ID
+                # Na verdade, pela migração anterior, admin_user deve ser preservado (SET_NULL)
+                # então não excluímos ele aqui
                 loja.delete()
                 
                 logger.warning(f"Loja excluída manualmente após erro de tabela modulos_configuracaoloja não existir.")
