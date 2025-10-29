@@ -760,10 +760,48 @@ def excluir_loja(request, loja_id):
             error_msg = str(e)
             loja_id_str = str(loja.id)
             if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
-                # Se o erro for de tabela não existir, tenta excluir novamente após o rollback
+                # Se o erro for de tabela não existir, tenta excluir novamente
+                # Primeiro garante que ConfiguracaoLoja está excluída antes de excluir a loja
                 try:
-                    Loja.objects.filter(id=loja_id_str).delete()
-                    logger.warning(f"Loja excluída via QuerySet após erro de tabela modulos_configuracaoloja não existir.")
+                    # Tenta excluir ConfiguracaoLoja antes, verificando se a tabela existe
+                    from modulos.models import ConfiguracaoLoja
+                    table_name = ConfiguracaoLoja._meta.db_table
+                    with connection.cursor() as cursor:
+                        if connection.vendor == 'postgresql':
+                            cursor.execute("""
+                                SELECT EXISTS (
+                                    SELECT FROM information_schema.tables 
+                                    WHERE table_schema = 'public' 
+                                    AND table_name = %s
+                                )
+                            """, [table_name])
+                        else:  # SQLite
+                            cursor.execute("""
+                                SELECT EXISTS (
+                                    SELECT name FROM sqlite_master 
+                                    WHERE type='table' AND name = ?
+                                )
+                            """, [table_name])
+                        table_exists = cursor.fetchone()[0]
+                    
+                    if table_exists:
+                        ConfiguracaoLoja.objects.filter(loja=loja).delete()
+                    
+                    # Agora exclui a loja manualmente, removendo todos os dados relacionados primeiro
+                    # Exclui em ordem de dependência
+                    vendas = Venda.objects.filter(loja=loja)
+                    for venda in vendas:
+                        ItemVenda.objects.filter(venda=venda).delete()
+                    vendas.delete()
+                    Produto.objects.filter(loja=loja).delete()
+                    Cliente.objects.filter(loja=loja).delete()
+                    BackupLoja.objects.filter(loja=loja).delete()
+                    Notificacao.objects.filter(loja=loja).delete()
+                    if admin_user:
+                        admin_user.delete()
+                    loja.delete()
+                    
+                    logger.warning(f"Loja excluída manualmente após erro de tabela modulos_configuracaoloja não existir.")
                     messages.success(request, f'Loja {nome_loja} excluída com sucesso!')
                     return redirect('lojas:listar_lojas')
                 except Exception as e2:
