@@ -18,7 +18,17 @@ def criar_recursos_loja(sender, instance, created, **kwargs):
     Cria automaticamente recursos necessários para a loja.
     """
     if created:
+        # Verificar se já foi processado (evitar duplicação)
+        if hasattr(instance, '_signal_processed'):
+            logger.warning(f"Signal já processado para loja {instance.nome} - ignorando execução duplicada")
+            return
+        
+        # Marcar como processado
+        instance._signal_processed = True
+        
         try:
+            logger.info(f"🚀 INICIANDO processamento de signal para nova loja: {instance.nome}")
+            
             # 1. Criar login personalizado para a loja
             login_personalizado = criar_login_personalizado(instance)
             
@@ -30,18 +40,19 @@ def criar_recursos_loja(sender, instance, created, **kwargs):
                 instance.admin_user = admin_user
                 instance.save(update_fields=['admin_user'])
             
-            # 4. Enviar email com credenciais e link personalizado
-            enviar_email_credenciais_loja_personalizado(instance, login_personalizado)
+            # 4. Enviar email com credenciais e link personalizado (APENAS UMA VEZ)
+            logger.info(f"📧 Enviando email único para loja {instance.nome}")
+            email_enviado = enviar_email_credenciais_loja_personalizado(instance, login_personalizado)
             
-            logger.info(f"Recursos criados para loja {instance.nome}:")
+            logger.info(f"✅ Recursos criados para loja {instance.nome}:")
             logger.info(f"- Login personalizado: {login_personalizado.get_login_url()}")
             if admin_user:
                 logger.info(f"- Admin criado: {admin_user.username}")
             logger.info(f"- Senha provisória: {instance.senha_provisoria}")
-            logger.info(f"- Email enviado para: {instance.email}")
+            logger.info(f"- Email enviado: {'✅ SIM' if email_enviado else '❌ FALHOU'} para: {instance.email}")
             
         except Exception as e:
-            logger.error(f"Erro ao criar recursos para loja {instance.nome}: {str(e)}")
+            logger.error(f"❌ Erro ao criar recursos para loja {instance.nome}: {str(e)}")
 
 
 def criar_login_personalizado(loja):
@@ -134,11 +145,19 @@ def gerar_username_loja(nome_loja):
 def enviar_email_credenciais_loja_personalizado(loja, login_personalizado):
     """
     Envia email com credenciais e link de login personalizado para a loja
+    APENAS UMA VEZ por loja
     """
+    # Verificar se já foi enviado (evitar duplicação)
+    if hasattr(loja, '_email_enviado'):
+        logger.warning(f"📧 Email já enviado para loja {loja.nome} - ignorando envio duplicado")
+        return True
+    
     try:
         from django.core.mail import send_mail
         from django.conf import settings
         from django.template.loader import render_to_string
+        
+        logger.info(f"📧 ENVIANDO email único para loja {loja.nome} ({loja.email})")
         
         # URL completa do login personalizado
         site_url = getattr(settings, 'SITE_URL', 'https://www.lvksistemas.com.br')
@@ -204,7 +223,10 @@ Equipe LVK Sistemas
             fail_silently=False,
         )
         
-        logger.info(f"✅ Email com login personalizado enviado para {loja.email}")
+        # Marcar como enviado
+        loja._email_enviado = True
+        
+        logger.info(f"✅ Email ÚNICO com login personalizado enviado para {loja.email}")
         logger.info(f"🔗 Link personalizado: {login_url_personalizada}")
         
         return True
