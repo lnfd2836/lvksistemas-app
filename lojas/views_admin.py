@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db import transaction, DatabaseError, ProgrammingError
+from django.db import transaction, DatabaseError, ProgrammingError, connection
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -147,14 +147,53 @@ def executar_exclusao_loja(request, loja):
     loja_id = str(loja.id)
     
     try:
+        admin_user = loja.admin_user
+        
+        logger.info(f"Iniciando exclusão da loja {nome_loja} por super admin {request.user.username}")
+        
+        # Coletar estatísticas antes da exclusão para log
+        stats = coletar_estatisticas_loja(loja)
+        
+        # Configurações específicas da loja (modulos.ConfiguracaoLoja)
+        # Exclui ANTES do bloco atômico para evitar quebrar a transação se a tabela não existir
+        configuracoes_removidas = 0
+        try:
+            from modulos.models import ConfiguracaoLoja
+            # Verifica se a tabela existe antes de tentar excluir
+            table_name = ConfiguracaoLoja._meta.db_table
+            with connection.cursor() as cursor:
+                if connection.vendor == 'postgresql':
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = %s
+                        )
+                    """, [table_name])
+                else:  # SQLite
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT name FROM sqlite_master 
+                            WHERE type='table' AND name = ?
+                        )
+                    """, [table_name])
+                table_exists = cursor.fetchone()[0]
+            
+            if table_exists:
+                configuracoes_removidas = ConfiguracaoLoja.objects.filter(loja=loja).delete()[0]
+        except (DatabaseError, ProgrammingError) as e:
+            error_msg = str(e)
+            if 'does not exist' in error_msg or 'relation' in error_msg.lower():
+                logger.warning(f"Tabela modulos_configuracaoloja não existe. Pulando exclusão de configurações.")
+            else:
+                logger.warning(f"Erro ao excluir configurações da loja {loja.nome}: {e}")
+            configuracoes_removidas = 0
+        except Exception as e:
+            logger.warning(f"Não foi possível excluir configurações da loja {loja.nome}: {e}")
+            configuracoes_removidas = 0
+        
+        # Agora executa o resto da exclusão dentro de uma transação atômica
         with transaction.atomic():
-            admin_user = loja.admin_user
-            
-            logger.info(f"Iniciando exclusão da loja {nome_loja} por super admin {request.user.username}")
-            
-            # Coletar estatísticas antes da exclusão para log
-            stats = coletar_estatisticas_loja(loja)
-            
             # 1. Excluir dados relacionados (em ordem de dependência)
             
             # Notificações da loja
@@ -183,26 +222,6 @@ def executar_exclusao_loja(request, loja):
             
             # Clientes
             clientes_removidos = Cliente.objects.filter(loja=loja).delete()[0]
-            
-            # Configurações específicas da loja (modulos.ConfiguracaoLoja)
-            # Exclui manualmente para evitar erro de CASCADE se a tabela não existir
-            try:
-                from modulos.models import ConfiguracaoLoja
-                from django.db import DatabaseError, ProgrammingError
-                configuracoes_removidas = ConfiguracaoLoja.objects.filter(loja=loja).delete()[0]
-            except (DatabaseError, ProgrammingError) as e:
-                # Se a tabela não existir (especialmente no Heroku antes das migrações),
-                # apenas loga e continua. O CASCADE não acontecerá automaticamente.
-                error_msg = str(e)
-                if 'does not exist' in error_msg or 'relation' in error_msg.lower():
-                    logger.warning(f"Tabela modulos_configuracaoloja não existe. Pulando exclusão de configurações.")
-                else:
-                    logger.warning(f"Erro ao excluir configurações da loja {loja.nome}: {e}")
-                configuracoes_removidas = 0
-            except Exception as e:
-                # Outros erros também são tratados
-                logger.warning(f"Não foi possível excluir configurações da loja {loja.nome}: {e}")
-                configuracoes_removidas = 0
             
             # Dados específicos por tipo de loja
             if loja.tipo_loja and loja.tipo_loja.nome == 'lanchonete':
