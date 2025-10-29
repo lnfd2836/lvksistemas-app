@@ -1,9 +1,12 @@
 """
 Router de banco de dados para separar dados por loja
 """
+import logging
 from django.conf import settings
 from django.db import DatabaseError, ProgrammingError
 from .database_config import get_loja_database_alias, is_loja_database
+
+logger = logging.getLogger(__name__)
 
 
 class LojaDBRouter:
