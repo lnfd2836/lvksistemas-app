@@ -5,50 +5,7 @@
 {% block page_title %}Dashboard CRM - {{ loja.nome }}{% endblock %}
 
 {% block content %}
-<!-- Módulos específicos do tipo de loja -->
-{% if modulos_loja %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-cogs"></i> Módulos - {{ loja.tipo_loja.get_nome_display }}
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for modulo in modulos_loja %}
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="card border-left-primary shadow h-100">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            {{ modulo.nome }}
-                                        </div>
-                                        <div class="text-muted small">{{ modulo.descricao }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="{{ modulo.icone }} text-primary" style="font-size: 2rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <a href="{{ modulo.url }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-arrow-right"></i> Acessar
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- CRM de Vendas - Foco Principal -->
+<!-- Template focado no CRM - SEM seção de módulos duplicada -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card shadow mb-4">
@@ -82,7 +39,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Leads -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-info shadow h-100">
@@ -109,7 +66,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Orçamentos -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-warning shadow h-100">
@@ -136,7 +93,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Propostas -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-success shadow h-100">
@@ -164,7 +121,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Segunda linha - Contratos e Relatórios -->
                 <div class="row">
                     <!-- Contratos -->
@@ -193,7 +150,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Funil de Vendas -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-secondary shadow h-100">
@@ -217,7 +174,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Relatórios -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-dark shadow h-100">
@@ -241,7 +198,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Configurações CRM -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-light shadow h-100">
@@ -326,21 +283,21 @@
                     <strong>Nome:</strong><br>
                     {{ loja.nome }}
                 </div>
-                
+
                 {% if loja.email %}
                 <div class="mb-3">
                     <strong>Email:</strong><br>
                     {{ loja.email }}
                 </div>
                 {% endif %}
-                
+
                 {% if loja.telefone %}
                 <div class="mb-3">
                     <strong>Telefone:</strong><br>
                     {{ loja.telefone }}
                 </div>
                 {% endif %}
-                
+
                 <div class="mb-3">
                     <strong>Tipo:</strong><br>
                     {{ loja.tipo_loja.get_nome_display }}
@@ -348,7 +305,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
