@@ -815,29 +815,36 @@ def login_view(request):
 def logout_view(request):
     """View de logout"""
     # Verificar se o usuário está em uma página de loja
-    loja_slug = None
-    loja_url_personalizada = None
+    loja_url = None
     
     if request.user.is_authenticated:
         try:
             # Verificar se o usuário tem uma loja associada e não é super admin
             if hasattr(request.user, 'loja_admin') and request.user.loja_admin and not request.user.is_superuser:
                 loja = request.user.loja_admin
-                loja_slug = loja.slug
                 
-                # Verificar se a loja tem login personalizado ativo
-                if hasattr(loja, 'login_personalizado') and loja.login_personalizado.ativo:
-                    loja_url_personalizada = loja.login_personalizado.url_personalizada
+                # Criar URL baseada no nome da loja (formato slug)
+                # Converter nome para formato de URL amigável
+                loja_nome_slug = loja.nome.lower()
+                loja_nome_slug = loja_nome_slug.replace(' ', '-')
+                loja_nome_slug = loja_nome_slug.replace('&', 'e')
+                loja_nome_slug = loja_nome_slug.replace('.', '')
+                loja_nome_slug = loja_nome_slug.replace(',', '')
+                loja_nome_slug = loja_nome_slug.replace('ltda', '')
+                loja_nome_slug = loja_nome_slug.replace('--', '-')
+                loja_nome_slug = loja_nome_slug.strip('-')
+                
+                loja_url = f'/login/{loja_nome_slug}/'
+                logger.info(f"Logout: redirecionando para {loja_url}")
+                
         except Exception as e:
             logger.error(f"Erro ao verificar loja do usuário no logout: {str(e)}")
     
     logout(request)
     
-    # Redirecionar para o login personalizado da loja se disponível
-    if loja_url_personalizada:
-        return redirect(f'/login/{loja_url_personalizada}/')
-    elif loja_slug:
-        return redirect(f'/login/{loja_slug}/')
+    # Redirecionar para o login da loja se disponível
+    if loja_url:
+        return redirect(loja_url)
     else:
         return redirect('/')
 
