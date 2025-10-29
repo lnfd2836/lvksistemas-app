@@ -15,6 +15,5 @@ urlpatterns = [
     # URLs do CRM de Vendas
     path('crm/', include('modulos.urls_crm')),
     
-    # URLs de Serviços (geral)
-    path('servicos/', include('modulos.urls_servicos')),
+
 ]

@@ -12,70 +12,34 @@ logger = logging.getLogger(__name__)
 @register.simple_tag
 def count_servicos_ativos():
     """
-    Conta o número de serviços ativos
+    Conta o número de serviços ativos (placeholder - retorna 0 por enquanto)
     """
-    try:
-        from modulos.models import ServicoEstetica
-        return ServicoEstetica.objects.filter(ativo=True).count()
-    except (DatabaseError, ProgrammingError, ImportError) as e:
-        logger.warning(f"Erro ao contar serviços ativos: {str(e)}")
-        return 0
-    except Exception as e:
-        logger.error(f"Erro inesperado ao contar serviços: {str(e)}")
-        return 0
+    # Por enquanto retorna 0 já que não temos sistema de serviços
+    return 0
 
 
 @register.simple_tag
 def count_protocolos_ativos():
     """
-    Conta o número de protocolos de emagrecimento ativos
+    Conta o número de protocolos de emagrecimento ativos (placeholder)
     """
-    try:
-        from modulos.models import ProtocoloEmagrecimento
-        return ProtocoloEmagrecimento.objects.filter(ativo=True).count()
-    except (DatabaseError, ProgrammingError, ImportError) as e:
-        logger.warning(f"Erro ao contar protocolos ativos: {str(e)}")
-        return 0
-    except Exception as e:
-        logger.error(f"Erro inesperado ao contar protocolos: {str(e)}")
-        return 0
+    return 0
 
 
 @register.simple_tag
 def count_agendamentos_hoje():
     """
-    Conta o número de agendamentos para hoje
+    Conta o número de agendamentos para hoje (placeholder)
     """
-    try:
-        from modulos.models import Agendamento
-        from django.utils import timezone
-        
-        return Agendamento.objects.filter(
-            data_agendamento=timezone.now().date(),
-            status__in=['agendado', 'confirmado']
-        ).count()
-    except (DatabaseError, ProgrammingError, ImportError) as e:
-        logger.warning(f"Erro ao contar agendamentos hoje: {str(e)}")
-        return 0
-    except Exception as e:
-        logger.error(f"Erro inesperado ao contar agendamentos: {str(e)}")
-        return 0
+    return 0
 
 
 @register.simple_tag
 def count_pacotes_ativos():
     """
-    Conta o número de pacotes de tratamento ativos
+    Conta o número de pacotes de tratamento ativos (placeholder)
     """
-    try:
-        from modulos.models import PacoteTratamento
-        return PacoteTratamento.objects.filter(ativo=True).count()
-    except (DatabaseError, ProgrammingError, ImportError) as e:
-        logger.warning(f"Erro ao contar pacotes ativos: {str(e)}")
-        return 0
-    except Exception as e:
-        logger.error(f"Erro inesperado ao contar pacotes: {str(e)}")
-        return 0
+    return 0
 
 
 @register.simple_tag
