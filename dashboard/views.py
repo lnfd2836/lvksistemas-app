@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Sum
+from django.db import DatabaseError, ProgrammingError
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
@@ -202,80 +203,128 @@ def dashboard_loja(request, loja=None, loja_id=None):
         except Exception as e:
             logger.error(f"Erro ao buscar controle financeiro para loja {target_loja.nome}: {e}")
         
-        # Calcular estatísticas da loja
-        total_clientes = Cliente.objects.filter(loja=target_loja).count()
-        total_produtos = Produto.objects.filter(loja=target_loja).count()
+        # Calcular estatísticas da loja (com tratamento de erros para tabelas ausentes)
+        total_clientes = 0
+        total_produtos = 0
+        vendas_hoje = 0
+        vendas_semana = 0
+        vendas_mes = 0
+        receita_hoje = Decimal('0')
+        receita_semana = Decimal('0')
+        receita_mes = Decimal('0')
+        produtos_estoque_baixo = 0
+        vendas_recentes = []
+        clientes_recentes = []
+        produtos_mais_vendidos = []
+        
+        try:
+            total_clientes = Cliente.objects.filter(loja=target_loja).count()
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao contar clientes para loja {target_loja.nome}: {str(e)}")
+        
+        try:
+            total_produtos = Produto.objects.filter(loja=target_loja).count()
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao contar produtos para loja {target_loja.nome}: {str(e)}")
         
         # Vendas
-        vendas_hoje = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__date=timezone.now().date()
-        ).count()
-        
-        vendas_semana = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__gte=timezone.now() - timedelta(days=7)
-        ).count()
-        
-        vendas_mes = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__month=timezone.now().month,
-            data_venda__year=timezone.now().year
-        ).count()
+        try:
+            vendas_hoje = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__date=timezone.now().date()
+            ).count()
+            
+            vendas_semana = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__gte=timezone.now() - timedelta(days=7)
+            ).count()
+            
+            vendas_mes = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__month=timezone.now().month,
+                data_venda__year=timezone.now().year
+            ).count()
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao contar vendas para loja {target_loja.nome}: {str(e)}")
         
         # Receita
-        receita_hoje = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__date=timezone.now().date(),
-            status='concluida'
-        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
-        
-        receita_semana = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__gte=timezone.now() - timedelta(days=7),
-            status='concluida'
-        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
-        
-        receita_mes = Venda.objects.filter(
-            loja=target_loja,
-            data_venda__month=timezone.now().month,
-            data_venda__year=timezone.now().year,
-            status='concluida'
-        ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+        try:
+            receita_hoje = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__date=timezone.now().date(),
+                status='concluida'
+            ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+            
+            receita_semana = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__gte=timezone.now() - timedelta(days=7),
+                status='concluida'
+            ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+            
+            receita_mes = Venda.objects.filter(
+                loja=target_loja,
+                data_venda__month=timezone.now().month,
+                data_venda__year=timezone.now().year,
+                status='concluida'
+            ).aggregate(total=Sum('valor_final'))['total'] or Decimal('0')
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao calcular receita para loja {target_loja.nome}: {str(e)}")
         
         # Produtos com estoque baixo
-        produtos_estoque_baixo = Produto.objects.filter(
-            loja=target_loja,
-            estoque__lte=5,
-            ativo=True
-        ).count()
+        try:
+            produtos_estoque_baixo = Produto.objects.filter(
+                loja=target_loja,
+                estoque__lte=5,
+                ativo=True
+            ).count()
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao contar produtos com estoque baixo para loja {target_loja.nome}: {str(e)}")
         
         # Vendas recentes
-        vendas_recentes = Venda.objects.filter(loja=target_loja).order_by('-data_venda')[:10]
+        try:
+            vendas_recentes = Venda.objects.filter(loja=target_loja).order_by('-data_venda')[:10]
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao buscar vendas recentes para loja {target_loja.nome}: {str(e)}")
         
         # Clientes recentes
-        clientes_recentes = Cliente.objects.filter(loja=target_loja).order_by('-data_cadastro')[:10]
+        try:
+            clientes_recentes = Cliente.objects.filter(loja=target_loja).order_by('-data_cadastro')[:10]
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao buscar clientes recentes para loja {target_loja.nome}: {str(e)}")
         
         # Produtos mais vendidos
-        produtos_mais_vendidos = Produto.objects.filter(
-            loja=target_loja
-        ).annotate(
-            total_vendido=Sum('itens_venda__quantidade')
-        ).order_by('-total_vendido')[:5]
+        try:
+            produtos_mais_vendidos = Produto.objects.filter(
+                loja=target_loja
+            ).annotate(
+                total_vendido=Sum('itens_venda__quantidade')
+            ).order_by('-total_vendido')[:5]
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao buscar produtos mais vendidos para loja {target_loja.nome}: {str(e)}")
         
         # Módulos específicos do tipo de loja
         modulos_loja = []
-        if target_loja.tipo_loja:
-            modulos_loja = ModuloLoja.objects.filter(
-                tipo_loja=target_loja.tipo_loja,
-                ativo=True
-            ).order_by('ordem')
+        try:
+            if target_loja.tipo_loja:
+                modulos_loja = ModuloLoja.objects.filter(
+                    tipo_loja=target_loja.tipo_loja,
+                    ativo=True
+                ).order_by('ordem')
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao buscar módulos da loja {target_loja.nome}: {str(e)}")
+            modulos_loja = []
         
         # Estatísticas de funcionários
-        from lojas.models import Funcionario
-        total_funcionarios = Funcionario.objects.filter(loja=target_loja).count()
-        funcionarios_ativos = Funcionario.objects.filter(loja=target_loja, ativo=True).count()
-        funcionarios_inativos = total_funcionarios - funcionarios_ativos
+        total_funcionarios = 0
+        funcionarios_ativos = 0
+        funcionarios_inativos = 0
+        try:
+            from lojas.models import Funcionario
+            total_funcionarios = Funcionario.objects.filter(loja=target_loja).count()
+            funcionarios_ativos = Funcionario.objects.filter(loja=target_loja, ativo=True).count()
+            funcionarios_inativos = total_funcionarios - funcionarios_ativos
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao buscar funcionários para loja {target_loja.nome}: {str(e)}")
         
         # Preparar contexto completo
         context = {
