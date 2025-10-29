@@ -5,7 +5,8 @@
 {% block page_title %}Dashboard CRM - {{ loja.nome }}{% endblock %}
 
 {% block content %}
-<!-- Template focado no CRM - SEM seção de módulos duplicada -->
+<!-- Template focado no CRM - APENAS as opções essenciais -->
+<!-- CRM de Vendas - Sistema Principal -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card shadow mb-4">
@@ -39,7 +40,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Leads -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-info shadow h-100">
@@ -66,7 +67,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Orçamentos -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-warning shadow h-100">
@@ -93,7 +94,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Propostas -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-success shadow h-100">
@@ -121,7 +122,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Segunda linha - Contratos e Relatórios -->
                 <div class="row">
                     <!-- Contratos -->
@@ -150,7 +151,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Funil de Vendas -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-secondary shadow h-100">
@@ -174,7 +175,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Relatórios -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-dark shadow h-100">
@@ -198,7 +199,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Configurações CRM -->
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card border-left-light shadow h-100">
@@ -222,115 +223,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Ações Rápidas -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-bolt"></i> Ações Rápidas
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="/crm/leads/criar/" class="btn btn-primary btn-block">
-                            <i class="fas fa-user-plus"></i><br>
-                            <small>Novo Lead</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/crm/orcamentos/criar/" class="btn btn-warning btn-block">
-                            <i class="fas fa-file-invoice-dollar"></i><br>
-                            <small>Novo Orçamento</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/crm/propostas/criar/" class="btn btn-success btn-block">
-                            <i class="fas fa-file-alt"></i><br>
-                            <small>Nova Proposta</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/crm/contratos/criar/" class="btn btn-danger btn-block">
-                            <i class="fas fa-file-contract"></i><br>
-                            <small>Novo Contrato</small>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Informações da Loja (Mínimas) -->
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-store"></i> Informações da Loja
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Nome:</strong><br>
-                    {{ loja.nome }}
-                </div>
-
-                {% if loja.email %}
-                <div class="mb-3">
-                    <strong>Email:</strong><br>
-                    {{ loja.email }}
-                </div>
-                {% endif %}
-
-                {% if loja.telefone %}
-                <div class="mb-3">
-                    <strong>Telefone:</strong><br>
-                    {{ loja.telefone }}
-                </div>
-                {% endif %}
-
-                <div class="mb-3">
-                    <strong>Tipo:</strong><br>
-                    {{ loja.tipo_loja.get_nome_display }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-info-circle"></i> Acesso Rápido
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <a href="/crm/" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt text-primary"></i>
-                        Dashboard CRM Completo
-                    </a>
-                    <a href="/crm/leads/" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users text-info"></i>
-                        Gerenciar Leads
-                    </a>
-                    <a href="/crm/funil/" class="list-group-item list-group-item-action">
-                        <i class="fas fa-filter text-secondary"></i>
-                        Funil de Vendas
-                    </a>
-                    <a href="/crm/relatorios/" class="list-group-item list-group-item-action">
-                        <i class="fas fa-chart-line text-dark"></i>
-                        Relatórios e Análises
-                    </a>
                 </div>
             </div>
         </div>
