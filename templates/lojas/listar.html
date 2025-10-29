@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load loja_filters %}
 
 {% block title %}Gerenciar Lojas{% endblock %}
 {% block page_title %}{% endblock %}
@@ -173,21 +174,22 @@
                 </thead>
                 <tbody>
                     {% for loja in lojas %}
+                    {% with tipo=loja|safe_get_tipo_loja %}
                     <tr>
                         <td>
                             <div class="fw-bold">{{ loja.nome }}</div>
                             <small class="text-muted">{{ loja.cidade }}/{{ loja.estado }}</small>
                         </td>
                         <td>
-                            {% if loja.tipo_loja %}
+                            {% if tipo %}
                             <div class="d-flex align-items-center">
-                                <i class="{{ loja.tipo_loja.icone }} me-2"
-                                    style="color: {{ loja.tipo_loja.cor_primaria }};"></i>
+                                <i class="{{ tipo.icone }} me-2"
+                                    style="color: {{ tipo.cor_primaria }};"></i>
                                 <div>
-                                    <div class="fw-bold" style="color: {{ loja.tipo_loja.cor_primaria }};">
-                                        {{ loja.tipo_loja.get_nome_display }}
+                                    <div class="fw-bold" style="color: {{ tipo.cor_primaria }};">
+                                        {{ tipo.get_nome_display }}
                                     </div>
-                                    <small class="text-muted">{{ loja.tipo_loja.descricao|truncatechars:30 }}</small>
+                                    <small class="text-muted">{{ tipo.descricao|truncatechars:30 }}</small>
                                 </div>
                             </div>
                             {% else %}
@@ -231,7 +233,7 @@
                                     title="Editar loja">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                {% if loja.tipo_loja %}
+                                {% if tipo %}
                                 <a href="{% url 'lojas:acessar_login_personalizado' loja.id %}"
                                     class="btn btn-sm btn-outline-success" title="Acessar Login da Loja" target="_blank">
                                     <i class="bi bi-box-arrow-up-right"></i> Login
@@ -244,6 +246,7 @@
                             </div>
                         </td>
                     </tr>
+                    {% endwith %}
                     {% empty %}
                     <tr>
                         <td colspan="8" class="text-center py-4">
@@ -260,6 +263,7 @@
 
 <!-- Modais de confirmação para exclusão -->
 {% for loja in lojas %}
+{% with tipo=loja|safe_get_tipo_loja %}
 <div class="modal fade" id="modalExcluir{{ loja.id }}" tabindex="-1" aria-labelledby="modalExcluir{{ loja.id }}Label"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -283,8 +287,8 @@
                             <strong>CNPJ:</strong> {{ loja.cnpj }}<br>
                             <strong>Email:</strong> {{ loja.email }}<br>
                             <strong>Cidade:</strong> {{ loja.cidade }}/{{ loja.estado }}<br>
-                            {% if loja.tipo_loja %}
-                            <strong>Tipo:</strong> {{ loja.tipo_loja.get_nome_display }}
+                            {% if tipo %}
+                            <strong>Tipo:</strong> {{ tipo.get_nome_display }}
                             {% endif %}
                         </p>
                     </div>
