@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load modulos_tags %}
 
 {% block title %}Dashboard - {{ loja.nome }}{% endblock %}
 {% block page_title %}Dashboard - {{ loja.nome }}{% endblock %}
@@ -173,7 +174,6 @@
                                             Serviços
                                         </div>
                                         <div class="h6 mb-0 font-weight-bold">
-                                            {% load modulos_tags %}
                                             {% count_servicos_ativos %}
                                         </div>
                                         <div class="text-muted small">Cadastrados</div>
