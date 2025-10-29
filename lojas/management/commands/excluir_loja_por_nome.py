@@ -116,10 +116,11 @@ class Command(BaseCommand):
                 self.stdout.write(f'  - {stats["vendas"]} vendas removidas')
                 self.stdout.write(f'  - {stats["funcionarios"]} funcionários removidos')
                 self.stdout.write(f'  - {stats["notificacoes"]} notificações removidas')
-
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'\n❌ Erro ao excluir loja: {e}')
-            )
+                
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f'\n❌ Erro ao excluir loja: {e}')
+                )
+                logger.error(f"Erro ao excluir loja {nome_loja_final}: {e}", exc_info=True)
             logger.error(f"Erro ao excluir loja {nome_loja}: {e}", exc_info=True)
 
