@@ -19,6 +19,28 @@ class Command(BaseCommand):
                 'icone': 'fas fa-briefcase',
                 'cor_primaria': '#007bff',
                 'cor_secundaria': '#0056b3',
+                # Configurações de produto (CRM não usa produtos tradicionais)
+                'tem_categoria_produto': False,
+                'tem_marca_produto': False,
+                'tem_tamanho_produto': False,
+                'tem_cor_produto': False,
+                'tem_peso_produto': False,
+                'tem_volume_produto': False,
+                'tem_data_validade': False,
+                'tem_codigo_barras': False,
+                'tem_estoque_minimo': False,
+                # Configurações de cliente (CRM foca em leads/oportunidades)
+                'tem_data_nascimento_cliente': True,
+                'tem_sexo_cliente': True,
+                'tem_cpf_cliente': True,
+                'tem_rg_cliente': False,
+                'tem_cnpj_cliente': True,  # Importante para empresas no CRM
+                'tem_crm_cliente': False,  # CRM não usa CRM médico
+                # Configurações de venda (CRM trabalha com orçamentos/propostas)
+                'tem_desconto_venda': True,
+                'tem_taxa_entrega': False,
+                'tem_mesa_venda': False,
+                'tem_garcom_venda': False,
                 'ativo': True,
             }
         )
