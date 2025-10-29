@@ -30,11 +30,31 @@ def gerenciar_configuracoes_loja(request, loja_id):
     # Para simplificar, vamos usar o banco padrão por enquanto
     # TODO: Implementar isolamento completo de banco posteriormente
     
-    # Buscar ou criar configurações
-    config_produto, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
-    config_cliente, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)
-    config_venda, _ = ConfiguracaoVenda.objects.get_or_create(loja=loja)
-    config_dashboard, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    # Buscar ou criar configurações (com tratamento de erro para tabelas ausentes)
+    config_produto = None
+    config_cliente = None
+    config_venda = None
+    config_dashboard = None
+    
+    try:
+        config_produto, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoProduto não existe para loja {loja.nome}: {str(e)}")
+    
+    try:
+        config_cliente, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoCliente não existe para loja {loja.nome}: {str(e)}")
+    
+    try:
+        config_venda, _ = ConfiguracaoVenda.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoVenda não existe para loja {loja.nome}: {str(e)}")
+    
+    try:
+        config_dashboard, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoDashboard não existe para loja {loja.nome}: {str(e)}")
     
     context = {
         'loja': loja,
@@ -53,7 +73,13 @@ def salvar_configuracao_produto(request, loja_id):
     """Salva configurações de produto"""
     
     loja = get_object_or_404(Loja, id=loja_id)
-    config, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
+    
+    try:
+        config, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoProduto não existe para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'As configurações de produto não estão disponíveis no momento.')
+        return redirect('lojas:configuracoes', loja_id=loja_id)
     
     try:
         # Atualizar configurações
@@ -93,7 +119,13 @@ def salvar_configuracao_cliente(request, loja_id):
     """Salva configurações de cliente"""
     
     loja = get_object_or_404(Loja, id=loja_id)
-    config, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)
+    
+    try:
+        config, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoCliente não existe para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'As configurações de cliente não estão disponíveis no momento.')
+        return redirect('lojas:configuracoes', loja_id=loja_id)
     
     try:
         config.campos_obrigatorios = request.POST.getlist('campos_obrigatorios')
@@ -124,7 +156,13 @@ def salvar_configuracao_venda(request, loja_id):
     """Salva configurações de venda"""
     
     loja = get_object_or_404(Loja, id=loja_id)
-    config, _ = ConfiguracaoVenda.objects.get_or_create(loja=loja)
+    
+    try:
+        config, _ = ConfiguracaoVenda.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoVenda não existe para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'As configurações de venda não estão disponíveis no momento.')
+        return redirect('lojas:configuracoes', loja_id=loja_id)
     
     try:
         config.numeracao_automatica = request.POST.get('numeracao_automatica') == 'on'
@@ -158,7 +196,13 @@ def salvar_configuracao_dashboard(request, loja_id):
     """Salva configurações de dashboard"""
     
     loja = get_object_or_404(Loja, id=loja_id)
-    config, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    
+    try:
+        config, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoDashboard não existe para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'As configurações de dashboard não estão disponíveis no momento.')
+        return redirect('lojas:configuracoes', loja_id=loja_id)
     
     try:
         config.widgets_habilitados = request.POST.getlist('widgets_habilitados')

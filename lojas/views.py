@@ -578,7 +578,7 @@ def backup_loja(request, loja_id):
     except Exception as e:
         messages.error(request, f'Erro ao criar backup: {str(e)}')
     
-    return redirect('detalhar_loja', loja_id=loja_id)
+    return redirect('lojas:detalhar_loja', loja_id=loja_id)
 
 @login_required
 @user_passes_test(is_superuser)
