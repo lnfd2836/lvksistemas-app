@@ -510,7 +510,7 @@
                     <strong>Loja Bloqueada!</strong> {{ controle_financeiro.motivo_bloqueio }} Entre em contato conosco
                     ou efetue o pagamento.
                 </div>
-                {% elif controle_financeiro.dias_para_vencimento <= 5 and controle_financeiro.dias_para_vencimento> 0 %}
+                {% elif controle_financeiro.dias_para_vencimento <= 5 and controle_financeiro.dias_para_vencimento > 0 %}
                     <div class="alert alert-info mt-3" role="alert">
                         <i class="fas fa-info-circle"></i>
                         <strong>Lembrete:</strong> Sua mensalidade vence em {{ controle_financeiro.dias_para_vencimento
