@@ -122,5 +122,4 @@ class Command(BaseCommand):
                     self.style.ERROR(f'\n❌ Erro ao excluir loja: {e}')
                 )
                 logger.error(f"Erro ao excluir loja {nome_loja_final}: {e}", exc_info=True)
-            logger.error(f"Erro ao excluir loja {nome_loja}: {e}", exc_info=True)
 
