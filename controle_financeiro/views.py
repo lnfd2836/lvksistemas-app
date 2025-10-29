@@ -4,13 +4,17 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Count, Sum
+from django.db import DatabaseError, ProgrammingError
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
+import logging
 
 from .models import PlanoFinanceiro, ControleFinanceiro, Pagamento, NotificacaoFinanceira, ConfiguracaoBoleto, BoletoGerado
 from lojas.models import Loja
+
+logger = logging.getLogger(__name__)
 
 
 def is_superuser(user):
@@ -22,40 +26,80 @@ def is_superuser(user):
 def dashboard_financeiro(request):
     """Dashboard de controle financeiro para Super Admin"""
     
-    # Estatísticas gerais
-    total_lojas = Loja.objects.count()
-    lojas_ativas = ControleFinanceiro.objects.filter(status='ativa').count()
-    lojas_vencidas = ControleFinanceiro.objects.filter(status='vencida').count()
-    lojas_bloqueadas = ControleFinanceiro.objects.filter(status='bloqueada').count()
+    # Estatísticas gerais com tratamento de erro para tabelas ausentes
+    try:
+        total_lojas = Loja.objects.count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas em dashboard_financeiro: {str(e)}")
+        total_lojas = 0
+    
+    try:
+        lojas_ativas = ControleFinanceiro.objects.filter(status='ativa').count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas ativas em dashboard_financeiro: {str(e)}")
+        lojas_ativas = 0
+    
+    try:
+        lojas_vencidas = ControleFinanceiro.objects.filter(status='vencida').count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas vencidas em dashboard_financeiro: {str(e)}")
+        lojas_vencidas = 0
+    
+    try:
+        lojas_bloqueadas = ControleFinanceiro.objects.filter(status='bloqueada').count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas bloqueadas em dashboard_financeiro: {str(e)}")
+        lojas_bloqueadas = 0
     
     # Receita
-    receita_mensal = ControleFinanceiro.objects.filter(
-        status='ativa',
-        data_ultimo_pagamento__month=timezone.now().month
-    ).aggregate(total=Sum('valor_pago'))['total'] or 0
+    try:
+        receita_mensal = ControleFinanceiro.objects.filter(
+            status='ativa',
+            data_ultimo_pagamento__month=timezone.now().month
+        ).aggregate(total=Sum('valor_pago'))['total'] or 0
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao calcular receita mensal em dashboard_financeiro: {str(e)}")
+        receita_mensal = 0
     
-    receita_pendente = ControleFinanceiro.objects.filter(
-        status__in=['vencida', 'bloqueada']
-    ).aggregate(total=Sum('valor_pendente'))['total'] or 0
+    try:
+        receita_pendente = ControleFinanceiro.objects.filter(
+            status__in=['vencida', 'bloqueada']
+        ).aggregate(total=Sum('valor_pendente'))['total'] or 0
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao calcular receita pendente em dashboard_financeiro: {str(e)}")
+        receita_pendente = 0
     
     # Lojas próximas do vencimento (5 dias)
-    data_limite = timezone.now() + timedelta(days=5)
-    lojas_vencendo = ControleFinanceiro.objects.filter(
-        data_vencimento__lte=data_limite,
-        status='ativa'
-    ).order_by('data_vencimento')
+    try:
+        data_limite = timezone.now() + timedelta(days=5)
+        lojas_vencendo = ControleFinanceiro.objects.filter(
+            data_vencimento__lte=data_limite,
+            status='ativa'
+        ).order_by('data_vencimento')
+        lojas_vencendo = list(lojas_vencendo)  # Converter para lista para evitar lazy evaluation
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao buscar lojas vencendo em dashboard_financeiro: {str(e)}")
+        lojas_vencendo = []
     
     # Pagamentos pendentes
-    pagamentos_pendentes = Pagamento.objects.filter(
-        status='pendente'
-    ).order_by('-data_criacao')[:10]
-    
-    # Seção de cobranças removida - usando apenas seção Asaas
+    try:
+        pagamentos_pendentes = Pagamento.objects.filter(
+            status='pendente'
+        ).order_by('-data_criacao')[:10]
+        pagamentos_pendentes = list(pagamentos_pendentes)  # Converter para lista
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao buscar pagamentos pendentes em dashboard_financeiro: {str(e)}")
+        pagamentos_pendentes = []
     
     # Controles financeiros recentes
-    controles_recentes = ControleFinanceiro.objects.select_related(
-        'loja', 'plano'
-    ).order_by('-data_atualizacao')[:10]
+    try:
+        controles_recentes = ControleFinanceiro.objects.select_related(
+            'loja', 'plano'
+        ).order_by('-data_atualizacao')[:10]
+        controles_recentes = list(controles_recentes)  # Converter para lista
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao buscar controles recentes em dashboard_financeiro: {str(e)}")
+        controles_recentes = []
     
     context = {
         'total_lojas': total_lojas,
@@ -66,8 +110,10 @@ def dashboard_financeiro(request):
         'receita_pendente': receita_pendente,
         'lojas_vencendo': lojas_vencendo,
         'pagamentos_pendentes': pagamentos_pendentes,
-
         'controles_recentes': controles_recentes,
+        'erro_tabela': any([
+            lojas_ativas == 0 and lojas_vencidas == 0 and lojas_bloqueadas == 0 and not lojas_vencendo and not pagamentos_pendentes and not controles_recentes
+        ]),  # Flag para mostrar aviso no template se necessário
     }
     
     return render(request, 'controle_financeiro/dashboard.html', context)
