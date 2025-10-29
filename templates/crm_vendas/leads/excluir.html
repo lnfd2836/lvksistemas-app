@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Lead - {{ lead.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Exclusão
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                    </div>
+                    
+                    <p>Você tem certeza que deseja excluir o lead:</p>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ lead.nome }}</h5>
+                            <p class="card-text">
+                                <strong>Email:</strong> {{ lead.email }}<br>
+                                {% if lead.empresa %}
+                                <strong>Empresa:</strong> {{ lead.empresa }}<br>
+                                {% endif %}
+                                <strong>Status:</strong> {{ lead.get_status_display }}<br>
+                                <strong>Valor Estimado:</strong> R$ {{ lead.valor_estimado|floatformat:2 }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>O que será excluído:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Dados do lead</li>
+                            <li>Histórico de contatos</li>
+                            <li>Orçamentos relacionados</li>
+                            <li>Propostas relacionadas</li>
+                            <li>Contratos relacionados</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita!')">
+                                <i class="fas fa-trash me-1"></i>Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

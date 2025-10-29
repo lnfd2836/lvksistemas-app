@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Editar Lead - {{ lead.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Editar Lead - {{ lead.nome }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Dados Básicos -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Dados Básicos</h5>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="nome" class="form-label">Nome Completo *</label>
+                                    <input type="text" class="form-control" id="nome" name="nome" 
+                                           value="{{ lead.nome }}" required>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ lead.email }}" required>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="telefone" class="form-label">Telefone</label>
+                                    <input type="text" class="form-control" id="telefone" name="telefone" 
+                                           value="{{ lead.telefone }}">
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="empresa" class="form-label">Empresa</label>
+                                    <input type="text" class="form-control" id="empresa" name="empresa" 
+                                           value="{{ lead.empresa }}">
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="cargo" class="form-label">Cargo</label>
+                                    <input type="text" class="form-control" id="cargo" name="cargo" 
+                                           value="{{ lead.cargo }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Endereço e Controle -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Endereço</h5>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="endereco" class="form-label">Endereço</label>
+                                    <textarea class="form-control" id="endereco" name="endereco" rows="3">{{ lead.endereco }}</textarea>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group mb-3">
+                                            <label for="cidade" class="form-label">Cidade</label>
+                                            <input type="text" class="form-control" id="cidade" name="cidade" 
+                                                   value="{{ lead.cidade }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="estado" class="form-label">Estado</label>
+                                            <input type="text" class="form-control" id="estado" name="estado" 
+                                                   value="{{ lead.estado }}" maxlength="2">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="cep" class="form-label">CEP</label>
+                                    <input type="text" class="form-control" id="cep" name="cep" 
+                                           value="{{ lead.cep }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <!-- Controle -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Controle</h5>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="origem" class="form-label">Origem</label>
+                                    <select class="form-control" id="origem" name="origem">
+                                        {% for value, label in origem_choices %}
+                                        <option value="{{ value }}" {% if lead.origem == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                {% if usuarios %}
+                                <div class="form-group mb-3">
+                                    <label for="responsavel" class="form-label">Responsável</label>
+                                    <select class="form-control" id="responsavel" name="responsavel">
+                                        <option value="">Selecione um responsável</option>
+                                        {% for usuario in usuarios %}
+                                        <option value="{{ usuario.id }}" {% if lead.responsavel_id == usuario.id %}selected{% endif %}>
+                                            {{ usuario.get_full_name|default:usuario.username }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Dados Comerciais -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Dados Comerciais</h5>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="valor_estimado" class="form-label">Valor Estimado (R$)</label>
+                                    <input type="number" class="form-control" id="valor_estimado" name="valor_estimado" 
+                                           value="{{ lead.valor_estimado }}" step="0.01" min="0">
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="probabilidade" class="form-label">Probabilidade (%)</label>
+                                    <input type="number" class="form-control" id="probabilidade" name="probabilidade" 
+                                           value="{{ lead.probabilidade }}" min="0" max="100">
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="observacoes" class="form-label">Observações</label>
+                                    <textarea class="form-control" id="observacoes" name="observacoes" rows="4">{{ lead.observacoes }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Salvar Alterações
+                                </button>
+                                <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Máscara para telefone
+    $('#telefone').mask('(00) 00000-0000');
+    
+    // Máscara para CEP
+    $('#cep').mask('00000-000');
+    
+    // Validação do formulário
+    $('form').on('submit', function(e) {
+        var nome = $('#nome').val().trim();
+        var email = $('#email').val().trim();
+        
+        if (!nome) {
+            alert('Nome é obrigatório!');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (!email) {
+            alert('Email é obrigatório!');
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

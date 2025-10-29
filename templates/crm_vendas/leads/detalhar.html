@@ -29,6 +29,9 @@
                                 <a href="{% url 'crm_vendas:registrar_contato' lead.id %}" class="btn btn-success btn-sm">
                                     <i class="fas fa-phone"></i> Registrar Contato
                                 </a>
+                                <a href="{% url 'crm_vendas:excluir_lead' lead.id %}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </a>
                                 <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-arrow-left"></i> Voltar
                                 </a>

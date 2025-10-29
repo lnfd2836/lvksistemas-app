@@ -15,6 +15,7 @@ urlpatterns = [
     path('leads/novo/', views.criar_lead, name='criar_lead'),
     path('leads/<uuid:lead_id>/', views.detalhar_lead, name='detalhar_lead'),
     path('leads/<uuid:lead_id>/editar/', views.editar_lead, name='editar_lead'),
+    path('leads/<uuid:lead_id>/excluir/', views.excluir_lead, name='excluir_lead'),
     path('leads/<uuid:lead_id>/contato/', views.registrar_contato, name='registrar_contato'),
     
     # Orçamentos

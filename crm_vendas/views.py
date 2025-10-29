@@ -649,8 +649,89 @@ def enviar_contrato(request, contrato_id):
 def editar_lead(request, lead_id): 
     """Edita um lead"""
     lead = get_object_or_404(Lead, id=lead_id)
-    messages.info(request, 'Funcionalidade de edição de lead em desenvolvimento.')
-    return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and hasattr(request.user, 'loja_admin'):
+        if lead.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para editar este lead.')
+            return redirect('crm_vendas:listar_leads')
+    
+    if request.method == 'POST':
+        try:
+            # Atualizar dados do lead
+            lead.nome = request.POST.get('nome', lead.nome)
+            lead.email = request.POST.get('email', lead.email)
+            lead.telefone = request.POST.get('telefone', lead.telefone)
+            lead.empresa = request.POST.get('empresa', lead.empresa)
+            lead.cargo = request.POST.get('cargo', lead.cargo)
+            lead.endereco = request.POST.get('endereco', lead.endereco)
+            lead.cidade = request.POST.get('cidade', lead.cidade)
+            lead.estado = request.POST.get('estado', lead.estado)
+            lead.cep = request.POST.get('cep', lead.cep)
+            lead.status = request.POST.get('status', lead.status)
+            lead.origem = request.POST.get('origem', lead.origem)
+            lead.valor_estimado = request.POST.get('valor_estimado', lead.valor_estimado) or 0
+            lead.probabilidade = request.POST.get('probabilidade', lead.probabilidade) or 50
+            lead.observacoes = request.POST.get('observacoes', lead.observacoes)
+            
+            # Responsável (apenas super admin pode alterar)
+            if request.user.is_superuser:
+                responsavel_id = request.POST.get('responsavel')
+                if responsavel_id:
+                    lead.responsavel_id = responsavel_id
+            
+            lead.save()
+            
+            messages.success(request, f'Lead "{lead.nome}" atualizado com sucesso!')
+            return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
+            
+        except Exception as e:
+            logger.error(f"Erro ao editar lead {lead_id}: {str(e)}")
+            messages.error(request, 'Erro ao atualizar lead. Verifique os dados informados.')
+    
+    # Buscar usuários para o campo responsável (apenas super admin)
+    usuarios = []
+    if request.user.is_superuser:
+        usuarios = User.objects.filter(is_active=True).order_by('first_name', 'username')
+    
+    context = {
+        'lead': lead,
+        'usuarios': usuarios,
+        'status_choices': Lead.STATUS_CHOICES,
+        'origem_choices': Lead.ORIGEM_CHOICES,
+    }
+    
+    return render(request, 'crm_vendas/leads/editar.html', context)
+
+
+@login_required
+def excluir_lead(request, lead_id):
+    """Exclui um lead"""
+    lead = get_object_or_404(Lead, id=lead_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and hasattr(request.user, 'loja_admin'):
+        if lead.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para excluir este lead.')
+            return redirect('crm_vendas:listar_leads')
+    
+    if request.method == 'POST':
+        try:
+            nome_lead = lead.nome
+            lead.delete()
+            messages.success(request, f'Lead "{nome_lead}" excluído com sucesso!')
+            return redirect('crm_vendas:listar_leads')
+        except Exception as e:
+            logger.error(f"Erro ao excluir lead {lead_id}: {str(e)}")
+            messages.error(request, 'Erro ao excluir lead. Tente novamente.')
+            return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
+    
+    context = {
+        'lead': lead,
+    }
+    
+    return render(request, 'crm_vendas/leads/excluir.html', context)
+
 
 @login_required
 def registrar_contato(request, lead_id): 
