@@ -779,6 +779,115 @@ def assinar_contrato_publico(request, contrato_id):
     }
     
     return render(request, 'crm_vendas/publico/contrato.html', context)
-def track_email_clique(request, token): pass
-def relatorio_funil_vendas(request): pass
-def relatorio_performance(request): pass
+def track_email_clique(request, token): 
+    """Track de cliques em emails"""
+    # TODO: Implementar tracking de cliques
+    return redirect('crm_vendas:dashboard')
+
+
+@login_required
+def relatorio_funil_vendas(request):
+    """Relatório do funil de vendas"""
+    # Filtrar por loja se não for super admin
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            leads = Lead.objects.filter(loja=loja)
+        except:
+            leads = Lead.objects.none()
+    
+    # Contar leads por status para o funil
+    funil_data = {
+        'leads_novos': leads.filter(status='novo').count(),
+        'leads_qualificados': leads.filter(status='qualificado').count(),
+        'leads_interessados': leads.filter(status='proposta_enviada').count(),
+        'em_negociacao': leads.filter(status='negociacao').count(),
+        'fechados_ganhos': leads.filter(status='fechado_ganho').count(),
+        'fechados_perdidos': leads.filter(status='fechado_perdido').count(),
+    }
+    
+    context = {
+        'funil': funil_data,
+    }
+    
+    return render(request, 'crm_vendas/funil.html', context)
+    # Verificar permissão
+    if not request.user.is_superuser and not hasattr(request.user, 'loja_admin'):
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('crm_vendas:dashboard')
+    
+    # Determinar loja
+    loja = None
+    if request.user.is_superuser:
+        # Super admin pode ver todas as lojas ou uma específica
+        loja_id = request.GET.get('loja')
+        if loja_id:
+            try:
+                loja = Loja.objects.get(id=loja_id)
+            except Loja.DoesNotExist:
+                pass
+    else:
+        loja = request.user.loja_admin
+    
+    # Filtrar leads por loja se especificada
+    leads_query = Lead.objects.all()
+    if loja:
+        leads_query = leads_query.filter(loja=loja)
+    
+    # Estatísticas do funil
+    stats = {
+        'total_leads': leads_query.count(),
+        'novos': leads_query.filter(status='novo').count(),
+        'qualificados': leads_query.filter(status='qualificado').count(),
+        'proposta_enviada': leads_query.filter(status='proposta_enviada').count(),
+        'negociacao': leads_query.filter(status='negociacao').count(),
+        'fechado_ganho': leads_query.filter(status='fechado_ganho').count(),
+        'fechado_perdido': leads_query.filter(status='fechado_perdido').count(),
+    }
+    
+    # Calcular taxas de conversão
+    conversao = {}
+    if stats['total_leads'] > 0:
+        conversao['qualificacao'] = (stats['qualificados'] / stats['total_leads']) * 100
+        conversao['proposta'] = (stats['proposta_enviada'] / stats['total_leads']) * 100
+        conversao['fechamento'] = (stats['fechado_ganho'] / stats['total_leads']) * 100
+    
+    context = {
+        'loja': loja,
+        'stats': stats,
+        'conversao': conversao,
+        'leads_recentes': leads_query.order_by('-data_criacao')[:10],
+    }
+    
+    return render(request, 'crm_vendas/funil.html', context)
+
+
+@login_required
+def relatorio_performance(request):
+    """Relatório de performance de vendas"""
+    
+    # Verificar permissão
+    if not request.user.is_superuser and not hasattr(request.user, 'loja_admin'):
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('crm_vendas:dashboard')
+    
+    # Determinar loja
+    loja = None
+    if request.user.is_superuser:
+        loja_id = request.GET.get('loja')
+        if loja_id:
+            try:
+                loja = Loja.objects.get(id=loja_id)
+            except Loja.DoesNotExist:
+                pass
+    else:
+        loja = request.user.loja_admin
+    
+    context = {
+        'loja': loja,
+        'em_desenvolvimento': True,
+    }
+    
+    return render(request, 'crm_vendas/relatorios.html', context)
