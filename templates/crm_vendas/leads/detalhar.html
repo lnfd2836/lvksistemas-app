@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ lead.nome }} - Detalhes do Lead{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Cabeçalho -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-user me-2"></i>
+                                {{ lead.nome }}
+                            </h3>
+                            <small class="text-muted">Lead criado em {{ lead.data_criacao|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-{% if lead.status == 'novo' %}info{% elif lead.status == 'qualificado' %}success{% elif lead.status == 'fechado_ganho' %}primary{% elif lead.status == 'fechado_perdido' %}danger{% else %}secondary{% endif %} fs-6 me-2">
+                                {{ lead.get_status_display }}
+                            </span>
+                            <div class="btn-group">
+                                <a href="{% url 'crm_vendas:editar_lead' lead.id %}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="{% url 'crm_vendas:registrar_contato' lead.id %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-phone"></i> Registrar Contato
+                                </a>
+                                <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Voltar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Informações do Lead -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Informações Básicas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Nome:</strong><br>
+                                {{ lead.nome }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Email:</strong><br>
+                                <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+                            </div>
+                            
+                            {% if lead.telefone %}
+                            <div class="mb-3">
+                                <strong>Telefone:</strong><br>
+                                <a href="tel:{{ lead.telefone }}">{{ lead.telefone }}</a>
+                            </div>
+                            {% endif %}
+                            
+                            {% if lead.empresa %}
+                            <div class="mb-3">
+                                <strong>Empresa:</strong><br>
+                                {{ lead.empresa }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if lead.cargo %}
+                            <div class="mb-3">
+                                <strong>Cargo:</strong><br>
+                                {{ lead.cargo }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <strong>Origem:</strong><br>
+                                <span class="badge bg-light text-dark">{{ lead.get_origem_display }}</span>
+                            </div>
+                            
+                            {% if lead.responsavel %}
+                            <div class="mb-3">
+                                <strong>Responsável:</strong><br>
+                                {{ lead.responsavel.first_name }} {{ lead.responsavel.last_name }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dados Comerciais -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Dados Comerciais
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Valor Estimado:</strong><br>
+                                <span class="h5 text-success">R$ {{ lead.valor_estimado|floatformat:2 }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Probabilidade:</strong><br>
+                                <div class="progress mb-1">
+                                    <div class="progress-bar bg-{% if lead.probabilidade >= 75 %}success{% elif lead.probabilidade >= 50 %}warning{% else %}danger{% endif %}" 
+                                         role="progressbar" style="width: {{ lead.probabilidade }}%">
+                                        {{ lead.probabilidade }}%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Loja:</strong><br>
+                                {{ lead.loja.nome }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    {% if lead.endereco or lead.cidade or lead.estado or lead.cep %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                Endereço
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if lead.endereco %}
+                            <div class="mb-2">{{ lead.endereco }}</div>
+                            {% endif %}
+                            
+                            <div>
+                                {% if lead.cidade %}{{ lead.cidade }}{% endif %}
+                                {% if lead.estado %} - {{ lead.estado }}{% endif %}
+                                {% if lead.cep %}<br>CEP: {{ lead.cep }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Observações -->
+                    {% if lead.observacoes %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-sticky-note me-2"></i>
+                                Observações
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ lead.observacoes|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Atividades e Documentos -->
+                <div class="col-md-8">
+                    <!-- Ações Rápidas -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-bolt me-2"></i>
+                                Ações Rápidas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'crm_vendas:criar_orcamento' %}?lead={{ lead.id }}" class="btn btn-primary btn-sm w-100">
+                                        <i class="fas fa-file-invoice-dollar"></i><br>
+                                        Criar Orçamento
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'crm_vendas:criar_proposta' %}?lead={{ lead.id }}" class="btn btn-info btn-sm w-100">
+                                        <i class="fas fa-file-alt"></i><br>
+                                        Criar Proposta
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'crm_vendas:criar_contrato' %}?lead={{ lead.id }}" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-file-contract"></i><br>
+                                        Criar Contrato
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button type="button" class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAlterarStatus">
+                                        <i class="fas fa-exchange-alt"></i><br>
+                                        Alterar Status
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs de Conteúdo -->
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" id="leadTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="historico-tab" data-bs-toggle="tab" data-bs-target="#historico" type="button" role="tab">
+                                        <i class="fas fa-history me-1"></i>Histórico de Contatos ({{ historico.count }})
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="orcamentos-tab" data-bs-toggle="tab" data-bs-target="#orcamentos" type="button" role="tab">
+                                        <i class="fas fa-file-invoice-dollar me-1"></i>Orçamentos ({{ orcamentos.count }})
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="propostas-tab" data-bs-toggle="tab" data-bs-target="#propostas" type="button" role="tab">
+                                        <i class="fas fa-file-alt me-1"></i>Propostas ({{ propostas.count }})
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="contratos-tab" data-bs-toggle="tab" data-bs-target="#contratos" type="button" role="tab">
+                                        <i class="fas fa-file-contract me-1"></i>Contratos ({{ contratos.count }})
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab">
+                                        <i class="fas fa-envelope me-1"></i>Emails ({{ emails.count }})
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content" id="leadTabsContent">
+                                <!-- Histórico de Contatos -->
+                                <div class="tab-pane fade show active" id="historico" role="tabpanel">
+                                    {% if historico %}
+                                        <div class="timeline">
+                                            {% for contato in historico %}
+                                            <div class="timeline-item mb-3">
+                                                <div class="d-flex">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-{% if contato.tipo == 'telefone' %}phone{% elif contato.tipo == 'email' %}envelope{% elif contato.tipo == 'reuniao' %}users{% else %}comment{% endif %} text-white"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <h6 class="card-title mb-1">{{ contato.get_tipo_display }}</h6>
+                                                                    <small class="text-muted">{{ contato.data_contato|date:"d/m/Y H:i" }}</small>
+                                                                </div>
+                                                                <p class="card-text">{{ contato.observacoes|linebreaks }}</p>
+                                                                {% if contato.usuario %}
+                                                                <small class="text-muted">Por: {{ contato.usuario.first_name }} {{ contato.usuario.last_name }}</small>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                            <h5>Nenhum contato registrado</h5>
+                                            <p class="text-muted">Registre o primeiro contato com este lead.</p>
+                                            <a href="{% url 'crm_vendas:registrar_contato' lead.id %}" class="btn btn-primary">
+                                                <i class="fas fa-plus me-1"></i>Registrar Contato
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Orçamentos -->
+                                <div class="tab-pane fade" id="orcamentos" role="tabpanel">
+                                    {% if orcamentos %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Número</th>
+                                                        <th>Valor</th>
+                                                        <th>Status</th>
+                                                        <th>Data</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for orcamento in orcamentos %}
+                                                    <tr>
+                                                        <td>{{ orcamento.numero }}</td>
+                                                        <td>R$ {{ orcamento.valor_total|floatformat:2 }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{% if orcamento.status == 'aprovado' %}success{% elif orcamento.status == 'rejeitado' %}danger{% else %}warning{% endif %}">
+                                                                {{ orcamento.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ orcamento.data_criacao|date:"d/m/Y" }}</td>
+                                                        <td>
+                                                            <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                                            <h5>Nenhum orçamento criado</h5>
+                                            <p class="text-muted">Crie o primeiro orçamento para este lead.</p>
+                                            <a href="{% url 'crm_vendas:criar_orcamento' %}?lead={{ lead.id }}" class="btn btn-primary">
+                                                <i class="fas fa-plus me-1"></i>Criar Orçamento
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Propostas -->
+                                <div class="tab-pane fade" id="propostas" role="tabpanel">
+                                    {% if propostas %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Título</th>
+                                                        <th>Valor</th>
+                                                        <th>Status</th>
+                                                        <th>Data</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for proposta in propostas %}
+                                                    <tr>
+                                                        <td>{{ proposta.titulo }}</td>
+                                                        <td>R$ {{ proposta.valor_total|floatformat:2 }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{% if proposta.status == 'aprovada' %}success{% elif proposta.status == 'rejeitada' %}danger{% else %}warning{% endif %}">
+                                                                {{ proposta.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ proposta.data_criacao|date:"d/m/Y" }}</td>
+                                                        <td>
+                                                            <a href="{% url 'crm_vendas:detalhar_proposta' proposta.id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                            <h5>Nenhuma proposta criada</h5>
+                                            <p class="text-muted">Crie a primeira proposta para este lead.</p>
+                                            <a href="{% url 'crm_vendas:criar_proposta' %}?lead={{ lead.id }}" class="btn btn-info">
+                                                <i class="fas fa-plus me-1"></i>Criar Proposta
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Contratos -->
+                                <div class="tab-pane fade" id="contratos" role="tabpanel">
+                                    {% if contratos %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Número</th>
+                                                        <th>Valor</th>
+                                                        <th>Status</th>
+                                                        <th>Data</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for contrato in contratos %}
+                                                    <tr>
+                                                        <td>{{ contrato.numero }}</td>
+                                                        <td>R$ {{ contrato.valor_total|floatformat:2 }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{% if contrato.status == 'assinado' %}success{% elif contrato.status == 'cancelado' %}danger{% else %}warning{% endif %}">
+                                                                {{ contrato.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ contrato.data_criacao|date:"d/m/Y" }}</td>
+                                                        <td>
+                                                            <a href="{% url 'crm_vendas:detalhar_contrato' contrato.id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+                                            <h5>Nenhum contrato criado</h5>
+                                            <p class="text-muted">Crie o primeiro contrato para este lead.</p>
+                                            <a href="{% url 'crm_vendas:criar_contrato' %}?lead={{ lead.id }}" class="btn btn-success">
+                                                <i class="fas fa-plus me-1"></i>Criar Contrato
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Emails -->
+                                <div class="tab-pane fade" id="emails" role="tabpanel">
+                                    {% if emails %}
+                                        <div class="list-group">
+                                            {% for email in emails %}
+                                            <div class="list-group-item">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">{{ email.assunto }}</h6>
+                                                    <small>{{ email.data_envio|date:"d/m/Y H:i" }}</small>
+                                                </div>
+                                                <p class="mb-1">Para: {{ email.destinatario }}</p>
+                                                <small class="text-muted">
+                                                    Status: 
+                                                    <span class="badge bg-{% if email.enviado %}success{% else %}danger{% endif %}">
+                                                        {% if email.enviado %}Enviado{% else %}Erro no envio{% endif %}
+                                                    </span>
+                                                </small>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                                            <h5>Nenhum email enviado</h5>
+                                            <p class="text-muted">Os emails enviados para este lead aparecerão aqui.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Alterar Status -->
+<div class="modal fade" id="modalAlterarStatus" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Alterar Status do Lead</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'crm_vendas:alterar_status_lead' lead.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Novo Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if value == lead.status %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação (opcional)</label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="3" 
+                                  placeholder="Motivo da alteração de status..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Alterar Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline-item {
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 50px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background-color: #dee2e6;
+}
+
+.card-header-tabs .nav-link {
+    border-bottom: 1px solid transparent;
+}
+
+.card-header-tabs .nav-link.active {
+    background-color: transparent;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Ativar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
