@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load modulos_tags %}
+
+{% block title %}Dashboard CRM - {{ loja.nome }}{% endblock %}
+{% block page_title %}Dashboard CRM - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+<!-- Módulos específicos do tipo de loja -->
+{% if modulos_loja %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Módulos - {{ loja.tipo_loja.get_nome_display }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for modulo in modulos_loja %}
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            {{ modulo.nome }}
+                                        </div>
+                                        <div class="text-muted small">{{ modulo.descricao }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="{{ modulo.icone }} text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ modulo.url }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right"></i> Acessar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- CRM de Vendas - Foco Principal -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-handshake"></i> CRM de Vendas - Sistema Principal
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Dashboard CRM -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Dashboard CRM
+                                        </div>
+                                        <div class="text-muted small">Visão geral completa</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-tachometer-alt text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-pie"></i> Acessar CRM
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Leads -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Leads
+                                        </div>
+                                        <div class="text-muted small">Gerenciar prospects</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-users text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/leads/criar/" class="btn btn-info btn-sm">
+                                        <i class="fas fa-plus"></i> Novo Lead
+                                    </a>
+                                    <a href="/crm/leads/" class="btn btn-outline-info btn-sm ml-1">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Orçamentos -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Orçamentos
+                                        </div>
+                                        <div class="text-muted small">Criar orçamentos</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-invoice-dollar text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/orcamentos/criar/" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="/crm/orcamentos/" class="btn btn-outline-warning btn-sm ml-1">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Propostas -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Propostas
+                                        </div>
+                                        <div class="text-muted small">Criar propostas</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-alt text-success" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/propostas/criar/" class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="/crm/propostas/" class="btn btn-outline-success btn-sm ml-1">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Segunda linha - Contratos e Relatórios -->
+                <div class="row">
+                    <!-- Contratos -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-danger shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                            Contratos
+                                        </div>
+                                        <div class="text-muted small">Criar contratos</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-contract text-danger" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/contratos/criar/" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="/crm/contratos/" class="btn btn-outline-danger btn-sm ml-1">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Funil de Vendas -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                            Funil de Vendas
+                                        </div>
+                                        <div class="text-muted small">Acompanhar pipeline</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-filter text-secondary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/funil/" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-chart-bar"></i> Ver Funil
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Relatórios -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-dark shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">
+                                            Relatórios
+                                        </div>
+                                        <div class="text-muted small">Análises e métricas</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-chart-line text-dark" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/relatorios/" class="btn btn-dark btn-sm">
+                                        <i class="fas fa-file-alt"></i> Relatórios
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configurações CRM -->
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card border-left-light shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-muted text-uppercase mb-1">
+                                            Configurações
+                                        </div>
+                                        <div class="text-muted small">Personalizar CRM</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-cogs text-muted" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/crm/configuracoes/" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-cog"></i> Configurar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt"></i> Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="/crm/leads/criar/" class="btn btn-primary btn-block">
+                            <i class="fas fa-user-plus"></i><br>
+                            <small>Novo Lead</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/crm/orcamentos/criar/" class="btn btn-warning btn-block">
+                            <i class="fas fa-file-invoice-dollar"></i><br>
+                            <small>Novo Orçamento</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/crm/propostas/criar/" class="btn btn-success btn-block">
+                            <i class="fas fa-file-alt"></i><br>
+                            <small>Nova Proposta</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/crm/contratos/criar/" class="btn btn-danger btn-block">
+                            <i class="fas fa-file-contract"></i><br>
+                            <small>Novo Contrato</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Loja (Mínimas) -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-store"></i> Informações da Loja
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Nome:</strong><br>
+                    {{ loja.nome }}
+                </div>
+                
+                {% if loja.email %}
+                <div class="mb-3">
+                    <strong>Email:</strong><br>
+                    {{ loja.email }}
+                </div>
+                {% endif %}
+                
+                {% if loja.telefone %}
+                <div class="mb-3">
+                    <strong>Telefone:</strong><br>
+                    {{ loja.telefone }}
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Tipo:</strong><br>
+                    {{ loja.tipo_loja.get_nome_display }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Acesso Rápido
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="/crm/" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt text-primary"></i>
+                        Dashboard CRM Completo
+                    </a>
+                    <a href="/crm/leads/" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users text-info"></i>
+                        Gerenciar Leads
+                    </a>
+                    <a href="/crm/funil/" class="list-group-item list-group-item-action">
+                        <i class="fas fa-filter text-secondary"></i>
+                        Funil de Vendas
+                    </a>
+                    <a href="/crm/relatorios/" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-line text-dark"></i>
+                        Relatórios e Análises
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
