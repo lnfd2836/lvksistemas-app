@@ -88,6 +88,20 @@ class Command(BaseCommand):
                 Produto.objects.filter(loja=loja).delete()
                 Cliente.objects.filter(loja=loja).delete()
                 
+                # Controle financeiro
+                try:
+                    from controle_financeiro.models import ControleFinanceiro
+                    ControleFinanceiro.objects.filter(loja=loja).delete()
+                except Exception as e:
+                    # Se falhar, tenta excluir via SQL direto
+                    try:
+                        from django.db import connection
+                        with connection.cursor() as cursor:
+                            cursor.execute("DELETE FROM controle_financeiro_controlefinanceiro WHERE loja_id = %s", [loja_id])
+                    except Exception as e2:
+                        logger.warning(f"Erro ao excluir controle financeiro via SQL: {e2}")
+                    logger.warning(f"Erro ao excluir controle financeiro via ORM: {e}")
+                
                 # Login personalizado (se existir)
                 try:
                     from lojas.models_login import LoginPersonalizado
