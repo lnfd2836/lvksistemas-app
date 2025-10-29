@@ -465,7 +465,7 @@
                 <h5 class="modal-title">Alterar Status do Lead</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'crm_vendas:alterar_status_lead' lead.id %}">
+            <form method="post" action="{% url 'crm_vendas:editar_lead' lead.id %}"
                 <div class="modal-body">
                     {% csrf_token %}
                     <div class="mb-3">
