@@ -88,6 +88,13 @@ class Command(BaseCommand):
                 Produto.objects.filter(loja=loja).delete()
                 Cliente.objects.filter(loja=loja).delete()
                 
+                # Login personalizado (se existir)
+                try:
+                    from lojas.models import LoginPersonalizado
+                    LoginPersonalizado.objects.filter(loja=loja).delete()
+                except Exception as e:
+                    logger.warning(f"Erro ao excluir login personalizado: {e}")
+                
                 # Configurações específicas da loja
                 try:
                     from modulos.models import ConfiguracaoLoja
