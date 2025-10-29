@@ -103,8 +103,10 @@ class Command(BaseCommand):
                 except Exception as e:
                     logger.warning(f"Erro ao excluir configurações: {e}")
                 
-                # Excluir a loja usando QuerySet (evita problemas com CASCADE e tabelas inexistentes)
-                Loja.objects.filter(id=loja_id).delete()
+                # Excluir a loja usando SQL direto (evita problemas com CASCADE quando tabela não existe)
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("DELETE FROM lojas_loja WHERE id = %s", [loja_id])
                 
                 self.stdout.write(
                     self.style.SUCCESS(
