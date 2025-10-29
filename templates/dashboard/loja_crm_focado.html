@@ -33,7 +33,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/" class="btn btn-primary btn-sm">
+                                    <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-chart-pie"></i> Acessar CRM
                                     </a>
                                 </div>
@@ -57,10 +57,10 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/leads/criar/" class="btn btn-info btn-sm">
+                                    <a href="{% url 'crm_vendas:criar_lead' %}" class="btn btn-info btn-sm">
                                         <i class="fas fa-plus"></i> Novo Lead
                                     </a>
-                                    <a href="/crm/leads/" class="btn btn-outline-info btn-sm ml-1">
+                                    <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-info btn-sm ml-1">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -84,10 +84,10 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/orcamentos/criar/" class="btn btn-warning btn-sm">
+                                    <a href="{% url 'crm_vendas:criar_orcamento' %}" class="btn btn-warning btn-sm">
                                         <i class="fas fa-plus"></i> Criar
                                     </a>
-                                    <a href="/crm/orcamentos/" class="btn btn-outline-warning btn-sm ml-1">
+                                    <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-warning btn-sm ml-1">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -111,10 +111,10 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/propostas/criar/" class="btn btn-success btn-sm">
+                                    <a href="{% url 'crm_vendas:criar_proposta' %}" class="btn btn-success btn-sm">
                                         <i class="fas fa-plus"></i> Criar
                                     </a>
-                                    <a href="/crm/propostas/" class="btn btn-outline-success btn-sm ml-1">
+                                    <a href="{% url 'crm_vendas:listar_propostas' %}" class="btn btn-outline-success btn-sm ml-1">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -141,10 +141,10 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/contratos/criar/" class="btn btn-danger btn-sm">
+                                    <a href="{% url 'crm_vendas:criar_contrato' %}" class="btn btn-danger btn-sm">
                                         <i class="fas fa-plus"></i> Criar
                                     </a>
-                                    <a href="/crm/contratos/" class="btn btn-outline-danger btn-sm ml-1">
+                                    <a href="{% url 'crm_vendas:listar_contratos' %}" class="btn btn-outline-danger btn-sm ml-1">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -168,7 +168,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/funil/" class="btn btn-secondary btn-sm">
+                                    <a href="{% url 'crm_vendas:relatorio_funil' %}" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-chart-bar"></i> Ver Funil
                                     </a>
                                 </div>
@@ -192,7 +192,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a href="/crm/relatorios/" class="btn btn-dark btn-sm">
+                                    <a href="{% url 'crm_vendas:relatorios' %}" class="btn btn-dark btn-sm">
                                         <i class="fas fa-file-alt"></i> Relatórios
                                     </a>
                                 </div>
