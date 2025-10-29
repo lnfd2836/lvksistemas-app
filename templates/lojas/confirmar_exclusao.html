@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load loja_filters %}
 
 {% block title %}Confirmar Exclusão - {{ loja.nome }}{% endblock %}
 {% block page_title %}Confirmar Exclusão{% endblock %}
@@ -49,11 +50,11 @@
                     <ul class="mb-0">
                         <li><strong>Informações da loja</strong> - Todos os dados cadastrais</li>
                         <li><strong>Usuário administrador</strong> - {{ loja.admin_user.username }}</li>
-                        <li><strong>Clientes</strong> - {{ loja.cliente_set.count }} cliente(s) cadastrado(s)</li>
-                        <li><strong>Produtos</strong> - {{ loja.produto_set.count }} produto(s) cadastrado(s)</li>
-                        <li><strong>Vendas</strong> - {{ loja.venda_set.count }} venda(s) registrada(s)</li>
+                        <li><strong>Clientes</strong> - {{ loja|safe_count_related:'cliente_set' }} cliente(s) cadastrado(s)</li>
+                        <li><strong>Produtos</strong> - {{ loja|safe_count_related:'produto_set' }} produto(s) cadastrado(s)</li>
+                        <li><strong>Vendas</strong> - {{ loja|safe_count_related:'venda_set' }} venda(s) registrada(s)</li>
                         <li><strong>Histórico de acessos</strong> - Todos os logs de acesso</li>
-                        <li><strong>Backups</strong> - {{ loja.backuploja_set.count }} backup(s) criado(s)</li>
+                        <li><strong>Backups</strong> - {{ loja|safe_count_related:'backups' }} backup(s) criado(s)</li>
                     </ul>
                 </div>
                 

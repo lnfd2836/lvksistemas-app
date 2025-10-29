@@ -296,6 +296,9 @@ def detalhar_loja(request, loja_id):
         # Backups da loja (com tratamento de erro)
         try:
             backups = BackupLoja.objects.filter(loja=loja).order_by('-data_backup')[:5]
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Tabela lojas_backuploja não existe para loja {loja.nome}: {str(e)}")
+            backups = []
         except Exception as e:
             logger.warning(f"Erro ao buscar backups da loja {loja.nome}: {str(e)}")
             backups = []
@@ -337,6 +340,26 @@ def detalhar_loja(request, loja_id):
         
         return render(request, 'lojas/detalhar.html', context)
         
+    except (DatabaseError, ProgrammingError) as e:
+        logger.error(f"Erro de banco de dados ao detalhar loja {loja_id}: {str(e)}")
+        messages.warning(request, 'Algumas informações da loja não puderam ser carregadas devido a tabelas ausentes no banco de dados.')
+        # Ainda tenta renderizar a página com os dados básicos
+        try:
+            context = {
+                'loja': loja,
+                'total_clientes': 0,
+                'total_produtos': 0,
+                'total_vendas': 0,
+                'vendas_recentes': [],
+                'backups': [],
+                'assinatura': None,
+                'plano': None,
+                'dias_vencimento': 0,
+                'limites_atingidos': {},
+            }
+            return render(request, 'lojas/detalhar.html', context)
+        except Exception:
+            return redirect('lojas:listar_lojas')
     except Exception as e:
         logger.error(f"Erro crítico ao detalhar loja {loja_id}: {str(e)}")
         messages.error(request, f'Erro ao carregar detalhes da loja: {str(e)}')

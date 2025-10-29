@@ -44,3 +44,22 @@ def has_tipo_loja(loja):
     except Exception:
         return False
 
+
+@register.filter
+def safe_count_related(loja, related_name):
+    """
+    Conta objetos relacionados de forma segura, retornando 0 se houver erro
+    """
+    if not loja:
+        return 0
+    
+    try:
+        related_manager = getattr(loja, related_name, None)
+        if related_manager is None:
+            return 0
+        return related_manager.count()
+    except (DatabaseError, ProgrammingError, AttributeError):
+        return 0
+    except Exception:
+        return 0
+
