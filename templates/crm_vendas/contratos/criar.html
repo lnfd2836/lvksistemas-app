@@ -47,7 +47,7 @@
                             <div class="card-header">
                                 <h5 class="mb-0">
                                     <i class="fas fa-list me-2"></i>
-                                    Serviços/Produtos do Contrato
+                                    Produtos/Serviços do Contrato
                                 </h5>
                             </div>
                             <div class="card-body">
@@ -80,7 +80,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <button type="button" id="adicionar-servico-contrato" class="btn btn-success btn-sm">
                                         <i class="fas fa-plus me-1"></i>
-                                        Adicionar Serviço/Produto
+                                        Adicionar Produto/Serviço
                                     </button>
                                     
                                     <div class="text-end">
@@ -211,9 +211,9 @@ $(document).ready(function() {
     $('form').on('submit', function(e) {
         let valid = true;
         
-        // Verificar se há pelo menos um serviço
+        // Verificar se há pelo menos um produto/serviço
         if ($('.servico-contrato-row').length === 0) {
-            alert('Adicione pelo menos um serviço/produto ao contrato.');
+            alert('Adicione pelo menos um produto/serviço ao contrato.');
             e.preventDefault();
             return false;
         }
@@ -223,7 +223,7 @@ $(document).ready(function() {
             const nome = $(this).find('input[name*="[nome]"]').val().trim();
             
             if (!nome) {
-                alert('Todos os serviços/produtos devem ter um nome.');
+                alert('Todos os produtos/serviços devem ter um nome.');
                 valid = false;
                 return false;
             }

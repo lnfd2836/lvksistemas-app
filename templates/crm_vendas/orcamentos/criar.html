@@ -47,7 +47,7 @@
                             <div class="card-header">
                                 <h5 class="mb-0">
                                     <i class="fas fa-list me-2"></i>
-                                    Itens/Serviços do Orçamento
+                                    Produtos/Serviços do Orçamento
                                 </h5>
                             </div>
                             <div class="card-body">
@@ -55,8 +55,8 @@
                                     <div class="item-row mb-3" data-index="0">
                                         <div class="row">
                                             <div class="col-md-4">
-                                                <label class="form-label">Nome do Serviço/Item</label>
-                                                <input type="text" name="itens[0][descricao]" class="form-control" placeholder="Ex: Limpeza de Pele Profunda" required>
+                                                <label class="form-label">Nome do Produto/Serviço</label>
+                                                <input type="text" name="itens[0][descricao]" class="form-control" placeholder="Ex: Produto XYZ ou Limpeza de Pele" required>
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-label">Quantidade</label>
@@ -88,7 +88,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <button type="button" id="adicionar-item" class="btn btn-success btn-sm">
                                         <i class="fas fa-plus me-1"></i>
-                                        Adicionar Item
+                                        Adicionar Produto/Serviço
                                     </button>
                                     
                                     <div class="text-end">
@@ -229,7 +229,7 @@ $(document).ready(function() {
         
         // Verificar se há pelo menos um item
         if ($('.item-row').length === 0) {
-            alert('Adicione pelo menos um item ao orçamento.');
+            alert('Adicione pelo menos um produto/serviço ao orçamento.');
             e.preventDefault();
             return false;
         }
@@ -240,13 +240,13 @@ $(document).ready(function() {
             const valorUnitario = parseFloat($(this).find('.valor-unitario').val()) || 0;
             
             if (!descricao) {
-                alert('Todos os itens devem ter uma descrição.');
+                alert('Todos os produtos/serviços devem ter uma descrição.');
                 valid = false;
                 return false;
             }
             
             if (valorUnitario <= 0) {
-                alert('Todos os itens devem ter um valor unitário maior que zero.');
+                alert('Todos os produtos/serviços devem ter um valor unitário maior que zero.');
                 valid = false;
                 return false;
             }
