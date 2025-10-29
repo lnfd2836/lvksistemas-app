@@ -12,6 +12,8 @@ class Command(BaseCommand):
         self.stdout.write('Criando tipo de loja CRM de Vendas...')
         
         # Criar tipo de loja CRM de Vendas
+        # Como o modelo atual foi simplificado, criamos com apenas os campos básicos
+        # e depois atualizamos via SQL se necessário
         crm_vendas, created = TipoLoja.objects.get_or_create(
             nome='crm_vendas',
             defaults={
@@ -19,31 +21,42 @@ class Command(BaseCommand):
                 'icone': 'fas fa-briefcase',
                 'cor_primaria': '#007bff',
                 'cor_secundaria': '#0056b3',
-                # Configurações de produto (CRM não usa produtos tradicionais)
-                'tem_categoria_produto': False,
-                'tem_marca_produto': False,
-                'tem_tamanho_produto': False,
-                'tem_cor_produto': False,
-                'tem_peso_produto': False,
-                'tem_volume_produto': False,
-                'tem_data_validade': False,
-                'tem_codigo_barras': False,
-                'tem_estoque_minimo': False,
-                # Configurações de cliente (CRM foca em leads/oportunidades)
-                'tem_data_nascimento_cliente': True,
-                'tem_sexo_cliente': True,
-                'tem_cpf_cliente': True,
-                'tem_rg_cliente': False,
-                'tem_cnpj_cliente': True,  # Importante para empresas no CRM
-                'tem_crm_cliente': False,  # CRM não usa CRM médico
-                # Configurações de venda (CRM trabalha com orçamentos/propostas)
-                'tem_desconto_venda': True,
-                'tem_taxa_entrega': False,
-                'tem_mesa_venda': False,
-                'tem_garcom_venda': False,
                 'ativo': True,
             }
         )
+        
+        # Se o banco ainda tem os campos antigos, atualizamos via SQL direto
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                # Atualiza todos os campos booleanos para valores padrão do CRM
+                cursor.execute("""
+                    UPDATE modulos_tipoloja 
+                    SET 
+                        tem_categoria_produto = FALSE,
+                        tem_marca_produto = FALSE,
+                        tem_tamanho_produto = FALSE,
+                        tem_cor_produto = FALSE,
+                        tem_peso_produto = FALSE,
+                        tem_volume_produto = FALSE,
+                        tem_data_validade = FALSE,
+                        tem_codigo_barras = FALSE,
+                        tem_estoque_minimo = FALSE,
+                        tem_data_nascimento_cliente = TRUE,
+                        tem_sexo_cliente = TRUE,
+                        tem_cpf_cliente = TRUE,
+                        tem_rg_cliente = FALSE,
+                        tem_cnpj_cliente = TRUE,
+                        tem_crm_cliente = FALSE,
+                        tem_desconto_venda = TRUE,
+                        tem_taxa_entrega = FALSE,
+                        tem_mesa_venda = FALSE,
+                        tem_garcom_venda = FALSE
+                    WHERE id = %s
+                """, [str(crm_vendas.id)])
+        except Exception as e:
+            # Se os campos não existirem mais no banco, ignora
+            logger.warning(f"Campos antigos não encontrados no banco (pode ser esperado): {e}")
         
         if created:
             self.stdout.write(self.style.SUCCESS(f'✅ Criado tipo de loja: {crm_vendas.get_nome_display()}'))
