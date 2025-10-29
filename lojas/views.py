@@ -775,46 +775,10 @@ def excluir_loja(request, loja_id):
             loja_id_str = str(loja.id)
             if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
                 # Se o erro for de tabela não existir, tenta excluir novamente
-                # Primeiro garante que ConfiguracaoLoja está excluída antes de excluir a loja
+                # Como sabemos que a tabela não existe, pulamos tentar excluir ConfiguracaoLoja
+                # e excluímos diretamente os outros dados relacionados
+                logger.warning(f"Tabela modulos_configuracaoloja não existe. Pulando exclusão de ConfiguracaoLoja e continuando...")
                 try:
-                    # Tenta excluir ConfiguracaoLoja antes, verificando se a tabela existe
-                    from modulos.models import ConfiguracaoLoja
-                    table_name = ConfiguracaoLoja._meta.db_table
-                    table_exists = False
-                    try:
-                        with connection.cursor() as cursor:
-                            if connection.vendor == 'postgresql':
-                                cursor.execute("""
-                                    SELECT EXISTS (
-                                        SELECT FROM information_schema.tables 
-                                        WHERE table_schema = 'public' 
-                                        AND table_name = %s
-                                    )
-                                """, [table_name])
-                            else:  # SQLite
-                                cursor.execute("""
-                                    SELECT EXISTS (
-                                        SELECT name FROM sqlite_master 
-                                        WHERE type='table' AND name = ?
-                                    )
-                                """, [table_name])
-                            table_exists = cursor.fetchone()[0]
-                    except Exception as check_error:
-                        logger.warning(f"Erro ao verificar existência da tabela {table_name}: {check_error}")
-                        table_exists = False
-                    
-                    if table_exists:
-                        try:
-                            ConfiguracaoLoja.objects.filter(loja=loja).delete()
-                        except (DatabaseError, ProgrammingError) as delete_error:
-                            error_msg = str(delete_error)
-                            if 'does not exist' in error_msg or 'relation' in error_msg.lower():
-                                logger.warning(f"Tabela {table_name} não existe durante exclusão. Continuando...")
-                            else:
-                                logger.warning(f"Erro ao excluir ConfiguracaoLoja: {delete_error}")
-                        except Exception as delete_error:
-                            logger.warning(f"Erro inesperado ao excluir ConfiguracaoLoja: {delete_error}")
-                    
                     # Agora exclui a loja manualmente, removendo todos os dados relacionados primeiro
                     # Exclui em ordem de dependência
                     vendas = Venda.objects.filter(loja=loja)
