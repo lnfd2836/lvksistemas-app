@@ -894,15 +894,39 @@ def estatisticas_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse({'error': 'Acesso negado'}, status=403)
     
-    # Estatísticas em tempo real
-    stats = {
-        'total_lojas': Loja.objects.count(),
-        'lojas_ativas': Loja.objects.filter(status='ativa').count(),
-        'vendas_hoje': Venda.objects.filter(data_venda__date=timezone.now().date()).count(),
-        'receita_hoje': float(Venda.objects.filter(
+    # Estatísticas em tempo real com tratamento de erro para tabelas ausentes
+    try:
+        total_lojas = Loja.objects.count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas em estatisticas_ajax: {str(e)}")
+        total_lojas = 0
+    
+    try:
+        lojas_ativas = Loja.objects.filter(status='ativa').count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar lojas ativas em estatisticas_ajax: {str(e)}")
+        lojas_ativas = 0
+    
+    try:
+        vendas_hoje = Venda.objects.filter(data_venda__date=timezone.now().date()).count()
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao contar vendas hoje em estatisticas_ajax: {str(e)}")
+        vendas_hoje = 0
+    
+    try:
+        receita_hoje = float(Venda.objects.filter(
             data_venda__date=timezone.now().date(),
             status='concluida'
-        ).aggregate(total=Sum('valor_final'))['total'] or 0),
+        ).aggregate(total=Sum('valor_final'))['total'] or 0)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Erro ao calcular receita hoje em estatisticas_ajax: {str(e)}")
+        receita_hoje = 0.0
+    
+    stats = {
+        'total_lojas': total_lojas,
+        'lojas_ativas': lojas_ativas,
+        'vendas_hoje': vendas_hoje,
+        'receita_hoje': receita_hoje,
     }
     
     return JsonResponse(stats)

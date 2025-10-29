@@ -410,20 +410,154 @@ def listar_contratos(request):
 @login_required
 def relatorios_crm(request):
     """Relatórios do CRM"""
-    return render(request, 'crm_vendas/relatorios/index.html')
+    # Filtrar por loja se não for super admin
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+        orcamentos = Orcamento.objects.all()
+        propostas = Proposta.objects.all()
+        contratos = Contrato.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            leads = Lead.objects.filter(loja=loja)
+            orcamentos = Orcamento.objects.filter(loja=loja)
+            propostas = Proposta.objects.filter(loja=loja)
+            contratos = Contrato.objects.filter(loja=loja)
+        except:
+            leads = Lead.objects.none()
+            orcamentos = Orcamento.objects.none()
+            propostas = Proposta.objects.none()
+            contratos = Contrato.objects.none()
+    
+    context = {
+        'total_leads': leads.count(),
+        'total_orcamentos': orcamentos.count(),
+        'total_propostas': propostas.count(),
+        'total_contratos': contratos.count(),
+    }
+    
+    # Tentar usar template de relatórios, se não existir, usar o template básico
+    from django.template import loader
+    from django.template.exceptions import TemplateDoesNotExist
+    
+    try:
+        loader.get_template('crm_vendas/relatorios/index.html')
+        template_name = 'crm_vendas/relatorios/index.html'
+    except TemplateDoesNotExist:
+        template_name = 'crm_vendas/relatorios.html'
+    
+    return render(request, template_name, context)
 
 # Placeholder views (implementar conforme necessário)
-def criar_orcamento(request): pass
-def detalhar_orcamento(request, orcamento_id): pass
-def editar_orcamento(request, orcamento_id): pass
-def criar_proposta(request): pass
-def detalhar_proposta(request, proposta_id): pass
-def enviar_proposta(request, proposta_id): pass
-def criar_contrato(request): pass
-def detalhar_contrato(request, contrato_id): pass
-def enviar_contrato(request, contrato_id): pass
-def editar_lead(request, lead_id): pass
-def registrar_contato(request, lead_id): pass
+@login_required
+def criar_orcamento(request):
+    """Cria um novo orçamento"""
+    # Implementação básica - renderizar formulário
+    if not request.user.is_superuser:
+        try:
+            loja = request.user.loja_admin
+        except:
+            loja = None
+    else:
+        loja = None
+    
+    context = {
+        'loja': loja,
+        'lojas': Loja.objects.all() if request.user.is_superuser else None,
+    }
+    return render(request, 'crm_vendas/orcamentos/criar.html', context)
+
+@login_required
+def detalhar_orcamento(request, orcamento_id): 
+    """Detalhes de um orçamento"""
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    context = {'orcamento': orcamento}
+    return render(request, 'crm_vendas/orcamentos/detalhar.html', context)
+
+@login_required
+def editar_orcamento(request, orcamento_id): 
+    """Edita um orçamento"""
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    context = {'orcamento': orcamento}
+    return render(request, 'crm_vendas/orcamentos/editar.html', context)
+
+@login_required
+def criar_proposta(request):
+    """Cria uma nova proposta"""
+    # Implementação básica - renderizar formulário
+    if not request.user.is_superuser:
+        try:
+            loja = request.user.loja_admin
+        except:
+            loja = None
+    else:
+        loja = None
+    
+    context = {
+        'loja': loja,
+        'lojas': Loja.objects.all() if request.user.is_superuser else None,
+    }
+    return render(request, 'crm_vendas/propostas/criar.html', context)
+
+@login_required
+def detalhar_proposta(request, proposta_id): 
+    """Detalhes de uma proposta"""
+    proposta = get_object_or_404(Proposta, id=proposta_id)
+    context = {'proposta': proposta}
+    return render(request, 'crm_vendas/propostas/detalhar.html', context)
+
+@login_required
+def enviar_proposta(request, proposta_id): 
+    """Envia uma proposta por email"""
+    proposta = get_object_or_404(Proposta, id=proposta_id)
+    messages.info(request, 'Funcionalidade de envio de proposta em desenvolvimento.')
+    return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta_id)
+
+@login_required
+def criar_contrato(request):
+    """Cria um novo contrato"""
+    # Implementação básica - renderizar formulário
+    if not request.user.is_superuser:
+        try:
+            loja = request.user.loja_admin
+        except:
+            loja = None
+    else:
+        loja = None
+    
+    context = {
+        'loja': loja,
+        'lojas': Loja.objects.all() if request.user.is_superuser else None,
+    }
+    return render(request, 'crm_vendas/contratos/criar.html', context)
+
+@login_required
+def detalhar_contrato(request, contrato_id): 
+    """Detalhes de um contrato"""
+    contrato = get_object_or_404(Contrato, id=contrato_id)
+    context = {'contrato': contrato}
+    return render(request, 'crm_vendas/contratos/detalhar.html', context)
+
+@login_required
+def enviar_contrato(request, contrato_id): 
+    """Envia um contrato por email"""
+    contrato = get_object_or_404(Contrato, id=contrato_id)
+    messages.info(request, 'Funcionalidade de envio de contrato em desenvolvimento.')
+    return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato_id)
+
+@login_required
+def editar_lead(request, lead_id): 
+    """Edita um lead"""
+    lead = get_object_or_404(Lead, id=lead_id)
+    messages.info(request, 'Funcionalidade de edição de lead em desenvolvimento.')
+    return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
+
+@login_required
+def registrar_contato(request, lead_id): 
+    """Registra um novo contato com um lead"""
+    lead = get_object_or_404(Lead, id=lead_id)
+    messages.info(request, 'Funcionalidade de registro de contato em desenvolvimento.')
+    return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
 @csrf_exempt
 def visualizar_proposta_publico(request, proposta_id):
     """Visualização pública da proposta (para clientes)"""
