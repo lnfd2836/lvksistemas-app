@@ -47,7 +47,8 @@
 
 <body>
     <div class="container-fluid">
-        <!-- Barra de navegação horizontal -->
+        <!-- Barra de navegação horizontal - Ocultar em páginas da loja -->
+        {% if user.is_superuser and '/dashboard/loja/' not in request.path and '/lojas/clientes' not in request.path and '/lojas/produtos' not in request.path and '/lojas/vendas' not in request.path and '/lojas/funcionarios' not in request.path %}
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{% url 'dashboard:principal' %}">
@@ -138,6 +139,8 @@
                 </div>
             </div>
         </nav>
+        {% endif %}
+        <!-- Fim da barra de navegação - oculta em páginas da loja -->
 
         <!-- Main content - ocupando toda a largura -->
         <main class="px-md-4 main-content" id="mainContent">
