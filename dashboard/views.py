@@ -362,8 +362,45 @@ def dashboard_loja(request, loja=None, loja_id=None):
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")
-        messages.error(request, 'Erro interno ao carregar dashboard da loja. Tente novamente.')
-        return redirect('/')
+        
+        # Em caso de erro, mostrar dashboard básico sem redirecionar
+        # para evitar loops infinitos
+        try:
+            # Contexto mínimo para evitar erro de template
+            context = {
+                'loja': target_loja if 'target_loja' in locals() else None,
+                'controle_financeiro': None,
+                'total_clientes': 0,
+                'total_produtos': 0,
+                'total_funcionarios': 0,
+                'funcionarios_ativos': 0,
+                'funcionarios_inativos': 0,
+                'vendas_hoje': 0,
+                'vendas_semana': 0,
+                'vendas_mes': 0,
+                'receita_hoje': Decimal('0'),
+                'receita_semana': Decimal('0'),
+                'receita_mes': Decimal('0'),
+                'produtos_estoque_baixo': 0,
+                'vendas_recentes': [],
+                'clientes_recentes': [],
+                'produtos_mais_vendidos': [],
+                'modulos_loja': [],
+                'user_type': 'store_admin',
+                'can_access_store': True,
+                'page_title': 'Dashboard - Sistema em Manutenção',
+                'erro_banco': True,
+                'mensagem_erro': 'Sistema em manutenção. Algumas funcionalidades podem estar indisponíveis.'
+            }
+            
+            messages.warning(request, 'Sistema em manutenção. Algumas funcionalidades podem estar indisponíveis.')
+            return render(request, 'dashboard/loja.html', context)
+            
+        except Exception as render_error:
+            logger.error(f"Erro crítico ao renderizar dashboard de emergência: {str(render_error)}")
+            # Só em último caso, redirecionar para evitar loop
+            messages.error(request, 'Sistema temporariamente indisponível. Tente novamente em alguns minutos.')
+            return redirect('/admin/login/')
 
 
 @login_required

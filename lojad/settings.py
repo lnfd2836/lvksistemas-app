@@ -242,9 +242,10 @@ SESSION_COOKIE_AGE = 3600  # 1 hour
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Database Routers for multi-database support
+# TEMPORARIAMENTE DESABILITADO PARA RESOLVER LOOP DE REDIRECIONAMENTO
 DATABASE_ROUTERS = [
-    'lojas.database_router_isolado.LojaIsoladaDBRouter',  # Router principal para isolamento
-    'email_credentials.db_router.LojaDBRouter',  # Router secundário para compatibilidade
+    # 'lojas.database_router_isolado.LojaIsoladaDBRouter',  # Router principal para isolamento
+    # 'email_credentials.db_router.LojaDBRouter',  # Router secundário para compatibilidade
 ]
 
 # Email Credentials Configuration

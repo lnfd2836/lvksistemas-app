@@ -28,10 +28,22 @@ def smart_login_redirect(request):
         try:
             dashboard_url = AuthenticationService.determine_user_dashboard(request.user)
             logger.info(f"Usuário {request.user.username} já autenticado, redirecionando para {dashboard_url}")
-            return redirect(dashboard_url)
+            
+            # PROTEÇÃO CONTRA LOOP: Se o dashboard_url é a página atual, não redirecionar
+            if dashboard_url == request.path or dashboard_url == '/':
+                logger.warning(f"Detectado possível loop de redirecionamento para {dashboard_url}, forçando logout")
+                from django.contrib.auth import logout
+                logout(request)
+                messages.error(request, 'Sessão inválida detectada. Faça login novamente.')
+                # Não redirecionar, mostrar formulário de login
+            else:
+                return redirect(dashboard_url)
         except Exception as e:
             logger.error(f"Erro ao determinar dashboard para usuário autenticado: {str(e)}")
-            return redirect('dashboard:principal')
+            # Em caso de erro, fazer logout para evitar loops
+            from django.contrib.auth import logout
+            logout(request)
+            messages.error(request, 'Erro na sessão. Faça login novamente.')
     
     # CORREÇÃO: Mostrar DIRETAMENTE o formulário de login de super admin
     # Não redirecionar, mas renderizar o template de login
