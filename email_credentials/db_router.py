@@ -2,6 +2,7 @@
 Router de banco de dados para separar dados por loja
 """
 from django.conf import settings
+from django.db import DatabaseError, ProgrammingError
 from .database_config import get_loja_database_alias, is_loja_database
 
 
@@ -149,9 +150,18 @@ class LojaMiddleware:
         # Se usuário está logado
         if hasattr(request, 'user') and request.user.is_authenticated:
             
-            # Verificar se é admin de uma loja
-            if hasattr(request.user, 'loja_admin') and request.user.loja_admin:
-                return request.user.loja_admin
+            # Verificar se é admin de uma loja (com tratamento de erro para tabelas ausentes)
+            try:
+                if hasattr(request.user, 'loja_admin') and request.user.loja_admin:
+                    return request.user.loja_admin
+            except (DatabaseError, ProgrammingError) as e:
+                # Se houver erro de banco (ex: coluna tipo_loja_id não existe), ignora silenciosamente
+                logger.warning(f"Erro ao acessar loja_admin para usuário {request.user.username}: {str(e)}")
+                pass
+            except Exception as e:
+                # Outros erros também são ignorados para não quebrar o sistema
+                logger.warning(f"Erro inesperado ao acessar loja_admin: {str(e)}")
+                pass
             
             # Verificar se tem perfil FATESA com loja associada
             # Usar try-except para evitar erro quando a tabela não existe
