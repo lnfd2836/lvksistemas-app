@@ -830,7 +830,7 @@ def logout_view(request):
                 loja_nome_slug = loja_nome_slug.replace('&', 'e')
                 loja_nome_slug = loja_nome_slug.replace('.', '')
                 loja_nome_slug = loja_nome_slug.replace(',', '')
-                loja_nome_slug = loja_nome_slug.replace('ltda', '')
+                # Manter "ltda" na URL
                 loja_nome_slug = loja_nome_slug.replace('--', '-')
                 loja_nome_slug = loja_nome_slug.strip('-')
                 
