@@ -823,6 +823,8 @@ def login_view(request):
 
 def logout_view(request):
     """View de logout"""
+    # Verificar se o usuário está em uma página de loja
+    loja_slug = None
     if request.user.is_authenticated:
         # Registra o logout
         LogAcesso.objects.create(
@@ -832,9 +834,18 @@ def logout_view(request):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             sucesso=True
         )
+        
+        # Verificar se o usuário tem uma loja associada e não é super admin
+        if hasattr(request.user, 'loja_admin') and request.user.loja_admin and not request.user.is_superuser:
+            loja_slug = request.user.loja_admin.slug
     
     logout(request)
-    return redirect('/')
+    
+    # Redirecionar para o login da loja se o usuário estava em uma loja
+    if loja_slug:
+        return redirect(f'/login/{loja_slug}/')
+    else:
+        return redirect('/')
 
 
 
