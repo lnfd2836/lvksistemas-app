@@ -46,6 +46,7 @@ class SuperAdminMiddleware:
         # URLs do dashboard que super admins PODEM acessar
         self.allowed_dashboard_paths = [
             '/dashboard/',
+            '/financeiro/',
         ]
     
     def __call__(self, request):
@@ -123,8 +124,8 @@ class SuperAdminMiddleware:
         if path == '/' or path == '':
             return True
         
-        # CORREÇÃO: Não redirecionar se está acessando qualquer URL do dashboard
-        if path.startswith('/dashboard/'):
+        # CORREÇÃO: Não redirecionar se está acessando qualquer URL do dashboard ou financeiro
+        if path.startswith('/dashboard/') or path.startswith('/financeiro/'):
             return False
         
         # Se está tentando acessar URLs de loja (exceto admin)
@@ -210,12 +211,14 @@ class SuperAdminMiddleware:
         if self._is_authenticated_super_admin(request):
             logger.error(f"Exceção para super admin {request.user.username}: {str(exception)}")
             
-            # PERMITIR que super admins vejam erros em /lojas/ para debug
-            if request.path.startswith('/lojas/'):
+            # PERMITIR que super admins vejam erros em /lojas/, /dashboard/ e /financeiro/ para debug
+            if (request.path.startswith('/lojas/') or 
+                request.path.startswith('/dashboard/') or 
+                request.path.startswith('/financeiro/')):
                 logger.info(f"Permitindo que super admin veja erro em {request.path}")
                 return None  # Deixar Django tratar o erro normalmente
             
-            # Se não está em área administrativa (exceto /lojas/), redirecionar
+            # Se não está em área administrativa (exceto as permitidas), redirecionar
             if not request.path.startswith('/admin/'):
                 messages.error(request, 'Ocorreu um erro. Você foi redirecionado para a área administrativa.')
                 return redirect('/admin/')
