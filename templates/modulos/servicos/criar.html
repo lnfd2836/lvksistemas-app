@@ -1,0 +1,284 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - {{ loja.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section h5 {
+        color: #5a5c69;
+        border-bottom: 2px solid #e3e6f0;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #e74a3b;
+    }
+    
+    .money-input {
+        position: relative;
+    }
+    
+    .money-input::before {
+        content: "R$";
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .money-input input {
+        padding-left: 35px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-plus text-primary"></i>
+                Criar Novo Serviço
+            </h1>
+            <p class="mb-0 text-gray-600">{{ loja.nome }}</p>
+        </div>
+        <div>
+            <a href="{% url 'modulos:listar_servicos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Informações Básicas -->
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle"></i> Informações Básicas</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="nome" class="form-label required-field">Nome do Serviço</label>
+                            <input type="text" class="form-control" id="nome" name="nome" 
+                                   placeholder="Ex: Limpeza de Pele Profunda" required>
+                            <div class="invalid-feedback">
+                                Por favor, informe o nome do serviço.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="categoria" class="form-label required-field">Categoria</label>
+                            <select class="form-control" id="categoria" name="categoria" required>
+                                <option value="">Selecione uma categoria</option>
+                                {% for value, label in categorias %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor, selecione uma categoria.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label required-field">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="4" 
+                                  placeholder="Descreva detalhadamente o serviço oferecido..." required></textarea>
+                        <div class="invalid-feedback">
+                            Por favor, informe a descrição do serviço.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações do Serviço -->
+                <div class="form-section">
+                    <h5><i class="fas fa-cogs"></i> Configurações do Serviço</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="duracao_minutos" class="form-label required-field">Duração</label>
+                            <select class="form-control" id="duracao_minutos" name="duracao_minutos" required>
+                                <option value="">Selecione a duração</option>
+                                {% for value, label in duracoes %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor, selecione a duração.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="idade_minima" class="form-label">Idade Mínima</label>
+                            <input type="number" class="form-control" id="idade_minima" name="idade_minima" 
+                                   value="16" min="0" max="100">
+                            <small class="form-text text-muted">Idade mínima recomendada para o serviço</small>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="requer_consulta_medica" 
+                                       name="requer_consulta_medica">
+                                <label class="form-check-label" for="requer_consulta_medica">
+                                    Requer Consulta Médica
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Marque se o serviço requer avaliação médica prévia
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contraindicações e Cuidados -->
+                <div class="form-section">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Contraindicações e Cuidados</h5>
+                    
+                    <div class="mb-3">
+                        <label for="contraindicacoes" class="form-label">Contraindicações</label>
+                        <textarea class="form-control" id="contraindicacoes" name="contraindicacoes" rows="3" 
+                                  placeholder="Liste as contraindicações do serviço (ex: gravidez, alergias, etc.)"></textarea>
+                        <small class="form-text text-muted">
+                            Informe situações em que o serviço não deve ser realizado
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cuidados_pos_procedimento" class="form-label">Cuidados Pós-Procedimento</label>
+                        <textarea class="form-control" id="cuidados_pos_procedimento" name="cuidados_pos_procedimento" rows="3" 
+                                  placeholder="Descreva os cuidados necessários após o procedimento"></textarea>
+                        <small class="form-text text-muted">
+                            Orientações importantes para o cliente após o serviço
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Preços -->
+                <div class="form-section">
+                    <h5><i class="fas fa-dollar-sign"></i> Preços</h5>
+                    
+                    <div class="mb-3">
+                        <label for="preco" class="form-label required-field">Preço Normal</label>
+                        <div class="money-input">
+                            <input type="text" class="form-control money-mask" id="preco" name="preco" 
+                                   placeholder="0,00" required>
+                        </div>
+                        <div class="invalid-feedback">
+                            Por favor, informe o preço do serviço.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="preco_promocional" class="form-label">Preço Promocional</label>
+                        <div class="money-input">
+                            <input type="text" class="form-control money-mask" id="preco_promocional" name="preco_promocional" 
+                                   placeholder="0,00">
+                        </div>
+                        <small class="form-text text-muted">
+                            Opcional. Deve ser menor que o preço normal.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-section">
+                    <h5><i class="fas fa-toggle-on"></i> Status</h5>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="ativo" name="ativo" checked>
+                        <label class="form-check-label" for="ativo">
+                            <strong>Serviço Ativo</strong>
+                        </label>
+                        <small class="form-text text-muted d-block">
+                            Serviços ativos ficam disponíveis para agendamento
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Ações -->
+                <div class="form-section">
+                    <h5><i class="fas fa-save"></i> Ações</h5>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i>
+                            Criar Serviço
+                        </button>
+                        
+                        <a href="{% url 'modulos:listar_servicos' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Máscara para valores monetários
+    $('.money-mask').mask('#.##0,00', {
+        reverse: true,
+        translation: {
+            '#': {pattern: /[0-9]/}
+        }
+    });
+    
+    // Validação do formulário
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+    
+    // Validação personalizada para preços
+    $('#preco, #preco_promocional').on('blur', function() {
+        const preco = parseFloat($('#preco').val().replace(/\./g, '').replace(',', '.')) || 0;
+        const precoPromocional = parseFloat($('#preco_promocional').val().replace(/\./g, '').replace(',', '.')) || 0;
+        
+        if (precoPromocional > 0 && precoPromocional >= preco) {
+            $('#preco_promocional')[0].setCustomValidity('O preço promocional deve ser menor que o preço normal.');
+        } else {
+            $('#preco_promocional')[0].setCustomValidity('');
+        }
+    });
+    
+    // Foco no primeiro campo
+    $('#nome').focus();
+});
+</script>
+{% endblock %}

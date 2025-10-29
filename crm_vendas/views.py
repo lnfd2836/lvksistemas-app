@@ -452,7 +452,8 @@ def relatorios_crm(request):
 @login_required
 def criar_orcamento(request):
     """Cria um novo orçamento"""
-    # Implementação básica - renderizar formulário
+    
+    # Obter loja
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
@@ -461,8 +462,107 @@ def criar_orcamento(request):
     else:
         loja = None
     
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            lead_id = request.POST.get('lead_id')
+            titulo = request.POST.get('titulo')
+            descricao = request.POST.get('descricao', '')
+            condicoes_pagamento = request.POST.get('condicoes_pagamento', 'À vista')
+            validade_dias = int(request.POST.get('validade_dias', 30))
+            observacoes = request.POST.get('observacoes', '')
+            
+            # Buscar lead
+            lead = get_object_or_404(Lead, id=lead_id)
+            
+            # Verificar permissão
+            if not request.user.is_superuser and lead.loja != loja:
+                messages.error(request, 'Você não tem permissão para criar orçamento para este lead.')
+                return redirect('crm_vendas:criar_orcamento')
+            
+            # Criar orçamento
+            orcamento = Orcamento.objects.create(
+                lead=lead,
+                loja=lead.loja,
+                responsavel=request.user,
+                titulo=titulo,
+                descricao=descricao,
+                condicoes_pagamento=condicoes_pagamento,
+                validade_dias=validade_dias,
+                status='rascunho'
+            )
+            
+            # Processar itens
+            subtotal = 0
+            itens_data = {}
+            
+            # Agrupar dados dos itens
+            for key, value in request.POST.items():
+                if key.startswith('itens[') and '][' in key:
+                    # Extrair índice e campo (ex: itens[0][descricao])
+                    parts = key.replace('itens[', '').replace(']', '').split('[')
+                    if len(parts) == 2:
+                        index, field = parts
+                        if index not in itens_data:
+                            itens_data[index] = {}
+                        itens_data[index][field] = value
+            
+            # Criar itens do orçamento
+            for index, item_data in itens_data.items():
+                if 'descricao' in item_data and item_data['descricao'].strip():
+                    quantidade = float(item_data.get('quantidade', 1))
+                    valor_unitario = float(item_data.get('valor_unitario', 0))
+                    valor_total = quantidade * valor_unitario
+                    
+                    ItemOrcamento.objects.create(
+                        orcamento=orcamento,
+                        descricao=item_data['descricao'].strip(),
+                        detalhes=item_data.get('detalhes', '').strip(),
+                        quantidade=quantidade,
+                        valor_unitario=valor_unitario,
+                        valor_total=valor_total,
+                        ordem=int(index)
+                    )
+                    
+                    subtotal += valor_total
+            
+            # Atualizar totais do orçamento
+            orcamento.subtotal = subtotal
+            orcamento.total = subtotal  # Por enquanto sem desconto/impostos
+            orcamento.save()
+            
+            # Atualizar status do lead
+            if lead.status == 'novo' or lead.status == 'contatado':
+                lead.status = 'proposta_enviada'
+                lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=lead,
+                usuario=request.user,
+                tipo='outros',
+                assunto='Orçamento Criado',
+                descricao=f'Orçamento {orcamento.numero} criado com {orcamento.itens.count()} itens',
+                resultado=f'Valor total: R$ {orcamento.total:,.2f}',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, f'Orçamento {orcamento.numero} criado com sucesso!')
+            return redirect('crm_vendas:detalhar_orcamento', orcamento_id=orcamento.id)
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar orçamento: {str(e)}")
+            messages.error(request, f'Erro ao criar orçamento: {str(e)}')
+    
+    # Buscar leads disponíveis
+    if loja:
+        leads = Lead.objects.filter(loja=loja).exclude(status__in=['fechado_ganho', 'fechado_perdido'])
+    else:
+        leads = Lead.objects.exclude(status__in=['fechado_ganho', 'fechado_perdido'])
+    
     context = {
         'loja': loja,
+        'leads': leads,
         'lojas': Loja.objects.all() if request.user.is_superuser else None,
     }
     return render(request, 'crm_vendas/orcamentos/criar.html', context)

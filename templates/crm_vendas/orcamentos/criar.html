@@ -42,11 +42,67 @@
                             <textarea name="descricao" id="descricao" class="form-control" rows="4"></textarea>
                         </div>
                         
+                        <!-- Seção de Itens/Serviços -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Itens/Serviços do Orçamento
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="itens-container">
+                                    <div class="item-row mb-3" data-index="0">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Nome do Serviço/Item</label>
+                                                <input type="text" name="itens[0][descricao]" class="form-control" placeholder="Ex: Limpeza de Pele Profunda" required>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Quantidade</label>
+                                                <input type="number" name="itens[0][quantidade]" class="form-control quantidade" value="1" min="1" step="0.01">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Valor Unitário</label>
+                                                <input type="number" name="itens[0][valor_unitario]" class="form-control valor-unitario" step="0.01" min="0">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Valor Total</label>
+                                                <input type="number" name="itens[0][valor_total]" class="form-control valor-total" readonly>
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-end">
+                                                <button type="button" class="btn btn-danger btn-sm remover-item" style="display: none;">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-12">
+                                                <label class="form-label">Detalhes/Observações (opcional)</label>
+                                                <textarea name="itens[0][detalhes]" class="form-control" rows="2" placeholder="Detalhes adicionais sobre o serviço..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="button" id="adicionar-item" class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Adicionar Item
+                                    </button>
+                                    
+                                    <div class="text-end">
+                                        <strong>Total Geral: R$ <span id="total-geral">0,00</span></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="valor_total" class="form-label">Valor Total</label>
-                                    <input type="number" name="valor_total" id="valor_total" class="form-control" step="0.01" required>
+                                    <label for="condicoes_pagamento" class="form-label">Condições de Pagamento</label>
+                                    <input type="text" name="condicoes_pagamento" id="condicoes_pagamento" class="form-control" value="À vista" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -72,4 +128,134 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let itemIndex = 1;
+    
+    // Função para calcular valor total de um item
+    function calcularValorItem(row) {
+        const quantidade = parseFloat(row.find('.quantidade').val()) || 0;
+        const valorUnitario = parseFloat(row.find('.valor-unitario').val()) || 0;
+        const valorTotal = quantidade * valorUnitario;
+        
+        row.find('.valor-total').val(valorTotal.toFixed(2));
+        calcularTotalGeral();
+    }
+    
+    // Função para calcular total geral
+    function calcularTotalGeral() {
+        let total = 0;
+        $('.valor-total').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        
+        $('#total-geral').text(total.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }));
+    }
+    
+    // Adicionar novo item
+    $('#adicionar-item').click(function() {
+        const novoItem = `
+            <div class="item-row mb-3" data-index="${itemIndex}">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Nome do Serviço/Item</label>
+                        <input type="text" name="itens[${itemIndex}][descricao]" class="form-control" placeholder="Ex: Massagem Relaxante" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" name="itens[${itemIndex}][quantidade]" class="form-control quantidade" value="1" min="1" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Unitário</label>
+                        <input type="number" name="itens[${itemIndex}][valor_unitario]" class="form-control valor-unitario" step="0.01" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Total</label>
+                        <input type="number" name="itens[${itemIndex}][valor_total]" class="form-control valor-total" readonly>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm remover-item">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <label class="form-label">Detalhes/Observações (opcional)</label>
+                        <textarea name="itens[${itemIndex}][detalhes]" class="form-control" rows="2" placeholder="Detalhes adicionais sobre o serviço..."></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('#itens-container').append(novoItem);
+        itemIndex++;
+        
+        // Mostrar botão de remover se houver mais de um item
+        if ($('.item-row').length > 1) {
+            $('.remover-item').show();
+        }
+    });
+    
+    // Remover item
+    $(document).on('click', '.remover-item', function() {
+        $(this).closest('.item-row').remove();
+        calcularTotalGeral();
+        
+        // Esconder botão de remover se houver apenas um item
+        if ($('.item-row').length <= 1) {
+            $('.remover-item').hide();
+        }
+    });
+    
+    // Calcular valores quando quantidade ou valor unitário mudarem
+    $(document).on('input', '.quantidade, .valor-unitario', function() {
+        const row = $(this).closest('.item-row');
+        calcularValorItem(row);
+    });
+    
+    // Calcular valor inicial
+    calcularTotalGeral();
+    
+    // Validação do formulário
+    $('form').on('submit', function(e) {
+        let valid = true;
+        
+        // Verificar se há pelo menos um item
+        if ($('.item-row').length === 0) {
+            alert('Adicione pelo menos um item ao orçamento.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Verificar se todos os itens têm descrição e valor
+        $('.item-row').each(function() {
+            const descricao = $(this).find('input[name*="[descricao]"]').val().trim();
+            const valorUnitario = parseFloat($(this).find('.valor-unitario').val()) || 0;
+            
+            if (!descricao) {
+                alert('Todos os itens devem ter uma descrição.');
+                valid = false;
+                return false;
+            }
+            
+            if (valorUnitario <= 0) {
+                alert('Todos os itens devem ter um valor unitário maior que zero.');
+                valid = false;
+                return false;
+            }
+        });
+        
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
 {% endblock %}
