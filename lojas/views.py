@@ -380,26 +380,54 @@ def gerenciar_clientes(request):
         return redirect('dashboard:principal')
     
     loja = request.loja_atual
-    clientes = Cliente.objects.filter(loja=loja).order_by('-data_cadastro')
     
-    # Filtros
-    search = request.GET.get('search')
-    if search:
-        clientes = clientes.filter(
-            Q(nome__icontains=search) |
-            Q(email__icontains=search) |
-            Q(cpf__icontains=search)
-        )
+    # Buscar clientes com tratamento de erro para tabela ausente
+    clientes = []
+    total_clientes = 0
     
-    ativo_filter = request.GET.get('ativo')
-    if ativo_filter is not None:
-        clientes = clientes.filter(ativo=ativo_filter == 'true')
+    try:
+        clientes = Cliente.objects.filter(loja=loja).order_by('-data_cadastro')
+        
+        # Filtros
+        search = request.GET.get('search')
+        if search:
+            clientes = clientes.filter(
+                Q(nome__icontains=search) |
+                Q(email__icontains=search) |
+                Q(cpf__icontains=search)
+            )
+        
+        ativo_filter = request.GET.get('ativo')
+        if ativo_filter is not None:
+            clientes = clientes.filter(ativo=ativo_filter == 'true')
+        
+        # Converter para lista para evitar queries lazy no template
+        clientes = list(clientes)
+        total_clientes = len(clientes)
+        search_param = search
+        ativo_filter_param = ativo_filter
+        
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela lojas_cliente não existe para loja {loja.nome}: {str(e)}")
+        messages.warning(request, 'A funcionalidade de clientes não está disponível no momento.')
+        clientes = []
+        total_clientes = 0
+        search_param = request.GET.get('search')
+        ativo_filter_param = request.GET.get('ativo')
+    except Exception as e:
+        logger.error(f"Erro ao buscar clientes para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'Erro ao carregar clientes.')
+        clientes = []
+        total_clientes = 0
+        search_param = request.GET.get('search')
+        ativo_filter_param = request.GET.get('ativo')
     
     context = {
         'clientes': clientes,
+        'total_clientes': total_clientes,
         'loja': loja,
-        'search': search,
-        'ativo_filter': ativo_filter,
+        'search': search_param,
+        'ativo_filter': ativo_filter_param,
     }
     
     return render(request, 'lojas/clientes.html', context)
@@ -464,31 +492,62 @@ def gerenciar_produtos(request):
         return redirect('dashboard:principal')
     
     loja = request.loja_atual
-    produtos = Produto.objects.filter(loja=loja).order_by('nome')
     
-    # Filtros
-    search = request.GET.get('search')
-    if search:
-        produtos = produtos.filter(
-            Q(nome__icontains=search) |
-            Q(descricao__icontains=search) |
-            Q(codigo_barras__icontains=search)
-        )
+    # Buscar produtos com tratamento de erro para tabela ausente
+    produtos = []
+    total_produtos = 0
     
-    categoria_filter = request.GET.get('categoria')
-    if categoria_filter:
-        produtos = produtos.filter(categoria=categoria_filter)
-    
-    ativo_filter = request.GET.get('ativo')
-    if ativo_filter is not None:
-        produtos = produtos.filter(ativo=ativo_filter == 'true')
+    try:
+        produtos = Produto.objects.filter(loja=loja).order_by('nome')
+        
+        # Filtros
+        search = request.GET.get('search')
+        if search:
+            produtos = produtos.filter(
+                Q(nome__icontains=search) |
+                Q(descricao__icontains=search) |
+                Q(codigo_barras__icontains=search)
+            )
+        
+        categoria_filter = request.GET.get('categoria')
+        if categoria_filter:
+            produtos = produtos.filter(categoria=categoria_filter)
+        
+        ativo_filter = request.GET.get('ativo')
+        if ativo_filter is not None:
+            produtos = produtos.filter(ativo=ativo_filter == 'true')
+        
+        # Converter para lista para evitar queries lazy no template
+        produtos = list(produtos)
+        total_produtos = len(produtos)
+        search_param = search
+        categoria_filter_param = categoria_filter
+        ativo_filter_param = ativo_filter
+        
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela lojas_produto não existe para loja {loja.nome}: {str(e)}")
+        messages.warning(request, 'A funcionalidade de produtos não está disponível no momento.')
+        produtos = []
+        total_produtos = 0
+        search_param = request.GET.get('search')
+        categoria_filter_param = request.GET.get('categoria')
+        ativo_filter_param = request.GET.get('ativo')
+    except Exception as e:
+        logger.error(f"Erro ao buscar produtos para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'Erro ao carregar produtos.')
+        produtos = []
+        total_produtos = 0
+        search_param = request.GET.get('search')
+        categoria_filter_param = request.GET.get('categoria')
+        ativo_filter_param = request.GET.get('ativo')
     
     context = {
         'produtos': produtos,
+        'total_produtos': total_produtos,
         'loja': loja,
-        'search': search,
-        'categoria_filter': categoria_filter,
-        'ativo_filter': ativo_filter,
+        'search': search_param,
+        'categoria_filter': categoria_filter_param,
+        'ativo_filter': ativo_filter_param,
     }
     
     return render(request, 'lojas/produtos.html', context)

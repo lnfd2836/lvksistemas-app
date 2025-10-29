@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, DatabaseError, ProgrammingError
 from django.utils import timezone
 import secrets
 import string
@@ -54,57 +54,98 @@ def funcionario_list(request):
         # Admin de loja vê apenas funcionários da sua loja
         loja = request.user.loja_admin
     
-    # Query base
-    funcionarios = Funcionario.objects.filter(loja=loja).select_related(
-        'user', 'tipo_funcionario', 'loja'
-    )
-    
-    # Filtros
+    # Query base com tratamento de erro para tabela ausente
+    funcionarios_list = []
+    total_funcionarios = 0
+    funcionarios_ativos = 0
+    funcionarios_inativos = 0
+    tipos_funcionario = []
     search = request.GET.get('search', '').strip()
     tipo_funcionario_id = request.GET.get('tipo_funcionario', '')
     status = request.GET.get('status', '')
     
-    if search:
-        funcionarios = funcionarios.filter(
-            Q(user__first_name__icontains=search) |
-            Q(user__last_name__icontains=search) |
-            Q(user__username__icontains=search) |
-            Q(codigo_funcionario__icontains=search)
+    try:
+        funcionarios = Funcionario.objects.filter(loja=loja).select_related(
+            'user', 'tipo_funcionario', 'loja'
         )
-    
-    if tipo_funcionario_id:
-        funcionarios = funcionarios.filter(tipo_funcionario_id=tipo_funcionario_id)
-    
-    if status == 'ativo':
-        funcionarios = funcionarios.filter(ativo=True)
-    elif status == 'inativo':
-        funcionarios = funcionarios.filter(ativo=False)
-    
-    # Ordenação
-    funcionarios = funcionarios.order_by('-data_criacao')
-    
-    # Paginação
-    paginator = Paginator(funcionarios, 20)  # 20 funcionários por página
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Tipos de funcionário para o filtro
-    tipos_funcionario = TipoFuncionario.objects.filter(
-        tipo_loja=loja.tipo_loja,
-        ativo=True
-    ).order_by('nome')
+        
+        # Filtros
+        if search:
+            funcionarios = funcionarios.filter(
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search) |
+                Q(user__username__icontains=search) |
+                Q(codigo_funcionario__icontains=search)
+            )
+        
+        if tipo_funcionario_id:
+            funcionarios = funcionarios.filter(tipo_funcionario_id=tipo_funcionario_id)
+        
+        if status == 'ativo':
+            funcionarios = funcionarios.filter(ativo=True)
+        elif status == 'inativo':
+            funcionarios = funcionarios.filter(ativo=False)
+        
+        # Ordenação
+        funcionarios = funcionarios.order_by('-data_criacao')
+        
+        # Calcular totais antes de converter para lista
+        total_funcionarios = funcionarios.count()
+        funcionarios_ativos = funcionarios.filter(ativo=True).count()
+        funcionarios_inativos = funcionarios.filter(ativo=False).count()
+        
+        # Paginação
+        paginator = Paginator(funcionarios, 20)  # 20 funcionários por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Converter para lista para evitar queries lazy no template
+        funcionarios_list = list(page_obj.object_list)
+        
+        # Tipos de funcionário para o filtro
+        try:
+            tipos_funcionario = list(TipoFuncionario.objects.filter(
+                tipo_loja=loja.tipo_loja,
+                ativo=True
+            ).order_by('nome'))
+        except (DatabaseError, ProgrammingError):
+            tipos_funcionario = []
+        
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela lojas_funcionario não existe para loja {loja.nome}: {str(e)}")
+        messages.warning(request, 'A funcionalidade de funcionários não está disponível no momento.')
+        funcionarios_list = []
+        total_funcionarios = 0
+        funcionarios_ativos = 0
+        funcionarios_inativos = 0
+        tipos_funcionario = []
+        # Criar um objeto de página vazio para o template
+        paginator = Paginator([], 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+    except Exception as e:
+        logger.error(f"Erro ao buscar funcionários para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'Erro ao carregar funcionários.')
+        funcionarios_list = []
+        total_funcionarios = 0
+        funcionarios_ativos = 0
+        funcionarios_inativos = 0
+        tipos_funcionario = []
+        paginator = Paginator([], 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
-        'funcionarios': page_obj,
+        'funcionarios': funcionarios_list,
         'loja': loja,
         'tipos_funcionario': tipos_funcionario,
         'search': search,
         'tipo_funcionario_selected': tipo_funcionario_id,
         'status_selected': status,
-        'total_funcionarios': funcionarios.count(),
-        'funcionarios_ativos': funcionarios.filter(ativo=True).count(),
-        'funcionarios_inativos': funcionarios.filter(ativo=False).count(),
+        'total_funcionarios': total_funcionarios,
+        'funcionarios_ativos': funcionarios_ativos,
+        'funcionarios_inativos': funcionarios_inativos,
     }
     
     return render(request, 'funcionarios/list.html', context)
