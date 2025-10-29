@@ -1,3 +1,4 @@
+{% if config_cliente %}
 <form method="post" action="{% url 'lojas:salvar_config_cliente' loja.id %}" class="config-form">
     {% csrf_token %}
     
@@ -135,3 +136,10 @@
         </div>
     </div>
 </form>
+{% else %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Configurações de cliente não disponíveis.</strong>
+    <p class="mb-0">A tabela de configurações de cliente não existe no banco de dados.</p>
+</div>
+{% endif %}

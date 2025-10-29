@@ -1,3 +1,4 @@
+{% if config_venda %}
 <form method="post" action="{% url 'lojas:salvar_config_venda' loja.id %}" class="config-form">
     {% csrf_token %}
     
@@ -20,7 +21,7 @@
                         <label for="prefixo_numero" class="form-label">Prefixo do Número</label>
                         <input type="text" class="form-control" name="prefixo_numero" 
                                id="prefixo_numero" maxlength="10"
-                               value="{{ config_venda.prefixo_numero }}">
+                               value="{{ config_venda.prefixo_numero|default:'' }}">
                         <div class="form-text">Ex: VND, VENDA, etc.</div>
                     </div>
                 </div>
@@ -91,37 +92,37 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="dinheiro" id="pagamento_dinheiro"
-                                   {% if 'dinheiro' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'dinheiro' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_dinheiro">Dinheiro</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="cartao_credito" id="pagamento_cartao_credito"
-                                   {% if 'cartao_credito' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'cartao_credito' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_cartao_credito">Cartão de Crédito</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="cartao_debito" id="pagamento_cartao_debito"
-                                   {% if 'cartao_debito' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'cartao_debito' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_cartao_debito">Cartão de Débito</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="pix" id="pagamento_pix"
-                                   {% if 'pix' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'pix' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_pix">PIX</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="boleto" id="pagamento_boleto"
-                                   {% if 'boleto' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'boleto' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_boleto">Boleto</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="formas_pagamento" 
                                    value="prazo" id="pagamento_prazo"
-                                   {% if 'prazo' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
+                                   {% if config_venda.formas_pagamento_disponiveis and 'prazo' in config_venda.formas_pagamento_disponiveis %}checked{% endif %}>
                             <label class="form-check-label" for="pagamento_prazo">A Prazo</label>
                         </div>
                     </div>
@@ -138,3 +139,10 @@
         </div>
     </div>
 </form>
+{% else %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Configurações de venda não disponíveis.</strong>
+    <p class="mb-0">A tabela de configurações de venda não existe no banco de dados.</p>
+</div>
+{% endif %}

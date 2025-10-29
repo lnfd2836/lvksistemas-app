@@ -1,3 +1,4 @@
+{% if config_dashboard %}
 <form method="post" action="{% url 'lojas:salvar_config_dashboard' loja.id %}" class="config-form">
     {% csrf_token %}
     
@@ -11,37 +12,37 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="vendas_hoje" id="widget_vendas_hoje"
-                               {% if 'vendas_hoje' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'vendas_hoje' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_vendas_hoje">Vendas de Hoje</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="vendas_mes" id="widget_vendas_mes"
-                               {% if 'vendas_mes' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'vendas_mes' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_vendas_mes">Vendas do Mês</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="clientes_novos" id="widget_clientes_novos"
-                               {% if 'clientes_novos' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'clientes_novos' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_clientes_novos">Clientes Novos</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="produtos_mais_vendidos" id="widget_produtos_vendidos"
-                               {% if 'produtos_mais_vendidos' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'produtos_mais_vendidos' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_produtos_vendidos">Produtos Mais Vendidos</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="estoque_baixo" id="widget_estoque_baixo"
-                               {% if 'estoque_baixo' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'estoque_baixo' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_estoque_baixo">Produtos com Estoque Baixo</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="widgets_habilitados" 
                                value="metas_vendas" id="widget_metas_vendas"
-                               {% if 'metas_vendas' in config_dashboard.widgets_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.widgets_habilitados and 'metas_vendas' in config_dashboard.widgets_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="widget_metas_vendas">Metas de Vendas</label>
                     </div>
                 </div>
@@ -102,25 +103,25 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="metricas_principais" 
                                value="faturamento" id="metrica_faturamento"
-                               {% if 'faturamento' in config_dashboard.metricas_principais %}checked{% endif %}>
+                               {% if config_dashboard.metricas_principais and 'faturamento' in config_dashboard.metricas_principais %}checked{% endif %}>
                         <label class="form-check-label" for="metrica_faturamento">Faturamento</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="metricas_principais" 
                                value="ticket_medio" id="metrica_ticket_medio"
-                               {% if 'ticket_medio' in config_dashboard.metricas_principais %}checked{% endif %}>
+                               {% if config_dashboard.metricas_principais and 'ticket_medio' in config_dashboard.metricas_principais %}checked{% endif %}>
                         <label class="form-check-label" for="metrica_ticket_medio">Ticket Médio</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="metricas_principais" 
                                value="quantidade_vendas" id="metrica_quantidade_vendas"
-                               {% if 'quantidade_vendas' in config_dashboard.metricas_principais %}checked{% endif %}>
+                               {% if config_dashboard.metricas_principais and 'quantidade_vendas' in config_dashboard.metricas_principais %}checked{% endif %}>
                         <label class="form-check-label" for="metrica_quantidade_vendas">Quantidade de Vendas</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="metricas_principais" 
                                value="crescimento" id="metrica_crescimento"
-                               {% if 'crescimento' in config_dashboard.metricas_principais %}checked{% endif %}>
+                               {% if config_dashboard.metricas_principais and 'crescimento' in config_dashboard.metricas_principais %}checked{% endif %}>
                         <label class="form-check-label" for="metrica_crescimento">% Crescimento</label>
                     </div>
                 </div>
@@ -134,19 +135,19 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="graficos_habilitados" 
                                value="vendas_tempo" id="grafico_vendas_tempo"
-                               {% if 'vendas_tempo' in config_dashboard.graficos_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.graficos_habilitados and 'vendas_tempo' in config_dashboard.graficos_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="grafico_vendas_tempo">Vendas ao Longo do Tempo</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="graficos_habilitados" 
                                value="produtos_categoria" id="grafico_produtos_categoria"
-                               {% if 'produtos_categoria' in config_dashboard.graficos_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.graficos_habilitados and 'produtos_categoria' in config_dashboard.graficos_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="grafico_produtos_categoria">Vendas por Categoria</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="graficos_habilitados" 
                                value="formas_pagamento" id="grafico_formas_pagamento"
-                               {% if 'formas_pagamento' in config_dashboard.graficos_habilitados %}checked{% endif %}>
+                               {% if config_dashboard.graficos_habilitados and 'formas_pagamento' in config_dashboard.graficos_habilitados %}checked{% endif %}>
                         <label class="form-check-label" for="grafico_formas_pagamento">Formas de Pagamento</label>
                     </div>
                 </div>
@@ -167,3 +168,10 @@
         </div>
     </div>
 </form>
+{% else %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Configurações de dashboard não disponíveis.</strong>
+    <p class="mb-0">A tabela de configurações de dashboard não existe no banco de dados.</p>
+</div>
+{% endif %}

@@ -1,3 +1,4 @@
+{% if config_produto %}
 <form method="post" action="{% url 'lojas:salvar_config_produto' loja.id %}" class="config-form">
     {% csrf_token %}
     
@@ -91,7 +92,7 @@
                         <label for="estoque_minimo_padrao" class="form-label">Estoque Mínimo Padrão</label>
                         <input type="number" class="form-control" name="estoque_minimo_padrao" 
                                id="estoque_minimo_padrao" 
-                               value="{{ config_produto.estoque_minimo_padrao }}">
+                               value="{{ config_produto.estoque_minimo_padrao|default:'' }}">
                     </div>
                 </div>
             </div>
@@ -113,7 +114,7 @@
                         <label for="prefixo_codigo" class="form-label">Prefixo do Código</label>
                         <input type="text" class="form-control" name="prefixo_codigo" 
                                id="prefixo_codigo" maxlength="10"
-                               value="{{ config_produto.prefixo_codigo }}">
+                               value="{{ config_produto.prefixo_codigo|default:'' }}">
                         <div class="form-text">Ex: PROD, ITEM, etc.</div>
                     </div>
                 </div>
@@ -129,3 +130,10 @@
         </div>
     </div>
 </form>
+{% else %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Configurações de produto não disponíveis.</strong>
+    <p class="mb-0">A tabela de configurações de produto não existe no banco de dados.</p>
+</div>
+{% endif %}
