@@ -90,10 +90,17 @@ class Command(BaseCommand):
                 
                 # Login personalizado (se existir)
                 try:
-                    from lojas.models import LoginPersonalizado
+                    from lojas.models_login import LoginPersonalizado
                     LoginPersonalizado.objects.filter(loja=loja).delete()
                 except Exception as e:
-                    logger.warning(f"Erro ao excluir login personalizado: {e}")
+                    # Se falhar, tenta excluir via SQL direto
+                    try:
+                        from django.db import connection
+                        with connection.cursor() as cursor:
+                            cursor.execute("DELETE FROM lojas_loginpersonalizado WHERE loja_id = %s", [loja_id])
+                    except Exception as e2:
+                        logger.warning(f"Erro ao excluir login personalizado via SQL: {e2}")
+                    logger.warning(f"Erro ao excluir login personalizado via ORM: {e}")
                 
                 # Configurações específicas da loja
                 try:
