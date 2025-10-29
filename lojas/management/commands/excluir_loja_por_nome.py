@@ -78,44 +78,34 @@ class Command(BaseCommand):
             nome_loja_final = loja.nome
 
             try:
-                with transaction.atomic():
-                    # Excluir dados relacionados
-                    # Notificações
-                    Notificacao.objects.filter(loja=loja).delete()
-                    
-                    # Itens de venda
-                    ItemVenda.objects.filter(venda__loja=loja).delete()
-                    
-                    # Vendas
-                    Venda.objects.filter(loja=loja).delete()
-                    
-                    # Funcionários
-                    Funcionario.objects.filter(loja=loja).delete()
-                    
-                    # Produtos
-                    Produto.objects.filter(loja=loja).delete()
-                    
-                    # Clientes
-                    Cliente.objects.filter(loja=loja).delete()
-                    
-                    # Configurações específicas da loja
-                    try:
-                        from modulos.models import ConfiguracaoLoja
-                        ConfiguracaoLoja.objects.filter(loja=loja).delete()
-                    except (DatabaseError, ProgrammingError) as e:
-                        error_msg = str(e)
-                        if 'does not exist' in error_msg or 'relation' in error_msg.lower():
-                            self.stdout.write(
-                                self.style.WARNING('  Tabela modulos_configuracaoloja não existe. Pulando...')
-                            )
-                        else:
-                            logger.warning(f"Erro ao excluir configurações: {e}")
-                    except Exception as e:
+                # Tenta excluir usando QuerySet diretamente (mais seguro quando tabela não existe)
+                # Como já verificamos que não há dados relacionados, podemos fazer exclusão simples
+                # Excluir dados relacionados primeiro
+                Notificacao.objects.filter(loja=loja).delete()
+                ItemVenda.objects.filter(venda__loja=loja).delete()
+                Venda.objects.filter(loja=loja).delete()
+                Funcionario.objects.filter(loja=loja).delete()
+                Produto.objects.filter(loja=loja).delete()
+                Cliente.objects.filter(loja=loja).delete()
+                
+                # Configurações específicas da loja
+                try:
+                    from modulos.models import ConfiguracaoLoja
+                    ConfiguracaoLoja.objects.filter(loja=loja).delete()
+                except (DatabaseError, ProgrammingError) as e:
+                    error_msg = str(e)
+                    if 'does not exist' in error_msg or 'relation' in error_msg.lower():
+                        self.stdout.write(
+                            self.style.WARNING('  Tabela modulos_configuracaoloja não existe. Pulando...')
+                        )
+                    else:
                         logger.warning(f"Erro ao excluir configurações: {e}")
-                    
-                    # Excluir a loja
-                    loja.delete()
-                    
+                except Exception as e:
+                    logger.warning(f"Erro ao excluir configurações: {e}")
+                
+                # Excluir a loja usando QuerySet (evita problemas com CASCADE e tabelas inexistentes)
+                Loja.objects.filter(id=loja_id).delete()
+                
                 self.stdout.write(
                     self.style.SUCCESS(
                         f'\n✅ Loja "{nome_loja_final}" excluída com sucesso!'
@@ -126,30 +116,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'  - {stats["vendas"]} vendas removidas')
                 self.stdout.write(f'  - {stats["funcionarios"]} funcionários removidos')
                 self.stdout.write(f'  - {stats["notificacoes"]} notificações removidas')
-
-            except (DatabaseError, ProgrammingError) as e:
-                error_msg = str(e)
-                if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()) or 'atomic block' in error_msg.lower():
-                    # Tenta excluir novamente após rollback
-                    try:
-                        Loja.objects.filter(id=loja_id).delete()
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f'\n✅ Loja "{nome_loja_final}" excluída com sucesso (após tentativa com QuerySet)!'
-                            )
-                        )
-                        self.stdout.write(f'  - {stats["clientes"]} clientes removidos')
-                        self.stdout.write(f'  - {stats["produtos"]} produtos removidos')
-                        self.stdout.write(f'  - {stats["vendas"]} vendas removidas')
-                        self.stdout.write(f'  - {stats["funcionarios"]} funcionários removidos')
-                        self.stdout.write(f'  - {stats["notificacoes"]} notificações removidas')
-                    except Exception as e2:
-                        self.stdout.write(
-                            self.style.ERROR(f'\n❌ Erro ao excluir loja na segunda tentativa: {e2}')
-                        )
-                        raise
-                else:
-                    raise
 
         except Exception as e:
             self.stdout.write(
