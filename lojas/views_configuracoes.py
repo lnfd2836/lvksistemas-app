@@ -227,7 +227,13 @@ def preview_dashboard(request, loja_id):
     """Preview do dashboard com as configurações atuais"""
     
     loja = get_object_or_404(Loja, id=loja_id)
-    config, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    
+    try:
+        config, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela ConfiguracaoDashboard não existe para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'As configurações de dashboard não estão disponíveis no momento.')
+        return redirect('lojas:configuracoes', loja_id=loja_id)
     
     # Dados simulados para preview
     dados_preview = {
