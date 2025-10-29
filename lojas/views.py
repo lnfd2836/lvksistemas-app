@@ -766,26 +766,40 @@ def excluir_loja(request, loja_id):
                     # Tenta excluir ConfiguracaoLoja antes, verificando se a tabela existe
                     from modulos.models import ConfiguracaoLoja
                     table_name = ConfiguracaoLoja._meta.db_table
-                    with connection.cursor() as cursor:
-                        if connection.vendor == 'postgresql':
-                            cursor.execute("""
-                                SELECT EXISTS (
-                                    SELECT FROM information_schema.tables 
-                                    WHERE table_schema = 'public' 
-                                    AND table_name = %s
-                                )
-                            """, [table_name])
-                        else:  # SQLite
-                            cursor.execute("""
-                                SELECT EXISTS (
-                                    SELECT name FROM sqlite_master 
-                                    WHERE type='table' AND name = ?
-                                )
-                            """, [table_name])
-                        table_exists = cursor.fetchone()[0]
+                    table_exists = False
+                    try:
+                        with connection.cursor() as cursor:
+                            if connection.vendor == 'postgresql':
+                                cursor.execute("""
+                                    SELECT EXISTS (
+                                        SELECT FROM information_schema.tables 
+                                        WHERE table_schema = 'public' 
+                                        AND table_name = %s
+                                    )
+                                """, [table_name])
+                            else:  # SQLite
+                                cursor.execute("""
+                                    SELECT EXISTS (
+                                        SELECT name FROM sqlite_master 
+                                        WHERE type='table' AND name = ?
+                                    )
+                                """, [table_name])
+                            table_exists = cursor.fetchone()[0]
+                    except Exception as check_error:
+                        logger.warning(f"Erro ao verificar existência da tabela {table_name}: {check_error}")
+                        table_exists = False
                     
                     if table_exists:
-                        ConfiguracaoLoja.objects.filter(loja=loja).delete()
+                        try:
+                            ConfiguracaoLoja.objects.filter(loja=loja).delete()
+                        except (DatabaseError, ProgrammingError) as delete_error:
+                            error_msg = str(delete_error)
+                            if 'does not exist' in error_msg or 'relation' in error_msg.lower():
+                                logger.warning(f"Tabela {table_name} não existe durante exclusão. Continuando...")
+                            else:
+                                logger.warning(f"Erro ao excluir ConfiguracaoLoja: {delete_error}")
+                        except Exception as delete_error:
+                            logger.warning(f"Erro inesperado ao excluir ConfiguracaoLoja: {delete_error}")
                     
                     # Agora exclui a loja manualmente, removendo todos os dados relacionados primeiro
                     # Exclui em ordem de dependência
