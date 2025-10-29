@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, DatabaseError, ProgrammingError
 from django.db.models import Q
 from django.utils import timezone
 import logging
@@ -35,7 +35,14 @@ def listar_lojas(request):
             messages.error(request, 'Você não tem uma loja associada.')
             return redirect('login')
     
-    lojas = Loja.objects.all().order_by('-data_criacao')
+    # Buscar lojas sem fazer join com tipo_loja (pode não existir tabela)
+    try:
+        # Tenta fazer select_related se a tabela existir
+        lojas = Loja.objects.select_related('tipo_loja').all().order_by('-data_criacao')
+    except (DatabaseError, ProgrammingError):
+        # Se falhar, busca sem relacionamento
+        logger.warning("Tabela modulos_tipoloja não existe, buscando lojas sem tipo_loja")
+        lojas = Loja.objects.all().order_by('-data_criacao')
     
     # Filtros
     status_filter = request.GET.get('status')
@@ -44,7 +51,12 @@ def listar_lojas(request):
     
     tipo_filter = request.GET.get('tipo_loja')
     if tipo_filter:
-        lojas = lojas.filter(tipo_loja__nome=tipo_filter)
+        try:
+            lojas = lojas.filter(tipo_loja__nome=tipo_filter)
+        except (DatabaseError, ProgrammingError) as e:
+            logger.warning(f"Erro ao filtrar por tipo_loja: {str(e)}")
+            # Se a tabela não existe, simplesmente ignora o filtro
+            tipo_filter = None
     
     search = request.GET.get('search')
     if search:
@@ -54,10 +66,17 @@ def listar_lojas(request):
             Q(email__icontains=search)
         )
     
-    # Estatísticas por tipo de loja
+    # Estatísticas por tipo de loja (com tratamento de erro)
     stats_tipos = {}
-    for tipo in ['conveniencia', 'roupas', 'tintas', 'supermercado', 'lanchonete']:
-        stats_tipos[tipo] = Loja.objects.filter(tipo_loja__nome=tipo).count()
+    try:
+        for tipo in ['conveniencia', 'roupas', 'tintas', 'supermercado', 'lanchonete']:
+            try:
+                stats_tipos[tipo] = Loja.objects.filter(tipo_loja__nome=tipo).count()
+            except (DatabaseError, ProgrammingError):
+                stats_tipos[tipo] = 0
+    except Exception as e:
+        logger.warning(f"Erro ao calcular estatísticas por tipo: {str(e)}")
+        stats_tipos = {}
     
     context = {
         'lojas': lojas,
