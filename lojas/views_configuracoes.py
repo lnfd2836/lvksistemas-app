@@ -23,7 +23,12 @@ logger = logging.getLogger(__name__)
 def gerenciar_configuracoes_loja(request, loja_id):
     """View principal para gerenciar todas as configurações de uma loja"""
     
-    loja = get_object_or_404(Loja, id=loja_id)
+    try:
+        loja = get_object_or_404(Loja, id=loja_id)
+    except Exception as e:
+        logger.error(f"Erro ao buscar loja {loja_id}: {str(e)}")
+        messages.error(request, 'Loja não encontrada.')
+        return redirect('lojas:listar_lojas')
     
     # Verificar permissão
     if not (request.user.is_superuser or 
@@ -44,21 +49,29 @@ def gerenciar_configuracoes_loja(request, loja_id):
         config_produto, _ = ConfiguracaoProduto.objects.get_or_create(loja=loja)
     except (DatabaseError, ProgrammingError) as e:
         logger.warning(f"Tabela ConfiguracaoProduto não existe para loja {loja.nome}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Erro inesperado ao buscar ConfiguracaoProduto para loja {loja.nome}: {str(e)}")
     
     try:
         config_cliente, _ = ConfiguracaoCliente.objects.get_or_create(loja=loja)
     except (DatabaseError, ProgrammingError) as e:
         logger.warning(f"Tabela ConfiguracaoCliente não existe para loja {loja.nome}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Erro inesperado ao buscar ConfiguracaoCliente para loja {loja.nome}: {str(e)}")
     
     try:
         config_venda, _ = ConfiguracaoVenda.objects.get_or_create(loja=loja)
     except (DatabaseError, ProgrammingError) as e:
         logger.warning(f"Tabela ConfiguracaoVenda não existe para loja {loja.nome}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Erro inesperado ao buscar ConfiguracaoVenda para loja {loja.nome}: {str(e)}")
     
     try:
         config_dashboard, _ = ConfiguracaoDashboard.objects.get_or_create(loja=loja)
     except (DatabaseError, ProgrammingError) as e:
         logger.warning(f"Tabela ConfiguracaoDashboard não existe para loja {loja.nome}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Erro inesperado ao buscar ConfiguracaoDashboard para loja {loja.nome}: {str(e)}")
     
     context = {
         'loja': loja,
@@ -68,7 +81,16 @@ def gerenciar_configuracoes_loja(request, loja_id):
         'config_dashboard': config_dashboard,
     }
     
-    return render(request, 'lojas/configuracoes/gerenciar.html', context)
+    try:
+        return render(request, 'lojas/configuracoes/gerenciar.html', context)
+    except Exception as e:
+        logger.error(f"Erro ao renderizar template de configurações: {str(e)}")
+        # Fallback para template mais simples se o específico não existir
+        try:
+            return render(request, 'lojas/configuracoes.html', context)
+        except Exception:
+            messages.error(request, 'Página de configurações não disponível no momento.')
+            return redirect('lojas:detalhar_loja', loja_id=loja_id)
 
 
 @login_required
