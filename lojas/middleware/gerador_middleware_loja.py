@@ -213,7 +213,6 @@ class Loja{{ loja_slug|title }}Middleware:
         }
         
         return modulos_por_tipo.get(self.loja_tipo, modulos_por_tipo['padrao'])
-"""
     
     def remover_middleware_loja(self, loja):
         """Remove middleware de uma loja"""
