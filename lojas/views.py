@@ -599,12 +599,50 @@ def excluir_loja(request, loja_id):
                 # 5. Exclui notificações relacionadas
                 Notificacao.objects.filter(loja=loja).delete()
                 
-                # 6. Exclui usuário administrador
+                # 6. Exclui configurações específicas da loja (modulos.ConfiguracaoLoja)
+                # Exclui manualmente para evitar erro de CASCADE se a tabela não existir
+                try:
+                    from modulos.models import ConfiguracaoLoja
+                    from django.db import DatabaseError, ProgrammingError
+                    ConfiguracaoLoja.objects.filter(loja=loja).delete()
+                except (DatabaseError, ProgrammingError) as e:
+                    # Se a tabela não existir (especialmente no Heroku antes das migrações),
+                    # apenas loga e continua. O CASCADE não acontecerá automaticamente.
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    error_msg = str(e)
+                    if 'does not exist' in error_msg or 'relation' in error_msg.lower():
+                        logger.warning(f"Tabela modulos_configuracaoloja não existe. Pulando exclusão de configurações.")
+                    else:
+                        logger.warning(f"Erro ao excluir configurações da loja {loja.nome}: {e}")
+                except Exception as e:
+                    # Outros erros também são tratados
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Não foi possível excluir configurações da loja {loja.nome}: {e}")
+                
+                # 7. Exclui usuário administrador
                 if admin_user:
                     admin_user.delete()
                 
-                # 7. Exclui a loja
-                loja.delete()
+                # 8. Exclui a loja
+                # Protege contra erro de CASCADE se a tabela ConfiguracaoLoja não existir
+                try:
+                    loja.delete()
+                except (DatabaseError, ProgrammingError) as e:
+                    error_msg = str(e)
+                    if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
+                        # Se o erro for relacionado à tabela não existir, tenta excluir sem CASCADE
+                        # Excluindo diretamente via SQL para evitar o CASCADE
+                        from django.db import connection
+                        with connection.cursor() as cursor:
+                            cursor.execute("DELETE FROM lojas_loja WHERE id = %s", [str(loja.id)])
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Loja excluída via SQL direto devido à tabela modulos_configuracaoloja não existir.")
+                    else:
+                        # Se for outro erro, propaga
+                        raise
                 
                 # Cria notificação de sucesso
                 try:
