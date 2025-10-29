@@ -122,4 +122,10 @@ class Command(BaseCommand):
                     self.style.ERROR(f'\n❌ Erro ao excluir loja: {e}')
                 )
                 logger.error(f"Erro ao excluir loja {nome_loja_final}: {e}", exc_info=True)
+        
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'\n❌ Erro geral ao processar comando: {e}')
+            )
+            logger.error(f"Erro geral: {e}", exc_info=True)
 
