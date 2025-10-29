@@ -354,11 +354,8 @@ def dashboard_loja(request, loja=None, loja_id=None):
         
         logger.info(f"Dashboard da loja {target_loja.nome} carregado para usuário {request.user.username}")
         
-        # Usar template específico para a loja Felix (sem barra superior)
-        if str(target_loja.id) == "feeac6c9-0af3-4885-9592-9c6cd196d39c":
-            return render(request, 'dashboard/loja_crm_limpo.html', context)
-        else:
-            return render(request, 'dashboard/loja.html', context)
+        # Usar template focado no CRM (sem seções desnecessárias)
+        return render(request, 'dashboard/loja_crm_focado.html', context)
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")
