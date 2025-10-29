@@ -12,51 +12,51 @@ class Command(BaseCommand):
         self.stdout.write('Criando tipo de loja CRM de Vendas...')
         
         # Criar tipo de loja CRM de Vendas
-        # Como o modelo atual foi simplificado, criamos com apenas os campos básicos
-        # e depois atualizamos via SQL se necessário
-        crm_vendas, created = TipoLoja.objects.get_or_create(
-            nome='crm_vendas',
-            defaults={
-                'descricao': 'Sistema CRM completo para gestão de vendas, leads, orçamentos, propostas e contratos',
-                'icone': 'fas fa-briefcase',
-                'cor_primaria': '#007bff',
-                'cor_secundaria': '#0056b3',
-                'ativo': True,
-            }
-        )
+        # O banco no Heroku ainda tem os campos antigos que são NOT NULL
+        # Então precisamos usar SQL direto ou verificar se já existe
+        from django.db import connection
+        import uuid
         
-        # Se o banco ainda tem os campos antigos, atualizamos via SQL direto
+        # Primeiro verifica se já existe
         try:
-            from django.db import connection
+            crm_vendas = TipoLoja.objects.get(nome='crm_vendas')
+            created = False
+            self.stdout.write(self.style.WARNING(f'⚠️  Tipo de loja {crm_vendas.get_nome_display()} já existe.'))
+        except TipoLoja.DoesNotExist:
+            # Não existe, cria via SQL direto
+            tipo_id = uuid.uuid4()
             with connection.cursor() as cursor:
-                # Atualiza todos os campos booleanos para valores padrão do CRM
+                # Contagem: 6 básicos + 24 campos booleanos = 30 campos
                 cursor.execute("""
-                    UPDATE modulos_tipoloja 
-                    SET 
-                        tem_categoria_produto = FALSE,
-                        tem_marca_produto = FALSE,
-                        tem_tamanho_produto = FALSE,
-                        tem_cor_produto = FALSE,
-                        tem_peso_produto = FALSE,
-                        tem_volume_produto = FALSE,
-                        tem_data_validade = FALSE,
-                        tem_codigo_barras = FALSE,
-                        tem_estoque_minimo = FALSE,
-                        tem_data_nascimento_cliente = TRUE,
-                        tem_sexo_cliente = TRUE,
-                        tem_cpf_cliente = TRUE,
-                        tem_rg_cliente = FALSE,
-                        tem_cnpj_cliente = TRUE,
-                        tem_crm_cliente = FALSE,
-                        tem_desconto_venda = TRUE,
-                        tem_taxa_entrega = FALSE,
-                        tem_mesa_venda = FALSE,
-                        tem_garcom_venda = FALSE
-                    WHERE id = %s
-                """, [str(crm_vendas.id)])
-        except Exception as e:
-            # Se os campos não existirem mais no banco, ignora
-            logger.warning(f"Campos antigos não encontrados no banco (pode ser esperado): {e}")
+                    INSERT INTO modulos_tipoloja (
+                        id, nome, descricao, icone, cor_primaria, cor_secundaria,
+                        tem_categoria_produto, tem_marca_produto, tem_tamanho_produto,
+                        tem_cor_produto, tem_peso_produto, tem_volume_produto,
+                        tem_data_validade, tem_codigo_barras, tem_estoque_minimo,
+                        tem_data_nascimento_cliente, tem_sexo_cliente, tem_cpf_cliente,
+                        tem_rg_cliente, tem_cnpj_cliente, tem_crm_cliente,
+                        tem_desconto_venda, tem_taxa_entrega, tem_mesa_venda,
+                        tem_garcom_venda, ativo, data_criacao
+                    ) VALUES (
+                        %s::uuid, %s, %s, %s, %s, %s,
+                        FALSE, FALSE, FALSE,
+                        FALSE, FALSE, FALSE,
+                        FALSE, FALSE, FALSE,
+                        TRUE, TRUE, TRUE,
+                        FALSE, TRUE, FALSE,
+                        TRUE, FALSE, FALSE,
+                        FALSE, TRUE, NOW()
+                    )
+                """, [
+                    str(tipo_id),
+                    'crm_vendas',
+                    'Sistema CRM completo para gestão de vendas, leads, orçamentos, propostas e contratos',
+                    'fas fa-briefcase',
+                    '#007bff',
+                    '#0056b3',
+                ])
+            crm_vendas = TipoLoja.objects.get(id=tipo_id)
+            created = True
         
         if created:
             self.stdout.write(self.style.SUCCESS(f'✅ Criado tipo de loja: {crm_vendas.get_nome_display()}'))
