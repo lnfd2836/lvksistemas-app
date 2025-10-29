@@ -129,7 +129,7 @@ class Command(BaseCommand):
 
             except (DatabaseError, ProgrammingError) as e:
                 error_msg = str(e)
-                if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()):
+                if 'modulos_configuracaoloja' in error_msg or ('does not exist' in error_msg and 'relation' in error_msg.lower()) or 'atomic block' in error_msg.lower():
                     # Tenta excluir novamente após rollback
                     try:
                         Loja.objects.filter(id=loja_id).delete()
@@ -138,10 +138,16 @@ class Command(BaseCommand):
                                 f'\n✅ Loja "{nome_loja_final}" excluída com sucesso (após tentativa com QuerySet)!'
                             )
                         )
+                        self.stdout.write(f'  - {stats["clientes"]} clientes removidos')
+                        self.stdout.write(f'  - {stats["produtos"]} produtos removidos')
+                        self.stdout.write(f'  - {stats["vendas"]} vendas removidas')
+                        self.stdout.write(f'  - {stats["funcionarios"]} funcionários removidos')
+                        self.stdout.write(f'  - {stats["notificacoes"]} notificações removidas')
                     except Exception as e2:
                         self.stdout.write(
                             self.style.ERROR(f'\n❌ Erro ao excluir loja na segunda tentativa: {e2}')
                         )
+                        raise
                 else:
                     raise
 
