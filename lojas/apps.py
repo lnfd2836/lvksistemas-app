@@ -13,9 +13,9 @@ class LojasConfig(AppConfig):
         # Importar signal de login (não envia email, apenas cria configuração)
         import lojas.signals_login
         
-        # Importar signal de middleware (opcional)
-        try:
-            import lojas.signals_middleware
-        except ImportError:
-            pass
+        # Importar signal de middleware (DESABILITADO temporariamente devido a erro de sintaxe)
+        # try:
+        #     import lojas.signals_middleware
+        # except ImportError:
+        #     pass
 
