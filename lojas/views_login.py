@@ -49,18 +49,26 @@ def login_personalizado_loja(request, url_personalizada=None, loja_id=None):
         
         # Verificar se a loja está ativa
         if loja.status != 'ativa':
-            messages.error(request, 'Esta loja está temporariamente indisponível.')
-            return redirect('root_redirect')
+            return render(request, 'auth/erro_login_loja.html', {
+                'titulo': 'Loja Temporariamente Indisponível',
+                'mensagem': 'Esta loja está temporariamente indisponível para manutenção.',
+                'detalhes': 'Tente novamente mais tarde ou entre em contato com o suporte.',
+                'url_solicitada': url_personalizada or str(loja_id)
+            })
         
         # Se já está autenticado, verificar o tipo de usuário
         if request.user.is_authenticated:
             # Super admins não podem usar login de loja
             if request.user.is_superuser:
                 logger.warning(f"Super usuário {request.user.username} tentou acessar login de loja")
-                messages.error(request, 'Super administradores devem usar o login exclusivo do sistema.')
                 from django.contrib.auth import logout
                 logout(request)
-                return redirect('root_redirect')
+                return render(request, 'auth/erro_login_loja.html', {
+                    'titulo': 'Acesso Não Permitido',
+                    'mensagem': 'Super administradores não podem usar o login de loja.',
+                    'detalhes': 'Use o login exclusivo do sistema através da página principal.',
+                    'url_solicitada': url_personalizada or str(loja_id)
+                })
             
             # Verificar se pode acessar esta loja específica
             if AuthenticationService.can_access_store_dashboard(request.user, loja):
@@ -91,16 +99,31 @@ def login_personalizado_loja(request, url_personalizada=None, loja_id=None):
         
     except LoginPersonalizado.DoesNotExist:
         logger.error(f"Configuração de login não encontrada para URL: {url_personalizada}")
-        messages.error(request, 'Página de login não encontrada.')
-        return redirect('root_redirect')
+        # Renderizar página de erro específica em vez de redirecionar
+        return render(request, 'auth/erro_login_loja.html', {
+            'titulo': 'Página de Login Não Encontrada',
+            'mensagem': 'A página de login solicitada não foi encontrada ou está inativa.',
+            'detalhes': 'Verifique se o endereço está correto ou entre em contato com o suporte.',
+            'url_solicitada': url_personalizada
+        })
     except Loja.DoesNotExist:
         logger.error(f"Loja não encontrada - ID: {loja_id}, URL: {url_personalizada}")
-        messages.error(request, 'Loja não encontrada.')
-        return redirect('root_redirect')
+        # Renderizar página de erro específica em vez de redirecionar
+        return render(request, 'auth/erro_login_loja.html', {
+            'titulo': 'Loja Não Encontrada',
+            'mensagem': 'A loja solicitada não foi encontrada ou está inativa.',
+            'detalhes': 'Verifique se o endereço está correto ou entre em contato com o suporte.',
+            'url_solicitada': url_personalizada or str(loja_id)
+        })
     except Exception as e:
         logger.error(f"Erro no login personalizado: {str(e)}")
-        messages.error(request, 'Erro interno. Tente novamente.')
-        return redirect('root_redirect')
+        # Renderizar página de erro específica em vez de redirecionar
+        return render(request, 'auth/erro_login_loja.html', {
+            'titulo': 'Erro Temporário',
+            'mensagem': 'Ocorreu um erro temporário no sistema.',
+            'detalhes': 'Tente novamente em alguns minutos. Se o problema persistir, entre em contato com o suporte.',
+            'url_solicitada': url_personalizada or str(loja_id)
+        })
 
 
 def processar_login_personalizado(request, loja, login_config):

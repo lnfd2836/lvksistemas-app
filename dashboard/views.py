@@ -398,9 +398,13 @@ def dashboard_loja(request, loja=None, loja_id=None):
             
         except Exception as render_error:
             logger.error(f"Erro crítico ao renderizar dashboard de emergência: {str(render_error)}")
-            # Só em último caso, redirecionar para evitar loop
-            messages.error(request, 'Sistema temporariamente indisponível. Tente novamente em alguns minutos.')
-            return redirect('/admin/login/')
+            # Renderizar página de erro em vez de redirecionar para admin
+            return render(request, 'auth/erro_login_loja.html', {
+                'titulo': 'Sistema Temporariamente Indisponível',
+                'mensagem': 'O sistema está passando por manutenção.',
+                'detalhes': 'Tente novamente em alguns minutos. Se o problema persistir, entre em contato com o suporte.',
+                'url_solicitada': request.path
+            })
 
 
 @login_required
