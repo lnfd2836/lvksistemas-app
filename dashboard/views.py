@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from lojas.models import Loja, Cliente, Produto, Venda, BackupLoja
 from dashboard.models import DashboardStats, Notificacao
-from usuarios.models import LogAcesso, SessaoAtiva
+from usuarios.models import SessaoAtiva
 from modulos.models import ModuloLoja, TipoLoja, CampoPersonalizado
 from dashboard.services.authentication import AuthenticationService
 from lojas.permissions import require_loja_access, get_user_permissions
@@ -802,17 +802,8 @@ def login_view(request):
         if user is not None:
             login(request, user)
             
-            # Registra o login
-            try:
-                LogAcesso.objects.create(
-                    user=user,
-                    acao='LOGIN',
-                    ip_address=request.META.get('REMOTE_ADDR'),
-                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                    sucesso=True
-                )
-            except:
-                pass  # Ignora erro se não conseguir criar log
+            # Login realizado com sucesso
+            logger.info(f"Login realizado com sucesso para usuário: {user.username}")
             
             return redirect('dashboard:principal')
         else:
@@ -825,24 +816,27 @@ def logout_view(request):
     """View de logout"""
     # Verificar se o usuário está em uma página de loja
     loja_slug = None
+    loja_url_personalizada = None
+    
     if request.user.is_authenticated:
-        # Registra o logout
-        LogAcesso.objects.create(
-            user=request.user,
-            acao='LOGOUT',
-            ip_address=request.META.get('REMOTE_ADDR'),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            sucesso=True
-        )
-        
-        # Verificar se o usuário tem uma loja associada e não é super admin
-        if hasattr(request.user, 'loja_admin') and request.user.loja_admin and not request.user.is_superuser:
-            loja_slug = request.user.loja_admin.slug
+        try:
+            # Verificar se o usuário tem uma loja associada e não é super admin
+            if hasattr(request.user, 'loja_admin') and request.user.loja_admin and not request.user.is_superuser:
+                loja = request.user.loja_admin
+                loja_slug = loja.slug
+                
+                # Verificar se a loja tem login personalizado ativo
+                if hasattr(loja, 'login_personalizado') and loja.login_personalizado.ativo:
+                    loja_url_personalizada = loja.login_personalizado.url_personalizada
+        except Exception as e:
+            logger.error(f"Erro ao verificar loja do usuário no logout: {str(e)}")
     
     logout(request)
     
-    # Redirecionar para o login da loja se o usuário estava em uma loja
-    if loja_slug:
+    # Redirecionar para o login personalizado da loja se disponível
+    if loja_url_personalizada:
+        return redirect(f'/login/{loja_url_personalizada}/')
+    elif loja_slug:
         return redirect(f'/login/{loja_slug}/')
     else:
         return redirect('/')
