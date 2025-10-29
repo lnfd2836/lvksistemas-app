@@ -891,3 +891,31 @@ def relatorio_performance(request):
     }
     
     return render(request, 'crm_vendas/relatorios.html', context)
+
+
+@login_required
+def configuracoes_crm(request):
+    """Configurações do CRM"""
+    # Verificar permissão
+    if not request.user.is_superuser and not hasattr(request.user, 'loja_admin'):
+        messages.error(request, 'Você não tem permissão para acessar esta página.')
+        return redirect('crm_vendas:dashboard')
+    
+    # Determinar loja
+    loja = None
+    if request.user.is_superuser:
+        loja_id = request.GET.get('loja')
+        if loja_id:
+            try:
+                loja = Loja.objects.get(id=loja_id)
+            except Loja.DoesNotExist:
+                pass
+    else:
+        loja = request.user.loja_admin
+    
+    context = {
+        'loja': loja,
+        'em_desenvolvimento': True,
+    }
+    
+    return render(request, 'crm_vendas/configuracoes.html', context)

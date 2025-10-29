@@ -51,4 +51,7 @@ urlpatterns = [
     path('relatorios/', views.relatorios_crm, name='relatorios'),
     path('relatorios/funil/', views.relatorio_funil_vendas, name='relatorio_funil'),
     path('relatorios/performance/', views.relatorio_performance, name='relatorio_performance'),
+    
+    # Configurações
+    path('configuracoes/', views.configuracoes_crm, name='configuracoes'),
 ]

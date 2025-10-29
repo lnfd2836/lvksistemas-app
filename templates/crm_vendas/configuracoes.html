@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Configurações - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs me-2"></i>
+                        Configurações do CRM
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar ao Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if em_desenvolvimento %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Em Desenvolvimento</strong><br>
+                        Esta seção de configurações está sendo desenvolvida. Em breve você poderá personalizar:
+                        <ul class="mt-2 mb-0">
+                            <li>Templates de email</li>
+                            <li>Campos personalizados</li>
+                            <li>Fluxos de trabalho</li>
+                            <li>Integrações</li>
+                            <li>Notificações</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Configurações Básicas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Configurações Gerais</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Nome da Empresa</label>
+                                        <input type="text" class="form-control" value="{% if loja %}{{ loja.nome }}{% endif %}" readonly>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Email Padrão</label>
+                                        <input type="email" class="form-control" value="{% if loja %}{{ loja.email }}{% endif %}" readonly>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" value="{% if loja %}{{ loja.telefone }}{% endif %}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Configurações do Pipeline</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Estágios do Funil</label>
+                                        <div class="list-group">
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-user-plus me-2 text-info"></i>Novo</span>
+                                                <span class="badge bg-info">Ativo</span>
+                                            </div>
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-user-check me-2 text-primary"></i>Qualificado</span>
+                                                <span class="badge bg-primary">Ativo</span>
+                                            </div>
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-file-alt me-2 text-warning"></i>Proposta Enviada</span>
+                                                <span class="badge bg-warning">Ativo</span>
+                                            </div>
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-handshake me-2 text-orange"></i>Negociação</span>
+                                                <span class="badge bg-orange">Ativo</span>
+                                            </div>
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-trophy me-2 text-success"></i>Fechado - Ganho</span>
+                                                <span class="badge bg-success">Ativo</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ações Rápidas -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Ações Rápidas</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:relatorios' %}" class="btn btn-outline-primary btn-block">
+                                                <i class="fas fa-chart-bar me-2"></i>
+                                                Ver Relatórios
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:relatorio_funil' %}" class="btn btn-outline-success btn-block">
+                                                <i class="fas fa-funnel-dollar me-2"></i>
+                                                Funil de Vendas
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-warning btn-block">
+                                                <i class="fas fa-users me-2"></i>
+                                                Gerenciar Leads
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-outline-info btn-block">
+                                                <i class="fas fa-tachometer-alt me-2"></i>
+                                                Dashboard CRM
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-orange {
+        background-color: #f39c12 !important;
+    }
+    
+    .text-orange {
+        color: #f39c12 !important;
+    }
+    
+    .btn-block {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
