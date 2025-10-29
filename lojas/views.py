@@ -701,22 +701,48 @@ def gerenciar_vendas(request):
         return redirect('dashboard:principal')
     
     loja = request.loja_atual
-    vendas = Venda.objects.filter(loja=loja).order_by('-data_venda')
     
-    # Filtros
-    status_filter = request.GET.get('status')
-    if status_filter:
-        vendas = vendas.filter(status=status_filter)
+    # Buscar vendas com tratamento de erro para tabela ausente
+    vendas = []
+    total_vendas = 0
     
-    search = request.GET.get('search')
-    if search:
-        vendas = vendas.filter(
-            Q(numero_venda__icontains=search) |
-            Q(cliente__nome__icontains=search)
-        )
+    try:
+        vendas = Venda.objects.filter(loja=loja).order_by('-data_venda')
+        
+        # Filtros
+        status_filter = request.GET.get('status')
+        if status_filter:
+            vendas = vendas.filter(status=status_filter)
+        
+        search = request.GET.get('search')
+        if search:
+            vendas = vendas.filter(
+                Q(numero_venda__icontains=search) |
+                Q(cliente__nome__icontains=search)
+            )
+        
+        # Converter para lista para evitar queries lazy no template
+        vendas = list(vendas)
+        total_vendas = len(vendas)
+        
+    except (DatabaseError, ProgrammingError) as e:
+        logger.warning(f"Tabela lojas_venda não existe para loja {loja.nome}: {str(e)}")
+        messages.warning(request, 'A funcionalidade de vendas não está disponível no momento.')
+        vendas = []
+        total_vendas = 0
+        status_filter = None
+        search = None
+    except Exception as e:
+        logger.error(f"Erro ao buscar vendas para loja {loja.nome}: {str(e)}")
+        messages.error(request, 'Erro ao carregar vendas.')
+        vendas = []
+        total_vendas = 0
+        status_filter = request.GET.get('status')
+        search = request.GET.get('search')
     
     context = {
         'vendas': vendas,
+        'total_vendas': total_vendas,
         'loja': loja,
         'status_filter': status_filter,
         'search': search,
