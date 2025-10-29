@@ -102,6 +102,20 @@ class Command(BaseCommand):
                         logger.warning(f"Erro ao excluir login personalizado via SQL: {e2}")
                     logger.warning(f"Erro ao excluir login personalizado via ORM: {e}")
                 
+                # Assinatura da loja (se existir)
+                try:
+                    from planos.models import AssinaturaLoja
+                    AssinaturaLoja.objects.filter(loja=loja).delete()
+                except Exception as e:
+                    # Se falhar, tenta excluir via SQL direto
+                    try:
+                        from django.db import connection
+                        with connection.cursor() as cursor:
+                            cursor.execute("DELETE FROM planos_assinaturaloja WHERE loja_id = %s", [loja_id])
+                    except Exception as e2:
+                        logger.warning(f"Erro ao excluir assinatura via SQL: {e2}")
+                    logger.warning(f"Erro ao excluir assinatura via ORM: {e}")
+                
                 # Configurações específicas da loja
                 try:
                     from modulos.models import ConfiguracaoLoja
