@@ -2216,8 +2216,7 @@ def api_produto_servico_detalhes(request, produto_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-def a
-ssinar_documento_publico(request, token):
+def assinar_documento_publico(request, token):
     """
     View pública para assinatura digital de documentos
     """
