@@ -2425,8 +2425,7 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
                 
                 # Enviar email de solicitação
                 try:
-                    email_service = EmailService()
-                    email_service.enviar_solicitacao_assinatura(assinatura, documento)
+                    EmailService.enviar_solicitacao_assinatura(assinatura)
                     messages.success(request, 'Solicitação de assinatura enviada com sucesso!')
                 except Exception as e:
                     logger.error(f"Erro ao enviar email de assinatura: {str(e)}")
