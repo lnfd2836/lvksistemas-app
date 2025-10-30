@@ -319,10 +319,11 @@ def listar_orcamentos(request):
     # Paginação
     paginator = Paginator(orcamentos, 20)
     page = request.GET.get('page')
-    orcamentos = paginator.get_page(page)
+    page_obj = paginator.get_page(page)
     
     context = {
-        'orcamentos': orcamentos,
+        'orcamentos': page_obj,
+        'page_obj': page_obj,
         'status_filter': status,
     }
     
@@ -2307,17 +2308,17 @@ def solicitar_assinatura_empresa(request, tipo_documento, documento_id):
             documento = get_object_or_404(Contrato, id=documento_id)
         else:
             messages.error(request, 'Tipo de documento inválido.')
-            return redirect('crm_vendas:dashboard_crm')
+            return redirect('crm_vendas:dashboard')
         
         # Verificar permissão
         if not request.user.is_superuser and documento.loja != request.user.loja_admin:
             messages.error(request, 'Sem permissão para acessar este documento.')
-            return redirect('crm_vendas:dashboard_crm')
+            return redirect('crm_vendas:dashboard')
         
         # Verificar se cliente já assinou (para contratos)
         if tipo_documento == 'contrato' and not documento.assinado_cliente_em:
             messages.error(request, 'O cliente deve assinar primeiro antes da empresa.')
-            return redirect('crm_vendas:dashboard_crm')
+            return redirect('crm_vendas:dashboard')
         
         if request.method == 'POST':
             form = AssinaturaDigitalForm(request.POST)
@@ -2345,7 +2346,7 @@ def solicitar_assinatura_empresa(request, tipo_documento, documento_id):
                     logger.error(f"Erro ao enviar email de assinatura da empresa: {str(e)}")
                     messages.warning(request, 'Assinatura criada, mas houve erro no envio do email.')
                 
-                return redirect('crm_vendas:dashboard_crm')
+                return redirect('crm_vendas:dashboard')
         else:
             # Pré-preencher com dados da empresa/loja
             initial = {
@@ -2364,7 +2365,7 @@ def solicitar_assinatura_empresa(request, tipo_documento, documento_id):
     except Exception as e:
         logger.error(f"Erro ao solicitar assinatura da empresa: {str(e)}")
         messages.error(request, 'Erro interno do servidor.')
-        return redirect('crm_vendas:dashboard_crm')
+        return redirect('crm_vendas:dashboard')
 
 
 def solicitar_assinatura(request, tipo_documento, documento_id):
@@ -2386,12 +2387,12 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
             documento = get_object_or_404(Contrato, id=documento_id)
         else:
             messages.error(request, 'Tipo de documento inválido.')
-            return redirect('crm_vendas:dashboard_crm')
+            return redirect('crm_vendas:dashboard')
         
         # Verificar permissão
         if not request.user.is_superuser and documento.loja != request.user.loja_admin:
             messages.error(request, 'Sem permissão para acessar este documento.')
-            return redirect('crm_vendas:dashboard_crm')
+            return redirect('crm_vendas:dashboard')
         
         if request.method == 'POST':
             form = AssinaturaDigitalForm(request.POST)
@@ -2419,7 +2420,7 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
                     logger.error(f"Erro ao enviar email de assinatura: {str(e)}")
                     messages.warning(request, 'Assinatura criada, mas houve erro no envio do email.')
                 
-                return redirect('crm_vendas:dashboard_crm')
+                return redirect('crm_vendas:dashboard')
         else:
             form = AssinaturaDigitalForm()
         
@@ -2432,4 +2433,4 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
     except Exception as e:
         logger.error(f"Erro ao solicitar assinatura: {str(e)}")
         messages.error(request, 'Erro interno do servidor.')
-        return redirect('crm_vendas:dashboard_crm')
+        return redirect('crm_vendas:dashboard')
