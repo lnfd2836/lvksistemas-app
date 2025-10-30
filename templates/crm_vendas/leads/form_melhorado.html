@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Tipo de Pessoa -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Tipo de Pessoa</h5>
+                                        <div class="form-check form-check-inline">
+                                            {{ form.tipo_pessoa|add_class:"form-check-input" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dados Básicos -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-user me-2"></i>Dados Básicos</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.nome.label }}</label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                    <div class="text-danger">{{ form.nome.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3" id="campo-cpf">
+                                <label class="form-label">{{ form.cpf.label }}</label>
+                                {{ form.cpf }}
+                                {% if form.cpf.errors %}
+                                    <div class="text-danger">{{ form.cpf.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3" id="campo-rg">
+                                <label class="form-label">{{ form.rg.label }}</label>
+                                {{ form.rg }}
+                                {% if form.rg.errors %}
+                                    <div class="text-danger">{{ form.rg.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3" id="campo-cnpj" style="display: none;">
+                                <label class="form-label">{{ form.cnpj.label }}</label>
+                                {{ form.cnpj }}
+                                {% if form.cnpj.errors %}
+                                    <div class="text-danger">{{ form.cnpj.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3" id="campo-ie" style="display: none;">
+                                <label class="form-label">{{ form.inscricao_estadual.label }}</label>
+                                {{ form.inscricao_estadual }}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3" id="campo-nome-fantasia" style="display: none;">
+                                <label class="form-label">{{ form.nome_fantasia.label }}</label>
+                                {{ form.nome_fantasia }}
+                            </div>
+                        </div>
+                        
+                        <!-- Contato -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-phone me-2"></i>Contato</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.telefone.label }}</label>
+                                {{ form.telefone }}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.celular.label }}</label>
+                                {{ form.celular }}
+                            </div>
+                            
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">{{ form.whatsapp.label }}</label>
+                                {{ form.whatsapp }}
+                            </div>
+                        </div>
+                        
+                        <!-- Interesse do Cliente -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-bullseye me-2"></i>Interesse do Cliente</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.interesse_principal.label }}</label>
+                                {{ form.interesse_principal }}
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.observacoes_interesse.label }}</label>
+                                {{ form.observacoes_interesse }}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.valor_estimado.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.valor_estimado }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.orcamento_disponivel.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.orcamento_disponivel }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.prazo_decisao.label }}</label>
+                                {{ form.prazo_decisao }}
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Salvar Lead
+                                </button>
+                                <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePessoaFields() {
+    const tipoPessoa = document.getElementById('id_tipo_pessoa').value;
+    
+    // Campos Pessoa Física
+    const camposCpf = document.getElementById('campo-cpf');
+    const camposRg = document.getElementById('campo-rg');
+    
+    // Campos Pessoa Jurídica
+    const camposCnpj = document.getElementById('campo-cnpj');
+    const camposIe = document.getElementById('campo-ie');
+    const camposNomeFantasia = document.getElementById('campo-nome-fantasia');
+    
+    if (tipoPessoa === 'fisica') {
+        camposCpf.style.display = 'block';
+        camposRg.style.display = 'block';
+        camposCnpj.style.display = 'none';
+        camposIe.style.display = 'none';
+        camposNomeFantasia.style.display = 'none';
+    } else {
+        camposCpf.style.display = 'none';
+        camposRg.style.display = 'none';
+        camposCnpj.style.display = 'block';
+        camposIe.style.display = 'block';
+        camposNomeFantasia.style.display = 'block';
+    }
+}
+
+// Executar ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    togglePessoaFields();
+});
+</script>
+{% endblock %}

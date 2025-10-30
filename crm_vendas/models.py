@@ -9,6 +9,49 @@ from decimal import Decimal
 import uuid
 
 
+class ProdutoServico(models.Model):
+    """Produtos e Serviços para orçamentos, propostas e contratos"""
+    
+    TIPO_CHOICES = [
+        ('produto', 'Produto'),
+        ('servico', 'Serviço'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loja = models.ForeignKey('lojas.Loja', on_delete=models.CASCADE, related_name='produtos_servicos')
+    
+    # Dados básicos
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='servico')
+    codigo = models.CharField(max_length=50, blank=True, help_text="Código interno do produto/serviço")
+    nome = models.CharField(max_length=200)
+    descricao = models.TextField(blank=True)
+    categoria = models.CharField(max_length=100, blank=True)
+    
+    # Valores
+    preco_base = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    unidade = models.CharField(max_length=20, default='un', help_text="Unidade de medida (un, h, kg, m², etc.)")
+    
+    # Controle
+    ativo = models.BooleanField(default=True)
+    
+    # Datas
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Produto/Serviço"
+        verbose_name_plural = "Produtos/Serviços"
+        ordering = ['nome']
+        unique_together = ['loja', 'codigo']
+        indexes = [
+            models.Index(fields=['loja', 'ativo']),
+            models.Index(fields=['tipo', 'categoria']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nome} ({self.get_tipo_display()})"
+
+
 class Lead(models.Model):
     """Leads/Prospects do CRM"""
     
@@ -34,14 +77,37 @@ class Lead(models.Model):
         ('outros', 'Outros'),
     ]
     
+    TIPO_PESSOA_CHOICES = [
+        ('fisica', 'Pessoa Física'),
+        ('juridica', 'Pessoa Jurídica'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    # Dados básicos
-    nome = models.CharField(max_length=200)
+    # Tipo de pessoa
+    tipo_pessoa = models.CharField(max_length=10, choices=TIPO_PESSOA_CHOICES, default='fisica')
+    
+    # Dados básicos - Pessoa Física
+    nome = models.CharField(max_length=200, help_text="Nome completo para PF ou Razão Social para PJ")
+    cpf = models.CharField(max_length=14, blank=True, help_text="CPF para Pessoa Física")
+    rg = models.CharField(max_length=20, blank=True, help_text="RG para Pessoa Física")
+    
+    # Dados básicos - Pessoa Jurídica
+    cnpj = models.CharField(max_length=18, blank=True, help_text="CNPJ para Pessoa Jurídica")
+    inscricao_estadual = models.CharField(max_length=20, blank=True, help_text="Inscrição Estadual")
+    inscricao_municipal = models.CharField(max_length=20, blank=True, help_text="Inscrição Municipal")
+    nome_fantasia = models.CharField(max_length=200, blank=True, help_text="Nome Fantasia para PJ")
+    
+    # Contato
     email = models.EmailField(validators=[EmailValidator()])
     telefone = models.CharField(max_length=20, blank=True)
-    empresa = models.CharField(max_length=200, blank=True)
-    cargo = models.CharField(max_length=100, blank=True)
+    celular = models.CharField(max_length=20, blank=True)
+    whatsapp = models.CharField(max_length=20, blank=True)
+    
+    # Dados profissionais/empresariais
+    empresa = models.CharField(max_length=200, blank=True, help_text="Empresa onde trabalha (para PF)")
+    cargo = models.CharField(max_length=100, blank=True, help_text="Cargo na empresa (para PF)")
+    ramo_atividade = models.CharField(max_length=200, blank=True, help_text="Ramo de atividade da empresa")
     
     # Endereço
     endereco = models.TextField(blank=True)
@@ -58,9 +124,16 @@ class Lead(models.Model):
     valor_estimado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     probabilidade = models.IntegerField(default=50, help_text="Probabilidade de fechamento (%)")
     
-    # Observações
-    observacoes = models.TextField(blank=True)
+    # Interesse e necessidades do cliente
+    interesse_principal = models.TextField(blank=True, help_text="Principal interesse/necessidade do cliente")
+    observacoes = models.TextField(blank=True, help_text="Observações gerais sobre o lead")
+    observacoes_interesse = models.TextField(blank=True, help_text="Detalhes específicos do interesse do cliente")
     tags = models.JSONField(default=list, blank=True)
+    
+    # Qualificação
+    orcamento_disponivel = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Orçamento disponível informado pelo cliente")
+    prazo_decisao = models.CharField(max_length=100, blank=True, help_text="Prazo para tomada de decisão")
+    decisor = models.BooleanField(default=True, help_text="É o decisor da compra?")
     
     # Datas
     data_criacao = models.DateTimeField(auto_now_add=True)
@@ -201,14 +274,19 @@ class ItemOrcamento(models.Model):
     """Itens do orçamento"""
     
     orcamento = models.ForeignKey(Orcamento, on_delete=models.CASCADE, related_name='itens')
+    produto_servico = models.ForeignKey(ProdutoServico, on_delete=models.SET_NULL, null=True, blank=True, help_text="Produto/Serviço cadastrado")
     
-    # Dados do item
+    # Dados do item (podem ser preenchidos automaticamente do produto/serviço)
     descricao = models.CharField(max_length=500)
     detalhes = models.TextField(blank=True)
     quantidade = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     unidade = models.CharField(max_length=20, default='un')
     valor_unitario = models.DecimalField(max_digits=12, decimal_places=2)
     valor_total = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # Desconto específico do item
+    desconto_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Desconto em %")
+    desconto_valor = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Desconto em valor")
     
     # Ordem
     ordem = models.IntegerField(default=0)
@@ -219,7 +297,18 @@ class ItemOrcamento(models.Model):
         ordering = ['ordem', 'id']
     
     def save(self, *args, **kwargs):
-        self.valor_total = self.quantidade * self.valor_unitario
+        # Se produto/serviço foi selecionado, preencher dados automaticamente
+        if self.produto_servico and not self.descricao:
+            self.descricao = self.produto_servico.nome
+            self.unidade = self.produto_servico.unidade
+            if not self.valor_unitario:
+                self.valor_unitario = self.produto_servico.preco_base
+        
+        # Calcular valor total com descontos
+        valor_bruto = self.quantidade * self.valor_unitario
+        desconto_total = self.desconto_valor + (valor_bruto * self.desconto_percentual / 100)
+        self.valor_total = valor_bruto - desconto_total
+        
         super().save(*args, **kwargs)
         
         # Atualizar totais do orçamento
@@ -433,3 +522,86 @@ class EmailLog(models.Model):
     
     def __str__(self):
         return f"Email para {self.destinatario} - {self.assunto}"
+
+
+class AssinaturaDigital(models.Model):
+    """Controle de assinaturas digitais de documentos"""
+    
+    STATUS_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('enviado', 'Enviado para Assinatura'),
+        ('visualizado', 'Visualizado'),
+        ('assinado', 'Assinado'),
+        ('rejeitado', 'Rejeitado'),
+        ('expirado', 'Expirado'),
+    ]
+    
+    TIPO_DOCUMENTO_CHOICES = [
+        ('orcamento', 'Orçamento'),
+        ('proposta', 'Proposta'),
+        ('contrato', 'Contrato'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Relacionamentos
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='assinaturas')
+    orcamento = models.ForeignKey(Orcamento, on_delete=models.CASCADE, null=True, blank=True)
+    proposta = models.ForeignKey(Proposta, on_delete=models.CASCADE, null=True, blank=True)
+    contrato = models.ForeignKey(Contrato, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Dados da assinatura
+    tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
+    
+    # Signatários
+    nome_signatario = models.CharField(max_length=200)
+    email_signatario = models.EmailField()
+    cpf_signatario = models.CharField(max_length=14, blank=True)
+    
+    # Controle de acesso
+    token_acesso = models.UUIDField(default=uuid.uuid4, unique=True)
+    ip_assinatura = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Arquivos
+    documento_original = models.FileField(upload_to='assinaturas/originais/', blank=True)
+    documento_assinado = models.FileField(upload_to='assinaturas/assinados/', blank=True)
+    
+    # Dados da assinatura
+    hash_documento = models.CharField(max_length=64, blank=True, help_text="Hash SHA-256 do documento")
+    certificado_digital = models.TextField(blank=True, help_text="Dados do certificado usado na assinatura")
+    
+    # Datas
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_envio = models.DateTimeField(null=True, blank=True)
+    data_visualizacao = models.DateTimeField(null=True, blank=True)
+    data_assinatura = models.DateTimeField(null=True, blank=True)
+    data_expiracao = models.DateTimeField(null=True, blank=True)
+    
+    # Observações
+    observacoes = models.TextField(blank=True)
+    motivo_rejeicao = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = "Assinatura Digital"
+        verbose_name_plural = "Assinaturas Digitais"
+        ordering = ['-data_criacao']
+        indexes = [
+            models.Index(fields=['lead', 'status']),
+            models.Index(fields=['token_acesso']),
+            models.Index(fields=['data_expiracao']),
+        ]
+    
+    def __str__(self):
+        return f"Assinatura {self.get_tipo_documento_display()} - {self.nome_signatario}"
+    
+    @property
+    def esta_expirado(self):
+        """Verifica se a assinatura está expirada"""
+        return self.data_expiracao and timezone.now() > self.data_expiracao
+    
+    def gerar_url_assinatura(self):
+        """Gera URL para assinatura do documento"""
+        from django.urls import reverse
+        return reverse('crm_vendas:assinar_documento', kwargs={'token': self.token_acesso})

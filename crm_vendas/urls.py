@@ -55,4 +55,30 @@ urlpatterns = [
     
     # Configurações
     path('configuracoes/', views.configuracoes_crm, name='configuracoes'),
+    
+    # ============================================================================
+    # NOVAS URLS PARA FLUXO COMPLETO
+    # ============================================================================
+    
+    # Produtos e Serviços
+    path('produtos-servicos/', views.listar_produtos_servicos, name='listar_produtos_servicos'),
+    path('produtos-servicos/novo/', views.criar_produto_servico, name='criar_produto_servico'),
+    path('produtos-servicos/<uuid:produto_id>/editar/', views.editar_produto_servico, name='editar_produto_servico'),
+    
+    # Leads melhorados
+    path('leads/novo-melhorado/', views.criar_lead_melhorado, name='criar_lead_melhorado'),
+    
+    # Orçamentos melhorados
+    path('orcamentos/novo-melhorado/', views.criar_orcamento_melhorado, name='criar_orcamento_melhorado'),
+    path('orcamentos/<uuid:orcamento_id>/itens/', views.editar_orcamento_itens, name='editar_orcamento_itens'),
+    
+    # Assinatura Digital
+    path('assinatura/<str:tipo_documento>/<uuid:documento_id>/', views.solicitar_assinatura, name='solicitar_assinatura'),
+    path('assinar/<uuid:token>/', views.assinar_documento_publico, name='assinar_documento_publico'),
+    
+    # Relatórios
+    path('relatorios/vendas/', views.relatorios_vendas, name='relatorios_vendas'),
+    
+    # APIs
+    path('api/produto-servico/<uuid:produto_id>/', views.api_produto_servico_detalhes, name='api_produto_servico_detalhes'),
 ]

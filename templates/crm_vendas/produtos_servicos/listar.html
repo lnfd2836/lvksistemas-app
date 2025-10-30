@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Produtos e Serviços{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-box me-2"></i>
+                            Produtos e Serviços
+                        </h3>
+                        <a href="{% url 'crm_vendas:criar_produto_servico' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Novo Produto/Serviço
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <select name="tipo" class="form-select">
+                                    <option value="">Todos os tipos</option>
+                                    <option value="produto" {% if filtros.tipo == 'produto' %}selected{% endif %}>Produto</option>
+                                    <option value="servico" {% if filtros.tipo == 'servico' %}selected{% endif %}>Serviço</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="busca" class="form-control" placeholder="Buscar..." value="{{ filtros.busca }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Lista -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Código</th>
+                                    <th>Nome</th>
+                                    <th>Categoria</th>
+                                    <th>Preço Base</th>
+                                    <th>Unidade</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in produtos_servicos %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{% if item.tipo == 'produto' %}primary{% else %}info{% endif %}">
+                                            {{ item.get_tipo_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ item.codigo|default:"-" }}</td>
+                                    <td>{{ item.nome }}</td>
+                                    <td>{{ item.categoria|default:"-" }}</td>
+                                    <td>R$ {{ item.preco_base|floatformat:2 }}</td>
+                                    <td>{{ item.unidade }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if item.ativo %}success{% else %}secondary{% endif %}">
+                                            {% if item.ativo %}Ativo{% else %}Inativo{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'crm_vendas:editar_produto_servico' item.id %}" 
+                                               class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="fas fa-box fa-3x text-muted mb-3"></i>
+                                        <h5>Nenhum produto/serviço encontrado</h5>
+                                        <p class="text-muted">Cadastre o primeiro produto ou serviço.</p>
+                                        <a href="{% url 'crm_vendas:criar_produto_servico' %}" class="btn btn-primary">
+                                            <i class="fas fa-plus me-1"></i>Cadastrar Produto/Serviço
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginação -->
+                    {% if produtos_servicos.has_other_pages %}
+                    <nav aria-label="Paginação">
+                        <ul class="pagination justify-content-center">
+                            {% if produtos_servicos.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ produtos_servicos.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in produtos_servicos.paginator.page_range %}
+                                {% if produtos_servicos.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if produtos_servicos.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ produtos_servicos.next_page_number }}">Próximo</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

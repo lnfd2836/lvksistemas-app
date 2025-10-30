@@ -1191,3 +1191,525 @@ def configuracoes_crm(request):
     }
     
     return render(request, 'crm_vendas/configuracoes.html', context)
+
+# ============================================================================
+# NOVAS VIEWS PARA FLUXO COMPLETO DO CRM
+# ============================================================================
+
+from .forms import (
+    LeadForm, ProdutoServicoForm, OrcamentoForm, ItemOrcamentoForm, 
+    PropostaForm, ContratoForm, HistoricoContatoForm, AssinaturaDigitalForm
+)
+from .models import ProdutoServico, AssinaturaDigital
+
+
+# ============================================================================
+# PRODUTOS E SERVIÇOS
+# ============================================================================
+
+@login_required
+def listar_produtos_servicos(request):
+    """Lista produtos e serviços"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        produtos_servicos = ProdutoServico.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            produtos_servicos = ProdutoServico.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Filtros
+    tipo = request.GET.get('tipo')
+    categoria = request.GET.get('categoria')
+    ativo = request.GET.get('ativo')
+    busca = request.GET.get('busca')
+    
+    if tipo:
+        produtos_servicos = produtos_servicos.filter(tipo=tipo)
+    if categoria:
+        produtos_servicos = produtos_servicos.filter(categoria__icontains=categoria)
+    if ativo:
+        produtos_servicos = produtos_servicos.filter(ativo=ativo == 'true')
+    if busca:
+        produtos_servicos = produtos_servicos.filter(
+            Q(nome__icontains=busca) | 
+            Q(descricao__icontains=busca) |
+            Q(codigo__icontains=busca)
+        )
+    
+    # Paginação
+    paginator = Paginator(produtos_servicos, 20)
+    page = request.GET.get('page')
+    produtos_servicos = paginator.get_page(page)
+    
+    # Categorias para filtro
+    categorias = ProdutoServico.objects.values_list('categoria', flat=True).distinct()
+    
+    context = {
+        'produtos_servicos': produtos_servicos,
+        'categorias': categorias,
+        'filtros': {
+            'tipo': tipo,
+            'categoria': categoria,
+            'ativo': ativo,
+            'busca': busca,
+        }
+    }
+    
+    return render(request, 'crm_vendas/produtos_servicos/listar.html', context)
+
+
+@login_required
+def criar_produto_servico(request):
+    """Cria novo produto/serviço"""
+    
+    if request.method == 'POST':
+        form = ProdutoServicoForm(request.POST)
+        if form.is_valid():
+            try:
+                produto_servico = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    # Super admin pode escolher a loja (implementar seleção)
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    loja = request.user.loja_admin
+                
+                produto_servico.loja = loja
+                produto_servico.save()
+                
+                messages.success(request, f'Produto/Serviço "{produto_servico.nome}" criado com sucesso!')
+                return redirect('crm_vendas:listar_produtos_servicos')
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar produto/serviço: {str(e)}")
+                messages.error(request, 'Erro ao criar produto/serviço. Tente novamente.')
+    else:
+        form = ProdutoServicoForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Novo Produto/Serviço'
+    }
+    
+    return render(request, 'crm_vendas/produtos_servicos/form.html', context)
+
+
+@login_required
+def editar_produto_servico(request, produto_id):
+    """Edita produto/serviço"""
+    
+    produto_servico = get_object_or_404(ProdutoServico, id=produto_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and produto_servico.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para editar este produto/serviço.')
+        return redirect('crm_vendas:listar_produtos_servicos')
+    
+    if request.method == 'POST':
+        form = ProdutoServicoForm(request.POST, instance=produto_servico)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f'Produto/Serviço "{produto_servico.nome}" atualizado com sucesso!')
+                return redirect('crm_vendas:listar_produtos_servicos')
+                
+            except Exception as e:
+                logger.error(f"Erro ao atualizar produto/serviço {produto_id}: {str(e)}")
+                messages.error(request, 'Erro ao atualizar produto/serviço. Tente novamente.')
+    else:
+        form = ProdutoServicoForm(instance=produto_servico)
+    
+    context = {
+        'form': form,
+        'produto_servico': produto_servico,
+        'titulo': f'Editar {produto_servico.nome}'
+    }
+    
+    return render(request, 'crm_vendas/produtos_servicos/form.html', context)
+
+
+# ============================================================================
+# LEADS MELHORADOS
+# ============================================================================
+
+@login_required
+def criar_lead_melhorado(request):
+    """Cria novo lead com campos melhorados"""
+    
+    if request.method == 'POST':
+        form = LeadForm(request.POST)
+        if form.is_valid():
+            try:
+                lead = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    # Super admin pode escolher a loja (implementar seleção)
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    loja = request.user.loja_admin
+                
+                lead.loja = loja
+                lead.save()
+                
+                messages.success(request, f'Lead "{lead.nome}" criado com sucesso!')
+                return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar lead: {str(e)}")
+                messages.error(request, 'Erro ao criar lead. Tente novamente.')
+    else:
+        form = LeadForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Novo Lead'
+    }
+    
+    return render(request, 'crm_vendas/leads/form_melhorado.html', context)
+
+
+# ============================================================================
+# ORÇAMENTOS MELHORADOS
+# ============================================================================
+
+@login_required
+def criar_orcamento_melhorado(request):
+    """Cria orçamento com produtos/serviços"""
+    
+    lead_id = request.GET.get('lead')
+    lead = None
+    if lead_id:
+        lead = get_object_or_404(Lead, id=lead_id)
+    
+    if request.method == 'POST':
+        form = OrcamentoForm(request.POST)
+        if form.is_valid():
+            try:
+                orcamento = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    loja = request.user.loja_admin
+                
+                orcamento.loja = loja
+                orcamento.responsavel = request.user
+                orcamento.save()
+                
+                messages.success(request, f'Orçamento "{orcamento.numero}" criado com sucesso!')
+                return redirect('crm_vendas:editar_orcamento_itens', orcamento_id=orcamento.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar orçamento: {str(e)}")
+                messages.error(request, 'Erro ao criar orçamento. Tente novamente.')
+    else:
+        initial = {}
+        if lead:
+            initial['lead'] = lead
+        form = OrcamentoForm(initial=initial)
+    
+    context = {
+        'form': form,
+        'lead': lead,
+        'titulo': 'Novo Orçamento'
+    }
+    
+    return render(request, 'crm_vendas/orcamentos/form_melhorado.html', context)
+
+
+@login_required
+def editar_orcamento_itens(request, orcamento_id):
+    """Edita itens do orçamento"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para editar este orçamento.')
+        return redirect('crm_vendas:listar_orcamentos')
+    
+    # Produtos/serviços disponíveis
+    produtos_servicos = ProdutoServico.objects.filter(loja=orcamento.loja, ativo=True)
+    
+    if request.method == 'POST':
+        # Processar adição de item
+        if 'adicionar_item' in request.POST:
+            form_item = ItemOrcamentoForm(request.POST)
+            if form_item.is_valid():
+                item = form_item.save(commit=False)
+                item.orcamento = orcamento
+                item.save()
+                messages.success(request, 'Item adicionado com sucesso!')
+                return redirect('crm_vendas:editar_orcamento_itens', orcamento_id=orcamento_id)
+        
+        # Processar remoção de item
+        elif 'remover_item' in request.POST:
+            item_id = request.POST.get('item_id')
+            try:
+                item = ItemOrcamento.objects.get(id=item_id, orcamento=orcamento)
+                item.delete()
+                messages.success(request, 'Item removido com sucesso!')
+            except ItemOrcamento.DoesNotExist:
+                messages.error(request, 'Item não encontrado.')
+            return redirect('crm_vendas:editar_orcamento_itens', orcamento_id=orcamento_id)
+    
+    form_item = ItemOrcamentoForm()
+    
+    context = {
+        'orcamento': orcamento,
+        'form_item': form_item,
+        'produtos_servicos': produtos_servicos,
+        'titulo': f'Editar Itens - {orcamento.numero}'
+    }
+    
+    return render(request, 'crm_vendas/orcamentos/editar_itens.html', context)
+
+
+# ============================================================================
+# ASSINATURA DIGITAL
+# ============================================================================
+
+@login_required
+def solicitar_assinatura(request, tipo_documento, documento_id):
+    """Solicita assinatura digital de documento"""
+    
+    # Buscar documento
+    documento = None
+    if tipo_documento == 'orcamento':
+        documento = get_object_or_404(Orcamento, id=documento_id)
+    elif tipo_documento == 'proposta':
+        documento = get_object_or_404(Proposta, id=documento_id)
+    elif tipo_documento == 'contrato':
+        documento = get_object_or_404(Contrato, id=documento_id)
+    else:
+        messages.error(request, 'Tipo de documento inválido.')
+        return redirect('crm_vendas:dashboard')
+    
+    # Verificar permissão
+    if not request.user.is_superuser and documento.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para este documento.')
+        return redirect('crm_vendas:dashboard')
+    
+    if request.method == 'POST':
+        form = AssinaturaDigitalForm(request.POST)
+        if form.is_valid():
+            try:
+                assinatura = form.save(commit=False)
+                assinatura.lead = documento.lead
+                assinatura.tipo_documento = tipo_documento
+                
+                # Associar documento específico
+                if tipo_documento == 'orcamento':
+                    assinatura.orcamento = documento
+                elif tipo_documento == 'proposta':
+                    assinatura.proposta = documento
+                elif tipo_documento == 'contrato':
+                    assinatura.contrato = documento
+                
+                # Definir data de expiração (30 dias)
+                assinatura.data_expiracao = timezone.now() + timezone.timedelta(days=30)
+                assinatura.save()
+                
+                # Enviar email com link de assinatura
+                # TODO: Implementar envio de email
+                
+                messages.success(request, 'Solicitação de assinatura criada com sucesso!')
+                return redirect('crm_vendas:detalhar_lead', lead_id=documento.lead.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao solicitar assinatura: {str(e)}")
+                messages.error(request, 'Erro ao solicitar assinatura. Tente novamente.')
+    else:
+        # Preencher dados do lead
+        initial = {
+            'nome_signatario': documento.lead.nome,
+            'email_signatario': documento.lead.email,
+            'cpf_signatario': documento.lead.cpf,
+        }
+        form = AssinaturaDigitalForm(initial=initial)
+    
+    context = {
+        'form': form,
+        'documento': documento,
+        'tipo_documento': tipo_documento,
+        'titulo': f'Solicitar Assinatura - {documento}'
+    }
+    
+    return render(request, 'crm_vendas/assinaturas/solicitar.html', context)
+
+
+@csrf_exempt
+def assinar_documento_publico(request, token):
+    """Página pública para assinatura de documento"""
+    
+    assinatura = get_object_or_404(AssinaturaDigital, token_acesso=token)
+    
+    # Verificar se não expirou
+    if assinatura.esta_expirado:
+        return render(request, 'crm_vendas/assinaturas/expirado.html', {'assinatura': assinatura})
+    
+    # Marcar como visualizado
+    if not assinatura.data_visualizacao:
+        assinatura.data_visualizacao = timezone.now()
+        assinatura.status = 'visualizado'
+        assinatura.save()
+    
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'assinar':
+            # Processar assinatura
+            assinatura.status = 'assinado'
+            assinatura.data_assinatura = timezone.now()
+            assinatura.ip_assinatura = request.META.get('REMOTE_ADDR')
+            assinatura.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            assinatura.save()
+            
+            # Atualizar status do documento
+            if assinatura.orcamento:
+                assinatura.orcamento.status = 'aprovado'
+                assinatura.orcamento.data_resposta = timezone.now()
+                assinatura.orcamento.save()
+            elif assinatura.proposta:
+                assinatura.proposta.status = 'aprovada'
+                assinatura.proposta.data_resposta = timezone.now()
+                assinatura.proposta.save()
+            elif assinatura.contrato:
+                assinatura.contrato.status = 'assinado_cliente'
+                assinatura.contrato.assinado_cliente_em = timezone.now()
+                assinatura.contrato.save()
+            
+            return render(request, 'crm_vendas/assinaturas/sucesso.html', {'assinatura': assinatura})
+        
+        elif acao == 'rejeitar':
+            motivo = request.POST.get('motivo_rejeicao', '')
+            assinatura.status = 'rejeitado'
+            assinatura.motivo_rejeicao = motivo
+            assinatura.data_assinatura = timezone.now()
+            assinatura.save()
+            
+            # Atualizar status do documento
+            if assinatura.orcamento:
+                assinatura.orcamento.status = 'rejeitado'
+                assinatura.orcamento.save()
+            elif assinatura.proposta:
+                assinatura.proposta.status = 'rejeitada'
+                assinatura.proposta.save()
+            
+            return render(request, 'crm_vendas/assinaturas/rejeitado.html', {'assinatura': assinatura})
+    
+    context = {
+        'assinatura': assinatura,
+    }
+    
+    return render(request, 'crm_vendas/assinaturas/assinar.html', context)
+
+
+# ============================================================================
+# RELATÓRIOS
+# ============================================================================
+
+@login_required
+def relatorios_vendas(request):
+    """Relatórios de vendas"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+        orcamentos = Orcamento.objects.all()
+        propostas = Proposta.objects.all()
+        contratos = Contrato.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            leads = Lead.objects.filter(loja=loja)
+            orcamentos = Orcamento.objects.filter(loja=loja)
+            propostas = Proposta.objects.filter(loja=loja)
+            contratos = Contrato.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Período
+    periodo = request.GET.get('periodo', '30')  # últimos 30 dias
+    data_inicio = timezone.now() - timezone.timedelta(days=int(periodo))
+    
+    # Estatísticas do período
+    stats = {
+        'leads_criados': leads.filter(data_criacao__gte=data_inicio).count(),
+        'leads_convertidos': leads.filter(status='fechado_ganho', data_atualizacao__gte=data_inicio).count(),
+        'orcamentos_enviados': orcamentos.filter(data_envio__gte=data_inicio).count(),
+        'orcamentos_aprovados': orcamentos.filter(status='aprovado', data_resposta__gte=data_inicio).count(),
+        'propostas_enviadas': propostas.filter(data_envio__gte=data_inicio).count(),
+        'propostas_aprovadas': propostas.filter(status='aprovada', data_resposta__gte=data_inicio).count(),
+        'contratos_assinados': contratos.filter(status__in=['assinado_cliente', 'ativo'], assinado_cliente_em__gte=data_inicio).count(),
+        'valor_total_vendas': contratos.filter(status__in=['assinado_cliente', 'ativo'], assinado_cliente_em__gte=data_inicio).aggregate(total=Sum('valor_total'))['total'] or 0,
+    }
+    
+    # Taxa de conversão
+    if stats['leads_criados'] > 0:
+        stats['taxa_conversao'] = (stats['leads_convertidos'] / stats['leads_criados']) * 100
+    else:
+        stats['taxa_conversao'] = 0
+    
+    # Leads por status
+    leads_por_status = leads.values('status').annotate(count=Count('id')).order_by('-count')
+    
+    # Origem dos leads
+    leads_por_origem = leads.filter(data_criacao__gte=data_inicio).values('origem').annotate(count=Count('id')).order_by('-count')
+    
+    # Top produtos/serviços
+    top_produtos = ItemOrcamento.objects.filter(
+        orcamento__data_criacao__gte=data_inicio,
+        orcamento__status='aprovado'
+    ).values('descricao').annotate(
+        quantidade_total=Sum('quantidade'),
+        valor_total=Sum('valor_total')
+    ).order_by('-valor_total')[:10]
+    
+    context = {
+        'stats': stats,
+        'leads_por_status': leads_por_status,
+        'leads_por_origem': leads_por_origem,
+        'top_produtos': top_produtos,
+        'periodo': periodo,
+    }
+    
+    return render(request, 'crm_vendas/relatorios/vendas.html', context)
+
+
+# ============================================================================
+# API ENDPOINTS
+# ============================================================================
+
+@login_required
+def api_produto_servico_detalhes(request, produto_id):
+    """API para buscar detalhes de produto/serviço"""
+    
+    try:
+        produto = get_object_or_404(ProdutoServico, id=produto_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and produto.loja != request.user.loja_admin:
+            return JsonResponse({'error': 'Sem permissão'}, status=403)
+        
+        data = {
+            'id': str(produto.id),
+            'nome': produto.nome,
+            'descricao': produto.descricao,
+            'preco_base': float(produto.preco_base),
+            'unidade': produto.unidade,
+        }
+        
+        return JsonResponse(data)
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
