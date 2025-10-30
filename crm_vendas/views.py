@@ -1624,6 +1624,45 @@ def configuracoes_crm(request):
 # NOVAS VIEWS PARA FLUXO COMPLETO DO CRM
 # ============================================================================
 
+@login_required
+def criar_lead_melhorado(request):
+    """Cria novo lead com campos melhorados"""
+    
+    if request.method == 'POST':
+        form = LeadForm(request.POST)
+        if form.is_valid():
+            try:
+                lead = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    # Super admin pode escolher a loja (implementar seleção)
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    try:
+                        loja = request.user.loja_admin
+                    except:
+                        loja = Loja.objects.first()  # Fallback
+                
+                lead.loja = loja
+                lead.save()
+                
+                messages.success(request, f'Lead "{lead.nome}" criado com sucesso!')
+                return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar lead: {str(e)}")
+                messages.error(request, f'Erro ao criar lead: {str(e)}')
+    else:
+        form = LeadForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Novo Lead'
+    }
+    
+    return render(request, 'crm_vendas/leads/form_melhorado.html', context)
+
 
 # ============================================================================
 # PRODUTOS E SERVIÇOS
