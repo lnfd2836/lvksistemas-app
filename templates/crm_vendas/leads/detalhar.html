@@ -170,43 +170,7 @@
 
                 <!-- Atividades e Documentos -->
                 <div class="col-md-8">
-                    <!-- Ações Rápidas -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-bolt me-2"></i>
-                                Ações Rápidas
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3 mb-2">
-                                    <a href="{% url 'crm_vendas:criar_orcamento' %}?lead={{ lead.id }}" class="btn btn-primary btn-sm w-100">
-                                        <i class="fas fa-file-invoice-dollar"></i><br>
-                                        Criar Orçamento
-                                    </a>
-                                </div>
-                                <div class="col-md-3 mb-2">
-                                    <a href="{% url 'crm_vendas:criar_proposta' %}?lead={{ lead.id }}" class="btn btn-info btn-sm w-100">
-                                        <i class="fas fa-file-alt"></i><br>
-                                        Criar Proposta
-                                    </a>
-                                </div>
-                                <div class="col-md-3 mb-2">
-                                    <a href="{% url 'crm_vendas:criar_contrato' %}?lead={{ lead.id }}" class="btn btn-success btn-sm w-100">
-                                        <i class="fas fa-file-contract"></i><br>
-                                        Criar Contrato
-                                    </a>
-                                </div>
-                                <div class="col-md-3 mb-2">
-                                    <button type="button" class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAlterarStatus">
-                                        <i class="fas fa-exchange-alt"></i><br>
-                                        Alterar Status
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Tabs de Conteúdo -->
                     <div class="card">
@@ -322,10 +286,7 @@
                                         <div class="text-center py-4">
                                             <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
                                             <h5>Nenhum orçamento criado</h5>
-                                            <p class="text-muted">Crie o primeiro orçamento para este lead.</p>
-                                            <a href="{% url 'crm_vendas:criar_orcamento' %}?lead={{ lead.id }}" class="btn btn-primary">
-                                                <i class="fas fa-plus me-1"></i>Criar Orçamento
-                                            </a>
+                                            <p class="text-muted">Os orçamentos criados para este lead aparecerão aqui.</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -369,10 +330,7 @@
                                         <div class="text-center py-4">
                                             <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
                                             <h5>Nenhuma proposta criada</h5>
-                                            <p class="text-muted">Crie a primeira proposta para este lead.</p>
-                                            <a href="{% url 'crm_vendas:criar_proposta' %}?lead={{ lead.id }}" class="btn btn-info">
-                                                <i class="fas fa-plus me-1"></i>Criar Proposta
-                                            </a>
+                                            <p class="text-muted">As propostas criadas para este lead aparecerão aqui.</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -416,10 +374,7 @@
                                         <div class="text-center py-4">
                                             <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
                                             <h5>Nenhum contrato criado</h5>
-                                            <p class="text-muted">Crie o primeiro contrato para este lead.</p>
-                                            <a href="{% url 'crm_vendas:criar_contrato' %}?lead={{ lead.id }}" class="btn btn-success">
-                                                <i class="fas fa-plus me-1"></i>Criar Contrato
-                                            </a>
+                                            <p class="text-muted">Os contratos criados para este lead aparecerão aqui.</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -461,41 +416,7 @@
     </div>
 </div>
 
-<!-- Modal para Alterar Status -->
-<div class="modal fade" id="modalAlterarStatus" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Alterar Status do Lead</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="{% url 'crm_vendas:editar_lead' lead.id %}"
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Novo Status</label>
-                        <select class="form-select" id="status" name="status" required>
-                            {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if value == lead.status %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="observacao" class="form-label">Observação (opcional)</label>
-                        <textarea class="form-control" id="observacao" name="observacao" rows="3" 
-                                  placeholder="Motivo da alteração de status..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Alterar Status</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
 
 {% block extra_css %}
