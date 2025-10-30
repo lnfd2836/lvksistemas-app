@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assinatura Concluída{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">✅ Assinatura Concluída</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="alert alert-success">
+                        <h5>Documento Assinado com Sucesso!</h5>
+                        <p class="mb-0">Sua assinatura digital foi registrada em {{ assinatura.data_assinatura|date:"d/m/Y H:i" }}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Detalhes da Assinatura:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Signatário:</strong> {{ assinatura.nome_signatario }}</li>
+                            <li><strong>Email:</strong> {{ assinatura.email_signatario }}</li>
+                            <li><strong>Data:</strong> {{ assinatura.data_assinatura|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Tipo de Documento:</strong> {{ assinatura.get_tipo_documento_display }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <p class="mb-0">
+                            📧 Uma cópia do documento assinado será enviada para seu email em breve.
+                        </p>
+                    </div>
+
+                    <button type="button" class="btn btn-primary mt-3" onclick="window.close()">
+                        Fechar Janela
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

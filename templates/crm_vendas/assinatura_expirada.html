@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Link Expirado{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">⏰ Link Expirado</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="alert alert-warning">
+                        <h5>Este link de assinatura expirou</h5>
+                        <p>O prazo para assinatura digital deste documento venceu em {{ assinatura.data_expiracao|date:"d/m/Y H:i" }}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Detalhes:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Signatário:</strong> {{ assinatura.nome_signatario }}</li>
+                            <li><strong>Email:</strong> {{ assinatura.email_signatario }}</li>
+                            <li><strong>Tipo de Documento:</strong> {{ assinatura.get_tipo_documento_display }}</li>
+                            <li><strong>Data de Expiração:</strong> {{ assinatura.data_expiracao|date:"d/m/Y H:i" }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <p class="mb-0">
+                            📞 Entre em contato conosco para solicitar um novo link de assinatura.
+                        </p>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary mt-3" onclick="window.close()">
+                        Fechar Janela
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

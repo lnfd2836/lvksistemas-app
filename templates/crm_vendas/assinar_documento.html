@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assinatura Digital - {{ assinatura.nome_signatario }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🖊️ Assinatura Digital</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Documento para Assinatura</h5>
+                        <p><strong>Signatário:</strong> {{ assinatura.nome_signatario }}</p>
+                        <p><strong>Email:</strong> {{ assinatura.email_signatario }}</p>
+                        <p><strong>Tipo:</strong> {{ assinatura.get_tipo_documento_display }}</p>
+                        <p><strong>Data de Expiração:</strong> {{ assinatura.data_expiracao|date:"d/m/Y H:i" }}</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6>⚠️ Importante:</h6>
+                        <ul>
+                            <li>A assinatura digital tem validade jurídica</li>
+                            <li>Você receberá uma cópia do documento assinado por email</li>
+                            <li>Esta ação não pode ser desfeita</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmar" required>
+                            <label class="form-check-label" for="confirmar">
+                                Confirmo que li e concordo com os termos da assinatura digital
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                🖊️ Assinar Documento
+                            </button>
+                            <a href="#" class="btn btn-secondary" onclick="window.close()">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

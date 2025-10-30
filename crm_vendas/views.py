@@ -2215,3 +2215,110 @@ def api_produto_servico_detalhes(request, produto_id):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+def a
+ssinar_documento_publico(request, token):
+    """
+    View pública para assinatura digital de documentos
+    """
+    try:
+        # Buscar assinatura pelo token
+        assinatura = get_object_or_404(AssinaturaDigital, token_acesso=token)
+        
+        # Verificar se o token ainda é válido
+        if assinatura.data_expiracao and assinatura.data_expiracao < timezone.now():
+            return render(request, 'crm_vendas/assinatura_expirada.html', {
+                'assinatura': assinatura
+            })
+        
+        # Verificar se já foi assinado
+        if assinatura.assinado:
+            return render(request, 'crm_vendas/documento_ja_assinado.html', {
+                'assinatura': assinatura
+            })
+        
+        if request.method == 'POST':
+            # Processar assinatura
+            assinatura.assinado = True
+            assinatura.data_assinatura = timezone.now()
+            assinatura.ip_assinatura = request.META.get('REMOTE_ADDR')
+            assinatura.user_agent_assinatura = request.META.get('HTTP_USER_AGENT', '')
+            assinatura.save()
+            
+            # Log da assinatura
+            logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} ID {assinatura.documento_id} por {assinatura.nome_signatario}")
+            
+            return render(request, 'crm_vendas/assinatura_concluida.html', {
+                'assinatura': assinatura
+            })
+        
+        # Exibir formulário de assinatura
+        return render(request, 'crm_vendas/assinar_documento.html', {
+            'assinatura': assinatura
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro na assinatura digital: {str(e)}")
+        return render(request, 'crm_vendas/erro_assinatura.html', {
+            'erro': 'Erro interno do servidor'
+        })
+
+
+def solicitar_assinatura(request, tipo_documento, documento_id):
+    """
+    View para solicitar assinatura digital de um documento
+    """
+    try:
+        # Verificar se o usuário tem permissão
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        # Buscar o documento baseado no tipo
+        documento = None
+        if tipo_documento == 'orcamento':
+            documento = get_object_or_404(Orcamento, id=documento_id)
+        elif tipo_documento == 'proposta':
+            documento = get_object_or_404(Proposta, id=documento_id)
+        elif tipo_documento == 'contrato':
+            documento = get_object_or_404(Contrato, id=documento_id)
+        else:
+            messages.error(request, 'Tipo de documento inválido.')
+            return redirect('crm_vendas:dashboard_crm')
+        
+        # Verificar permissão
+        if not request.user.is_superuser and documento.loja != request.user.loja_admin:
+            messages.error(request, 'Sem permissão para acessar este documento.')
+            return redirect('crm_vendas:dashboard_crm')
+        
+        if request.method == 'POST':
+            form = AssinaturaDigitalForm(request.POST)
+            if form.is_valid():
+                assinatura = form.save(commit=False)
+                assinatura.tipo_documento = tipo_documento
+                assinatura.documento_id = documento_id
+                assinatura.solicitado_por = request.user
+                assinatura.save()
+                
+                # Enviar email de solicitação
+                try:
+                    email_service = EmailService()
+                    email_service.enviar_solicitacao_assinatura(assinatura, documento)
+                    messages.success(request, 'Solicitação de assinatura enviada com sucesso!')
+                except Exception as e:
+                    logger.error(f"Erro ao enviar email de assinatura: {str(e)}")
+                    messages.warning(request, 'Assinatura criada, mas houve erro no envio do email.')
+                
+                return redirect('crm_vendas:dashboard_crm')
+        else:
+            form = AssinaturaDigitalForm()
+        
+        return render(request, 'crm_vendas/solicitar_assinatura.html', {
+            'form': form,
+            'documento': documento,
+            'tipo_documento': tipo_documento
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao solicitar assinatura: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:dashboard_crm')
