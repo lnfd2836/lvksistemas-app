@@ -55,15 +55,15 @@ def orcamento_criado(sender, instance, created, **kwargs):
     if created:
         logger.info(f"Novo orçamento criado: {instance.numero} para {instance.lead.nome}")
         
-        # Atualizar status do lead
-        if instance.lead.status in ['novo', 'contatado', 'qualificado']:
-            instance.lead.status = 'proposta_enviada'
+        # Atualizar status do lead apenas se ainda estiver em status inicial
+        if instance.lead.status in ['novo', 'contatado']:
+            instance.lead.status = 'qualificado'  # Mudança: usar 'qualificado' em vez de 'proposta_enviada'
             instance.lead.save()
         
         # Criar histórico
         HistoricoContato.objects.create(
             lead=instance.lead,
-            tipo='email',
+            tipo='outros',
             assunto='Orçamento Criado',
             descricao=f'Orçamento {instance.numero} foi criado',
             resultado='Orçamento preparado para envio',
@@ -96,10 +96,20 @@ def proposta_criada(sender, instance, created, **kwargs):
     if created:
         logger.info(f"Nova proposta criada: {instance.numero} para {instance.lead.nome}")
         
-        # Atualizar status do lead
-        if instance.lead.status != 'negociacao':
-            instance.lead.status = 'negociacao'
+        # Atualizar status do lead para 'proposta_enviada' quando uma PROPOSTA é criada
+        if instance.lead.status in ['novo', 'contatado', 'qualificado']:
+            instance.lead.status = 'proposta_enviada'
             instance.lead.save()
+        
+        # Criar histórico
+        HistoricoContato.objects.create(
+            lead=instance.lead,
+            tipo='email',
+            assunto='Proposta Criada',
+            descricao=f'Proposta {instance.numero} foi criada',
+            resultado='Proposta preparada para envio',
+            data_contato=timezone.now()
+        )
 
 
 @receiver(post_save, sender=Contrato)
@@ -137,6 +147,10 @@ def orcamento_status_alterado(sender, instance, **kwargs):
                     assunto = 'Orçamento Enviado'
                     descricao = f'Orçamento {instance.numero} foi enviado por email'
                     resultado = 'Aguardando resposta do cliente'
+                    # Atualizar status do lead quando orçamento é ENVIADO
+                    if instance.lead.status in ['novo', 'contatado', 'qualificado']:
+                        instance.lead.status = 'proposta_enviada'
+                        instance.lead.save()
                 elif instance.status == 'visualizado':
                     assunto = 'Orçamento Visualizado'
                     descricao = f'Cliente visualizou o orçamento {instance.numero}'
