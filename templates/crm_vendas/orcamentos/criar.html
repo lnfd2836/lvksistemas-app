@@ -131,6 +131,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
 $(document).ready(function() {
     let itemIndex = 1;
@@ -149,13 +152,17 @@ $(document).ready(function() {
     function calcularTotalGeral() {
         let total = 0;
         $('.valor-total').each(function() {
-            total += parseFloat($(this).val()) || 0;
+            const valor = parseFloat($(this).val()) || 0;
+            total += valor;
         });
         
+        // Atualizar display do total
         $('#total-geral').text(total.toLocaleString('pt-BR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }));
+        
+        console.log('Total calculado:', total); // Debug
     }
     
     // Adicionar novo item
