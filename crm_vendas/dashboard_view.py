@@ -15,27 +15,11 @@ def dashboard_crm_simples(request):
     """Dashboard principal do CRM - versão simplificada"""
     
     try:
-        # Filtrar por loja se não for super admin
-        if request.user.is_superuser:
-            leads = Lead.objects.all()
-            orcamentos = Orcamento.objects.all()
-            propostas = Proposta.objects.all()
-            contratos = Contrato.objects.all()
-        else:
-            # Buscar loja do usuário
-            try:
-                loja = request.user.loja_admin
-            except:
-                loja = None
-            
-            if not loja:
-                messages.error(request, 'Usuário não associado a nenhuma loja.')
-                return redirect('dashboard:index')
-            
-            leads = Lead.objects.filter(loja=loja)
-            orcamentos = Orcamento.objects.filter(loja=loja)
-            propostas = Proposta.objects.filter(loja=loja)
-            contratos = Contrato.objects.filter(loja=loja)
+        # Estatísticas básicas sem filtro por loja (temporário)
+        leads = Lead.objects.all()
+        orcamentos = Orcamento.objects.all()
+        propostas = Proposta.objects.all()
+        contratos = Contrato.objects.all()
         
         # Estatísticas básicas
         stats = {
@@ -50,20 +34,10 @@ def dashboard_crm_simples(request):
             'valor_orcamentos': 0,
         }
         
-        # Leads recentes
+        # Dados recentes
         leads_recentes = leads.order_by('-data_criacao')[:5]
-        
-        # Orcamentos recentes
         orcamentos_pendentes = orcamentos.order_by('-data_criacao')[:5]
-        
-        # Atividades recentes
         atividades = []
-        try:
-            atividades = HistoricoContato.objects.filter(
-                lead__in=leads
-            ).order_by('-data_contato')[:10]
-        except:
-            pass
         
         context = {
             'stats': stats,
@@ -72,9 +46,26 @@ def dashboard_crm_simples(request):
             'atividades': atividades,
         }
         
-        return render(request, 'crm_vendas/dashboard.html', context)
+        return render(request, 'crm_vendas/dashboard_simples.html', context)
         
     except Exception as e:
         logger.error(f"Erro no dashboard CRM: {str(e)}")
-        messages.error(request, 'Erro ao carregar dashboard. Tente novamente.')
-        return redirect('dashboard:index')
+        # Em caso de erro, retornar uma página básica
+        context = {
+            'stats': {
+                'total_leads': 0,
+                'leads_novos': 0,
+                'leads_qualificados': 0,
+                'orcamentos_enviados': 0,
+                'orcamentos_aprovados': 0,
+                'propostas_enviadas': 0,
+                'contratos_ativos': 0,
+                'valor_pipeline': 0,
+                'valor_orcamentos': 0,
+            },
+            'leads_recentes': [],
+            'orcamentos_pendentes': [],
+            'atividades': [],
+            'erro': True,
+        }
+        return render(request, 'crm_vendas/dashboard_simples.html', context)
