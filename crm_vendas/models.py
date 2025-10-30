@@ -188,6 +188,13 @@ class Orcamento(models.Model):
     def esta_expirado(self):
         """Verifica se o orçamento está expirado"""
         return self.data_expiracao and timezone.now() > self.data_expiracao
+    
+    def atualizar_totais(self):
+        """Atualiza os totais do orçamento baseado nos itens"""
+        subtotal = sum(item.valor_total for item in self.itens.all())
+        self.subtotal = subtotal
+        self.total = subtotal - self.desconto + self.impostos
+        self.save()
 
 
 class ItemOrcamento(models.Model):

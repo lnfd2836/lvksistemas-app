@@ -584,7 +584,7 @@ def editar_orcamento(request, orcamento_id):
 @login_required
 def criar_proposta(request):
     """Cria uma nova proposta"""
-    # Implementação básica - renderizar formulário
+    # Obter loja
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
@@ -593,8 +593,93 @@ def criar_proposta(request):
     else:
         loja = None
     
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            lead_id = request.POST.get('lead_id')
+            titulo = request.POST.get('titulo')
+            descricao = request.POST.get('descricao', '')
+            prazo_execucao = request.POST.get('prazo_execucao', '')
+            prazo_validade = int(request.POST.get('prazo_validade', 30))
+            condicoes_pagamento = request.POST.get('condicoes_pagamento', '')
+            observacoes = request.POST.get('observacoes', '')
+            
+            # Buscar lead
+            lead = get_object_or_404(Lead, id=lead_id)
+            
+            # Verificar permissão
+            if not request.user.is_superuser and lead.loja != loja:
+                messages.error(request, 'Você não tem permissão para criar proposta para este lead.')
+                return redirect('crm_vendas:criar_proposta')
+            
+            # Calcular valor total dos serviços
+            valor_total = 0
+            servicos_data = {}
+            
+            # Agrupar dados dos serviços
+            for key, value in request.POST.items():
+                if key.startswith('servicos[') and '][' in key:
+                    parts = key.replace('servicos[', '').replace(']', '').split('[')
+                    if len(parts) == 2:
+                        index, field = parts
+                        if index not in servicos_data:
+                            servicos_data[index] = {}
+                        servicos_data[index][field] = value
+            
+            # Calcular valor total
+            for index, servico_data in servicos_data.items():
+                if 'nome' in servico_data and servico_data['nome'].strip():
+                    valor = float(servico_data.get('valor', 0))
+                    valor_total += valor
+            
+            # Criar proposta
+            proposta = Proposta.objects.create(
+                lead=lead,
+                loja=lead.loja,
+                responsavel=request.user,
+                titulo=titulo,
+                resumo_executivo=descricao,
+                objetivos=f"Serviços: {len(servicos_data)} itens",
+                metodologia=prazo_execucao,
+                investimento=condicoes_pagamento,
+                valor_total=valor_total,
+                condicoes_comerciais=observacoes,
+                prazo_validade=prazo_validade,
+                status='rascunho'
+            )
+            
+            # Atualizar status do lead
+            if lead.status in ['novo', 'contatado', 'qualificado']:
+                lead.status = 'proposta_enviada'
+                lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=lead,
+                usuario=request.user,
+                tipo='outros',
+                assunto='Proposta Criada',
+                descricao=f'Proposta {proposta.numero} criada com {len(servicos_data)} serviços',
+                resultado=f'Valor total: R$ {proposta.valor_total:,.2f}',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, f'Proposta {proposta.numero} criada com sucesso!')
+            return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar proposta: {str(e)}")
+            messages.error(request, f'Erro ao criar proposta: {str(e)}')
+    
+    # Buscar leads disponíveis
+    if loja:
+        leads = Lead.objects.filter(loja=loja).exclude(status__in=['fechado_ganho', 'fechado_perdido'])
+    else:
+        leads = Lead.objects.exclude(status__in=['fechado_ganho', 'fechado_perdido'])
+    
     context = {
         'loja': loja,
+        'leads': leads,
         'lojas': Loja.objects.all() if request.user.is_superuser else None,
     }
     return render(request, 'crm_vendas/propostas/criar.html', context)
@@ -616,7 +701,7 @@ def enviar_proposta(request, proposta_id):
 @login_required
 def criar_contrato(request):
     """Cria um novo contrato"""
-    # Implementação básica - renderizar formulário
+    # Obter loja
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
@@ -625,8 +710,99 @@ def criar_contrato(request):
     else:
         loja = None
     
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            lead_id = request.POST.get('lead_id')
+            titulo = request.POST.get('titulo')
+            descricao = request.POST.get('descricao', '')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+            prazo_meses = int(request.POST.get('prazo_meses', 12))
+            condicoes = request.POST.get('condicoes', '')
+            observacoes = request.POST.get('observacoes', '')
+            
+            # Buscar lead
+            lead = get_object_or_404(Lead, id=lead_id)
+            
+            # Verificar permissão
+            if not request.user.is_superuser and lead.loja != loja:
+                messages.error(request, 'Você não tem permissão para criar contrato para este lead.')
+                return redirect('crm_vendas:criar_contrato')
+            
+            # Calcular valor total dos serviços
+            valor_total = 0
+            servicos_data = {}
+            
+            # Agrupar dados dos serviços
+            for key, value in request.POST.items():
+                if key.startswith('servicos_contrato[') and '][' in key:
+                    parts = key.replace('servicos_contrato[', '').replace(']', '').split('[')
+                    if len(parts) == 2:
+                        index, field = parts
+                        if index not in servicos_data:
+                            servicos_data[index] = {}
+                        servicos_data[index][field] = value
+            
+            # Calcular valor total
+            for index, servico_data in servicos_data.items():
+                if 'nome' in servico_data and servico_data['nome'].strip():
+                    valor = float(servico_data.get('valor', 0))
+                    valor_total += valor
+            
+            # Converter datas
+            from datetime import datetime
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date() if data_inicio else timezone.now().date()
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date() if data_fim else None
+            
+            # Criar contrato
+            contrato = Contrato.objects.create(
+                lead=lead,
+                loja=lead.loja,
+                responsavel=request.user,
+                titulo=titulo,
+                objeto=descricao,
+                clausulas=condicoes,
+                valor_total=valor_total,
+                data_inicio=data_inicio_obj,
+                data_fim=data_fim_obj,
+                prazo_meses=prazo_meses,
+                forma_pagamento=observacoes,
+                status='rascunho'
+            )
+            
+            # Atualizar status do lead
+            if lead.status != 'fechado_ganho':
+                lead.status = 'fechado_ganho'
+                lead.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=lead,
+                usuario=request.user,
+                tipo='outros',
+                assunto='Contrato Criado',
+                descricao=f'Contrato {contrato.numero} criado com {len(servicos_data)} serviços',
+                resultado=f'Valor total: R$ {contrato.valor_total:,.2f}',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, f'Contrato {contrato.numero} criado com sucesso!')
+            return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar contrato: {str(e)}")
+            messages.error(request, f'Erro ao criar contrato: {str(e)}')
+    
+    # Buscar leads disponíveis
+    if loja:
+        leads = Lead.objects.filter(loja=loja).exclude(status__in=['fechado_perdido'])
+    else:
+        leads = Lead.objects.exclude(status__in=['fechado_perdido'])
+    
     context = {
         'loja': loja,
+        'leads': leads,
         'lojas': Loja.objects.all() if request.user.is_superuser else None,
     }
     return render(request, 'crm_vendas/contratos/criar.html', context)
