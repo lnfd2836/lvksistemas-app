@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
 
-{% block title %}Criar Proposta - CRM{% endblock %}
+{% block title %}Criar Proposta{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,233 +9,22 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-handshake me-2"></i>
+                        <i class="fas fa-file-alt me-2"></i>
                         Criar Proposta
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="lead_id" class="form-label">Lead</label>
-                                    <select name="lead_id" id="lead_id" class="form-select" required>
-                                        <option value="">Selecione um lead</option>
-                                        {% for lead in leads %}
-                                        <option value="{{ lead.id }}">{{ lead.nome }} - {{ lead.empresa }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="titulo" class="form-label">Título</label>
-                                    <input type="text" name="titulo" id="titulo" class="form-control" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="descricao" class="form-label">Descrição</label>
-                            <textarea name="descricao" id="descricao" class="form-control" rows="4"></textarea>
-                        </div>
-
-                        <!-- Seção de Serviços/Produtos -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-list me-2"></i>
-                                    Produtos/Serviços da Proposta
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="servicos-container">
-                                    <div class="servico-row mb-3" data-index="0">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Nome do Serviço/Produto</label>
-                                                <input type="text" name="servicos[0][nome]" class="form-control"
-                                                    placeholder="Ex: Consultoria em Marketing Digital" required>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Valor</label>
-                                                <input type="number" name="servicos[0][valor]"
-                                                    class="form-control valor-servico" step="0.01" min="0">
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-end">
-                                                <button type="button" class="btn btn-danger btn-sm remover-servico"
-                                                    style="display: none;">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-2">
-                                            <div class="col-12">
-                                                <label class="form-label">Descrição Detalhada (opcional)</label>
-                                                <textarea name="servicos[0][descricao]" class="form-control" rows="2"
-                                                    placeholder="Detalhes sobre o serviço/produto..."></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <button type="button" id="adicionar-servico" class="btn btn-success btn-sm">
-                                        <i class="fas fa-plus me-1"></i>
-                                        Adicionar Produto/Serviço
-                                    </button>
-
-                                    <div class="text-end">
-                                        <strong>Valor Total: R$ <span id="valor-total-proposta">0,00</span></strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="prazo_execucao" class="form-label">Prazo de Execução</label>
-                                    <input type="text" name="prazo_execucao" id="prazo_execucao" class="form-control"
-                                        placeholder="Ex: 30 dias">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="prazo_validade" class="form-label">Validade da Proposta (dias)</label>
-                                    <input type="number" name="prazo_validade" id="prazo_validade" class="form-control"
-                                        value="30">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="condicoes_pagamento" class="form-label">Condições de Pagamento</label>
-                            <textarea name="condicoes_pagamento" id="condicoes_pagamento" class="form-control"
-                                rows="3"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'crm_vendas:listar_propostas' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Criar Proposta</button>
-                        </div>
-                    </form>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta funcionalidade está em desenvolvimento.
+                        <br>
+                        <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar ao Dashboard
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<script>
-    $(document).ready(function () {
-        let servicoIndex = 1;
-
-        // Função para calcular valor total
-        function calcularValorTotal() {
-            let total = 0;
-            $('.valor-servico').each(function () {
-                total += parseFloat($(this).val()) || 0;
-            });
-
-            $('#valor-total-proposta').text(total.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }));
-        }
-
-        // Adicionar novo serviço
-        $('#adicionar-servico').click(function () {
-            const novoServico = `
-            <div class="servico-row mb-3" data-index="${servicoIndex}">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label">Nome do Serviço/Produto</label>
-                        <input type="text" name="servicos[${servicoIndex}][nome]" class="form-control" placeholder="Ex: Desenvolvimento de Website" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Valor</label>
-                        <input type="number" name="servicos[${servicoIndex}][valor]" class="form-control valor-servico" step="0.01" min="0">
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="button" class="btn btn-danger btn-sm remover-servico">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-12">
-                        <label class="form-label">Descrição Detalhada (opcional)</label>
-                        <textarea name="servicos[${servicoIndex}][descricao]" class="form-control" rows="2" placeholder="Detalhes sobre o serviço/produto..."></textarea>
-                    </div>
-                </div>
-            </div>
-        `;
-
-            $('#servicos-container').append(novoServico);
-            servicoIndex++;
-
-            // Mostrar botão de remover se houver mais de um serviço
-            if ($('.servico-row').length > 1) {
-                $('.remover-servico').show();
-            }
-        });
-
-        // Remover serviço
-        $(document).on('click', '.remover-servico', function () {
-            $(this).closest('.servico-row').remove();
-            calcularValorTotal();
-
-            // Esconder botão de remover se houver apenas um serviço
-            if ($('.servico-row').length <= 1) {
-                $('.remover-servico').hide();
-            }
-        });
-
-        // Calcular valores quando valor mudar
-        $(document).on('input', '.valor-servico', function () {
-            calcularValorTotal();
-        });
-
-        // Calcular valor inicial
-        calcularValorTotal();
-
-        // Validação do formulário
-        $('form').on('submit', function (e) {
-            let valid = true;
-
-            // Verificar se há pelo menos um produto/serviço
-            if ($('.servico-row').length === 0) {
-                alert('Adicione pelo menos um produto/serviço à proposta.');
-                e.preventDefault();
-                return false;
-            }
-
-            // Verificar se todos os serviços têm nome
-            $('.servico-row').each(function () {
-                const nome = $(this).find('input[name*="[nome]"]').val().trim();
-
-                if (!nome) {
-                    alert('Todos os produtos/serviços devem ter um nome.');
-                    valid = false;
-                    return false;
-                }
-            });
-
-            if (!valid) {
-                e.preventDefault();
-            }
-        });
-    });
-</script>
 {% endblock %}

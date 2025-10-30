@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Orçamento {{ orcamento.numero }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            Orçamento {{ orcamento.numero }}
+                        </h3>
+                        <div>
+                            <a href="{% url 'crm_vendas:editar_orcamento' orcamento.id %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Informações do Orçamento</h5>
+                            <p><strong>Lead:</strong> {{ orcamento.lead.nome }}</p>
+                            <p><strong>Email:</strong> {{ orcamento.lead.email }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{% if orcamento.status == 'aprovado' %}success{% elif orcamento.status == 'rejeitado' %}danger{% else %}warning{% endif %}">
+                                    {{ orcamento.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Data de Criação:</strong> {{ orcamento.data_criacao|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Valores</h5>
+                            <p><strong>Subtotal:</strong> R$ {{ orcamento.subtotal|floatformat:2 }}</p>
+                            <p><strong>Desconto:</strong> R$ {{ orcamento.desconto|floatformat:2 }}</p>
+                            <p><strong>Impostos:</strong> R$ {{ orcamento.impostos|floatformat:2 }}</p>
+                            <p><strong>Total:</strong> <span class="h5 text-success">R$ {{ orcamento.total|floatformat:2 }}</span></p>
+                        </div>
+                    </div>
+                    
+                    {% if orcamento.itens.all %}
+                    <hr>
+                    <h5>Itens do Orçamento</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Qtd</th>
+                                    <th>Valor Unit.</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in orcamento.itens.all %}
+                                <tr>
+                                    <td>{{ item.descricao }}</td>
+                                    <td>{{ item.quantidade }} {{ item.unidade }}</td>
+                                    <td>R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
