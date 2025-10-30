@@ -2244,8 +2244,33 @@ def assinar_documento_publico(request, token):
             assinatura.user_agent = request.META.get('HTTP_USER_AGENT', '')
             assinatura.save()
             
+            # Atualizar documento baseado no tipo de signatário
+            if assinatura.tipo_signatario == 'cliente':
+                if assinatura.orcamento:
+                    assinatura.orcamento.status = 'aprovado'
+                    assinatura.orcamento.data_resposta = timezone.now()
+                    assinatura.orcamento.save()
+                elif assinatura.proposta:
+                    assinatura.proposta.status = 'aprovada'
+                    assinatura.proposta.data_resposta = timezone.now()
+                    assinatura.proposta.save()
+                elif assinatura.contrato:
+                    assinatura.contrato.status = 'assinado_cliente'
+                    assinatura.contrato.assinado_cliente_em = timezone.now()
+                    assinatura.contrato.save()
+            
+            elif assinatura.tipo_signatario == 'empresa':
+                if assinatura.contrato:
+                    assinatura.contrato.assinado_empresa_em = timezone.now()
+                    # Se cliente já assinou, ativar contrato
+                    if assinatura.contrato.assinado_cliente_em:
+                        assinatura.contrato.status = 'ativo'
+                    else:
+                        assinatura.contrato.status = 'assinado_empresa'
+                    assinatura.contrato.save()
+            
             # Log da assinatura
-            logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} por {assinatura.nome_signatario}")
+            logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} por {assinatura.nome_signatario} ({assinatura.tipo_signatario})")
             
             return render(request, 'crm_vendas/assinatura_concluida.html', {
                 'assinatura': assinatura
@@ -2263,9 +2288,88 @@ def assinar_documento_publico(request, token):
         })
 
 
+def solicitar_assinatura_empresa(request, tipo_documento, documento_id):
+    """
+    View para solicitar assinatura da empresa após cliente ter assinado
+    """
+    try:
+        # Verificar se o usuário tem permissão
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        # Buscar o documento baseado no tipo
+        documento = None
+        if tipo_documento == 'orcamento':
+            documento = get_object_or_404(Orcamento, id=documento_id)
+        elif tipo_documento == 'proposta':
+            documento = get_object_or_404(Proposta, id=documento_id)
+        elif tipo_documento == 'contrato':
+            documento = get_object_or_404(Contrato, id=documento_id)
+        else:
+            messages.error(request, 'Tipo de documento inválido.')
+            return redirect('crm_vendas:dashboard_crm')
+        
+        # Verificar permissão
+        if not request.user.is_superuser and documento.loja != request.user.loja_admin:
+            messages.error(request, 'Sem permissão para acessar este documento.')
+            return redirect('crm_vendas:dashboard_crm')
+        
+        # Verificar se cliente já assinou (para contratos)
+        if tipo_documento == 'contrato' and not documento.assinado_cliente_em:
+            messages.error(request, 'O cliente deve assinar primeiro antes da empresa.')
+            return redirect('crm_vendas:dashboard_crm')
+        
+        if request.method == 'POST':
+            form = AssinaturaDigitalForm(request.POST)
+            if form.is_valid():
+                assinatura = form.save(commit=False)
+                assinatura.tipo_documento = tipo_documento
+                assinatura.tipo_signatario = 'empresa'
+                assinatura.lead = documento.lead if hasattr(documento, 'lead') else None
+                
+                # Associar o documento correto baseado no tipo
+                if tipo_documento == 'orcamento':
+                    assinatura.orcamento = documento
+                elif tipo_documento == 'proposta':
+                    assinatura.proposta = documento
+                elif tipo_documento == 'contrato':
+                    assinatura.contrato = documento
+                
+                assinatura.save()
+                
+                # Enviar email de solicitação
+                try:
+                    EmailService.enviar_solicitacao_assinatura(assinatura)
+                    messages.success(request, 'Solicitação de assinatura da empresa enviada com sucesso!')
+                except Exception as e:
+                    logger.error(f"Erro ao enviar email de assinatura da empresa: {str(e)}")
+                    messages.warning(request, 'Assinatura criada, mas houve erro no envio do email.')
+                
+                return redirect('crm_vendas:dashboard_crm')
+        else:
+            # Pré-preencher com dados da empresa/loja
+            initial = {
+                'nome_signatario': documento.loja.nome_responsavel or documento.loja.nome,
+                'email_signatario': documento.loja.email,
+                'cpf_signatario': documento.loja.cnpj,  # ou CPF do responsável se houver
+            }
+            form = AssinaturaDigitalForm(initial=initial)
+        
+        return render(request, 'crm_vendas/solicitar_assinatura_empresa.html', {
+            'form': form,
+            'documento': documento,
+            'tipo_documento': tipo_documento
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao solicitar assinatura da empresa: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:dashboard_crm')
+
+
 def solicitar_assinatura(request, tipo_documento, documento_id):
     """
-    View para solicitar assinatura digital de um documento
+    View para solicitar assinatura digital de um documento (cliente)
     """
     try:
         # Verificar se o usuário tem permissão

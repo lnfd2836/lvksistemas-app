@@ -241,6 +241,7 @@ class EmailService:
                 'loja': documento.loja,
                 'titulo_documento': titulo_doc,
                 'tipo_documento': tipo_doc,
+                'tipo_signatario': assinatura_digital.tipo_signatario,
                 'link_assinatura': link_assinatura,
                 'data_expiracao': assinatura_digital.data_expiracao,
                 'data_envio': timezone.now(),
@@ -251,7 +252,10 @@ class EmailService:
             text_content = render_to_string('crm_vendas/emails/assinatura_digital.txt', context)
             
             # Assunto
-            assunto = f"Assinatura Digital Solicitada - {titulo_doc}"
+            if assinatura_digital.tipo_signatario == 'empresa':
+                assunto = f"Assinatura da Empresa Solicitada - {titulo_doc}"
+            else:
+                assunto = f"Assinatura Digital Solicitada - {titulo_doc}"
             
             # Criar email
             email = EmailMultiAlternatives(

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Contrato {{ contrato.numero }} - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-contract me-2"></i>
+                        Contrato {{ contrato.numero }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'crm_vendas:listar_contratos' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Status e Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informações do Contrato</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Número:</strong></td>
+                                    <td>{{ contrato.numero }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Título:</strong></td>
+                                    <td>{{ contrato.titulo }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Valor:</strong></td>
+                                    <td>R$ {{ contrato.valor_contrato|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if contrato.status == 'rascunho' %}
+                                            <span class="badge bg-secondary">{{ contrato.get_status_display }}</span>
+                                        {% elif contrato.status == 'enviado' %}
+                                            <span class="badge bg-warning">{{ contrato.get_status_display }}</span>
+                                        {% elif contrato.status == 'assinado_cliente' %}
+                                            <span class="badge bg-info">{{ contrato.get_status_display }}</span>
+                                        {% elif contrato.status == 'assinado_empresa' %}
+                                            <span class="badge bg-primary">{{ contrato.get_status_display }}</span>
+                                        {% elif contrato.status == 'ativo' %}
+                                            <span class="badge bg-success">{{ contrato.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ contrato.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Data de Criação:</strong></td>
+                                    <td>{{ contrato.data_criacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Cliente</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Nome:</strong></td>
+                                    <td>{{ contrato.lead.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ contrato.lead.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Telefone:</strong></td>
+                                    <td>{{ contrato.lead.telefone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Empresa:</strong></td>
+                                    <td>{{ contrato.lead.empresa|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Histórico de Assinaturas -->
+                    {% if contrato.assinado_cliente_em or contrato.assinado_empresa_em %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-history me-2"></i>Histórico de Assinaturas</h5>
+                            <div class="timeline">
+                                {% if contrato.assinado_cliente_em %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-user me-2"></i>
+                                    <strong>Cliente assinou:</strong> {{ contrato.assinado_cliente_em|date:"d/m/Y às H:i" }}
+                                </div>
+                                {% endif %}
+                                
+                                {% if contrato.assinado_empresa_em %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-building me-2"></i>
+                                    <strong>Empresa assinou:</strong> {{ contrato.assinado_empresa_em|date:"d/m/Y às H:i" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Ações de Assinatura -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5><i class="fas fa-signature me-2"></i>Ações de Assinatura</h5>
+                            <div class="d-flex gap-2 flex-wrap">
+                                
+                                <!-- Solicitar Assinatura do Cliente -->
+                                {% if contrato.status == 'rascunho' or contrato.status == 'enviado' %}
+                                    <a href="{% url 'crm_vendas:solicitar_assinatura' 'contrato' contrato.id %}" 
+                                       class="btn btn-success">
+                                        <i class="fas fa-signature me-2"></i>Solicitar Assinatura do Cliente
+                                    </a>
+                                {% endif %}
+                                
+                                <!-- Solicitar Assinatura da Empresa -->
+                                {% if contrato.status == 'assinado_cliente' %}
+                                    <a href="{% url 'crm_vendas:solicitar_assinatura_empresa' 'contrato' contrato.id %}" 
+                                       class="btn btn-warning">
+                                        <i class="fas fa-building me-2"></i>Solicitar Assinatura da Empresa
+                                    </a>
+                                {% endif %}
+                                
+                                <!-- Status das Assinaturas -->
+                                {% if contrato.assinado_cliente_em %}
+                                    <button class="btn btn-outline-success" disabled>
+                                        <i class="fas fa-check me-2"></i>Cliente Assinou
+                                    </button>
+                                {% endif %}
+                                
+                                {% if contrato.assinado_empresa_em %}
+                                    <button class="btn btn-outline-success" disabled>
+                                        <i class="fas fa-check me-2"></i>Empresa Assinou
+                                    </button>
+                                {% endif %}
+                                
+                                <!-- Contrato Ativo -->
+                                {% if contrato.status == 'ativo' %}
+                                    <button class="btn btn-success" disabled>
+                                        <i class="fas fa-check-circle me-2"></i>Contrato Ativo
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conteúdo do Contrato -->
+                    {% if contrato.conteudo %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-file-alt me-2"></i>Conteúdo do Contrato</h5>
+                            <div class="border p-3 bg-light">
+                                {{ contrato.conteudo|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Observações -->
+                    {% if contrato.observacoes %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-comment me-2"></i>Observações</h5>
+                            <div class="border p-3 bg-light">
+                                {{ contrato.observacoes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

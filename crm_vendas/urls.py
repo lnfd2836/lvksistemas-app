@@ -75,6 +75,7 @@ urlpatterns = [
     
     # Assinatura Digital
     path('assinatura/<str:tipo_documento>/<uuid:documento_id>/', views.solicitar_assinatura, name='solicitar_assinatura'),
+    path('assinatura-empresa/<str:tipo_documento>/<uuid:documento_id>/', views.solicitar_assinatura_empresa, name='solicitar_assinatura_empresa'),
     path('assinar/<uuid:token>/', views.assinar_documento_publico, name='assinar_documento_publico'),
     
     # Relatórios

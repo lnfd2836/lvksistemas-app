@@ -71,30 +71,46 @@
 
 <body>
     <div class="header">
-        <h1>🖊️ Assinatura Digital Solicitada</h1>
+        {% if assinatura.tipo_signatario == 'empresa' %}
+            <h1>🏢 Assinatura da Empresa Solicitada</h1>
+        {% else %}
+            <h1>🖊️ Assinatura Digital Solicitada</h1>
+        {% endif %}
         <p>{{ loja.nome }}</p>
     </div>
 
     <div class="content">
         <p>Olá <strong>{{ assinatura.nome_signatario }}</strong>,</p>
 
-        <p>Você recebeu uma solicitação para assinar digitalmente o seguinte documento:</p>
+        {% if assinatura.tipo_signatario == 'empresa' %}
+            <p>O cliente já assinou o documento e agora é necessária a assinatura da empresa para finalizar o processo:</p>
+        {% else %}
+            <p>Você recebeu uma solicitação para assinar digitalmente o seguinte documento:</p>
+        {% endif %}
 
         <div class="info-box">
             <h3>📄 {{ titulo_documento }}</h3>
             <p><strong>Cliente:</strong> {{ lead.nome }}</p>
             <p><strong>Email:</strong> {{ lead.email }}</p>
-            {% if documento.total %}
-            <p><strong>Valor:</strong> R$ {{ documento.total|floatformat:2 }}</p>
+            {% if documento.valor_total %}
+            <p><strong>Valor:</strong> R$ {{ documento.valor_total|floatformat:2 }}</p>
             {% endif %}
             <p><strong>Data de Criação:</strong> {{ documento.data_criacao|date:"d/m/Y H:i" }}</p>
+            
+            {% if assinatura.tipo_signatario == 'empresa' and documento.assinado_cliente_em %}
+            <p><strong>✅ Cliente assinou em:</strong> {{ documento.assinado_cliente_em|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
         </div>
 
         <p>Para assinar digitalmente este documento, clique no botão abaixo:</p>
 
         <div style="text-align: center;">
             <a href="{{ link_assinatura }}" class="btn">
-                🖊️ ASSINAR DOCUMENTO
+                {% if assinatura.tipo_signatario == 'empresa' %}
+                    🏢 ASSINAR COMO EMPRESA
+                {% else %}
+                    🖊️ ASSINAR DOCUMENTO
+                {% endif %}
             </a>
         </div>
 

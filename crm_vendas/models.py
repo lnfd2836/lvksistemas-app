@@ -582,6 +582,11 @@ class AssinaturaDigital(models.Model):
         ('contrato', 'Contrato'),
     ]
     
+    TIPO_SIGNATARIO_CHOICES = [
+        ('cliente', 'Cliente'),
+        ('empresa', 'Empresa'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Relacionamentos
@@ -592,6 +597,7 @@ class AssinaturaDigital(models.Model):
     
     # Dados da assinatura
     tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES)
+    tipo_signatario = models.CharField(max_length=20, choices=TIPO_SIGNATARIO_CHOICES, default='cliente')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
     
     # Signatários
@@ -644,4 +650,4 @@ class AssinaturaDigital(models.Model):
     def gerar_url_assinatura(self):
         """Gera URL para assinatura do documento"""
         from django.urls import reverse
-        return reverse('crm_vendas:assinar_documento', kwargs={'token': self.token_acesso})
+        return reverse('crm_vendas:assinar_documento_publico', kwargs={'token': self.token_acesso})
