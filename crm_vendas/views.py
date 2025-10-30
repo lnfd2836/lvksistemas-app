@@ -2,6 +2,7 @@
 Views do CRM de Vendas
 """
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -219,6 +220,359 @@ def detalhar_lead(request, lead_id):
     logger.info(f"Renderizando detalhes do lead: {lead.nome} (ID: {lead.id})")
     
     return render(request, 'crm_vendas/leads/detalhar.html', context)
+
+
+@login_required
+def listar_orcamentos(request):
+    """Lista orçamentos"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        orcamentos = Orcamento.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            orcamentos = Orcamento.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        orcamentos = orcamentos.filter(status=status)
+    
+    # Paginação
+    paginator = Paginator(orcamentos, 20)
+    page = request.GET.get('page')
+    orcamentos = paginator.get_page(page)
+    
+    context = {
+        'orcamentos': orcamentos,
+        'status_filter': status,
+    }
+    
+    return render(request, 'crm_vendas/orcamentos/listar.html', context)
+
+
+@login_required
+def criar_orcamento(request):
+    """Cria novo orçamento"""
+    
+    lead_id = request.GET.get('lead')
+    lead = None
+    if lead_id:
+        lead = get_object_or_404(Lead, id=lead_id)
+    
+    if request.method == 'POST':
+        # Implementar criação de orçamento
+        # Por enquanto, redirecionar para a versão melhorada
+        return redirect('crm_vendas:criar_orcamento_melhorado')
+    
+    # Por enquanto, redirecionar para a versão melhorada
+    if lead:
+        return redirect(f"{reverse('crm_vendas:criar_orcamento_melhorado')}?lead={lead.id}")
+    else:
+        return redirect('crm_vendas:criar_orcamento_melhorado')
+
+
+@login_required
+def detalhar_orcamento(request, orcamento_id):
+    """Detalha orçamento"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para ver este orçamento.')
+        return redirect('crm_vendas:listar_orcamentos')
+    
+    context = {
+        'orcamento': orcamento,
+    }
+    
+    return render(request, 'crm_vendas/orcamentos/detalhar.html', context)
+
+
+@login_required
+def editar_orcamento(request, orcamento_id):
+    """Edita orçamento"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para editar este orçamento.')
+        return redirect('crm_vendas:listar_orcamentos')
+    
+    # Redirecionar para a versão melhorada
+    return redirect('crm_vendas:editar_orcamento_itens', orcamento_id=orcamento_id)
+
+
+@login_required
+def listar_propostas(request):
+    """Lista propostas"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        propostas = Proposta.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            propostas = Proposta.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Paginação
+    paginator = Paginator(propostas, 20)
+    page = request.GET.get('page')
+    propostas = paginator.get_page(page)
+    
+    context = {
+        'propostas': propostas,
+    }
+    
+    return render(request, 'crm_vendas/propostas/listar.html', context)
+
+
+@login_required
+def criar_proposta(request):
+    """Cria nova proposta"""
+    
+    lead_id = request.GET.get('lead')
+    lead = None
+    if lead_id:
+        lead = get_object_or_404(Lead, id=lead_id)
+    
+    if request.method == 'POST':
+        form = PropostaForm(request.POST)
+        if form.is_valid():
+            try:
+                proposta = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    loja = request.user.loja_admin
+                
+                proposta.loja = loja
+                proposta.responsavel = request.user
+                proposta.save()
+                
+                messages.success(request, f'Proposta "{proposta.numero}" criada com sucesso!')
+                return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar proposta: {str(e)}")
+                messages.error(request, 'Erro ao criar proposta. Tente novamente.')
+    else:
+        initial = {}
+        if lead:
+            initial['lead'] = lead
+        form = PropostaForm(initial=initial)
+    
+    context = {
+        'form': form,
+        'lead': lead,
+        'titulo': 'Nova Proposta'
+    }
+    
+    return render(request, 'crm_vendas/propostas/form.html', context)
+
+
+@login_required
+def detalhar_proposta(request, proposta_id):
+    """Detalha proposta"""
+    
+    proposta = get_object_or_404(Proposta, id=proposta_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and proposta.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para ver esta proposta.')
+        return redirect('crm_vendas:listar_propostas')
+    
+    context = {
+        'proposta': proposta,
+    }
+    
+    return render(request, 'crm_vendas/propostas/detalhar.html', context)
+
+
+@login_required
+def listar_contratos(request):
+    """Lista contratos"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        contratos = Contrato.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            contratos = Contrato.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Paginação
+    paginator = Paginator(contratos, 20)
+    page = request.GET.get('page')
+    contratos = paginator.get_page(page)
+    
+    context = {
+        'contratos': contratos,
+    }
+    
+    return render(request, 'crm_vendas/contratos/listar.html', context)
+
+
+@login_required
+def criar_contrato(request):
+    """Cria novo contrato"""
+    
+    lead_id = request.GET.get('lead')
+    lead = None
+    if lead_id:
+        lead = get_object_or_404(Lead, id=lead_id)
+    
+    if request.method == 'POST':
+        form = ContratoForm(request.POST)
+        if form.is_valid():
+            try:
+                contrato = form.save(commit=False)
+                
+                # Definir loja
+                if request.user.is_superuser:
+                    loja = Loja.objects.first()  # Temporário
+                else:
+                    loja = request.user.loja_admin
+                
+                contrato.loja = loja
+                contrato.responsavel = request.user
+                contrato.save()
+                
+                messages.success(request, f'Contrato "{contrato.numero}" criado com sucesso!')
+                return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar contrato: {str(e)}")
+                messages.error(request, 'Erro ao criar contrato. Tente novamente.')
+    else:
+        initial = {}
+        if lead:
+            initial['lead'] = lead
+        form = ContratoForm(initial=initial)
+    
+    context = {
+        'form': form,
+        'lead': lead,
+        'titulo': 'Novo Contrato'
+    }
+    
+    return render(request, 'crm_vendas/contratos/form.html', context)
+
+
+@login_required
+def detalhar_contrato(request, contrato_id):
+    """Detalha contrato"""
+    
+    contrato = get_object_or_404(Contrato, id=contrato_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and contrato.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para ver este contrato.')
+        return redirect('crm_vendas:listar_contratos')
+    
+    context = {
+        'contrato': contrato,
+    }
+    
+    return render(request, 'crm_vendas/contratos/detalhar.html', context)
+
+
+@login_required
+def gerar_pdf_orcamento(request, orcamento_id):
+    """Gera PDF do orçamento"""
+    
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and orcamento.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para este orçamento.')
+        return redirect('crm_vendas:listar_orcamentos')
+    
+    try:
+        # Usar o serviço de PDF
+        pdf_content = PDFService.gerar_orcamento(orcamento)
+        
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="orcamento_{orcamento.numero}.pdf"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF do orçamento {orcamento_id}: {str(e)}")
+        messages.error(request, 'Erro ao gerar PDF. Tente novamente.')
+        return redirect('crm_vendas:detalhar_orcamento', orcamento_id=orcamento_id)
+
+
+@login_required
+def configuracoes_crm(request):
+    """Configurações do CRM"""
+    
+    context = {
+        'titulo': 'Configurações do CRM'
+    }
+    
+    return render(request, 'crm_vendas/configuracoes.html', context)
+
+
+@login_required
+def relatorios_crm(request):
+    """Relatórios do CRM"""
+    
+    # Redirecionar para a versão melhorada
+    return redirect('crm_vendas:relatorios_vendas')
+
+
+@login_required
+def relatorio_funil_vendas(request):
+    """Relatório do funil de vendas"""
+    
+    # Filtrar por loja
+    if request.user.is_superuser:
+        leads = Lead.objects.all()
+    else:
+        try:
+            loja = request.user.loja_admin
+            leads = Lead.objects.filter(loja=loja)
+        except:
+            messages.error(request, 'Usuário não associado a nenhuma loja.')
+            return redirect('dashboard:index')
+    
+    # Estatísticas do funil
+    funil = {}
+    for status, label in Lead.STATUS_CHOICES:
+        funil[status] = {
+            'label': label,
+            'count': leads.filter(status=status).count(),
+            'valor': leads.filter(status=status).aggregate(total=Sum('valor_estimado'))['total'] or 0
+        }
+    
+    context = {
+        'funil': funil,
+    }
+    
+    return render(request, 'crm_vendas/funil.html', context)
+
+
+@login_required
+def relatorio_performance(request):
+    """Relatório de performance"""
+    
+    # Redirecionar para relatórios de vendas
+    return redirect('crm_vendas:relatorios_vendas')
 
 
 @login_required

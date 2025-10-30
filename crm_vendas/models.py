@@ -373,6 +373,26 @@ class Proposta(models.Model):
     
     def __str__(self):
         return f"Proposta {self.numero} - {self.lead.nome}"
+    
+    def save(self, *args, **kwargs):
+        if not self.numero:
+            self.numero = self.gerar_numero()
+        super().save(*args, **kwargs)
+    
+    def gerar_numero(self):
+        """Gera número único da proposta"""
+        from datetime import datetime
+        ano = datetime.now().year
+        mes = datetime.now().month
+        
+        # Contar propostas do mês
+        count = Proposta.objects.filter(
+            loja=self.loja,
+            data_criacao__year=ano,
+            data_criacao__month=mes
+        ).count() + 1
+        
+        return f"PROP-{ano}{mes:02d}-{count:04d}"
 
 
 class Contrato(models.Model):
@@ -434,6 +454,26 @@ class Contrato(models.Model):
     
     def __str__(self):
         return f"Contrato {self.numero} - {self.lead.nome}"
+    
+    def save(self, *args, **kwargs):
+        if not self.numero:
+            self.numero = self.gerar_numero()
+        super().save(*args, **kwargs)
+    
+    def gerar_numero(self):
+        """Gera número único do contrato"""
+        from datetime import datetime
+        ano = datetime.now().year
+        mes = datetime.now().month
+        
+        # Contar contratos do mês
+        count = Contrato.objects.filter(
+            loja=self.loja,
+            data_criacao__year=ano,
+            data_criacao__month=mes
+        ).count() + 1
+        
+        return f"CONT-{ano}{mes:02d}-{count:04d}"
 
 
 class HistoricoContato(models.Model):
