@@ -2005,9 +2005,18 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
                 assinatura.save()
                 
                 # Enviar email com link de assinatura
-                # TODO: Implementar envio de email
+                from .services.email_service import EmailService
                 
-                messages.success(request, 'Solicitação de assinatura criada com sucesso!')
+                logger.info(f"Tentando enviar email de assinatura para {assinatura.email_signatario}")
+                sucesso_email = EmailService.enviar_solicitacao_assinatura(assinatura)
+                
+                if sucesso_email:
+                    messages.success(request, f'Solicitação de assinatura enviada para {assinatura.email_signatario}!')
+                    logger.info(f"Email de assinatura enviado com sucesso para {assinatura.email_signatario}")
+                else:
+                    messages.warning(request, 'Solicitação criada, mas houve erro no envio do email. Verifique as configurações de email.')
+                    logger.error(f"Falha no envio do email de assinatura para {assinatura.email_signatario}")
+                
                 return redirect('crm_vendas:detalhar_lead', lead_id=documento.lead.id)
                 
             except Exception as e:

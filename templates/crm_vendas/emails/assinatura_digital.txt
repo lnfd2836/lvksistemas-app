@@ -1,0 +1,32 @@
+ASSINATURA DIGITAL SOLICITADA
+{{ loja.nome }}
+
+Olá {{ assinatura.nome_signatario }},
+
+Você recebeu uma solicitação para assinar digitalmente o seguinte documento:
+
+📄 {{ titulo_documento }}
+Cliente: {{ lead.nome }}
+Email: {{ lead.email }}
+{% if documento.total %}Valor: R$ {{ documento.total|floatformat:2 }}{% endif %}
+Data de Criação: {{ documento.data_criacao|date:"d/m/Y H:i" }}
+
+Para assinar digitalmente este documento, acesse o link abaixo:
+{{ link_assinatura }}
+
+⚠️ IMPORTANTE:
+- Este link é válido até {{ data_expiracao|date:"d/m/Y H:i" }}
+- A assinatura digital tem validade jurídica
+- Você receberá uma cópia do documento assinado por email
+- Em caso de dúvidas, entre em contato conosco
+
+Atenciosamente,
+{{ loja.nome }}
+
+{% if loja.telefone %}📞 {{ loja.telefone }}{% endif %}
+{% if loja.email %}📧 {{ loja.email }}{% endif %}
+{% if loja.endereco %}📍 {{ loja.endereco }}{% endif %}
+
+---
+Este é um email automático. Por favor, não responda.
+© {{ data_envio|date:"Y" }} {{ loja.nome }}. Todos os direitos reservados.

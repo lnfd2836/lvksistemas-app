@@ -180,22 +180,130 @@ class EmailService:
     @classmethod
     def _gerar_link_visualizacao(cls, orcamento):
         """Gera link para visualização do orçamento"""
-        return f"{settings.SITE_URL}/crm/orcamento/{orcamento.id}/visualizar/"
+        site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
+        return f"{site_url}/crm/orcamento/{orcamento.id}/visualizar/"
     
     @classmethod
     def _gerar_link_aprovacao(cls, orcamento):
         """Gera link para aprovação do orçamento"""
-        return f"{settings.SITE_URL}/crm/orcamento/{orcamento.id}/aprovar/"
+        site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
+        return f"{site_url}/crm/orcamento/{orcamento.id}/aprovar/"
     
     @classmethod
     def _gerar_link_visualizacao_proposta(cls, proposta):
         """Gera link para visualização da proposta"""
-        return f"{settings.SITE_URL}/crm/proposta/{proposta.id}/visualizar/"
+        site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
+        return f"{site_url}/crm/proposta/{proposta.id}/visualizar/"
     
     @classmethod
     def _gerar_link_assinatura(cls, contrato):
         """Gera link para assinatura do contrato"""
-        return f"{settings.SITE_URL}/crm/contrato/{contrato.id}/assinar/"
+        site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
+        return f"{site_url}/crm/contrato/{contrato.id}/assinar/"
+    
+    @classmethod
+    def enviar_solicitacao_assinatura(cls, assinatura_digital):
+        """
+        Envia email com solicitação de assinatura digital
+        """
+        try:
+            # Verificar configurações de email
+            if not settings.DEFAULT_FROM_EMAIL:
+                logger.error("DEFAULT_FROM_EMAIL não configurado")
+                return False
+            
+            # Determinar documento e tipo
+            documento = None
+            tipo_doc = assinatura_digital.tipo_documento
+            
+            if tipo_doc == 'orcamento':
+                documento = assinatura_digital.orcamento
+                titulo_doc = f"Orçamento {documento.numero}"
+            elif tipo_doc == 'proposta':
+                documento = assinatura_digital.proposta
+                titulo_doc = f"Proposta {documento.numero}"
+            elif tipo_doc == 'contrato':
+                documento = assinatura_digital.contrato
+                titulo_doc = f"Contrato {documento.numero}"
+            else:
+                logger.error(f"Tipo de documento inválido: {tipo_doc}")
+                return False
+            
+            # Gerar link de assinatura
+            site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
+            link_assinatura = f"{site_url}/crm/assinar/{assinatura_digital.token_acesso}/"
+            
+            # Preparar contexto
+            context = {
+                'assinatura': assinatura_digital,
+                'documento': documento,
+                'lead': assinatura_digital.lead,
+                'loja': documento.loja,
+                'titulo_documento': titulo_doc,
+                'tipo_documento': tipo_doc,
+                'link_assinatura': link_assinatura,
+                'data_expiracao': assinatura_digital.data_expiracao,
+                'data_envio': timezone.now(),
+            }
+            
+            # Renderizar email
+            html_content = render_to_string('crm_vendas/emails/assinatura_digital.html', context)
+            text_content = render_to_string('crm_vendas/emails/assinatura_digital.txt', context)
+            
+            # Assunto
+            assunto = f"Assinatura Digital Solicitada - {titulo_doc}"
+            
+            # Criar email
+            email = EmailMultiAlternatives(
+                subject=assunto,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[assinatura_digital.email_signatario],
+                reply_to=[documento.loja.email] if documento.loja.email else None
+            )
+            
+            email.attach_alternative(html_content, "text/html")
+            
+            # Anexar PDF do documento
+            pdf_content = None
+            if tipo_doc == 'orcamento':
+                pdf_content = cls._gerar_pdf_orcamento(documento)
+                filename = f"Orcamento_{documento.numero}.pdf"
+            elif tipo_doc == 'proposta':
+                pdf_content = cls._gerar_pdf_proposta(documento)
+                filename = f"Proposta_{documento.numero}.pdf"
+            elif tipo_doc == 'contrato':
+                pdf_content = cls._gerar_pdf_contrato(documento)
+                filename = f"Contrato_{documento.numero}.pdf"
+            
+            if pdf_content:
+                email.attach(filename, pdf_content, "application/pdf")
+            
+            # Enviar
+            email.send()
+            
+            # Atualizar status da assinatura
+            assinatura_digital.status = 'enviado'
+            assinatura_digital.data_envio = timezone.now()
+            assinatura_digital.save()
+            
+            # Registrar no histórico do lead
+            from ..models import HistoricoContato
+            HistoricoContato.objects.create(
+                lead=assinatura_digital.lead,
+                tipo='email',
+                assunto=f'Solicitação de Assinatura Digital - {titulo_doc}',
+                descricao=f'Email enviado para {assinatura_digital.email_signatario} solicitando assinatura digital do {titulo_doc}',
+                resultado='Email de assinatura enviado com sucesso',
+                data_contato=timezone.now()
+            )
+            
+            logger.info(f"Email de assinatura enviado para {assinatura_digital.email_signatario} - {titulo_doc}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao enviar email de assinatura: {e}")
+            return False
     
     @classmethod
     def _registrar_envio_email(cls, documento, assunto, conteudo):
