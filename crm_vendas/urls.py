@@ -3,12 +3,13 @@ URLs do CRM de Vendas
 """
 from django.urls import path
 from . import views
+from .dashboard_view import dashboard_crm_simples
 
 app_name = 'crm_vendas'
 
 urlpatterns = [
     # Dashboard CRM
-    path('', views.dashboard_crm, name='dashboard'),
+    path('', dashboard_crm_simples, name='dashboard'),
     
     # Leads
     path('leads/', views.listar_leads, name='listar_leads'),
