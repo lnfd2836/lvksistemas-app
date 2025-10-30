@@ -104,7 +104,7 @@
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control" id="status" name="status">
                                         {% for value, label in status_choices %}
-                                        <option value="{{ value }}" {% if lead.status==value %}selected{% endif %}>
+                                        <option value="{{ value }}" {% if value == lead.status %}selected{% endif %}>
                                             {{ label }}
                                         </option>
                                         {% endfor %}

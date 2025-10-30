@@ -14,17 +14,19 @@
                             Orçamento {{ orcamento.numero }}
                         </h3>
                         <div>
-                            <a href="{% url 'crm_vendas:editar_orcamento' orcamento.id %}" class="btn btn-warning btn-sm">
+                            <a href="{% url 'crm_vendas:editar_orcamento' orcamento.id %}"
+                                class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
-                            
+
                             <!-- Botão Solicitar Assinatura Digital -->
                             {% if orcamento.status == 'rascunho' or orcamento.status == 'enviado' %}
-                                <a href="{% url 'crm_vendas:solicitar_assinatura' 'orcamento' orcamento.id %}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-signature"></i> Solicitar Assinatura
-                                </a>
+                            <a href="{% url 'crm_vendas:solicitar_assinatura' 'orcamento' orcamento.id %}"
+                                class="btn btn-success btn-sm">
+                                <i class="fas fa-signature"></i> Solicitar Assinatura
+                            </a>
                             {% endif %}
-                            
+
                             <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>
@@ -37,8 +39,9 @@
                             <h5>Informações do Orçamento</h5>
                             <p><strong>Lead:</strong> {{ orcamento.lead.nome }}</p>
                             <p><strong>Email:</strong> {{ orcamento.lead.email }}</p>
-                            <p><strong>Status:</strong> 
-                                <span class="badge bg-{% if orcamento.status == 'aprovado' %}success{% elif orcamento.status == 'rejeitado' %}danger{% else %}warning{% endif %}">
+                            <p><strong>Status:</strong>
+                                <span
+                                    class="badge bg-{% if orcamento.status == 'aprovado' %}success{% elif orcamento.status == 'rejeitado' %}danger{% else %}warning{% endif %}">
                                     {{ orcamento.get_status_display }}
                                 </span>
                             </p>
@@ -49,10 +52,11 @@
                             <p><strong>Subtotal:</strong> R$ {{ orcamento.subtotal|floatformat:2 }}</p>
                             <p><strong>Desconto:</strong> R$ {{ orcamento.desconto|floatformat:2 }}</p>
                             <p><strong>Impostos:</strong> R$ {{ orcamento.impostos|floatformat:2 }}</p>
-                            <p><strong>Total:</strong> <span class="h5 text-success">R$ {{ orcamento.total|floatformat:2 }}</span></p>
+                            <p><strong>Total:</strong> <span class="h5 text-success">R$ {{ orcamento.total|floatformat:2
+                                    }}</span></p>
                         </div>
                     </div>
-                    
+
                     {% if orcamento.itens.all %}
                     <hr>
                     <h5>Itens do Orçamento</h5>
