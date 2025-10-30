@@ -1356,8 +1356,51 @@ def excluir_lead(request, lead_id):
 def registrar_contato(request, lead_id): 
     """Registra um novo contato com um lead"""
     lead = get_object_or_404(Lead, id=lead_id)
-    messages.info(request, 'Funcionalidade de registro de contato em desenvolvimento.')
-    return redirect('crm_vendas:detalhar_lead', lead_id=lead_id)
+    
+    # Verificar permissão
+    if not request.user.is_superuser and lead.loja != request.user.loja_admin:
+        messages.error(request, 'Você não tem permissão para registrar contatos neste lead.')
+        return redirect('crm_vendas:listar_leads')
+    
+    if request.method == 'POST':
+        form = HistoricoContatoForm(request.POST)
+        if form.is_valid():
+            try:
+                contato = form.save(commit=False)
+                contato.lead = lead
+                contato.usuario = request.user
+                contato.save()
+                
+                # Atualizar data do último contato no lead
+                lead.data_ultimo_contato = timezone.now()
+                
+                # Se foi definida uma data para próximo contato, atualizar no lead
+                if contato.data_proximo_contato:
+                    lead.data_proximo_contato = contato.data_proximo_contato
+                
+                lead.save()
+                
+                messages.success(request, f'Contato registrado com sucesso! Tipo: {contato.get_tipo_display()}')
+                return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
+                
+            except Exception as e:
+                logger.error(f"Erro ao registrar contato para lead {lead_id}: {str(e)}")
+                messages.error(request, f'Erro ao registrar contato: {str(e)}')
+        else:
+            # Exibir erros de validação
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = HistoricoContatoForm()
+    
+    context = {
+        'form': form,
+        'lead': lead,
+        'titulo': f'Registrar Contato - {lead.nome}'
+    }
+    
+    return render(request, 'crm_vendas/leads/registrar_contato.html', context)
 @csrf_exempt
 def visualizar_proposta_publico(request, proposta_id):
     """Visualização pública da proposta (para clientes)"""

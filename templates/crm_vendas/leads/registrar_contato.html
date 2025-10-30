@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-phone me-2"></i>
+                        {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Informações do Lead -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-user me-2"></i>Lead:</strong> {{ lead.nome }}<br>
+                                <strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ lead.email }}<br>
+                                {% if lead.telefone %}
+                                <strong><i class="fas fa-phone me-2"></i>Telefone:</strong> {{ lead.telefone }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-building me-2"></i>Empresa:</strong> {{ lead.empresa|default:"Não informado" }}<br>
+                                <strong><i class="fas fa-flag me-2"></i>Status:</strong> 
+                                <span class="badge bg-{% if lead.status == 'novo' %}info{% elif lead.status == 'qualificado' %}success{% elif lead.status == 'fechado_ganho' %}primary{% elif lead.status == 'fechado_perdido' %}danger{% else %}secondary{% endif %}">
+                                    {{ lead.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulário de Contato -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.tipo.label }} <span class="text-danger">*</span></label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="text-danger">{{ form.tipo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">{{ form.assunto.label }} <span class="text-danger">*</span></label>
+                                {{ form.assunto }}
+                                {% if form.assunto.errors %}
+                                    <div class="text-danger">{{ form.assunto.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.descricao.label }} <span class="text-danger">*</span></label>
+                                {{ form.descricao }}
+                                <small class="form-text text-muted">Descreva detalhadamente o contato realizado</small>
+                                {% if form.descricao.errors %}
+                                    <div class="text-danger">{{ form.descricao.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.resultado.label }}</label>
+                                {{ form.resultado }}
+                                <small class="form-text text-muted">Qual foi o resultado ou conclusão deste contato?</small>
+                                {% if form.resultado.errors %}
+                                    <div class="text-danger">{{ form.resultado.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.proximo_passo.label }}</label>
+                                {{ form.proximo_passo }}
+                                <small class="form-text text-muted">Quais são os próximos passos a serem tomados?</small>
+                                {% if form.proximo_passo.errors %}
+                                    <div class="text-danger">{{ form.proximo_passo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.data_proximo_contato.label }}</label>
+                                {{ form.data_proximo_contato }}
+                                <small class="form-text text-muted">Quando deve ser feito o próximo contato?</small>
+                                {% if form.data_proximo_contato.errors %}
+                                    <div class="text-danger">{{ form.data_proximo_contato.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Registrar Contato
+                                </button>
+                                <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dicas de Uso -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Dicas para Registro de Contatos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-phone text-primary me-2"></i>Ligações</h6>
+                        <ul class="small">
+                            <li>Registre se o cliente atendeu ou não</li>
+                            <li>Anote os principais pontos discutidos</li>
+                            <li>Defina próximos passos claros</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-envelope text-info me-2"></i>Emails</h6>
+                        <ul class="small">
+                            <li>Copie o assunto do email enviado</li>
+                            <li>Resuma o conteúdo principal</li>
+                            <li>Anote se houve resposta</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-users text-success me-2"></i>Reuniões</h6>
+                        <ul class="small">
+                            <li>Liste os participantes</li>
+                            <li>Anote decisões tomadas</li>
+                            <li>Defina responsáveis por ações</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-comments text-warning me-2"></i>WhatsApp/Chat</h6>
+                        <ul class="small">
+                            <li>Resuma a conversa principal</li>
+                            <li>Anote informações importantes</li>
+                            <li>Registre compromissos assumidos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configurar data/hora atual como padrão para próximo contato (opcional)
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('id_tipo');
+    const assuntoInput = document.getElementById('id_assunto');
+    
+    // Sugestões de assunto baseadas no tipo
+    const sugestoes = {
+        'telefone': 'Ligação para ',
+        'email': 'Email enviado: ',
+        'whatsapp': 'Conversa WhatsApp: ',
+        'reuniao': 'Reunião: ',
+        'visita': 'Visita: ',
+        'outros': 'Contato: '
+    };
+    
+    tipoSelect.addEventListener('change', function() {
+        const tipo = this.value;
+        if (sugestoes[tipo] && !assuntoInput.value) {
+            assuntoInput.value = sugestoes[tipo];
+            assuntoInput.focus();
+            assuntoInput.setSelectionRange(assuntoInput.value.length, assuntoInput.value.length);
+        }
+    });
+});
+</script>
+{% endblock %}
