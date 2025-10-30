@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Proposta {{ proposta.numero }} - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-handshake me-2"></i>
+                        Proposta {{ proposta.numero }}
+                    </h3>
+                    <div class="card-tools">
+                        <!-- Botão Solicitar Assinatura Digital -->
+                        {% if proposta.status == 'rascunho' or proposta.status == 'enviada' %}
+                            <a href="{% url 'crm_vendas:solicitar_assinatura' 'proposta' proposta.id %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-signature me-1"></i>Solicitar Assinatura
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'crm_vendas:listar_propostas' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Status e Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informações da Proposta</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Número:</strong></td>
+                                    <td>{{ proposta.numero }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Título:</strong></td>
+                                    <td>{{ proposta.titulo }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Valor:</strong></td>
+                                    <td>R$ {{ proposta.valor_proposto|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if proposta.status == 'rascunho' %}
+                                            <span class="badge bg-secondary">{{ proposta.get_status_display }}</span>
+                                        {% elif proposta.status == 'enviada' %}
+                                            <span class="badge bg-warning">{{ proposta.get_status_display }}</span>
+                                        {% elif proposta.status == 'aprovada' %}
+                                            <span class="badge bg-success">{{ proposta.get_status_display }}</span>
+                                        {% elif proposta.status == 'rejeitada' %}
+                                            <span class="badge bg-danger">{{ proposta.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ proposta.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Data de Criação:</strong></td>
+                                    <td>{{ proposta.data_criacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Cliente</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Nome:</strong></td>
+                                    <td>{{ proposta.lead.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ proposta.lead.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Telefone:</strong></td>
+                                    <td>{{ proposta.lead.telefone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Empresa:</strong></td>
+                                    <td>{{ proposta.lead.empresa|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Ações de Assinatura -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5><i class="fas fa-signature me-2"></i>Ações de Assinatura</h5>
+                            <div class="d-flex gap-2 flex-wrap">
+                                
+                                <!-- Solicitar Assinatura -->
+                                {% if proposta.status == 'rascunho' or proposta.status == 'enviada' %}
+                                    <a href="{% url 'crm_vendas:solicitar_assinatura' 'proposta' proposta.id %}" 
+                                       class="btn btn-success">
+                                        <i class="fas fa-signature me-2"></i>Solicitar Assinatura Digital
+                                    </a>
+                                {% endif %}
+                                
+                                <!-- Status da Assinatura -->
+                                {% if proposta.status == 'aprovada' %}
+                                    <button class="btn btn-outline-success" disabled>
+                                        <i class="fas fa-check me-2"></i>Proposta Aprovada
+                                    </button>
+                                {% elif proposta.status == 'rejeitada' %}
+                                    <button class="btn btn-outline-danger" disabled>
+                                        <i class="fas fa-times me-2"></i>Proposta Rejeitada
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conteúdo da Proposta -->
+                    {% if proposta.conteudo %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-file-alt me-2"></i>Conteúdo da Proposta</h5>
+                            <div class="border p-3 bg-light">
+                                {{ proposta.conteudo|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Observações -->
+                    {% if proposta.observacoes %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-comment me-2"></i>Observações</h5>
+                            <div class="border p-3 bg-light">
+                                {{ proposta.observacoes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

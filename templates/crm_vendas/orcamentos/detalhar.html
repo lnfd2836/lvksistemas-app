@@ -17,6 +17,14 @@
                             <a href="{% url 'crm_vendas:editar_orcamento' orcamento.id %}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
+                            
+                            <!-- Botão Solicitar Assinatura Digital -->
+                            {% if orcamento.status == 'rascunho' or orcamento.status == 'enviado' %}
+                                <a href="{% url 'crm_vendas:solicitar_assinatura' 'orcamento' orcamento.id %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-signature"></i> Solicitar Assinatura
+                                </a>
+                            {% endif %}
+                            
                             <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>

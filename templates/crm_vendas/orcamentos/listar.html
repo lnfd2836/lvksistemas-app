@@ -52,9 +52,32 @@
                                         </td>
                                         <td>{{ orcamento.data_criacao|date:"d/m/Y" }}</td>
                                         <td>
-                                            <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
+                                            <div class="btn-group" role="group">
+                                                <!-- Botão Visualizar -->
+                                                <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Visualizar">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                
+                                                <!-- Botão Solicitar Assinatura -->
+                                                {% if orcamento.status == 'rascunho' or orcamento.status == 'enviado' %}
+                                                    <a href="{% url 'crm_vendas:solicitar_assinatura' 'orcamento' orcamento.id %}" 
+                                                       class="btn btn-sm btn-success" title="Solicitar Assinatura Digital">
+                                                        <i class="fas fa-signature"></i>
+                                                    </a>
+                                                {% endif %}
+                                                
+                                                <!-- Status da Assinatura -->
+                                                {% if orcamento.status == 'aprovado' %}
+                                                    <span class="btn btn-sm btn-outline-success disabled" title="Orçamento aprovado">
+                                                        <i class="fas fa-check"></i>
+                                                    </span>
+                                                {% elif orcamento.status == 'rejeitado' %}
+                                                    <span class="btn btn-sm btn-outline-danger disabled" title="Orçamento rejeitado">
+                                                        <i class="fas fa-times"></i>
+                                                    </span>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}

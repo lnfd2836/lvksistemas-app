@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitar Assinatura Digital{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-signature me-2"></i>
+                        Solicitar Assinatura Digital
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Informações do Documento -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Documento para Assinatura</h5>
+                        <p class="mb-2">
+                            <strong>Tipo:</strong> {{ tipo_documento|title }}<br>
+                            {% if tipo_documento == 'orcamento' %}
+                                <strong>Número:</strong> {{ documento.numero }}<br>
+                                <strong>Valor:</strong> R$ {{ documento.total|floatformat:2 }}
+                            {% elif tipo_documento == 'proposta' %}
+                                <strong>Número:</strong> {{ documento.numero }}<br>
+                                <strong>Valor:</strong> R$ {{ documento.valor_proposto|floatformat:2 }}
+                            {% elif tipo_documento == 'contrato' %}
+                                <strong>Número:</strong> {{ documento.numero }}<br>
+                                <strong>Valor:</strong> R$ {{ documento.valor_contrato|floatformat:2 }}
+                            {% endif %}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Cliente:</strong> {{ documento.lead.nome }}<br>
+                            <strong>Email:</strong> {{ documento.lead.email }}
+                        </p>
+                    </div>
+                    
+                    <!-- Formulário -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nome_signatario.id_for_label }}" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Nome do Signatário
+                                    </label>
+                                    {{ form.nome_signatario }}
+                                    {% if form.nome_signatario.errors %}
+                                        <div class="text-danger small">{{ form.nome_signatario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.email_signatario.id_for_label }}" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>Email do Signatário
+                                    </label>
+                                    {{ form.email_signatario }}
+                                    {% if form.email_signatario.errors %}
+                                        <div class="text-danger small">{{ form.email_signatario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cpf_signatario.id_for_label }}" class="form-label">
+                                        <i class="fas fa-id-card me-1"></i>CPF do Signatário
+                                    </label>
+                                    {{ form.cpf_signatario }}
+                                    {% if form.cpf_signatario.errors %}
+                                        <div class="text-danger small">{{ form.cpf_signatario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment me-1"></i>Observações
+                            </label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                                <div class="text-danger small">{{ form.observacoes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Aviso Legal -->
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Importante</h6>
+                            <ul class="mb-0">
+                                <li>Um email será enviado para o signatário com o link de assinatura</li>
+                                <li>A assinatura digital tem validade jurídica equivalente à assinatura manuscrita</li>
+                                <li>O documento será considerado válido após a assinatura</li>
+                                <li>Todas as assinaturas são registradas com data, hora e IP</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'crm_vendas:dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Solicitação de Assinatura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
