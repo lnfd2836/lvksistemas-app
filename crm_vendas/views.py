@@ -215,6 +215,9 @@ def detalhar_lead(request, lead_id):
         'status_choices': Lead.STATUS_CHOICES,
     }
     
+    # Debug: verificar se está chegando na view correta
+    logger.info(f"Renderizando detalhes do lead: {lead.nome} (ID: {lead.id})")
+    
     return render(request, 'crm_vendas/leads/detalhar.html', context)
 
 
