@@ -2045,7 +2045,14 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
 def assinar_documento_publico(request, token):
     """Página pública para assinatura de documento"""
     
-    assinatura = get_object_or_404(AssinaturaDigital, token_acesso=token)
+    logger.info(f"Tentativa de acesso à assinatura pública com token: {token}")
+    
+    try:
+        assinatura = get_object_or_404(AssinaturaDigital, token_acesso=token)
+        logger.info(f"Assinatura encontrada: {assinatura.id} - Status: {assinatura.status}")
+    except Exception as e:
+        logger.error(f"Erro ao buscar assinatura com token {token}: {str(e)}")
+        raise
     
     # Verificar se não expirou
     if assinatura.esta_expirado:

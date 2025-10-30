@@ -61,6 +61,7 @@ class LoginIsoladoMiddleware(MiddlewareMixin):
             '/crm/orcamento/',  # URLs públicas do CRM
             '/crm/proposta/',   # URLs públicas do CRM
             '/crm/contrato/',   # URLs públicas do CRM
+            '/crm/assinar/',    # URLs de assinatura digital do CRM
             '/crm/email/',      # URLs de tracking do CRM
         ]
         

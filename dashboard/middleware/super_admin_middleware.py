@@ -48,12 +48,27 @@ class SuperAdminMiddleware:
             '/dashboard/',
             '/financeiro/',
         ]
+        
+        # URLs públicas que NÃO devem ser interceptadas pelo middleware
+        self.public_urls = [
+            '/crm/orcamento/',   # URLs públicas do CRM
+            '/crm/proposta/',    # URLs públicas do CRM
+            '/crm/contrato/',    # URLs públicas do CRM
+            '/crm/assinar/',     # URLs de assinatura digital do CRM
+            '/crm/email/',       # URLs de tracking do CRM
+            '/api/',             # APIs públicas
+            '/webhook/',         # Webhooks
+        ]
     
     def __call__(self, request):
         """
         Processa a requisição com prioridade para super admins
         """
         try:
+            # PRIORIDADE 0: Permitir acesso a URLs públicas sem interceptação
+            if self._is_public_url(request.path):
+                return self.get_response(request)
+            
             # PRIORIDADE 1: Verificar se é acesso a URLs de super admin
             if self._is_super_admin_url(request.path):
                 return self._handle_super_admin_access(request)
@@ -73,6 +88,10 @@ class SuperAdminMiddleware:
             logger.error(f"Erro no SuperAdminMiddleware: {str(e)}")
             # Em caso de erro, continuar normalmente para não quebrar o sistema
             return self.get_response(request)
+    
+    def _is_public_url(self, path):
+        """Verifica se é uma URL pública que não deve ser interceptada"""
+        return any(path.startswith(public_url) for public_url in self.public_urls)
     
     def _is_super_admin_url(self, path):
         """Verifica se é uma URL exclusiva de super admin"""
