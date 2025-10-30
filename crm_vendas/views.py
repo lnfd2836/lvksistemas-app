@@ -457,8 +457,12 @@ def criar_orcamento(request):
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
-        except:
-            loja = None
+            if not loja:
+                messages.error(request, 'Usuário não está associado a nenhuma loja.')
+                return redirect('dashboard:principal')
+        except AttributeError:
+            messages.error(request, 'Usuário não tem permissão para acessar o CRM.')
+            return redirect('dashboard:principal')
     else:
         loja = None
     
@@ -588,8 +592,12 @@ def criar_proposta(request):
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
-        except:
-            loja = None
+            if not loja:
+                messages.error(request, 'Usuário não está associado a nenhuma loja.')
+                return redirect('dashboard:principal')
+        except AttributeError:
+            messages.error(request, 'Usuário não tem permissão para acessar o CRM.')
+            return redirect('dashboard:principal')
     else:
         loja = None
     
@@ -705,8 +713,12 @@ def criar_contrato(request):
     if not request.user.is_superuser:
         try:
             loja = request.user.loja_admin
-        except:
-            loja = None
+            if not loja:
+                messages.error(request, 'Usuário não está associado a nenhuma loja.')
+                return redirect('dashboard:principal')
+        except AttributeError:
+            messages.error(request, 'Usuário não tem permissão para acessar o CRM.')
+            return redirect('dashboard:principal')
     else:
         loja = None
     
