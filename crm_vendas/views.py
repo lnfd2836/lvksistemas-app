@@ -2231,21 +2231,21 @@ def assinar_documento_publico(request, token):
             })
         
         # Verificar se já foi assinado
-        if assinatura.assinado:
+        if assinatura.status == 'assinado':
             return render(request, 'crm_vendas/documento_ja_assinado.html', {
                 'assinatura': assinatura
             })
         
         if request.method == 'POST':
             # Processar assinatura
-            assinatura.assinado = True
+            assinatura.status = 'assinado'
             assinatura.data_assinatura = timezone.now()
             assinatura.ip_assinatura = request.META.get('REMOTE_ADDR')
-            assinatura.user_agent_assinatura = request.META.get('HTTP_USER_AGENT', '')
+            assinatura.user_agent = request.META.get('HTTP_USER_AGENT', '')
             assinatura.save()
             
             # Log da assinatura
-            logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} ID {assinatura.documento_id} por {assinatura.nome_signatario}")
+            logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} por {assinatura.nome_signatario}")
             
             return render(request, 'crm_vendas/assinatura_concluida.html', {
                 'assinatura': assinatura
@@ -2294,8 +2294,16 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
             if form.is_valid():
                 assinatura = form.save(commit=False)
                 assinatura.tipo_documento = tipo_documento
-                assinatura.documento_id = documento_id
-                assinatura.solicitado_por = request.user
+                assinatura.lead = documento.lead if hasattr(documento, 'lead') else None
+                
+                # Associar o documento correto baseado no tipo
+                if tipo_documento == 'orcamento':
+                    assinatura.orcamento = documento
+                elif tipo_documento == 'proposta':
+                    assinatura.proposta = documento
+                elif tipo_documento == 'contrato':
+                    assinatura.contrato = documento
+                
                 assinatura.save()
                 
                 # Enviar email de solicitação
