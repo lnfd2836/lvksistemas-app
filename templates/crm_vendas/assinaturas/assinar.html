@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assinatura Digital - {{ assinatura.get_tipo_documento_display }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-signature me-2"></i>
+                            Assinatura Digital
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Informações do Documento -->
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-file-alt me-2"></i>Documento para Assinatura</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Tipo:</strong> {{ assinatura.get_tipo_documento_display }}</p>
+                                    <p><strong>Signatário:</strong> {{ assinatura.nome_signatario }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Email:</strong> {{ assinatura.email_signatario }}</p>
+                                    <p><strong>Data de Envio:</strong> {{ assinatura.data_envio|date:"d/m/Y H:i" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Detalhes do Documento -->
+                        {% if assinatura.orcamento %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Orçamento {{ assinatura.orcamento.numero }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Título:</strong> {{ assinatura.orcamento.titulo }}</p>
+                                    <p><strong>Descrição:</strong> {{ assinatura.orcamento.descricao }}</p>
+                                    <p><strong>Valor Total:</strong> <span class="h5 text-success">R$ {{ assinatura.orcamento.total|floatformat:2 }}</span></p>
+                                    <p><strong>Condições de Pagamento:</strong> {{ assinamento.orcamento.condicoes_pagamento }}</p>
+                                    <p><strong>Prazo de Entrega:</strong> {{ assinatura.orcamento.prazo_entrega }}</p>
+                                </div>
+                            </div>
+                        {% elif assinatura.proposta %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Proposta {{ assinatura.proposta.numero }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Título:</strong> {{ assinatura.proposta.titulo }}</p>
+                                    <p><strong>Resumo Executivo:</strong> {{ assinatura.proposta.resumo_executivo }}</p>
+                                    <p><strong>Valor Total:</strong> <span class="h5 text-success">R$ {{ assinatura.proposta.valor_total|floatformat:2 }}</span></p>
+                                    <p><strong>Condições Comerciais:</strong> {{ assinatura.proposta.condicoes_comerciais }}</p>
+                                </div>
+                            </div>
+                        {% elif assinatura.contrato %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Contrato {{ assinatura.contrato.numero }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Título:</strong> {{ assinatura.contrato.titulo }}</p>
+                                    <p><strong>Objeto:</strong> {{ assinatura.contrato.objeto }}</p>
+                                    <p><strong>Valor Total:</strong> <span class="h5 text-success">R$ {{ assinatura.contrato.valor_total|floatformat:2 }}</span></p>
+                                    <p><strong>Período:</strong> {{ assinatura.contrato.data_inicio|date:"d/m/Y" }} a {{ assinatura.contrato.data_fim|date:"d/m/Y" }}</p>
+                                    <p><strong>Forma de Pagamento:</strong> {{ assinatura.contrato.forma_pagamento }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Observações -->
+                        {% if assinatura.observacoes %}
+                        <div class="alert alert-secondary">
+                            <h6><i class="fas fa-sticky-note me-2"></i>Observações:</h6>
+                            <p class="mb-0">{{ assinatura.observacoes|linebreaks }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Ações -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <form method="post" class="d-grid">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="assinar">
+                                    <button type="submit" class="btn btn-success btn-lg" 
+                                            onclick="return confirm('Tem certeza que deseja APROVAR e assinar digitalmente este documento?')">
+                                        <i class="fas fa-check me-2"></i>Aprovar e Assinar
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-warning btn-lg w-100" data-bs-toggle="modal" data-bs-target="#modalRevisar">
+                                    <i class="fas fa-edit me-2"></i>Solicitar Revisão
+                                </button>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-danger btn-lg w-100" data-bs-toggle="modal" data-bs-target="#modalRejeitar">
+                                    <i class="fas fa-times me-2"></i>Rejeitar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações de Segurança -->
+                        <div class="alert alert-light mt-4">
+                            <h6><i class="fas fa-shield-alt me-2"></i>Informações de Segurança:</h6>
+                            <ul class="mb-0 small">
+                                <li>Esta assinatura digital tem validade legal</li>
+                                <li>Seu IP e dados de acesso serão registrados</li>
+                                <li>O documento assinado será arquivado com segurança</li>
+                                <li>Você receberá uma cópia por email após a assinatura</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Solicitar Revisão -->
+    <div class="modal fade" id="modalRevisar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Solicitar Revisão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="revisar">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Motivo da Revisão *</label>
+                            <textarea name="motivo_revisao" class="form-control" rows="4" 
+                                      placeholder="Descreva o que precisa ser revisado..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">Solicitar Revisão</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Rejeitar -->
+    <div class="modal fade" id="modalRejeitar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rejeitar Documento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="rejeitar">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Motivo da Rejeição</label>
+                            <textarea name="motivo_rejeicao" class="form-control" rows="4" 
+                                      placeholder="Descreva o motivo da rejeição (opcional)..."></textarea>
+                        </div>
+                        <div class="alert alert-warning">
+                            <strong>Atenção:</strong> Esta ação rejeitará definitivamente o documento.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Confirmar Rejeição</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

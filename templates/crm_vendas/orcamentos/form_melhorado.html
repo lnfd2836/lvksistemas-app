@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
+                        {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.lead.label }} *</label>
+                                {{ form.lead }}
+                                {% if form.lead.errors %}
+                                    <div class="text-danger">{{ form.lead.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.titulo.label }} *</label>
+                                {{ form.titulo }}
+                                {% if form.titulo.errors %}
+                                    <div class="text-danger">{{ form.titulo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.descricao.label }}</label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="text-danger">{{ form.descricao.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.condicoes_pagamento.label }}</label>
+                                {{ form.condicoes_pagamento }}
+                                {% if form.condicoes_pagamento.errors %}
+                                    <div class="text-danger">{{ form.condicoes_pagamento.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.prazo_entrega.label }}</label>
+                                {{ form.prazo_entrega }}
+                                {% if form.prazo_entrega.errors %}
+                                    <div class="text-danger">{{ form.prazo_entrega.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.validade_dias.label }}</label>
+                                <div class="input-group">
+                                    {{ form.validade_dias }}
+                                    <span class="input-group-text">dias</span>
+                                </div>
+                                {% if form.validade_dias.errors %}
+                                    <div class="text-danger">{{ form.validade_dias.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.desconto.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.desconto }}
+                                </div>
+                                {% if form.desconto.errors %}
+                                    <div class="text-danger">{{ form.desconto.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.impostos.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.impostos }}
+                                </div>
+                                {% if form.impostos.errors %}
+                                    <div class="text-danger">{{ form.impostos.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Criar Orçamento
+                                </button>
+                                <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

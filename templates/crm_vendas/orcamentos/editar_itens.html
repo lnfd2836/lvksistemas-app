@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Informações do Orçamento -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            {{ titulo }}
+                        </h3>
+                        <div>
+                            <span class="badge bg-info fs-6">{{ orcamento.get_status_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Lead:</strong> {{ orcamento.lead.nome }}</p>
+                            <p><strong>Email:</strong> {{ orcamento.lead.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Subtotal:</strong> R$ {{ orcamento.subtotal|floatformat:2 }}</p>
+                            <p><strong>Total:</strong> <span class="h5 text-success">R$ {{ orcamento.total|floatformat:2 }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Adicionar Item -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>
+                        Adicionar Item
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="adicionar_item" value="1">
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form_item.produto_servico.label }}</label>
+                                {{ form_item.produto_servico }}
+                                <small class="form-text text-muted">Selecione um produto/serviço cadastrado (opcional)</small>
+                            </div>
+                            
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">{{ form_item.descricao.label }} *</label>
+                                {{ form_item.descricao }}
+                                {% if form_item.descricao.errors %}
+                                    <div class="text-danger">{{ form_item.descricao.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form_item.detalhes.label }}</label>
+                            {{ form_item.detalhes }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">{{ form_item.quantidade.label }} *</label>
+                                {{ form_item.quantidade }}
+                                {% if form_item.quantidade.errors %}
+                                    <div class="text-danger">{{ form_item.quantidade.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">{{ form_item.unidade.label }}</label>
+                                {{ form_item.unidade }}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form_item.valor_unitario.label }} *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form_item.valor_unitario }}
+                                </div>
+                                {% if form_item.valor_unitario.errors %}
+                                    <div class="text-danger">{{ form_item.valor_unitario.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">{{ form_item.desconto_percentual.label }}</label>
+                                <div class="input-group">
+                                    {{ form_item.desconto_percentual }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form_item.desconto_valor.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form_item.desconto_valor }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Adicionar Item
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Lista de Itens -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Itens do Orçamento ({{ orcamento.itens.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if orcamento.itens.all %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição</th>
+                                        <th>Qtd</th>
+                                        <th>Valor Unit.</th>
+                                        <th>Desconto</th>
+                                        <th>Total</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in orcamento.itens.all %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ item.descricao }}</strong>
+                                            {% if item.detalhes %}
+                                                <br><small class="text-muted">{{ item.detalhes }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.quantidade }} {{ item.unidade }}</td>
+                                        <td>R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                                        <td>
+                                            {% if item.desconto_percentual > 0 %}
+                                                {{ item.desconto_percentual }}%
+                                            {% endif %}
+                                            {% if item.desconto_valor > 0 %}
+                                                R$ {{ item.desconto_valor|floatformat:2 }}
+                                            {% endif %}
+                                            {% if item.desconto_percentual == 0 and item.desconto_valor == 0 %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td><strong>R$ {{ item.valor_total|floatformat:2 }}</strong></td>
+                                        <td>
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="remover_item" value="1">
+                                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Tem certeza que deseja remover este item?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-info">
+                                        <th colspan="4">Total do Orçamento</th>
+                                        <th>R$ {{ orcamento.total|floatformat:2 }}</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-list fa-3x text-muted mb-3"></i>
+                            <h5>Nenhum item adicionado</h5>
+                            <p class="text-muted">Adicione o primeiro item ao orçamento usando o formulário acima.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                        {% if orcamento.itens.count > 0 %}
+                        <div>
+                            <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}" class="btn btn-info">
+                                <i class="fas fa-eye me-1"></i>Visualizar Orçamento
+                            </a>
+                            <a href="{% url 'crm_vendas:solicitar_assinatura' 'orcamento' orcamento.id %}" class="btn btn-success">
+                                <i class="fas fa-signature me-1"></i>Solicitar Assinatura
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preencher dados do produto/serviço selecionado
+function preencherDadosProduto() {
+    const select = document.getElementById('id_produto_servico');
+    const produtoId = select.value;
+    
+    if (produtoId) {
+        fetch(`{% url 'crm_vendas:api_produto_servico_detalhes' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', produtoId))
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('id_descricao').value = data.nome;
+                document.getElementById('id_valor_unitario').value = data.preco_base;
+                document.getElementById('id_unidade').value = data.unidade;
+            })
+            .catch(error => console.error('Erro:', error));
+    }
+}
+
+// Adicionar evento ao select
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('id_produto_servico');
+    if (select) {
+        select.addEventListener('change', preencherDadosProduto);
+    }
+});
+</script>
+{% endblock %}

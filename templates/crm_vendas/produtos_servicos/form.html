@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-box me-2"></i>
+                        {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.tipo.label }}</label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="text-danger">{{ form.tipo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.codigo.label }}</label>
+                                {{ form.codigo }}
+                                {% if form.codigo.errors %}
+                                    <div class="text-danger">{{ form.codigo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">{{ form.nome.label }} *</label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                    <div class="text-danger">{{ form.nome.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.categoria.label }}</label>
+                                {{ form.categoria }}
+                                {% if form.categoria.errors %}
+                                    <div class="text-danger">{{ form.categoria.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.descricao.label }}</label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="text-danger">{{ form.descricao.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.preco_base.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.preco_base }}
+                                </div>
+                                {% if form.preco_base.errors %}
+                                    <div class="text-danger">{{ form.preco_base.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.unidade.label }}</label>
+                                {{ form.unidade }}
+                                {% if form.unidade.errors %}
+                                    <div class="text-danger">{{ form.unidade.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check mt-4">
+                                    {{ form.ativo }}
+                                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                        {{ form.ativo.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Salvar
+                                </button>
+                                <a href="{% url 'crm_vendas:listar_produtos_servicos' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

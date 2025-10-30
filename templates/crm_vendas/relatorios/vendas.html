@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios de Vendas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Relatórios de Vendas
+                        </h3>
+                        <div>
+                            <form method="get" class="d-inline">
+                                <select name="periodo" class="form-select" onchange="this.form.submit()">
+                                    <option value="7" {% if periodo == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                                    <option value="30" {% if periodo == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                                    <option value="90" {% if periodo == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                                    <option value="365" {% if periodo == '365' %}selected{% endif %}>Último ano</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estatísticas Principais -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ stats.leads_criados }}</h4>
+                                    <p class="mb-0">Leads Criados</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-users fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ stats.leads_convertidos }}</h4>
+                                    <p class="mb-0">Leads Convertidos</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ stats.taxa_conversao|floatformat:1 }}%</h4>
+                                    <p class="mb-0">Taxa de Conversão</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-percentage fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>R$ {{ stats.valor_total_vendas|floatformat:0 }}</h4>
+                                    <p class="mb-0">Valor Total Vendas</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-dollar-sign fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estatísticas Detalhadas -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>
+                                Orçamentos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">{{ stats.orcamentos_enviados }}</h4>
+                                    <p class="mb-0">Enviados</p>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ stats.orcamentos_aprovados }}</h4>
+                                    <p class="mb-0">Aprovados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-contract me-2"></i>
+                                Contratos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-info">{{ stats.propostas_enviadas }}</h4>
+                                    <p class="mb-0">Propostas Enviadas</p>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ stats.contratos_assinados }}</h4>
+                                    <p class="mb-0">Contratos Assinados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos e Análises -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Leads por Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if leads_por_status %}
+                                {% for item in leads_por_status %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ item.status|capfirst }}</span>
+                                    <div>
+                                        <span class="badge bg-primary">{{ item.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Nenhum dado disponível</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Origem dos Leads
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if leads_por_origem %}
+                                {% for item in leads_por_origem %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ item.origem|capfirst }}</span>
+                                    <div>
+                                        <span class="badge bg-info">{{ item.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Nenhum dado disponível</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Produtos/Serviços -->
+            {% if top_produtos %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-trophy me-2"></i>
+                                Top Produtos/Serviços
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Produto/Serviço</th>
+                                            <th>Quantidade</th>
+                                            <th>Valor Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in top_produtos %}
+                                        <tr>
+                                            <td>{{ item.descricao }}</td>
+                                            <td>{{ item.quantidade_total }}</td>
+                                            <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-signature me-2"></i>
+                        {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Informações do Documento -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Documento para Assinatura</h5>
+                        <p><strong>Tipo:</strong> {{ tipo_documento|capfirst }}</p>
+                        <p><strong>Documento:</strong> {{ documento }}</p>
+                        <p><strong>Lead:</strong> {{ documento.lead.nome }}</p>
+                        <p class="mb-0"><strong>Email:</strong> {{ documento.lead.email }}</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.nome_signatario.label }} *</label>
+                                {{ form.nome_signatario }}
+                                {% if form.nome_signatario.errors %}
+                                    <div class="text-danger">{{ form.nome_signatario.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.email_signatario.label }} *</label>
+                                {{ form.email_signatario }}
+                                {% if form.email_signatario.errors %}
+                                    <div class="text-danger">{{ form.email_signatario.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.cpf_signatario.label }}</label>
+                                {{ form.cpf_signatario }}
+                                <small class="form-text text-muted">CPF do signatário (opcional)</small>
+                                {% if form.cpf_signatario.errors %}
+                                    <div class="text-danger">{{ form.cpf_signatario.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.observacoes.label }}</label>
+                            {{ form.observacoes }}
+                            <small class="form-text text-muted">Observações sobre a assinatura (opcional)</small>
+                            {% if form.observacoes.errors %}
+                                <div class="text-danger">{{ form.observacoes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Importante:</h6>
+                            <ul class="mb-0">
+                                <li>Um link único será enviado para o email do signatário</li>
+                                <li>O link terá validade de 30 dias</li>
+                                <li>O signatário poderá aprovar, rejeitar ou solicitar revisão</li>
+                                <li>Você será notificado sobre a resposta</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-1"></i>Enviar para Assinatura
+                                </button>
+                                <a href="{% url 'crm_vendas:detalhar_lead' documento.lead.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
