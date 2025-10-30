@@ -18,7 +18,7 @@ class LeadForm(forms.ModelForm):
             'whatsapp', 'empresa', 'cargo', 'ramo_atividade', 'endereco', 'cidade', 
             'estado', 'cep', 'origem', 'interesse_principal', 'observacoes', 
             'observacoes_interesse', 'valor_estimado', 'orcamento_disponivel', 
-            'probabilidade', 'prazo_decisao', 'decisor', 'responsavel'
+            'probabilidade', 'prazo_decisao', 'decisor'
         ]
         widgets = {
             'tipo_pessoa': forms.Select(attrs={'class': 'form-select', 'onchange': 'togglePessoaFields()'}),
@@ -49,7 +49,6 @@ class LeadForm(forms.ModelForm):
             'probabilidade': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100'}),
             'prazo_decisao': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: 30 dias, 2 meses'}),
             'decisor': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'responsavel': forms.Select(attrs={'class': 'form-select'}),
         }
     
     def clean_cpf(self):

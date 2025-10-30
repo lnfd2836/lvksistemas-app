@@ -1630,6 +1630,10 @@ def criar_lead_melhorado(request):
     
     if request.method == 'POST':
         form = LeadForm(request.POST)
+        
+        # Debug: log dos dados recebidos
+        logger.info(f"POST data recebido: {request.POST}")
+        
         if form.is_valid():
             try:
                 lead = form.save(commit=False)
@@ -1644,15 +1648,27 @@ def criar_lead_melhorado(request):
                     except:
                         loja = Loja.objects.first()  # Fallback
                 
-                lead.loja = loja
-                lead.save()
-                
-                messages.success(request, f'Lead "{lead.nome}" criado com sucesso!')
-                return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
+                if not loja:
+                    messages.error(request, 'Erro: Nenhuma loja encontrada para associar ao lead.')
+                    logger.error("Nenhuma loja encontrada para criar lead")
+                else:
+                    lead.loja = loja
+                    lead.responsavel = request.user
+                    lead.save()
+                    
+                    logger.info(f"Lead criado com sucesso: {lead.nome} (ID: {lead.id})")
+                    messages.success(request, f'Lead "{lead.nome}" criado com sucesso!')
+                    return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
                 
             except Exception as e:
                 logger.error(f"Erro ao criar lead: {str(e)}")
                 messages.error(request, f'Erro ao criar lead: {str(e)}')
+        else:
+            # Debug: log dos erros de validação
+            logger.error(f"Erros de validação do formulário: {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = LeadForm()
     
@@ -1799,41 +1815,7 @@ def editar_produto_servico(request, produto_id):
 # LEADS MELHORADOS
 # ============================================================================
 
-@login_required
-def criar_lead_melhorado(request):
-    """Cria novo lead com campos melhorados"""
-    
-    if request.method == 'POST':
-        form = LeadForm(request.POST)
-        if form.is_valid():
-            try:
-                lead = form.save(commit=False)
-                
-                # Definir loja
-                if request.user.is_superuser:
-                    # Super admin pode escolher a loja (implementar seleção)
-                    loja = Loja.objects.first()  # Temporário
-                else:
-                    loja = request.user.loja_admin
-                
-                lead.loja = loja
-                lead.save()
-                
-                messages.success(request, f'Lead "{lead.nome}" criado com sucesso!')
-                return redirect('crm_vendas:detalhar_lead', lead_id=lead.id)
-                
-            except Exception as e:
-                logger.error(f"Erro ao criar lead: {str(e)}")
-                messages.error(request, 'Erro ao criar lead. Tente novamente.')
-    else:
-        form = LeadForm()
-    
-    context = {
-        'form': form,
-        'titulo': 'Novo Lead'
-    }
-    
-    return render(request, 'crm_vendas/leads/form_melhorado.html', context)
+
 
 
 # ============================================================================

@@ -24,8 +24,12 @@
                                 <div class="card bg-light">
                                     <div class="card-body">
                                         <h5 class="card-title">Tipo de Pessoa</h5>
-                                        <div class="form-check form-check-inline">
-                                            {{ form.tipo_pessoa|add_class:"form-check-input" }}
+                                        <div class="form-group">
+                                            <label class="form-label">{{ form.tipo_pessoa.label }}</label>
+                                            {{ form.tipo_pessoa }}
+                                            {% if form.tipo_pessoa.errors %}
+                                                <div class="text-danger">{{ form.tipo_pessoa.errors.0 }}</div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -149,6 +153,45 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ form.prazo_decisao.label }}</label>
                                 {{ form.prazo_decisao }}
+                            </div>
+                        </div>
+                        
+                        <!-- Dados Comerciais -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-chart-line me-2"></i>Dados Comerciais</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.origem.label }}</label>
+                                {{ form.origem }}
+                                {% if form.origem.errors %}
+                                    <div class="text-danger">{{ form.origem.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.probabilidade.label }}</label>
+                                <div class="input-group">
+                                    {{ form.probabilidade }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">É o decisor?</label>
+                                <div class="form-check">
+                                    {{ form.decisor }}
+                                    <label class="form-check-label" for="{{ form.decisor.id_for_label }}">
+                                        {{ form.decisor.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.observacoes.label }}</label>
+                                {{ form.observacoes }}
                             </div>
                         </div>
                         
