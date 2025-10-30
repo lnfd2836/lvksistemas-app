@@ -2263,17 +2263,29 @@ def assinar_documento_publico(request, token):
                     assinatura.orcamento.status = 'aprovado'
                     assinatura.orcamento.data_resposta = timezone.now()
                     assinatura.orcamento.save()
+                    # Solicitar automaticamente assinatura da empresa
+                    _solicitar_assinatura_empresa_automatica(assinatura.orcamento, 'orcamento')
                 elif assinatura.proposta:
                     assinatura.proposta.status = 'aprovada'
                     assinatura.proposta.data_resposta = timezone.now()
                     assinatura.proposta.save()
+                    # Solicitar automaticamente assinatura da empresa
+                    _solicitar_assinatura_empresa_automatica(assinatura.proposta, 'proposta')
                 elif assinatura.contrato:
                     assinatura.contrato.status = 'assinado_cliente'
                     assinatura.contrato.assinado_cliente_em = timezone.now()
                     assinatura.contrato.save()
+                    # Solicitar automaticamente assinatura da empresa
+                    _solicitar_assinatura_empresa_automatica(assinatura.contrato, 'contrato')
             
             elif assinatura.tipo_signatario == 'empresa':
-                if assinatura.contrato:
+                if assinatura.orcamento:
+                    # Enviar documento final com ambas assinaturas
+                    _enviar_documento_final_assinado(assinatura.orcamento, 'orcamento')
+                elif assinatura.proposta:
+                    # Enviar documento final com ambas assinaturas
+                    _enviar_documento_final_assinado(assinatura.proposta, 'proposta')
+                elif assinatura.contrato:
                     assinatura.contrato.assinado_empresa_em = timezone.now()
                     # Se cliente já assinou, ativar contrato
                     if assinatura.contrato.assinado_cliente_em:
@@ -2281,6 +2293,8 @@ def assinar_documento_publico(request, token):
                     else:
                         assinatura.contrato.status = 'assinado_empresa'
                     assinatura.contrato.save()
+                    # Enviar documento final com ambas assinaturas
+                    _enviar_documento_final_assinado(assinatura.contrato, 'contrato')
             
             # Log da assinatura
             logger.info(f"Documento assinado digitalmente: {assinatura.tipo_documento} por {assinatura.nome_signatario} ({assinatura.tipo_signatario})")
@@ -2445,3 +2459,106 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
         logger.error(f"Erro ao solicitar assinatura: {str(e)}")
         messages.error(request, 'Erro interno do servidor.')
         return redirect('crm_vendas:dashboard')
+
+# =====
+=======================================================================
+# FUNÇÕES AUXILIARES PARA AUTOMAÇÃO DE ASSINATURAS
+# ============================================================================
+
+def _solicitar_assinatura_empresa_automatica(documento, tipo_documento):
+    """
+    Solicita automaticamente assinatura da empresa após cliente assinar
+    """
+    try:
+        # Criar solicitação de assinatura para a empresa
+        assinatura = AssinaturaDigital.objects.create(
+            tipo_documento=tipo_documento,
+            tipo_signatario='empresa',
+            lead=documento.lead,
+            nome_signatario=documento.loja.nome_responsavel or documento.loja.nome,
+            email_signatario=documento.loja.email,
+            cpf_signatario=documento.loja.cnpj,
+            observacoes=f'Assinatura automática da empresa após aprovação do cliente para {tipo_documento} {documento.numero}',
+            data_expiracao=timezone.now() + timezone.timedelta(days=7)  # 7 dias para assinar
+        )
+        
+        # Associar documento correto
+        if tipo_documento == 'orcamento':
+            assinatura.orcamento = documento
+        elif tipo_documento == 'proposta':
+            assinatura.proposta = documento
+        elif tipo_documento == 'contrato':
+            assinatura.contrato = documento
+        
+        assinatura.save()
+        
+        # Enviar email automaticamente
+        try:
+            EmailService.enviar_solicitacao_assinatura(assinatura)
+            logger.info(f"Assinatura da empresa solicitada automaticamente para {tipo_documento} {documento.numero}")
+        except Exception as e:
+            logger.error(f"Erro ao enviar email automático de assinatura da empresa: {str(e)}")
+            
+    except Exception as e:
+        logger.error(f"Erro ao solicitar assinatura automática da empresa: {str(e)}")
+
+
+def _enviar_documento_final_assinado(documento, tipo_documento):
+    """
+    Envia documento final com ambas assinaturas por email
+    """
+    try:
+        # Preparar dados do email
+        if tipo_documento == 'orcamento':
+            assunto = f"Orçamento {documento.numero} - Aprovado e Assinado"
+            template = 'crm_vendas/emails/orcamento_final_assinado.html'
+        elif tipo_documento == 'proposta':
+            assunto = f"Proposta {documento.numero} - Aprovada e Assinada"
+            template = 'crm_vendas/emails/proposta_final_assinada.html'
+        elif tipo_documento == 'contrato':
+            assunto = f"Contrato {documento.numero} - Ativo e Assinado"
+            template = 'crm_vendas/emails/contrato_final_assinado.html'
+        
+        # Contexto do email
+        context = {
+            'documento': documento,
+            'lead': documento.lead,
+            'loja': documento.loja,
+            'tipo_documento': tipo_documento,
+            'data_envio': timezone.now(),
+        }
+        
+        # Renderizar email
+        from django.template.loader import render_to_string
+        html_content = render_to_string(template, context)
+        
+        # Enviar para cliente e empresa
+        destinatarios = [documento.lead.email]
+        if documento.loja.email and documento.loja.email != documento.lead.email:
+            destinatarios.append(documento.loja.email)
+        
+        from django.core.mail import EmailMultiAlternatives
+        email = EmailMultiAlternatives(
+            subject=assunto,
+            body=f"Documento {documento.numero} foi assinado por ambas as partes.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=destinatarios
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        logger.info(f"Documento final enviado por email: {tipo_documento} {documento.numero}")
+        
+        # Registrar no histórico
+        from .models import HistoricoContato
+        HistoricoContato.objects.create(
+            lead=documento.lead,
+            tipo='email',
+            assunto=assunto,
+            descricao=f'Documento final {tipo_documento} {documento.numero} enviado com ambas assinaturas',
+            resultado='Email enviado com sucesso',
+            data_contato=timezone.now()
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar documento final assinado: {str(e)}")

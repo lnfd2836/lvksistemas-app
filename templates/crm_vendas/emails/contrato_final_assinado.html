@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato Ativo e Assinado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+        }
+        .footer {
+            background-color: #6c757d;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            font-size: 12px;
+        }
+        .info-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        .success-box {
+            background-color: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✅ Contrato Ativo e Assinado</h1>
+        <p>{{ loja.nome }}</p>
+    </div>
+
+    <div class="content">
+        <p>Prezado(a) <strong>{{ lead.nome }}</strong>,</p>
+
+        <div class="success-box">
+            <h3>🎉 Parabéns! Seu contrato está ativo e foi assinado por ambas as partes!</h3>
+            <p>O processo de assinatura digital foi concluído com sucesso e o contrato entra em vigor imediatamente.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📄 Detalhes do Contrato</h3>
+            <p><strong>Número:</strong> {{ documento.numero }}</p>
+            <p><strong>Título:</strong> {{ documento.titulo }}</p>
+            <p><strong>Valor do Contrato:</strong> R$ {{ documento.valor_contrato|floatformat:2 }}</p>
+            <p><strong>Data de Ativação:</strong> {{ data_envio|date:"d/m/Y às H:i" }}</p>
+            <p><strong>Status:</strong> Ativo e Vigente</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Informações Importantes</h3>
+            <ul>
+                <li>O contrato está oficialmente ativo e em vigor</li>
+                <li>Todas as cláusulas contratuais são válidas a partir de agora</li>
+                <li>Ambas as partes devem cumprir suas obrigações conforme acordado</li>
+                <li>Mantenha este email como comprovante da ativação</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>📞 Suporte e Contato</h3>
+            <p>Para dúvidas sobre o contrato ou suporte, entre em contato conosco:</p>
+            {% if loja.telefone %}
+            <p>📞 <strong>Telefone:</strong> {{ loja.telefone }}</p>
+            {% endif %}
+            {% if loja.email %}
+            <p>📧 <strong>Email:</strong> {{ loja.email }}</p>
+            {% endif %}
+        </div>
+
+        <p>Agradecemos pela confiança e esperamos uma parceria de sucesso!</p>
+
+        <hr style="margin: 30px 0;">
+
+        <p>Atenciosamente,<br>
+            <strong>{{ loja.nome }}</strong>
+        </p>
+
+        {% if loja.endereco %}
+        <p>📍 {{ loja.endereco }}</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Este é um email automático. Por favor, não responda.</p>
+        <p>© {{ data_envio|date:"Y" }} {{ loja.nome }}. Todos os direitos reservados.</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposta Aprovada e Assinada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+        }
+        .footer {
+            background-color: #6c757d;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            font-size: 12px;
+        }
+        .info-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 20px 0;
+        }
+        .success-box {
+            background-color: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✅ Proposta Aprovada e Assinada</h1>
+        <p>{{ loja.nome }}</p>
+    </div>
+
+    <div class="content">
+        <p>Prezado(a) <strong>{{ lead.nome }}</strong>,</p>
+
+        <div class="success-box">
+            <h3>🎉 Excelente! Sua proposta foi aprovada e assinada por ambas as partes!</h3>
+            <p>O processo de assinatura digital foi concluído com sucesso.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📄 Detalhes da Proposta</h3>
+            <p><strong>Número:</strong> {{ documento.numero }}</p>
+            <p><strong>Título:</strong> {{ documento.titulo }}</p>
+            <p><strong>Valor Proposto:</strong> R$ {{ documento.valor_proposto|floatformat:2 }}</p>
+            <p><strong>Data de Aprovação:</strong> {{ documento.data_resposta|date:"d/m/Y às H:i" }}</p>
+            <p><strong>Status:</strong> Aprovada e Assinada</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Próximos Passos</h3>
+            <ul>
+                <li>A proposta está oficialmente aprovada</li>
+                <li>Iniciaremos a elaboração do contrato formal</li>
+                <li>Nossa equipe entrará em contato para definir detalhes</li>
+                <li>Você receberá o contrato para assinatura em breve</li>
+            </ul>
+        </div>
+
+        <p>Agradecemos pela confiança em nossa proposta!</p>
+
+        <hr style="margin: 30px 0;">
+
+        <p>Atenciosamente,<br>
+            <strong>{{ loja.nome }}</strong>
+        </p>
+
+        {% if loja.telefone %}
+        <p>📞 {{ loja.telefone }}</p>
+        {% endif %}
+        {% if loja.email %}
+        <p>📧 {{ loja.email }}</p>
+        {% endif %}
+        {% if loja.endereco %}
+        <p>📍 {{ loja.endereco }}</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Este é um email automático. Por favor, não responda.</p>
+        <p>© {{ data_envio|date:"Y" }} {{ loja.nome }}. Todos os direitos reservados.</p>
+    </div>
+</body>
+</html>
