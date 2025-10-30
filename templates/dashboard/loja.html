@@ -48,91 +48,116 @@
 </div>
 {% endif %}
 
-<!-- CRM de Vendas - Acesso Rápido -->
+<!-- CRM de Vendas - Completo -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-success">
-                    <i class="fas fa-handshake"></i> CRM de Vendas - Acesso Rápido
+                    <i class="fas fa-handshake"></i> CRM de Vendas
                 </h6>
+                <div>
+                    <a href="{% url 'crm_vendas:criar_lead_melhorado' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Novo Lead
+                    </a>
+                    <a href="{% url 'crm_vendas:criar_orcamento_melhorado' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-invoice-dollar"></i> Novo Orçamento
+                    </a>
+                </div>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <!-- Criar Orçamento -->
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="card border-left-primary shadow h-100">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Orçamentos
-                                        </div>
-                                        <div class="text-muted small">Criar orçamentos detalhados</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-file-invoice-dollar text-primary" style="font-size: 2rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <a href="/crm/orcamentos/criar/" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-plus"></i> Criar Orçamento
-                                    </a>
-                                    <a href="/crm/orcamentos/" class="btn btn-outline-primary btn-sm ml-1">
-                                        <i class="fas fa-list"></i> Listar
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Criar Proposta -->
-                    <div class="col-xl-3 col-md-6 mb-3">
+                <!-- Estatísticas CRM -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
                         <div class="card border-left-info shadow h-100">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                            Propostas
+                                            Total de Leads
                                         </div>
-                                        <div class="text-muted small">Criar propostas comerciais</div>
+                                        <div class="h5 mb-0 font-weight-bold">{{ stats_crm.total_leads|default:0 }}</div>
+                                        <div class="text-muted small">{{ stats_crm.leads_novos|default:0 }} novos</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-file-alt text-info" style="font-size: 2rem;"></i>
+                                        <i class="fas fa-users text-info" style="font-size: 2rem;"></i>
                                     </div>
-                                </div>
-                                <div class="mt-2">
-                                    <a href="/crm/propostas/criar/" class="btn btn-info btn-sm">
-                                        <i class="fas fa-plus"></i> Criar Proposta
-                                    </a>
-                                    <a href="/crm/propostas/" class="btn btn-outline-info btn-sm ml-1">
-                                        <i class="fas fa-list"></i> Listar
-                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Criar Contrato -->
-                    <div class="col-xl-3 col-md-6 mb-3">
+                    
+                    <div class="col-lg-3 col-md-6 mb-3">
                         <div class="card border-left-success shadow h-100">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            Contratos
+                                            Leads Qualificados
                                         </div>
-                                        <div class="text-muted small">Criar contratos formais</div>
+                                        <div class="h5 mb-0 font-weight-bold">{{ stats_crm.leads_qualificados|default:0 }}</div>
+                                        <div class="text-muted small">Em processo</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-file-contract text-success" style="font-size: 2rem;"></i>
+                                        <i class="fas fa-user-check text-success" style="font-size: 2rem;"></i>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Orçamentos
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold">{{ stats_crm.orcamentos_enviados|default:0 }}</div>
+                                        <div class="text-muted small">Enviados</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-invoice-dollar text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Pipeline
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold">R$ {{ stats_crm.valor_pipeline|default:0|floatformat:0 }}</div>
+                                        <div class="text-muted small">Valor estimado</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-dollar-sign text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ações Rápidas CRM -->
+                <div class="row">
+                    <!-- Leads -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users text-info mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-info font-weight-bold">Leads</h6>
                                 <div class="mt-2">
-                                    <a href="/crm/contratos/criar/" class="btn btn-success btn-sm">
-                                        <i class="fas fa-plus"></i> Criar Contrato
+                                    <a href="{% url 'crm_vendas:criar_lead_melhorado' %}" class="btn btn-info btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
                                     </a>
-                                    <a href="/crm/contratos/" class="btn btn-outline-success btn-sm ml-1">
+                                    <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-info btn-sm w-100">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -140,26 +165,213 @@
                         </div>
                     </div>
 
-                    <!-- Dashboard CRM -->
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="card border-left-warning shadow h-100">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                            Dashboard CRM
-                                        </div>
-                                        <div class="text-muted small">Visão geral do CRM</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-chart-pie text-warning" style="font-size: 2rem;"></i>
-                                    </div>
-                                </div>
+                    <!-- Orçamentos -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-invoice-dollar text-primary mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-primary font-weight-bold">Orçamentos</h6>
                                 <div class="mt-2">
-                                    <a href="/crm/" class="btn btn-warning btn-sm">
-                                        <i class="fas fa-tachometer-alt"></i> Acessar CRM
+                                    <a href="{% url 'crm_vendas:criar_orcamento_melhorado' %}" class="btn btn-primary btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Propostas -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-alt text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-warning font-weight-bold">Propostas</h6>
+                                <div class="mt-2">
+                                    <a href="{% url 'crm_vendas:criar_proposta' %}" class="btn btn-warning btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="{% url 'crm_vendas:listar_propostas' %}" class="btn btn-outline-warning btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contratos -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-contract text-success mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-success font-weight-bold">Contratos</h6>
+                                <div class="mt-2">
+                                    <a href="{% url 'crm_vendas:criar_contrato' %}" class="btn btn-success btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="{% url 'crm_vendas:listar_contratos' %}" class="btn btn-outline-success btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Produtos/Serviços -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-box text-secondary mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-secondary font-weight-bold">Produtos</h6>
+                                <div class="mt-2">
+                                    <a href="{% url 'crm_vendas:criar_produto_servico' %}" class="btn btn-secondary btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                    <a href="{% url 'crm_vendas:listar_produtos_servicos' %}" class="btn btn-outline-secondary btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relatórios -->
+                    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                        <div class="card border-left-dark shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar text-dark mb-2" style="font-size: 2rem;"></i>
+                                <h6 class="text-dark font-weight-bold">Relatórios</h6>
+                                <div class="mt-2">
+                                    <a href="{% url 'crm_vendas:relatorios_vendas' %}" class="btn btn-dark btn-sm mb-1 w-100">
+                                        <i class="fas fa-chart-line"></i> Vendas
+                                    </a>
+                                    <a href="{% url 'crm_vendas:relatorio_funil' %}" class="btn btn-outline-dark btn-sm w-100">
+                                        <i class="fas fa-funnel-dollar"></i> Funil
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leads e Orçamentos Recentes -->
+                <div class="row mt-4">
+                    <!-- Leads Recentes -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-users me-2"></i>Leads Recentes
+                                </h6>
+                                <a href="{% url 'crm_vendas:listar_leads' %}" class="btn btn-outline-primary btn-sm">
+                                    Ver todos
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                {% if leads_recentes_crm %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Status</th>
+                                                    <th>Valor</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for lead in leads_recentes_crm %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ lead.nome }}</strong><br>
+                                                        <small class="text-muted">{{ lead.empresa|default:"Sem empresa" }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-{% if lead.status == 'novo' %}info{% elif lead.status == 'qualificado' %}success{% elif lead.status == 'fechado_ganho' %}primary{% else %}secondary{% endif %}">
+                                                            {{ lead.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>R$ {{ lead.valor_estimado|floatformat:2 }}</td>
+                                                    <td>
+                                                        <a href="{% url 'crm_vendas:detalhar_lead' lead.id %}" class="btn btn-outline-primary btn-xs">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="{% url 'crm_vendas:registrar_contato' lead.id %}" class="btn btn-outline-success btn-xs">
+                                                            <i class="fas fa-phone"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Nenhum lead encontrado.</p>
+                                        <a href="{% url 'crm_vendas:criar_lead_melhorado' %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus"></i> Criar Primeiro Lead
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Orçamentos Pendentes -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-warning">
+                                    <i class="fas fa-file-invoice me-2"></i>Orçamentos Pendentes
+                                </h6>
+                                <a href="{% url 'crm_vendas:listar_orcamentos' %}" class="btn btn-outline-warning btn-sm">
+                                    Ver todos
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                {% if orcamentos_pendentes_crm %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Número</th>
+                                                    <th>Cliente</th>
+                                                    <th>Valor</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for orcamento in orcamentos_pendentes_crm %}
+                                                <tr>
+                                                    <td>
+                                                        <a href="{% url 'crm_vendas:detalhar_orcamento' orcamento.id %}">
+                                                            {{ orcamento.numero }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ orcamento.lead.nome }}</td>
+                                                    <td>R$ {{ orcamento.total|floatformat:2 }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{% if orcamento.status == 'enviado' %}warning{% elif orcamento.status == 'visualizado' %}info{% else %}secondary{% endif %}">
+                                                            {{ orcamento.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Nenhum orçamento pendente.</p>
+                                        <a href="{% url 'crm_vendas:criar_orcamento_melhorado' %}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-plus"></i> Criar Orçamento
+                                        </a>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -742,4 +954,69 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+.card-body .btn-sm {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.small-box {
+    border-radius: 10px;
+    position: relative;
+    display: block;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+
+.border-left-dark {
+    border-left: 0.25rem solid #5a5c69 !important;
+}
+</style>
 {% endblock %}

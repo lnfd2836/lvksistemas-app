@@ -326,6 +326,44 @@ def dashboard_loja(request, loja=None, loja_id=None):
         except (DatabaseError, ProgrammingError) as e:
             logger.warning(f"Erro ao buscar funcionários para loja {target_loja.nome}: {str(e)}")
         
+        # Estatísticas do CRM
+        stats_crm = {
+            'total_leads': 0,
+            'leads_novos': 0,
+            'leads_qualificados': 0,
+            'orcamentos_enviados': 0,
+            'valor_pipeline': 0
+        }
+        leads_recentes_crm = []
+        orcamentos_pendentes_crm = []
+        
+        try:
+            from crm_vendas.models import Lead, Orcamento
+            
+            # Filtrar por loja
+            leads = Lead.objects.filter(loja=target_loja)
+            orcamentos = Orcamento.objects.filter(loja=target_loja)
+            
+            # Estatísticas
+            stats_crm = {
+                'total_leads': leads.count(),
+                'leads_novos': leads.filter(status='novo').count(),
+                'leads_qualificados': leads.filter(status='qualificado').count(),
+                'orcamentos_enviados': orcamentos.filter(status='enviado').count(),
+                'valor_pipeline': leads.aggregate(total=Sum('valor_estimado'))['total'] or 0,
+            }
+            
+            # Leads recentes (últimos 5)
+            leads_recentes_crm = leads.order_by('-data_criacao')[:5]
+            
+            # Orçamentos pendentes (enviados ou visualizados)
+            orcamentos_pendentes_crm = orcamentos.filter(
+                status__in=['enviado', 'visualizado']
+            ).order_by('-data_envio')[:5]
+            
+        except (DatabaseError, ProgrammingError, ImportError) as e:
+            logger.warning(f"Erro ao buscar dados do CRM para loja {target_loja.nome}: {str(e)}")
+        
         # Preparar contexto completo
         context = {
             'loja': target_loja,
@@ -346,6 +384,10 @@ def dashboard_loja(request, loja=None, loja_id=None):
             'clientes_recentes': clientes_recentes,
             'produtos_mais_vendidos': produtos_mais_vendidos,
             'modulos_loja': modulos_loja,
+            # Dados do CRM
+            'stats_crm': stats_crm,
+            'leads_recentes_crm': leads_recentes_crm,
+            'orcamentos_pendentes_crm': orcamentos_pendentes_crm,
             # Adicionar contexto do AuthenticationService
             'user_type': dashboard_context['user_type'],
             'can_access_store': dashboard_context['can_access_store'],
@@ -354,8 +396,8 @@ def dashboard_loja(request, loja=None, loja_id=None):
         
         logger.info(f"Dashboard da loja {target_loja.nome} carregado para usuário {request.user.username}")
         
-        # Usar template focado no CRM (sem seções desnecessárias)
-        return render(request, 'dashboard/loja_crm_focado.html', context)
+        # Usar template padrão da loja com CRM integrado
+        return render(request, 'dashboard/loja.html', context)
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")
