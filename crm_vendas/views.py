@@ -2376,7 +2376,7 @@ def solicitar_assinatura_empresa(request, tipo_documento, documento_id):
         else:
             # Pré-preencher com dados da empresa/loja
             initial = {
-                'nome_signatario': documento.loja.nome_responsavel or documento.loja.nome,
+                'nome_signatario': documento.loja.nome,
                 'email_signatario': documento.loja.email,
                 'cpf_signatario': documento.loja.cnpj,  # ou CPF do responsável se houver
             }
@@ -2474,7 +2474,7 @@ def _solicitar_assinatura_empresa_automatica(documento, tipo_documento):
             tipo_documento=tipo_documento,
             tipo_signatario='empresa',
             lead=documento.lead,
-            nome_signatario=documento.loja.nome_responsavel or documento.loja.nome,
+            nome_signatario=documento.loja.nome,
             email_signatario=documento.loja.email,
             cpf_signatario=documento.loja.cnpj,
             observacoes=f'Assinatura automática da empresa após aprovação do cliente para {tipo_documento} {documento.numero}',
