@@ -300,31 +300,47 @@ def detalhar_lead(request, lead_id):
 def listar_orcamentos(request):
     """Lista orçamentos"""
     
+    # Debug: verificar total de orçamentos
+    total_orcamentos = Orcamento.objects.count()
+    logger.info(f"Total de orçamentos na base: {total_orcamentos}")
+    
     # Filtrar por loja
     if request.user.is_superuser:
         orcamentos = Orcamento.objects.all()
+        logger.info(f"Usuário superuser - buscando todos os orçamentos: {orcamentos.count()}")
     else:
         try:
             loja = request.user.loja_admin
             orcamentos = Orcamento.objects.filter(loja=loja)
-        except:
+            logger.info(f"Usuário da loja {loja.nome} - orçamentos encontrados: {orcamentos.count()}")
+        except Exception as e:
+            logger.error(f"Erro ao buscar loja do usuário: {str(e)}")
             messages.error(request, 'Usuário não associado a nenhuma loja.')
             return redirect('dashboard:index')
     
     # Filtros
     status = request.GET.get('status')
     if status:
+        orcamentos_antes = orcamentos.count()
         orcamentos = orcamentos.filter(status=status)
+        logger.info(f"Filtro status '{status}': {orcamentos_antes} -> {orcamentos.count()}")
+    
+    # Debug: listar alguns orçamentos
+    for orc in orcamentos[:5]:
+        logger.info(f"Orçamento: {orc.numero} - {orc.titulo} - Status: {orc.status} - Loja: {orc.loja.nome}")
     
     # Paginação
     paginator = Paginator(orcamentos, 20)
     page = request.GET.get('page')
     page_obj = paginator.get_page(page)
     
+    logger.info(f"Página atual: {page_obj.number}, Total páginas: {page_obj.paginator.num_pages}, Itens na página: {len(page_obj)}")
+    
     context = {
         'orcamentos': page_obj,
         'page_obj': page_obj,
         'status_filter': status,
+        'total_orcamentos': total_orcamentos,  # Para debug no template
     }
     
     return render(request, 'crm_vendas/orcamentos/listar.html', context)
@@ -824,10 +840,6 @@ def track_email_abertura(request, orcamento_id):
 
 
 # Views básicas para outras funcionalidades
-@login_required
-def listar_orcamentos(request):
-    """Lista orçamentos"""
-    return render(request, 'crm_vendas/orcamentos/listar.html')
 
 @login_required
 def listar_propostas(request):

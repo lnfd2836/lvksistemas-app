@@ -19,6 +19,13 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Debug info -->
+                    {% if total_orcamentos %}
+                        <div class="alert alert-info">
+                            <small>Debug: Total de orçamentos na base: {{ total_orcamentos }} | Orçamentos na página: {{ orcamentos|length }}</small>
+                        </div>
+                    {% endif %}
+                    
                     {% if orcamentos %}
                         <div class="table-responsive">
                             <table class="table table-hover">
