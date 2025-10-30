@@ -2460,8 +2460,7 @@ def solicitar_assinatura(request, tipo_documento, documento_id):
         messages.error(request, 'Erro interno do servidor.')
         return redirect('crm_vendas:dashboard')
 
-# =====
-=======================================================================
+# ============================================================================
 # FUNÇÕES AUXILIARES PARA AUTOMAÇÃO DE ASSINATURAS
 # ============================================================================
 
