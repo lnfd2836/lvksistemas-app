@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+{% load modulos_tags %}
+
+{% block title %}Dashboard - {{ loja.nome }}{% endblock %}
+{% block page_title %}Dashboard - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+
+<!-- Dashboard específico para Clínica de Estética -->
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <!-- Clientes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Clientes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Serviços/Produtos -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Serviços Disponíveis
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_produtos|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-spa fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receita do Mês -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Receita do Mês
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_mes|default:0|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Funcionários -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Funcionários Ativos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ funcionarios_ativos|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas para Clínica de Estética -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-spa"></i> Gestão da Clínica
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Clientes -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                <h6 class="text-primary font-weight-bold">Clientes</h6>
+                                <div class="mt-2">
+                                    <a href="/clientes/novo/" class="btn btn-primary btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Cadastrar
+                                    </a>
+                                    <a href="/clientes/" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Serviços -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-spa fa-3x text-success mb-3"></i>
+                                <h6 class="text-success font-weight-bold">Serviços</h6>
+                                <div class="mt-2">
+                                    <a href="/produtos/novo/" class="btn btn-success btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Cadastrar
+                                    </a>
+                                    <a href="/produtos/" class="btn btn-outline-success btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agendamentos -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-alt fa-3x text-info mb-3"></i>
+                                <h6 class="text-info font-weight-bold">Agendamentos</h6>
+                                <div class="mt-2">
+                                    <a href="/vendas/nova/" class="btn btn-info btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Agendar
+                                    </a>
+                                    <a href="/vendas/" class="btn btn-outline-info btn-sm w-100">
+                                        <i class="fas fa-calendar"></i> Ver Agenda
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Funcionários -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-md fa-3x text-warning mb-3"></i>
+                                <h6 class="text-warning font-weight-bold">Funcionários</h6>
+                                <div class="mt-2">
+                                    <a href="/funcionarios/novo/" class="btn btn-warning btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Cadastrar
+                                    </a>
+                                    <a href="/funcionarios/" class="btn btn-outline-warning btn-sm w-100">
+                                        <i class="fas fa-users"></i> Gerenciar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clientes Recentes -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-users me-2"></i>Clientes Recentes
+                </h6>
+                <a href="/clientes/" class="btn btn-outline-primary btn-sm">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if clientes_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes_recentes %}
+                                <tr>
+                                    <td>{{ cliente.nome }}</td>
+                                    <td>{{ cliente.telefone|default:"-" }}</td>
+                                    <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum cliente cadastrado ainda.</p>
+                        <a href="/clientes/novo/" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Cadastrar Primeiro Cliente
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Serviços Mais Procurados -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-spa me-2"></i>Serviços Mais Procurados
+                </h6>
+                <a href="/produtos/" class="btn btn-outline-success btn-sm">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if produtos_mais_vendidos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Serviço</th>
+                                    <th>Preço</th>
+                                    <th>Procura</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produto in produtos_mais_vendidos %}
+                                <tr>
+                                    <td>{{ produto.nome }}</td>
+                                    <td>R$ {{ produto.preco|floatformat:2 }}</td>
+                                    <td>{{ produto.total_vendido|default:0 }}x</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-spa fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum serviço cadastrado ainda.</p>
+                        <a href="/produtos/novo/" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Cadastrar Primeiro Serviço
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos Específicos da Loja -->
+{% if modulos_loja %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-secondary">
+                    <i class="fas fa-puzzle-piece"></i> Módulos Disponíveis
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for modulo in modulos_loja %}
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="{{ modulo.icone }} fa-2x text-secondary mb-3"></i>
+                                <h6 class="text-secondary font-weight-bold">{{ modulo.nome }}</h6>
+                                <p class="text-muted small">{{ modulo.descricao }}</p>
+                                <a href="{{ modulo.url }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> Acessar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Configurações da Loja -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-secondary">
+                    <i class="fas fa-cogs"></i> Configurações da Clínica
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Login Personalizado -->
+                    <div class="col-xl-4 col-md-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                            Login Personalizado
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">
+                                            {% if loja.login_personalizado.ativo %}
+                                            <span class="text-success">Ativo</span>
+                                            {% else %}
+                                            <span class="text-danger">Inativo</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-muted small">
+                                            {% if loja.login_personalizado.ativo %}
+                                            URL: /login/{{ loja.login_personalizado.url_personalizada }}/
+                                            {% else %}
+                                            Não configurado
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-sign-in-alt fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controle Financeiro -->
+                    <div class="col-xl-4 col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Controle Financeiro
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">
+                                            {% if controle_financeiro %}
+                                            <span class="text-success">Ativo</span>
+                                            {% else %}
+                                            <span class="text-warning">Inativo</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-muted small">
+                                            {% if controle_financeiro %}
+                                            Status: {{ controle_financeiro.get_status_display }}
+                                            {% else %}
+                                            Não configurado
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backup -->
+                    <div class="col-xl-4 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Backup Automático
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">
+                                            <span class="text-success">Ativo</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            Último: Hoje
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-database fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -326,7 +326,7 @@ def dashboard_loja(request, loja=None, loja_id=None):
         except (DatabaseError, ProgrammingError) as e:
             logger.warning(f"Erro ao buscar funcionários para loja {target_loja.nome}: {str(e)}")
         
-        # Estatísticas do CRM
+        # Estatísticas do CRM - APENAS se a loja tiver o módulo CRM ativado
         stats_crm = {
             'total_leads': 0,
             'leads_novos': 0,
@@ -336,33 +336,55 @@ def dashboard_loja(request, loja=None, loja_id=None):
         }
         leads_recentes_crm = []
         orcamentos_pendentes_crm = []
+        tem_modulo_crm = False
         
+        # Verificar se a loja tem o módulo CRM ativado
         try:
-            from crm_vendas.models import Lead, Orcamento
-            
-            # Filtrar por loja
-            leads = Lead.objects.filter(loja=target_loja)
-            orcamentos = Orcamento.objects.filter(loja=target_loja)
-            
-            # Estatísticas
-            stats_crm = {
-                'total_leads': leads.count(),
-                'leads_novos': leads.filter(status='novo').count(),
-                'leads_qualificados': leads.filter(status='qualificado').count(),
-                'orcamentos_enviados': orcamentos.filter(status='enviado').count(),
-                'valor_pipeline': leads.aggregate(total=Sum('valor_estimado'))['total'] or 0,
-            }
-            
-            # Leads recentes (últimos 5)
-            leads_recentes_crm = leads.order_by('-data_criacao')[:5]
-            
-            # Orçamentos pendentes (enviados ou visualizados)
-            orcamentos_pendentes_crm = orcamentos.filter(
-                status__in=['enviado', 'visualizado']
-            ).order_by('-data_envio')[:5]
-            
-        except (DatabaseError, ProgrammingError, ImportError) as e:
-            logger.warning(f"Erro ao buscar dados do CRM para loja {target_loja.nome}: {str(e)}")
+            if target_loja.tipo_loja:
+                # Lojas do tipo CRM sempre têm o módulo ativado
+                if target_loja.tipo_loja.nome == 'crm_vendas':
+                    tem_modulo_crm = True
+                    logger.info(f"Loja {target_loja.nome} é do tipo CRM - módulo CRM ativado automaticamente")
+                # Ou verificar se tem módulo CRM específico configurado
+                elif (modulos_loja.filter(nome__icontains='CRM').exists() or
+                      modulos_loja.filter(url__icontains='crm').exists()):
+                    tem_modulo_crm = True
+                    logger.info(f"Loja {target_loja.nome} tem módulo CRM configurado")
+        except Exception as e:
+            logger.warning(f"Erro ao verificar módulo CRM para loja {target_loja.nome}: {str(e)}")
+        
+        # Só buscar dados do CRM se a loja tiver o módulo ativado
+        if tem_modulo_crm:
+            try:
+                from crm_vendas.models import Lead, Orcamento
+                
+                # Filtrar por loja
+                leads = Lead.objects.filter(loja=target_loja)
+                orcamentos = Orcamento.objects.filter(loja=target_loja)
+                
+                # Estatísticas
+                stats_crm = {
+                    'total_leads': leads.count(),
+                    'leads_novos': leads.filter(status='novo').count(),
+                    'leads_qualificados': leads.filter(status='qualificado').count(),
+                    'orcamentos_enviados': orcamentos.filter(status='enviado').count(),
+                    'valor_pipeline': leads.aggregate(total=Sum('valor_estimado'))['total'] or 0,
+                }
+                
+                # Leads recentes (últimos 5)
+                leads_recentes_crm = leads.order_by('-data_criacao')[:5]
+                
+                # Orçamentos pendentes (enviados ou visualizados)
+                orcamentos_pendentes_crm = orcamentos.filter(
+                    status__in=['enviado', 'visualizado']
+                ).order_by('-data_envio')[:5]
+                
+                logger.info(f"Dados do CRM carregados para loja {target_loja.nome} (módulo CRM ativo)")
+                
+            except (DatabaseError, ProgrammingError, ImportError) as e:
+                logger.warning(f"Erro ao buscar dados do CRM para loja {target_loja.nome}: {str(e)}")
+        else:
+            logger.info(f"Módulo CRM não ativo para loja {target_loja.nome} - dados do CRM não carregados")
         
         # Preparar contexto completo
         context = {
@@ -384,7 +406,8 @@ def dashboard_loja(request, loja=None, loja_id=None):
             'clientes_recentes': clientes_recentes,
             'produtos_mais_vendidos': produtos_mais_vendidos,
             'modulos_loja': modulos_loja,
-            # Dados do CRM
+            # Dados do CRM (apenas se módulo estiver ativo)
+            'tem_modulo_crm': tem_modulo_crm,
             'stats_crm': stats_crm,
             'leads_recentes_crm': leads_recentes_crm,
             'orcamentos_pendentes_crm': orcamentos_pendentes_crm,
@@ -396,8 +419,49 @@ def dashboard_loja(request, loja=None, loja_id=None):
         
         logger.info(f"Dashboard da loja {target_loja.nome} carregado para usuário {request.user.username}")
         
-        # Usar template padrão da loja com CRM integrado
-        return render(request, 'dashboard/loja.html', context)
+        # Determinar template baseado no tipo de loja
+        template_name = 'dashboard/loja.html'  # Template padrão
+        
+        if target_loja.tipo_loja:
+            tipo_loja_nome = target_loja.tipo_loja.nome
+            
+            # Templates específicos por tipo de loja
+            templates_especificos = {
+                'conveniencia': 'dashboard/conveniencia.html',
+                'roupas': 'dashboard/roupas.html',
+                'tintas': 'dashboard/tintas.html',
+                'supermercado': 'dashboard/supermercado.html',
+                'lanchonete': 'dashboard/lanchonete.html',
+                'farmacia': 'dashboard/farmacia.html',
+                'eletronicos': 'dashboard/eletronicos.html',
+                'casa_construcao': 'dashboard/casa_construcao.html',
+                'livraria': 'dashboard/livraria.html',
+                'clinica_estetica': 'dashboard/clinica_estetica.html',
+                'crm_vendas': 'dashboard/crm_vendas.html',  # CRM já tem dashboard específico
+                'avaliacao_fatesa': 'dashboard/fatesa.html',
+                'dashboard_comercial': 'dashboard/comercial.html',
+                'controle_qualidade': 'dashboard/fatesa.html',
+                'outros': 'dashboard/outros.html',
+            }
+            
+            # Verificar se existe template específico (CRM de Vendas não está na lista)
+            if tipo_loja_nome in templates_especificos:
+                template_especifico = templates_especificos[tipo_loja_nome]
+                
+                # Verificar se o template existe
+                try:
+                    from django.template.loader import get_template
+                    get_template(template_especifico)
+                    template_name = template_especifico
+                    logger.info(f"Usando template específico para {tipo_loja_nome}: {template_name}")
+                except:
+                    logger.warning(f"Template específico {template_especifico} não encontrado, usando padrão")
+            else:
+                logger.info(f"Tipo de loja {tipo_loja_nome} usa template padrão com módulos integrados")
+            
+            logger.info(f"Tipo de loja: {tipo_loja_nome}, Template: {template_name}")
+        
+        return render(request, template_name, context)
         
     except Exception as e:
         logger.error(f"Erro ao carregar dashboard da loja para usuário {request.user.username}: {str(e)}")

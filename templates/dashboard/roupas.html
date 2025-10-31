@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load modulos_tags %}
+
+{% block title %}Dashboard - {{ loja.nome }}{% endblock %}
+{% block page_title %}Dashboard - {{ loja.nome }}{% endblock %}
+
+{% block content %}
+
+<!-- Dashboard específico para Loja de Roupas -->
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <!-- Vendas Hoje -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Vendas Hoje
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vendas_hoje|default:0 }}</div>
+                        <div class="text-muted small">R$ {{ receita_hoje|default:0|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tshirt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peças em Estoque -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Peças em Estoque
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_produtos|default:0 }}</div>
+                        <div class="text-muted small">{{ produtos_estoque_baixo|default:0 }} com estoque baixo</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-warehouse fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clientes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Clientes Cadastrados
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faturamento Mensal -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Faturamento do Mês
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ receita_mes|default:0|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-tshirt"></i> Gestão da Loja de Roupas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Nova Venda -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cash-register fa-3x text-success mb-3"></i>
+                                <h6 class="text-success font-weight-bold">Nova Venda</h6>
+                                <div class="mt-2">
+                                    <a href="/vendas/nova/" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-plus"></i> Registrar Venda
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Peças/Produtos -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-primary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tshirt fa-3x text-primary mb-3"></i>
+                                <h6 class="text-primary font-weight-bold">Peças</h6>
+                                <div class="mt-2">
+                                    <a href="/produtos/novo/" class="btn btn-primary btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Cadastrar
+                                    </a>
+                                    <a href="/produtos/" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-list"></i> Catálogo
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estoque -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-warning shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-warehouse fa-3x text-warning mb-3"></i>
+                                <h6 class="text-warning font-weight-bold">Estoque</h6>
+                                <div class="mt-2">
+                                    <a href="/estoque/" class="btn btn-warning btn-sm mb-1 w-100">
+                                        <i class="fas fa-eye"></i> Consultar
+                                    </a>
+                                    <a href="/estoque/entrada/" class="btn btn-outline-warning btn-sm w-100">
+                                        <i class="fas fa-plus"></i> Entrada
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clientes -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-info shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-3x text-info mb-3"></i>
+                                <h6 class="text-info font-weight-bold">Clientes</h6>
+                                <div class="mt-2">
+                                    <a href="/clientes/novo/" class="btn btn-info btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Cadastrar
+                                    </a>
+                                    <a href="/clientes/" class="btn btn-outline-info btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segunda linha de ações específicas para roupas -->
+                <div class="row mt-3">
+                    <!-- Coleções -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tags fa-3x text-secondary mb-3"></i>
+                                <h6 class="text-secondary font-weight-bold">Coleções</h6>
+                                <div class="mt-2">
+                                    <a href="/colecoes/" class="btn btn-secondary btn-sm mb-1 w-100">
+                                        <i class="fas fa-eye"></i> Gerenciar
+                                    </a>
+                                    <a href="/colecoes/nova/" class="btn btn-outline-secondary btn-sm w-100">
+                                        <i class="fas fa-plus"></i> Nova
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tamanhos -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-dark shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-ruler fa-3x text-dark mb-3"></i>
+                                <h6 class="text-dark font-weight-bold">Tamanhos</h6>
+                                <div class="mt-2">
+                                    <a href="/tamanhos/" class="btn btn-dark btn-sm mb-1 w-100">
+                                        <i class="fas fa-list"></i> Gerenciar
+                                    </a>
+                                    <a href="/grades/" class="btn btn-outline-dark btn-sm w-100">
+                                        <i class="fas fa-th"></i> Grades
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Promoções -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-danger shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-percent fa-3x text-danger mb-3"></i>
+                                <h6 class="text-danger font-weight-bold">Promoções</h6>
+                                <div class="mt-2">
+                                    <a href="/promocoes/" class="btn btn-danger btn-sm mb-1 w-100">
+                                        <i class="fas fa-eye"></i> Ativas
+                                    </a>
+                                    <a href="/promocoes/nova/" class="btn btn-outline-danger btn-sm w-100">
+                                        <i class="fas fa-plus"></i> Criar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relatórios -->
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-success shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                                <h6 class="text-success font-weight-bold">Relatórios</h6>
+                                <div class="mt-2">
+                                    <a href="/relatorios/vendas/" class="btn btn-success btn-sm mb-1 w-100">
+                                        <i class="fas fa-chart-bar"></i> Vendas
+                                    </a>
+                                    <a href="/relatorios/estoque/" class="btn btn-outline-success btn-sm w-100">
+                                        <i class="fas fa-boxes"></i> Estoque
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vendas Recentes e Peças Mais Vendidas -->
+<div class="row mb-4">
+    <!-- Vendas Recentes -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-receipt me-2"></i>Vendas Recentes
+                </h6>
+                <a href="/vendas/" class="btn btn-outline-primary btn-sm">
+                    Ver todas
+                </a>
+            </div>
+            <div class="card-body">
+                {% if vendas_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Valor</th>
+                                    <th>Peças</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas_recentes %}
+                                <tr>
+                                    <td>{{ venda.data_venda|date:"d/m H:i" }}</td>
+                                    <td>{{ venda.cliente.nome|default:"Cliente Avulso" }}</td>
+                                    <td>R$ {{ venda.total|floatformat:2 }}</td>
+                                    <td>{{ venda.itens_venda.count }}x</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tshirt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma venda registrada hoje.</p>
+                        <a href="/vendas/nova/" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Registrar Primeira Venda
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Peças Mais Vendidas -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-chart-bar me-2"></i>Peças Mais Vendidas
+                </h6>
+                <a href="/produtos/" class="btn btn-outline-success btn-sm">
+                    Ver catálogo
+                </a>
+            </div>
+            <div class="card-body">
+                {% if produtos_mais_vendidos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Peça</th>
+                                    <th>Preço</th>
+                                    <th>Vendidas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produto in produtos_mais_vendidos %}
+                                <tr>
+                                    <td>{{ produto.nome }}</td>
+                                    <td>R$ {{ produto.preco|floatformat:2 }}</td>
+                                    <td>{{ produto.total_vendido|default:0 }}x</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tshirt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma peça vendida ainda.</p>
+                        <a href="/produtos/novo/" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Cadastrar Peças
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos Específicos da Loja -->
+{% if modulos_loja %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-secondary">
+                    <i class="fas fa-puzzle-piece"></i> Módulos Disponíveis
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for modulo in modulos_loja %}
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card border-left-secondary shadow h-100">
+                            <div class="card-body text-center">
+                                <i class="{{ modulo.icone }} fa-2x text-secondary mb-3"></i>
+                                <h6 class="text-secondary font-weight-bold">{{ modulo.nome }}</h6>
+                                <p class="text-muted small">{{ modulo.descricao }}</p>
+                                <a href="{{ modulo.url }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> Acessar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
