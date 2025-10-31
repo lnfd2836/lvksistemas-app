@@ -92,6 +92,7 @@ MIDDLEWARE = [
     'email_credentials.db_router.LojaMiddleware',  # Middleware para definir contexto de loja
     'lojas.middleware_login_isolado.LoginIsoladoMiddleware',  # Isolamento de login por loja - CORRIGIDO
     'lojas.middleware_login_isolado.DatabaseIsolationMiddleware',  # Isolamento de banco por loja
+    'lojas.middleware.isolamento_total.IsolamentoTotalMiddleware',  # ISOLAMENTO TOTAL DE DADOS POR LOJA
     'usuarios.mandatory_password_middleware.MandatoryPasswordChangeMiddleware',  # Troca obrigatória de senha
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',

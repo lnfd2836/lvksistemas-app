@@ -7,6 +7,12 @@ from django.core.validators import EmailValidator
 from django.utils import timezone
 from decimal import Decimal
 import uuid
+from .managers import (
+    LojaIsoladaManager, 
+    HistoricoContatoManager, 
+    ItemOrcamentoManager, 
+    AssinaturaDigitalManager
+)
 
 
 class ProdutoServico(models.Model):
@@ -37,6 +43,9 @@ class ProdutoServico(models.Model):
     # Datas
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    # Manager com isolamento por loja
+    objects = LojaIsoladaManager()
     
     class Meta:
         verbose_name = "Produto/Serviço"
@@ -144,6 +153,9 @@ class Lead(models.Model):
     # Loja associada
     loja = models.ForeignKey('lojas.Loja', on_delete=models.CASCADE, related_name='leads')
     
+    # Manager com isolamento por loja
+    objects = LojaIsoladaManager()
+    
     class Meta:
         verbose_name = "Lead"
         verbose_name_plural = "Leads"
@@ -219,6 +231,9 @@ class Orcamento(models.Model):
     email_assunto = models.CharField(max_length=200, blank=True)
     email_corpo = models.TextField(blank=True)
     
+    # Manager com isolamento por loja
+    objects = LojaIsoladaManager()
+    
     class Meta:
         verbose_name = "Orçamento"
         verbose_name_plural = "Orçamentos"
@@ -290,6 +305,9 @@ class ItemOrcamento(models.Model):
     
     # Ordem
     ordem = models.IntegerField(default=0)
+    
+    # Manager com isolamento por loja (através do orçamento)
+    objects = ItemOrcamentoManager()
     
     class Meta:
         verbose_name = "Item do Orçamento"
@@ -365,6 +383,9 @@ class Proposta(models.Model):
     data_atualizacao = models.DateTimeField(auto_now=True)
     data_envio = models.DateTimeField(null=True, blank=True)
     data_resposta = models.DateTimeField(null=True, blank=True)
+    
+    # Manager com isolamento por loja
+    objects = LojaIsoladaManager()
     
     class Meta:
         verbose_name = "Proposta"
@@ -447,6 +468,9 @@ class Contrato(models.Model):
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
     
+    # Manager com isolamento por loja
+    objects = LojaIsoladaManager()
+    
     class Meta:
         verbose_name = "Contrato"
         verbose_name_plural = "Contratos"
@@ -506,6 +530,9 @@ class HistoricoContato(models.Model):
     
     data_contato = models.DateTimeField(default=timezone.now)
     data_criacao = models.DateTimeField(auto_now_add=True)
+    
+    # Manager com isolamento por loja (através do lead)
+    objects = HistoricoContatoManager()
     
     class Meta:
         verbose_name = "Histórico de Contato"
@@ -628,6 +655,9 @@ class AssinaturaDigital(models.Model):
     # Observações
     observacoes = models.TextField(blank=True)
     motivo_rejeicao = models.TextField(blank=True)
+    
+    # Manager com isolamento por loja (através dos relacionamentos)
+    objects = AssinaturaDigitalManager()
     
     class Meta:
         verbose_name = "Assinatura Digital"
