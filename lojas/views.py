@@ -458,7 +458,7 @@ def gerenciar_clientes(request):
 
 @login_required
 def adicionar_cliente(request):
-    """Adiciona um novo cliente"""
+    """Adiciona um novo cliente - Sistema individual por loja"""
     
     if not hasattr(request, 'loja_atual'):
         messages.error(request, 'Você não tem uma loja associada.')
@@ -479,7 +479,84 @@ def adicionar_cliente(request):
     else:
         form = ClienteForm()
     
-    return render(request, 'lojas/adicionar_cliente.html', {'form': form, 'loja': loja})
+    # Sistema de templates individuais por loja
+    templates_possiveis = [
+        f'lojas/clientes/loja_{loja.id}/adicionar_cliente.html',  # Template específico da loja
+        f'lojas/clientes/{loja.tipo_loja.nome.lower().replace(" ", "_")}/adicionar_cliente.html' if loja.tipo_loja else None,  # Template por tipo
+        'lojas/clientes/adicionar_personalizado.html',  # Template personalizado geral
+        'lojas/adicionar_cliente.html'  # Template padrão
+    ]
+    
+    # Filtrar templates None
+    templates_possiveis = [t for t in templates_possiveis if t is not None]
+    
+    # Tentar encontrar o primeiro template que existe
+    template_name = 'lojas/adicionar_cliente.html'  # Fallback padrão
+    
+    from django.template.loader import get_template
+    from django.template import TemplateDoesNotExist
+    
+    for template in templates_possiveis:
+        try:
+            get_template(template)
+            template_name = template
+            break
+        except TemplateDoesNotExist:
+            continue
+    
+    # Configurações específicas da loja
+    configuracoes_loja = {
+        'cores': {
+            'primaria': '#007bff',
+            'secundaria': '#6c757d',
+            'sucesso': '#28a745',
+            'perigo': '#dc3545'
+        },
+        'campos_obrigatorios': ['nome', 'email', 'telefone', 'cpf'],
+        'campos_opcionais': ['data_nascimento', 'sexo', 'endereco', 'cidade', 'estado', 'cep'],
+        'validacoes_especiais': [],
+        'mensagem_sucesso': f'Cliente cadastrado com sucesso na {loja.nome}!',
+        'titulo_pagina': f'Novo Cliente - {loja.nome}',
+        'subtitulo': 'Sistema de cadastro personalizado'
+    }
+    
+    # Personalizar configurações baseado no tipo de loja
+    if loja.tipo_loja:
+        tipo_nome = loja.tipo_loja.nome.lower()
+        
+        if 'estetica' in tipo_nome or 'clinica' in tipo_nome:
+            configuracoes_loja['cores']['primaria'] = '#e91e63'
+            configuracoes_loja['cores']['secundaria'] = '#f8bbd9'
+            configuracoes_loja['subtitulo'] = 'Cadastro para clínica de estética'
+            configuracoes_loja['validacoes_especiais'].append('idade_minima_16')
+            
+        elif 'lanchonete' in tipo_nome or 'restaurante' in tipo_nome:
+            configuracoes_loja['cores']['primaria'] = '#ff9800'
+            configuracoes_loja['cores']['secundaria'] = '#ffcc80'
+            configuracoes_loja['subtitulo'] = 'Cadastro para estabelecimento alimentício'
+            configuracoes_loja['campos_opcionais'].append('preferencias_alimentares')
+            
+        elif 'farmacia' in tipo_nome:
+            configuracoes_loja['cores']['primaria'] = '#4caf50'
+            configuracoes_loja['cores']['secundaria'] = '#81c784'
+            configuracoes_loja['subtitulo'] = 'Cadastro para farmácia'
+            configuracoes_loja['campos_obrigatorios'].append('data_nascimento')
+            
+        elif 'roupas' in tipo_nome or 'moda' in tipo_nome:
+            configuracoes_loja['cores']['primaria'] = '#9c27b0'
+            configuracoes_loja['cores']['secundaria'] = '#ce93d8'
+            configuracoes_loja['subtitulo'] = 'Cadastro para loja de roupas'
+    
+    context = {
+        'form': form, 
+        'loja': loja,
+        'configuracoes': configuracoes_loja,
+        'template_usado': template_name,
+        'loja_id': str(loja.id),
+        'tipo_loja': loja.tipo_loja.nome if loja.tipo_loja else 'Geral'
+    }
+    
+    return render(request, template_name, context)
 
 
 @login_required

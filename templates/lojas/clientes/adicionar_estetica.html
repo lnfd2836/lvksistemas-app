@@ -1,30 +1,30 @@
 {% extends 'base.html' %}
 
-{% block title %}Novo Cliente{% endblock %}
-{% block page_title %}Novo Cliente{% endblock %}
+{% block title %}Novo Cliente - {{ loja.nome }}{% endblock %}
+{% block page_title %}Novo Cliente - Clínica de Estética{% endblock %}
 
 {% block extra_css %}
 <style>
-    .cliente-card {
+    .estetica-card {
         border: none;
         border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(233, 30, 99, 0.1);
         transition: transform 0.3s ease;
     }
     
-    .cliente-card:hover {
+    .estetica-card:hover {
         transform: translateY(-5px);
     }
     
-    .cliente-card .card-header {
-        background: linear-gradient(135deg, #007bff, #6c757d);
+    .estetica-card .card-header {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
         color: white;
         border-radius: 15px 15px 0 0 !important;
         border: none;
     }
     
-    .btn-cliente {
-        background: linear-gradient(135deg, #007bff, #6c757d);
+    .btn-estetica {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
         border: none;
         color: white;
         padding: 10px 20px;
@@ -32,30 +32,45 @@
         transition: all 0.3s ease;
     }
     
-    .btn-cliente:hover {
-        background: linear-gradient(135deg, #0056b3, #007bff);
+    .btn-estetica:hover {
+        background: linear-gradient(135deg, #c2185b, #e91e63);
         color: white;
         transform: translateY(-2px);
+    }
+    
+    .estetica-header {
+        background: linear-gradient(135deg, #e91e63, #f8bbd9);
+        color: white;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 10px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2><i class="fas fa-user-plus me-2"></i>Novo Cliente</h2>
-                    <p class="text-muted mb-0">Cadastrar novo cliente no sistema</p>
-                </div>
-                <a href="{% url 'lojas:gerenciar_clientes' %}" class="btn btn-outline-secondary">
+    <!-- Header -->
+    <div class="estetica-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="mb-0">
+                    <i class="fas fa-spa me-2"></i>
+                    Novo Cliente - {{ loja.nome }}
+                </h2>
+                <p class="mb-0 opacity-75">Cadastro personalizado para clínica de estética</p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'lojas:gerenciar_clientes' %}" class="btn btn-outline-light">
                     <i class="fas fa-arrow-left me-2"></i>Voltar
                 </a>
             </div>
+        </div>
+    </div>
 
-            <div class="card cliente-card">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card estetica-card">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-user-plus me-2"></i>Dados do Cliente
@@ -157,10 +172,20 @@
                             </div>
                         </div>
                         
+                        <!-- Informações Específicas da Estética -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Informações da Clínica</h6>
+                                    <p class="mb-0">Este cliente será cadastrado na clínica <strong>{{ loja.nome }}</strong> e poderá ser usado para agendamentos de procedimentos estéticos.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Botões -->
                         <div class="row mt-4">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-cliente me-2">
+                                <button type="submit" class="btn btn-estetica me-2">
                                     <i class="fas fa-save me-2"></i>Cadastrar Cliente
                                 </button>
                                 <a href="{% url 'lojas:gerenciar_clientes' %}" class="btn btn-outline-secondary">
@@ -221,13 +246,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(response => response.json())
                     .then(data => {
                         if (!data.erro) {
-                            const enderecoInput = document.getElementById('{{ form.endereco.id_for_label }}');
-                            const cidadeInput = document.getElementById('{{ form.cidade.id_for_label }}');
-                            const estadoInput = document.getElementById('{{ form.estado.id_for_label }}');
+                            const enderecoField = document.getElementById('{{ form.endereco.id_for_label }}');
+                            const cidadeField = document.getElementById('{{ form.cidade.id_for_label }}');
+                            const estadoField = document.getElementById('{{ form.estado.id_for_label }}');
                             
-                            if (enderecoInput) enderecoInput.value = `${data.logradouro}, ${data.bairro}`;
-                            if (cidadeInput) cidadeInput.value = data.localidade;
-                            if (estadoInput) estadoInput.value = data.uf;
+                            if (enderecoField) enderecoField.value = `${data.logradouro}, ${data.bairro}`;
+                            if (cidadeField) cidadeField.value = data.localidade;
+                            if (estadoField) estadoField.value = data.uf;
                         }
                     })
                     .catch(error => {
@@ -252,27 +277,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Validar CPF
-        const cpf = cpfInput ? cpfInput.value.replace(/\D/g, '') : '';
-        if (cpf.length !== 11) {
-            if (cpfInput) cpfInput.classList.add('is-invalid');
-            isValid = false;
-        }
-        
-        // Validar email
-        const emailInput = document.getElementById('{{ form.email.id_for_label }}');
-        if (emailInput) {
-            const email = emailInput.value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                emailInput.classList.add('is-invalid');
-                isValid = false;
-            }
-        }
-        
         if (!isValid) {
             e.preventDefault();
-            alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+            alert('Por favor, preencha todos os campos obrigatórios.');
         }
     });
     
@@ -285,4 +292,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-
