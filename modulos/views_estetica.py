@@ -536,8 +536,16 @@ def relatorios_estetica(request):
 @login_required
 def listar_clientes(request):
     """Lista de clientes da clínica de estética"""
-    # Por enquanto, retorna uma lista vazia
+    # Buscar clientes da loja atual
     clientes = []
+    if hasattr(request, 'loja_atual'):
+        clientes = Cliente.objects.filter(loja=request.loja_atual).order_by('nome')
+    elif hasattr(request.user, 'loja_admin') and request.user.loja_admin:
+        clientes = Cliente.objects.filter(loja=request.user.loja_admin).order_by('nome')
+    else:
+        # Se não encontrar loja, buscar todos os clientes (fallback)
+        clientes = Cliente.objects.all().order_by('nome')[:50]  # Limitar a 50 para performance
+    
     context = {
         'page_title': 'Clientes - Clínica de Estética',
         'clientes': clientes,
@@ -556,12 +564,14 @@ def cliente_detalhes(request, cliente_id):
 
 @login_required
 def criar_cliente(request):
-    """Criar novo cliente"""
+    """Criar novo cliente para a clínica de estética"""
     if request.method == 'POST':
         try:
             # Obter a loja do usuário (pode ser através de diferentes formas)
             loja = None
-            if hasattr(request.user, 'loja_admin'):
+            if hasattr(request, 'loja_atual'):
+                loja = request.loja_atual
+            elif hasattr(request.user, 'loja_admin') and request.user.loja_admin:
                 loja = request.user.loja_admin
             else:
                 # Se não encontrar loja associada, usar a primeira loja disponível
