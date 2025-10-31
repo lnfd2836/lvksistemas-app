@@ -1,183 +1,132 @@
 """
-Signals do CRM de Vendas
+Signals para automação de processos de assinatura digital
 """
-from django.db.models.signals import post_save, pre_save
+import logging
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import Lead, Orcamento, ItemOrcamento, Proposta, Contrato, HistoricoContato
-import logging
+from .models import AssinaturaDigital
+from .services.assinatura_validator import AssinaturaDataValidator
 
 logger = logging.getLogger(__name__)
 
 
-@receiver(post_save, sender=Lead)
-def lead_criado(sender, instance, created, **kwargs):
-    """Signal executado quando um lead é criado"""
-    if created:
-        logger.info(f"Novo lead criado: {instance.nome} - {instance.email}")
-        
-        # Criar histórico inicial
-        HistoricoContato.objects.create(
-            lead=instance,
-            tipo='outros',
-            assunto='Lead Criado',
-            descricao=f'Lead {instance.nome} foi criado no sistema',
-            resultado='Lead adicionado ao pipeline',
-            data_contato=timezone.now()
-        )
-
-
-@receiver(pre_save, sender=Lead)
-def lead_status_alterado(sender, instance, **kwargs):
-    """Signal executado antes de salvar um lead (para detectar mudança de status)"""
-    if instance.pk:  # Se não é um novo lead
-        try:
-            lead_anterior = Lead.objects.get(pk=instance.pk)
-            if lead_anterior.status != instance.status:
-                logger.info(f"Status do lead {instance.nome} alterado de {lead_anterior.status} para {instance.status}")
-                
-                # Criar histórico da mudança de status
-                HistoricoContato.objects.create(
-                    lead=instance,
-                    tipo='outros',
-                    assunto='Status Alterado',
-                    descricao=f'Status alterado de {lead_anterior.get_status_display()} para {instance.get_status_display()}',
-                    resultado=f'Lead movido para {instance.get_status_display()}',
-                    data_contato=timezone.now()
-                )
-        except Lead.DoesNotExist:
-            pass
-
-
-@receiver(post_save, sender=Orcamento)
-def orcamento_criado(sender, instance, created, **kwargs):
-    """Signal executado quando um orçamento é criado"""
-    if created:
-        logger.info(f"Novo orçamento criado: {instance.numero} para {instance.lead.nome}")
-        
-        # Atualizar status do lead apenas se ainda estiver em status inicial
-        if instance.lead.status in ['novo', 'contatado']:
-            instance.lead.status = 'qualificado'  # Mudança: usar 'qualificado' em vez de 'proposta_enviada'
-            instance.lead.save()
-        
-        # Criar histórico
-        HistoricoContato.objects.create(
-            lead=instance.lead,
-            tipo='outros',
-            assunto='Orçamento Criado',
-            descricao=f'Orçamento {instance.numero} foi criado',
-            resultado='Orçamento preparado para envio',
-            data_contato=timezone.now()
-        )
-
-
-@receiver(post_save, sender=ItemOrcamento)
-def item_orcamento_salvo(sender, instance, **kwargs):
-    """Signal executado quando um item de orçamento é salvo"""
-    # Atualizar totais do orçamento
-    orcamento = instance.orcamento
+@receiver(post_save, sender=AssinaturaDigital)
+def handle_signature_completion(sender, instance, created, **kwargs):
+    """
+    Signal handler para processar automações após assinatura
     
-    # Calcular subtotal
-    subtotal = sum(item.valor_total for item in orcamento.itens.all())
-    
-    # Calcular total (subtotal - desconto + impostos)
-    total = subtotal - orcamento.desconto + orcamento.impostos
-    
-    # Atualizar orçamento
-    Orcamento.objects.filter(id=orcamento.id).update(
-        subtotal=subtotal,
-        total=total
-    )
-
-
-@receiver(post_save, sender=Proposta)
-def proposta_criada(sender, instance, created, **kwargs):
-    """Signal executado quando uma proposta é criada"""
+    Ações executadas:
+    1. Quando cliente assina, solicita assinatura da empresa
+    2. Quando empresa assina após cliente, envia notificação de conclusão
+    """
+    # Só processar se não foi recém criado (evitar loops)
     if created:
-        logger.info(f"Nova proposta criada: {instance.numero} para {instance.lead.nome}")
+        return
+    
+    try:
+        # Verificar se a assinatura foi completada (status mudou para 'assinado')
+        if instance.status != 'assinado' or not instance.data_assinatura:
+            return
         
-        # Atualizar status do lead para 'proposta_enviada' quando uma PROPOSTA é criada
-        if instance.lead.status in ['novo', 'contatado', 'qualificado']:
-            instance.lead.status = 'proposta_enviada'
-            instance.lead.save()
+        # Processar assinatura do cliente
+        if instance.tipo_signatario == 'cliente':
+            _handle_client_signature_completion(instance)
         
-        # Criar histórico
-        HistoricoContato.objects.create(
-            lead=instance.lead,
-            tipo='email',
-            assunto='Proposta Criada',
-            descricao=f'Proposta {instance.numero} foi criada',
-            resultado='Proposta preparada para envio',
-            data_contato=timezone.now()
-        )
+        # Processar assinatura da empresa
+        elif instance.tipo_signatario == 'empresa':
+            _handle_company_signature_completion(instance)
+            
+    except Exception as e:
+        logger.error(f"Erro no signal handler de assinatura: {str(e)}")
 
 
-@receiver(post_save, sender=Contrato)
-def contrato_criado(sender, instance, created, **kwargs):
-    """Signal executado quando um contrato é criado"""
-    if created:
-        logger.info(f"Novo contrato criado: {instance.numero} para {instance.lead.nome}")
+def _handle_client_signature_completion(assinatura_cliente):
+    """
+    Processa a conclusão da assinatura do cliente
+    """
+    try:
+        # Validar se a assinatura do cliente está realmente completa
+        if not AssinaturaDataValidator.validate_client_signature_completion(assinatura_cliente):
+            logger.warning(f"Assinatura do cliente não está completa: {assinatura_cliente.id}")
+            return
         
-        # Atualizar status do lead para fechado ganho
-        instance.lead.status = 'fechado_ganho'
-        instance.lead.save()
+        # Obter documento associado
+        documento = _get_documento_from_assinatura(assinatura_cliente)
+        if not documento:
+            logger.error(f"Documento não encontrado para assinatura: {assinatura_cliente.id}")
+            return
         
-        # Criar histórico
-        HistoricoContato.objects.create(
-            lead=instance.lead,
-            tipo='reuniao',
-            assunto='Contrato Criado',
-            descricao=f'Contrato {instance.numero} foi criado e está pronto para assinatura',
-            resultado='Negócio fechado - contrato gerado',
-            data_contato=timezone.now()
-        )
+        # Importar função de solicitação de assinatura da empresa
+        from .views import _solicitar_assinatura_empresa_automatica
+        
+        # Solicitar assinatura da empresa automaticamente
+        _solicitar_assinatura_empresa_automatica(documento, assinatura_cliente.tipo_documento)
+        
+        logger.info(f"Processo automático de assinatura da empresa iniciado para {assinatura_cliente.tipo_documento} {documento.numero}")
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar assinatura do cliente: {str(e)}")
 
 
-@receiver(pre_save, sender=Orcamento)
-def orcamento_status_alterado(sender, instance, **kwargs):
-    """Signal executado antes de salvar um orçamento"""
-    if instance.pk:
-        try:
-            orcamento_anterior = Orcamento.objects.get(pk=instance.pk)
-            if orcamento_anterior.status != instance.status:
-                logger.info(f"Status do orçamento {instance.numero} alterado para {instance.status}")
-                
-                # Criar histórico baseado no novo status
-                if instance.status == 'enviado':
-                    assunto = 'Orçamento Enviado'
-                    descricao = f'Orçamento {instance.numero} foi enviado por email'
-                    resultado = 'Aguardando resposta do cliente'
-                    # Atualizar status do lead quando orçamento é ENVIADO
-                    if instance.lead.status in ['novo', 'contatado', 'qualificado']:
-                        instance.lead.status = 'proposta_enviada'
-                        instance.lead.save()
-                elif instance.status == 'visualizado':
-                    assunto = 'Orçamento Visualizado'
-                    descricao = f'Cliente visualizou o orçamento {instance.numero}'
-                    resultado = 'Cliente demonstrou interesse'
-                elif instance.status == 'aprovado':
-                    assunto = 'Orçamento Aprovado'
-                    descricao = f'Cliente aprovou o orçamento {instance.numero}'
-                    resultado = 'Orçamento aprovado - preparar contrato'
-                    # Atualizar lead
-                    instance.lead.status = 'fechado_ganho'
-                    instance.lead.save()
-                elif instance.status == 'rejeitado':
-                    assunto = 'Orçamento Rejeitado'
-                    descricao = f'Cliente rejeitou o orçamento {instance.numero}'
-                    resultado = 'Orçamento rejeitado - analisar motivos'
-                else:
-                    assunto = 'Status do Orçamento Alterado'
-                    descricao = f'Status do orçamento {instance.numero} alterado para {instance.get_status_display()}'
-                    resultado = f'Orçamento em {instance.get_status_display()}'
-                
-                HistoricoContato.objects.create(
-                    lead=instance.lead,
-                    tipo='email',
-                    assunto=assunto,
-                    descricao=descricao,
-                    resultado=resultado,
-                    data_contato=timezone.now()
-                )
-        except Orcamento.DoesNotExist:
-            pass
+def _handle_company_signature_completion(assinatura_empresa):
+    """
+    Processa a conclusão da assinatura da empresa
+    """
+    try:
+        # Obter documento associado
+        documento = _get_documento_from_assinatura(assinatura_empresa)
+        if not documento:
+            logger.error(f"Documento não encontrado para assinatura da empresa: {assinatura_empresa.id}")
+            return
+        
+        # Verificar se o cliente também já assinou
+        if _check_client_signature_exists(documento, assinatura_empresa.tipo_documento):
+            # Importar função de envio de documento final
+            from .views import _enviar_documento_final_assinado
+            
+            # Enviar notificação de documento totalmente assinado
+            _enviar_documento_final_assinado(documento, assinatura_empresa.tipo_documento)
+            
+            logger.info(f"Documento totalmente assinado - notificação enviada para {assinatura_empresa.tipo_documento} {documento.numero}")
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar assinatura da empresa: {str(e)}")
+
+
+def _get_documento_from_assinatura(assinatura):
+    """
+    Obtém o documento associado à assinatura
+    """
+    try:
+        if assinatura.tipo_documento == 'orcamento' and assinatura.orcamento:
+            return assinatura.orcamento
+        elif assinatura.tipo_documento == 'proposta' and assinatura.proposta:
+            return assinatura.proposta
+        elif assinatura.tipo_documento == 'contrato' and assinatura.contrato:
+            return assinatura.contrato
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter documento da assinatura: {str(e)}")
+        return None
+
+
+def _check_client_signature_exists(documento, tipo_documento):
+    """
+    Verifica se existe assinatura do cliente para o documento
+    """
+    try:
+        filter_kwargs = {
+            'tipo_signatario': 'cliente',
+            'tipo_documento': tipo_documento,
+            'status': 'assinado',
+            tipo_documento: documento
+        }
+        
+        return AssinaturaDigital.objects.filter(**filter_kwargs).exists()
+        
+    except Exception as e:
+        logger.error(f"Erro ao verificar assinatura do cliente: {str(e)}")
+        return False

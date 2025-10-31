@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.conf import settings
 import logging
 
 from .models import Lead, Orcamento, ItemOrcamento, Proposta, Contrato, HistoricoContato, EmailLog, ProdutoServico, AssinaturaDigital
@@ -2468,38 +2469,45 @@ def _solicitar_assinatura_empresa_automatica(documento, tipo_documento):
     """
     Solicita automaticamente assinatura da empresa após cliente assinar
     """
+    from .services.assinatura_validator import AssinaturaDataValidator
+    from django.db import IntegrityError
+    
     try:
-        # Criar solicitação de assinatura para a empresa
-        assinatura = AssinaturaDigital.objects.create(
-            tipo_documento=tipo_documento,
-            tipo_signatario='empresa',
-            lead=documento.lead,
-            nome_signatario=documento.loja.nome,
-            email_signatario=documento.loja.email,
-            cpf_signatario=documento.loja.cnpj,
-            observacoes=f'Assinatura automática da empresa após aprovação do cliente para {tipo_documento} {documento.numero}',
-            data_expiracao=timezone.now() + timezone.timedelta(days=7)  # 7 dias para assinar
+        # Verificar se já existe assinatura da empresa para este documento
+        if AssinaturaDataValidator.check_company_signature_exists(documento, tipo_documento):
+            logger.info(f"Assinatura da empresa já existe para {tipo_documento} {documento.numero}")
+            return
+        
+        # Validar e sanitizar dados da empresa
+        validated_data = AssinaturaDataValidator.validate_and_sanitize_company_data(
+            documento.loja, documento, tipo_documento
         )
         
-        # Associar documento correto
-        if tipo_documento == 'orcamento':
-            assinatura.orcamento = documento
-        elif tipo_documento == 'proposta':
-            assinatura.proposta = documento
-        elif tipo_documento == 'contrato':
-            assinatura.contrato = documento
-        
-        assinatura.save()
-        
-        # Enviar email automaticamente
+        # Criar solicitação de assinatura para a empresa
         try:
-            EmailService.enviar_solicitacao_assinatura(assinatura)
-            logger.info(f"Assinatura da empresa solicitada automaticamente para {tipo_documento} {documento.numero}")
+            assinatura = AssinaturaDigital.objects.create(**validated_data)
+            logger.info(f"Assinatura da empresa criada com sucesso para {tipo_documento} {documento.numero}")
+        except IntegrityError as e:
+            logger.error(f"Erro de integridade ao criar assinatura da empresa: {str(e)}")
+            raise ValueError("Dados inválidos para criação de assinatura da empresa")
+        
+        # Enviar email automaticamente com retry
+        try:
+            success = EmailService.enviar_solicitacao_assinatura_com_retry(assinatura, max_retries=3)
+            if success:
+                logger.info(f"Email de assinatura da empresa enviado com sucesso para {tipo_documento} {documento.numero}")
+            else:
+                logger.error(f"Falha no envio de email após múltiplas tentativas para {tipo_documento} {documento.numero}")
         except Exception as e:
-            logger.error(f"Erro ao enviar email automático de assinatura da empresa: {str(e)}")
+            logger.error(f"Erro inesperado ao enviar email automático de assinatura da empresa: {str(e)}")
+            # Marcar assinatura para reenvio posterior
+            assinatura.status = 'pendente_reenvio'
+            assinatura.save()
             
+    except ValueError as e:
+        logger.error(f"Erro de validação na assinatura automática da empresa: {str(e)}")
     except Exception as e:
-        logger.error(f"Erro ao solicitar assinatura automática da empresa: {str(e)}")
+        logger.error(f"Erro inesperado ao solicitar assinatura automática da empresa: {str(e)}")
 
 
 def _enviar_documento_final_assinado(documento, tipo_documento):
@@ -2507,6 +2515,11 @@ def _enviar_documento_final_assinado(documento, tipo_documento):
     Envia documento final com ambas assinaturas por email
     """
     try:
+        # Verificar se ambas as assinaturas estão completas
+        if not _verificar_documento_totalmente_assinado(documento, tipo_documento):
+            logger.warning(f"Documento {tipo_documento} {documento.numero} não está totalmente assinado")
+            return False
+        
         # Preparar dados do email
         if tipo_documento == 'orcamento':
             assunto = f"Orçamento {documento.numero} - Aprovado e Assinado"
@@ -2517,6 +2530,12 @@ def _enviar_documento_final_assinado(documento, tipo_documento):
         elif tipo_documento == 'contrato':
             assunto = f"Contrato {documento.numero} - Ativo e Assinado"
             template = 'crm_vendas/emails/contrato_final_assinado.html'
+        else:
+            logger.error(f"Tipo de documento inválido: {tipo_documento}")
+            return False
+        
+        # Obter informações das assinaturas
+        assinaturas_info = _obter_informacoes_assinaturas(documento, tipo_documento)
         
         # Contexto do email
         context = {
@@ -2525,39 +2544,184 @@ def _enviar_documento_final_assinado(documento, tipo_documento):
             'loja': documento.loja,
             'tipo_documento': tipo_documento,
             'data_envio': timezone.now(),
+            'assinatura_cliente': assinaturas_info.get('cliente'),
+            'assinatura_empresa': assinaturas_info.get('empresa'),
+            'data_conclusao': assinaturas_info.get('data_conclusao'),
         }
         
         # Renderizar email
         from django.template.loader import render_to_string
         html_content = render_to_string(template, context)
+        text_content = f"Documento {documento.numero} foi assinado por ambas as partes em {assinaturas_info.get('data_conclusao')}."
         
-        # Enviar para cliente e empresa
-        destinatarios = [documento.lead.email]
+        # Preparar destinatários
+        destinatarios = []
+        if documento.lead.email:
+            destinatarios.append(documento.lead.email)
         if documento.loja.email and documento.loja.email != documento.lead.email:
             destinatarios.append(documento.loja.email)
         
+        if not destinatarios:
+            logger.error(f"Nenhum destinatário válido para envio do documento final: {tipo_documento} {documento.numero}")
+            return False
+        
+        # Enviar email
         from django.core.mail import EmailMultiAlternatives
         email = EmailMultiAlternatives(
             subject=assunto,
-            body=f"Documento {documento.numero} foi assinado por ambas as partes.",
+            body=text_content,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=destinatarios
+            to=destinatarios,
+            reply_to=[documento.loja.email] if documento.loja.email else None
         )
         email.attach_alternative(html_content, "text/html")
+        
+        # Anexar PDF do documento final
+        try:
+            pdf_content = _gerar_pdf_documento_final(documento, tipo_documento)
+            if pdf_content:
+                filename = f"{tipo_documento.title()}_{documento.numero}_Final_Assinado.pdf"
+                email.attach(filename, pdf_content, "application/pdf")
+        except Exception as e:
+            logger.warning(f"Erro ao anexar PDF do documento final: {str(e)}")
+        
         email.send()
         
-        logger.info(f"Documento final enviado por email: {tipo_documento} {documento.numero}")
+        logger.info(f"Documento final enviado por email para {len(destinatarios)} destinatários: {tipo_documento} {documento.numero}")
         
-        # Registrar no histórico
+        # Registrar no histórico para cada destinatário
         from .models import HistoricoContato
-        HistoricoContato.objects.create(
-            lead=documento.lead,
-            tipo='email',
-            assunto=assunto,
-            descricao=f'Documento final {tipo_documento} {documento.numero} enviado com ambas assinaturas',
-            resultado='Email enviado com sucesso',
-            data_contato=timezone.now()
-        )
+        for destinatario in destinatarios:
+            HistoricoContato.objects.create(
+                lead=documento.lead,
+                tipo='email',
+                assunto=assunto,
+                descricao=f'Documento final {tipo_documento} {documento.numero} enviado com ambas assinaturas para {destinatario}',
+                resultado='Email enviado com sucesso',
+                data_contato=timezone.now()
+            )
+        
+        # Atualizar status do documento se necessário
+        _atualizar_status_documento_final(documento, tipo_documento)
+        
+        return True
         
     except Exception as e:
         logger.error(f"Erro ao enviar documento final assinado: {str(e)}")
+        return False
+
+
+def _verificar_documento_totalmente_assinado(documento, tipo_documento):
+    """
+    Verifica se o documento possui assinaturas de cliente e empresa
+    """
+    try:
+        from .models import AssinaturaDigital
+        
+        filter_kwargs = {
+            'status': 'assinado',
+            'tipo_documento': tipo_documento,
+            tipo_documento: documento
+        }
+        
+        # Verificar assinatura do cliente
+        assinatura_cliente = AssinaturaDigital.objects.filter(
+            tipo_signatario='cliente',
+            **filter_kwargs
+        ).exists()
+        
+        # Verificar assinatura da empresa
+        assinatura_empresa = AssinaturaDigital.objects.filter(
+            tipo_signatario='empresa',
+            **filter_kwargs
+        ).exists()
+        
+        return assinatura_cliente and assinatura_empresa
+        
+    except Exception as e:
+        logger.error(f"Erro ao verificar assinaturas do documento: {str(e)}")
+        return False
+
+
+def _obter_informacoes_assinaturas(documento, tipo_documento):
+    """
+    Obtém informações detalhadas das assinaturas do documento
+    """
+    try:
+        from .models import AssinaturaDigital
+        
+        filter_kwargs = {
+            'status': 'assinado',
+            'tipo_documento': tipo_documento,
+            tipo_documento: documento
+        }
+        
+        # Obter assinatura do cliente
+        assinatura_cliente = AssinaturaDigital.objects.filter(
+            tipo_signatario='cliente',
+            **filter_kwargs
+        ).first()
+        
+        # Obter assinatura da empresa
+        assinatura_empresa = AssinaturaDigital.objects.filter(
+            tipo_signatario='empresa',
+            **filter_kwargs
+        ).first()
+        
+        # Determinar data de conclusão (última assinatura)
+        data_conclusao = None
+        if assinatura_cliente and assinatura_empresa:
+            data_conclusao = max(
+                assinatura_cliente.data_assinatura,
+                assinatura_empresa.data_assinatura
+            )
+        
+        return {
+            'cliente': assinatura_cliente,
+            'empresa': assinatura_empresa,
+            'data_conclusao': data_conclusao
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter informações das assinaturas: {str(e)}")
+        return {}
+
+
+def _gerar_pdf_documento_final(documento, tipo_documento):
+    """
+    Gera PDF do documento final com assinaturas
+    """
+    try:
+        from .services.pdf_service import PDFService
+        
+        if tipo_documento == 'orcamento':
+            return PDFService.gerar_orcamento_pdf(documento)
+        elif tipo_documento == 'proposta':
+            return PDFService.gerar_proposta_pdf(documento)
+        elif tipo_documento == 'contrato':
+            return PDFService.gerar_contrato_pdf(documento)
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF do documento final: {str(e)}")
+        return None
+
+
+def _atualizar_status_documento_final(documento, tipo_documento):
+    """
+    Atualiza o status do documento para refletir conclusão das assinaturas
+    """
+    try:
+        if tipo_documento == 'orcamento':
+            documento.status = 'assinado'
+        elif tipo_documento == 'proposta':
+            documento.status = 'assinada'
+        elif tipo_documento == 'contrato':
+            documento.status = 'ativo'
+        
+        documento.save()
+        logger.info(f"Status do {tipo_documento} {documento.numero} atualizado para conclusão das assinaturas")
+        
+    except Exception as e:
+        logger.error(f"Erro ao atualizar status do documento final: {str(e)}")

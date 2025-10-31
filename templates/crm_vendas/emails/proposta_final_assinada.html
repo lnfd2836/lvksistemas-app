@@ -68,7 +68,22 @@
             <p><strong>Valor Proposto:</strong> R$ {{ documento.valor_proposto|floatformat:2 }}</p>
             <p><strong>Data de Aprovação:</strong> {{ documento.data_resposta|date:"d/m/Y às H:i" }}</p>
             <p><strong>Status:</strong> Aprovada e Assinada</p>
+            {% if data_conclusao %}
+            <p><strong>Data de Conclusão das Assinaturas:</strong> {{ data_conclusao|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
         </div>
+
+        {% if assinatura_cliente or assinatura_empresa %}
+        <div class="info-box">
+            <h3>✍️ Informações das Assinaturas</h3>
+            {% if assinatura_cliente %}
+            <p><strong>Assinatura do Cliente:</strong> {{ assinatura_cliente.nome_signatario }} em {{ assinatura_cliente.data_assinatura|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
+            {% if assinatura_empresa %}
+            <p><strong>Assinatura da Empresa:</strong> {{ assinatura_empresa.nome_signatario }} em {{ assinatura_empresa.data_assinatura|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <div class="info-box">
             <h3>📋 Próximos Passos</h3>

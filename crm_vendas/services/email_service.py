@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.urls import reverse
 import logging
 import uuid
+import time
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -201,6 +202,38 @@ class EmailService:
         site_url = getattr(settings, 'SITE_URL', 'https://lvksistemas-app-4f6fa281e217.herokuapp.com')
         return f"{site_url}/crm/contrato/{contrato.id}/assinar/"
     
+    @classmethod
+    def enviar_solicitacao_assinatura_com_retry(cls, assinatura_digital, max_retries=3):
+        """
+        Envia email com solicitação de assinatura digital com sistema de retry
+        """
+        for tentativa in range(max_retries):
+            try:
+                success = cls.enviar_solicitacao_assinatura(assinatura_digital)
+                if success:
+                    return True
+                
+                # Se não foi sucesso e não é a última tentativa, aguardar antes de tentar novamente
+                if tentativa < max_retries - 1:
+                    wait_time = (tentativa + 1) * 2  # Backoff exponencial: 2s, 4s, 6s
+                    logger.warning(f"Tentativa {tentativa + 1} falhou, aguardando {wait_time}s antes da próxima tentativa")
+                    time.sleep(wait_time)
+                
+            except Exception as e:
+                logger.error(f"Erro na tentativa {tentativa + 1} de envio de email: {str(e)}")
+                
+                if tentativa < max_retries - 1:
+                    wait_time = (tentativa + 1) * 2
+                    logger.warning(f"Aguardando {wait_time}s antes da próxima tentativa")
+                    time.sleep(wait_time)
+                else:
+                    # Última tentativa falhou, marcar para reenvio posterior
+                    assinatura_digital.status = 'pendente_reenvio'
+                    assinatura_digital.save()
+                    logger.error(f"Todas as {max_retries} tentativas de envio falharam para assinatura {assinatura_digital.id}")
+        
+        return False
+
     @classmethod
     def enviar_solicitacao_assinatura(cls, assinatura_digital):
         """

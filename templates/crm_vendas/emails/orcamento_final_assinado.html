@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             margin: 0 auto;
             padding: 20px;
         }
+
         .header {
             background-color: #28a745;
             color: white;
@@ -20,11 +22,13 @@
             text-align: center;
             border-radius: 5px 5px 0 0;
         }
+
         .content {
             background-color: #f8f9fa;
             padding: 30px;
             border: 1px solid #dee2e6;
         }
+
         .footer {
             background-color: #6c757d;
             color: white;
@@ -33,12 +37,14 @@
             border-radius: 0 0 5px 5px;
             font-size: 12px;
         }
+
         .info-box {
             background-color: #e9ecef;
             padding: 15px;
             border-left: 4px solid #28a745;
             margin: 20px 0;
         }
+
         .success-box {
             background-color: #d4edda;
             padding: 15px;
@@ -47,6 +53,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>✅ Orçamento Aprovado e Assinado</h1>
@@ -68,7 +75,24 @@
             <p><strong>Valor Total:</strong> R$ {{ documento.total|floatformat:2 }}</p>
             <p><strong>Data de Aprovação:</strong> {{ documento.data_resposta|date:"d/m/Y às H:i" }}</p>
             <p><strong>Status:</strong> Aprovado e Assinado</p>
+            {% if data_conclusao %}
+            <p><strong>Data de Conclusão das Assinaturas:</strong> {{ data_conclusao|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
         </div>
+
+        {% if assinatura_cliente or assinatura_empresa %}
+        <div class="info-box">
+            <h3>✍️ Informações das Assinaturas</h3>
+            {% if assinatura_cliente %}
+            <p><strong>Assinatura do Cliente:</strong> {{ assinatura_cliente.nome_signatario }} em {{
+                assinatura_cliente.data_assinatura|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
+            {% if assinatura_empresa %}
+            <p><strong>Assinatura da Empresa:</strong> {{ assinatura_empresa.nome_signatario }} em {{
+                assinatura_empresa.data_assinatura|date:"d/m/Y às H:i" }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <div class="info-box">
             <h3>📋 Próximos Passos</h3>
@@ -104,4 +128,5 @@
         <p>© {{ data_envio|date:"Y" }} {{ loja.nome }}. Todos os direitos reservados.</p>
     </div>
 </body>
+
 </html>
