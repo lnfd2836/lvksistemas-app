@@ -1170,40 +1170,6 @@ def criar_proposta(request):
         logger.error(f"Erro ao criar proposta: {str(e)}")
         messages.error(request, 'Erro interno do servidor.')
         return redirect('crm_vendas:listar_propostas')
-                responsavel=request.user,
-                titulo=titulo,
-                resumo_executivo=descricao,
-                objetivos=f"Serviços: {len(servicos_data)} itens",
-                metodologia=prazo_execucao,
-                investimento=condicoes_pagamento,
-                valor_total=valor_total,
-                condicoes_comerciais=observacoes,
-                prazo_validade=prazo_validade,
-                status='rascunho'
-            )
-            
-            # Atualizar status do lead
-            if lead.status in ['novo', 'contatado', 'qualificado']:
-                lead.status = 'proposta_enviada'
-                lead.save()
-            
-            # Registrar no histórico
-            HistoricoContato.objects.create(
-                lead=lead,
-                usuario=request.user,
-                tipo='outros',
-                assunto='Proposta Criada',
-                descricao=f'Proposta {proposta.numero} criada com {len(servicos_data)} serviços',
-                resultado=f'Valor total: R$ {proposta.valor_total:,.2f}',
-                data_contato=timezone.now()
-            )
-            
-            messages.success(request, f'Proposta {proposta.numero} criada com sucesso!')
-            return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
-            
-        except Exception as e:
-            logger.error(f"Erro ao criar proposta: {str(e)}")
-            messages.error(request, f'Erro ao criar proposta: {str(e)}')
     
     # Buscar leads disponíveis
     if loja:
@@ -2967,8 +2933,8 @@ def _atualizar_status_documento_final(documento, tipo_documento):
         
     except Exception as e:
         logger.error(f"Erro ao atualizar status do documento final: {str(e)}")
-@lo
-gin_required
+
+@login_required
 def listar_contratos(request):
     """Lista contratos com filtros e paginação"""
     try:
