@@ -31,13 +31,17 @@ urlpatterns = [
     path('propostas/', views.listar_propostas, name='listar_propostas'),
     path('propostas/nova/', views.criar_proposta, name='criar_proposta'),
     path('propostas/<uuid:proposta_id>/', views.detalhar_proposta, name='detalhar_proposta'),
+    path('propostas/<uuid:proposta_id>/editar/', views.editar_proposta, name='editar_proposta'),
     path('propostas/<uuid:proposta_id>/enviar/', views.enviar_proposta, name='enviar_proposta'),
+    path('propostas/<uuid:proposta_id>/pdf/', views.gerar_pdf_proposta, name='pdf_proposta'),
     
     # Contratos
     path('contratos/', views.listar_contratos, name='listar_contratos'),
     path('contratos/novo/', views.criar_contrato, name='criar_contrato'),
     path('contratos/<uuid:contrato_id>/', views.detalhar_contrato, name='detalhar_contrato'),
+    path('contratos/<uuid:contrato_id>/editar/', views.editar_contrato, name='editar_contrato'),
     path('contratos/<uuid:contrato_id>/enviar/', views.enviar_contrato, name='enviar_contrato'),
+    path('contratos/<uuid:contrato_id>/pdf/', views.gerar_pdf_contrato, name='pdf_contrato'),
     
     # URLs públicas (para clientes)
     path('orcamento/<uuid:orcamento_id>/visualizar/', views.visualizar_orcamento_publico, name='visualizar_orcamento_publico'),

@@ -844,8 +844,67 @@ def track_email_abertura(request, orcamento_id):
 
 @login_required
 def listar_propostas(request):
-    """Lista propostas"""
-    return render(request, 'crm_vendas/propostas/listar.html')
+    """Lista propostas com filtros e paginação"""
+    try:
+        # Obter loja do usuário
+        if request.user.is_superuser:
+            propostas = Proposta.objects.all()
+        else:
+            loja = request.user.loja_admin
+            propostas = Proposta.objects.filter(loja=loja)
+        
+        # Filtros
+        status_filter = request.GET.get('status')
+        lead_filter = request.GET.get('lead')
+        search = request.GET.get('search')
+        
+        if status_filter:
+            propostas = propostas.filter(status=status_filter)
+        
+        if lead_filter:
+            propostas = propostas.filter(lead__nome__icontains=lead_filter)
+        
+        if search:
+            propostas = propostas.filter(
+                Q(numero__icontains=search) |
+                Q(titulo__icontains=search) |
+                Q(lead__nome__icontains=search)
+            )
+        
+        # Ordenação
+        propostas = propostas.select_related('lead', 'loja').order_by('-data_criacao')
+        
+        # Paginação
+        paginator = Paginator(propostas, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Estatísticas
+        stats = {
+            'total': propostas.count(),
+            'rascunho': propostas.filter(status='rascunho').count(),
+            'enviada': propostas.filter(status='enviada').count(),
+            'aprovada': propostas.filter(status='aprovada').count(),
+            'rejeitada': propostas.filter(status='rejeitada').count(),
+        }
+        
+        context = {
+            'page_obj': page_obj,
+            'stats': stats,
+            'status_choices': Proposta.STATUS_CHOICES,
+            'current_filters': {
+                'status': status_filter,
+                'lead': lead_filter,
+                'search': search,
+            }
+        }
+        
+        return render(request, 'crm_vendas/propostas/listar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar propostas: {str(e)}")
+        messages.error(request, 'Erro ao carregar propostas.')
+        return redirect('crm_vendas:dashboard')
 
 @login_required
 def listar_contratos(request):
@@ -1033,62 +1092,84 @@ def editar_orcamento(request, orcamento_id):
 @login_required
 def criar_proposta(request):
     """Cria uma nova proposta"""
-    # Obter loja
-    if not request.user.is_superuser:
-        try:
+    try:
+        # Obter loja do usuário
+        if request.user.is_superuser:
+            loja = None
+        else:
             loja = request.user.loja_admin
-            if not loja:
-                messages.error(request, 'Usuário não está associado a nenhuma loja.')
-                return redirect('dashboard:principal')
-        except AttributeError:
-            messages.error(request, 'Usuário não tem permissão para acessar o CRM.')
-            return redirect('dashboard:principal')
-    else:
-        loja = None
-    
-    if request.method == 'POST':
-        try:
-            # Obter dados do formulário
-            lead_id = request.POST.get('lead_id')
-            titulo = request.POST.get('titulo')
-            descricao = request.POST.get('descricao', '')
-            prazo_execucao = request.POST.get('prazo_execucao', '')
-            prazo_validade = int(request.POST.get('prazo_validade', 30))
-            condicoes_pagamento = request.POST.get('condicoes_pagamento', '')
-            observacoes = request.POST.get('observacoes', '')
+        
+        if request.method == 'POST':
+            form = PropostaForm(request.POST, user=request.user)
             
-            # Buscar lead
-            lead = get_object_or_404(Lead, id=lead_id)
+            if form.is_valid():
+                proposta = form.save(commit=False)
+                
+                # Definir loja
+                if loja:
+                    proposta.loja = loja
+                else:
+                    proposta.loja = proposta.lead.loja
+                
+                # Definir responsável
+                proposta.responsavel = request.user
+                
+                # Pré-preencher dados do orçamento base se selecionado
+                if proposta.orcamento_base:
+                    orcamento = proposta.orcamento_base
+                    if not proposta.titulo:
+                        proposta.titulo = f"Proposta baseada no {orcamento.titulo}"
+                    if not proposta.valor_total:
+                        proposta.valor_total = orcamento.total
+                
+                proposta.save()
+                
+                # Registrar no histórico do lead
+                HistoricoContato.objects.create(
+                    lead=proposta.lead,
+                    usuario=request.user,
+                    tipo='outros',
+                    assunto=f'Proposta {proposta.numero} criada',
+                    descricao=f'Nova proposta comercial criada: {proposta.titulo}',
+                    resultado=f'Valor: R$ {proposta.valor_total:,.2f}',
+                    data_contato=timezone.now()
+                )
+                
+                messages.success(request, f'Proposta {proposta.numero} criada com sucesso!')
+                return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+            else:
+                messages.error(request, 'Erro ao criar proposta. Verifique os dados informados.')
+        else:
+            # Pré-preencher com orçamento se fornecido
+            orcamento_id = request.GET.get('orcamento')
+            initial_data = {}
             
-            # Verificar permissão
-            if not request.user.is_superuser and lead.loja != loja:
-                messages.error(request, 'Você não tem permissão para criar proposta para este lead.')
-                return redirect('crm_vendas:criar_proposta')
+            if orcamento_id:
+                try:
+                    orcamento = Orcamento.objects.get(id=orcamento_id)
+                    if not loja or orcamento.loja == loja:
+                        initial_data = {
+                            'lead': orcamento.lead,
+                            'orcamento_base': orcamento,
+                            'titulo': f"Proposta baseada no {orcamento.titulo}",
+                            'valor_total': orcamento.total,
+                        }
+                except Orcamento.DoesNotExist:
+                    pass
             
-            # Calcular valor total dos serviços
-            valor_total = 0
-            servicos_data = {}
-            
-            # Agrupar dados dos serviços
-            for key, value in request.POST.items():
-                if key.startswith('servicos[') and '][' in key:
-                    parts = key.replace('servicos[', '').replace(']', '').split('[')
-                    if len(parts) == 2:
-                        index, field = parts
-                        if index not in servicos_data:
-                            servicos_data[index] = {}
-                        servicos_data[index][field] = value
-            
-            # Calcular valor total
-            for index, servico_data in servicos_data.items():
-                if 'nome' in servico_data and servico_data['nome'].strip():
-                    valor = float(servico_data.get('valor', 0))
-                    valor_total += valor
-            
-            # Criar proposta
-            proposta = Proposta.objects.create(
-                lead=lead,
-                loja=lead.loja,
+            form = PropostaForm(initial=initial_data, user=request.user)
+        
+        context = {
+            'form': form,
+            'title': 'Nova Proposta Comercial',
+        }
+        
+        return render(request, 'crm_vendas/propostas/criar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar proposta: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_propostas')
                 responsavel=request.user,
                 titulo=titulo,
                 resumo_executivo=descricao,
@@ -1140,136 +1221,293 @@ def criar_proposta(request):
 @login_required
 def detalhar_proposta(request, proposta_id): 
     """Detalhes de uma proposta"""
-    proposta = get_object_or_404(Proposta, id=proposta_id)
-    context = {'proposta': proposta}
-    return render(request, 'crm_vendas/propostas/detalhar.html', context)
+    try:
+        proposta = get_object_or_404(Proposta, id=proposta_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and proposta.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para visualizar esta proposta.')
+            return redirect('crm_vendas:listar_propostas')
+        
+        # Buscar histórico de contatos relacionados
+        historico = HistoricoContato.objects.filter(lead=proposta.lead).order_by('-data_contato')[:10]
+        
+        # Verificar se pode editar (apenas rascunho)
+        pode_editar = proposta.status == 'rascunho'
+        
+        # Verificar se pode enviar
+        pode_enviar = proposta.status in ['rascunho', 'rejeitada']
+        
+        context = {
+            'proposta': proposta,
+            'historico': historico,
+            'pode_editar': pode_editar,
+            'pode_enviar': pode_enviar,
+        }
+        
+        return render(request, 'crm_vendas/propostas/detalhar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao detalhar proposta: {str(e)}")
+        messages.error(request, 'Erro ao carregar proposta.')
+        return redirect('crm_vendas:listar_propostas')
+
+@login_required
+def editar_proposta(request, proposta_id):
+    """Edita uma proposta"""
+    try:
+        proposta = get_object_or_404(Proposta, id=proposta_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and proposta.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para editar esta proposta.')
+            return redirect('crm_vendas:listar_propostas')
+        
+        # Verificar se pode editar
+        if proposta.status not in ['rascunho', 'rejeitada']:
+            messages.error(request, 'Esta proposta não pode ser editada.')
+            return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+        
+        if request.method == 'POST':
+            form = PropostaForm(request.POST, instance=proposta, user=request.user)
+            
+            if form.is_valid():
+                proposta = form.save()
+                
+                # Registrar no histórico
+                HistoricoContato.objects.create(
+                    lead=proposta.lead,
+                    usuario=request.user,
+                    tipo='outros',
+                    assunto=f'Proposta {proposta.numero} editada',
+                    descricao=f'Proposta comercial atualizada: {proposta.titulo}',
+                    resultado=f'Valor: R$ {proposta.valor_total:,.2f}',
+                    data_contato=timezone.now()
+                )
+                
+                messages.success(request, 'Proposta atualizada com sucesso!')
+                return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+            else:
+                messages.error(request, 'Erro ao atualizar proposta. Verifique os dados informados.')
+        else:
+            form = PropostaForm(instance=proposta, user=request.user)
+        
+        context = {
+            'form': form,
+            'proposta': proposta,
+            'title': f'Editar Proposta {proposta.numero}',
+        }
+        
+        return render(request, 'crm_vendas/propostas/editar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao editar proposta: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_propostas')
 
 @login_required
 def enviar_proposta(request, proposta_id): 
     """Envia uma proposta por email"""
-    proposta = get_object_or_404(Proposta, id=proposta_id)
-    messages.info(request, 'Funcionalidade de envio de proposta em desenvolvimento.')
-    return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta_id)
+    try:
+        proposta = get_object_or_404(Proposta, id=proposta_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and proposta.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para enviar esta proposta.')
+            return redirect('crm_vendas:listar_propostas')
+        
+        # Verificar se pode enviar
+        if proposta.status not in ['rascunho', 'rejeitada']:
+            messages.error(request, 'Esta proposta não pode ser enviada.')
+            return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+        
+        # Enviar por email
+        success = EmailService.enviar_proposta(proposta)
+        
+        if success:
+            # Atualizar status
+            proposta.status = 'enviada'
+            proposta.data_envio = timezone.now()
+            proposta.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=proposta.lead,
+                usuario=request.user,
+                tipo='email',
+                assunto=f'Proposta {proposta.numero} enviada',
+                descricao=f'Proposta comercial enviada por email para {proposta.lead.email}',
+                resultado='Email enviado com sucesso',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, 'Proposta enviada com sucesso!')
+        else:
+            messages.error(request, 'Erro ao enviar proposta por email.')
+        
+        return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar proposta: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_propostas')
+
+@login_required
+def gerar_pdf_proposta(request, proposta_id):
+    """Gera PDF da proposta"""
+    try:
+        proposta = get_object_or_404(Proposta, id=proposta_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and proposta.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para acessar esta proposta.')
+            return redirect('crm_vendas:listar_propostas')
+        
+        # Gerar PDF
+        pdf_content = PDFService.gerar_proposta_pdf(proposta)
+        
+        if pdf_content:
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Proposta_{proposta.numero}.pdf"'
+            return response
+        else:
+            messages.error(request, 'Erro ao gerar PDF da proposta.')
+            return redirect('crm_vendas:detalhar_proposta', proposta_id=proposta.id)
+            
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF da proposta: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_propostas')
 
 @login_required
 def criar_contrato(request):
     """Cria um novo contrato"""
-    # Obter loja
-    if not request.user.is_superuser:
-        try:
+    try:
+        # Obter loja do usuário
+        if request.user.is_superuser:
+            loja = None
+        else:
             loja = request.user.loja_admin
-            if not loja:
-                messages.error(request, 'Usuário não está associado a nenhuma loja.')
-                return redirect('dashboard:principal')
-        except AttributeError:
-            messages.error(request, 'Usuário não tem permissão para acessar o CRM.')
-            return redirect('dashboard:principal')
-    else:
-        loja = None
-    
-    if request.method == 'POST':
-        try:
-            # Obter dados do formulário
-            lead_id = request.POST.get('lead_id')
-            titulo = request.POST.get('titulo')
-            descricao = request.POST.get('descricao', '')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim')
-            prazo_meses = int(request.POST.get('prazo_meses', 12))
-            condicoes = request.POST.get('condicoes', '')
-            observacoes = request.POST.get('observacoes', '')
+        
+        if request.method == 'POST':
+            form = ContratoForm(request.POST, user=request.user)
             
-            # Buscar lead
-            lead = get_object_or_404(Lead, id=lead_id)
+            if form.is_valid():
+                contrato = form.save(commit=False)
+                
+                # Definir loja
+                if loja:
+                    contrato.loja = loja
+                else:
+                    contrato.loja = contrato.lead.loja
+                
+                # Definir responsável
+                contrato.responsavel = request.user
+                
+                # Pré-preencher dados da proposta base se selecionada
+                if contrato.proposta_base:
+                    proposta = contrato.proposta_base
+                    if not contrato.titulo:
+                        contrato.titulo = f"Contrato baseado na {proposta.titulo}"
+                    if not contrato.valor_total:
+                        contrato.valor_total = proposta.valor_total
+                    if not contrato.objeto:
+                        contrato.objeto = proposta.resumo_executivo
+                
+                contrato.save()
+                
+                # Atualizar status do lead
+                if contrato.lead.status != 'fechado_ganho':
+                    contrato.lead.status = 'fechado_ganho'
+                    contrato.lead.save()
+                
+                # Registrar no histórico do lead
+                HistoricoContato.objects.create(
+                    lead=contrato.lead,
+                    usuario=request.user,
+                    tipo='outros',
+                    assunto=f'Contrato {contrato.numero} criado',
+                    descricao=f'Novo contrato criado: {contrato.titulo}',
+                    resultado=f'Valor: R$ {contrato.valor_total:,.2f}',
+                    data_contato=timezone.now()
+                )
+                
+                messages.success(request, f'Contrato {contrato.numero} criado com sucesso!')
+                return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+            else:
+                messages.error(request, 'Erro ao criar contrato. Verifique os dados informados.')
+        else:
+            # Pré-preencher com proposta se fornecida
+            proposta_id = request.GET.get('proposta')
+            initial_data = {}
             
-            # Verificar permissão
-            if not request.user.is_superuser and lead.loja != loja:
-                messages.error(request, 'Você não tem permissão para criar contrato para este lead.')
-                return redirect('crm_vendas:criar_contrato')
+            if proposta_id:
+                try:
+                    proposta = Proposta.objects.get(id=proposta_id)
+                    if not loja or proposta.loja == loja:
+                        initial_data = {
+                            'lead': proposta.lead,
+                            'proposta_base': proposta,
+                            'titulo': f"Contrato baseado na {proposta.titulo}",
+                            'valor_total': proposta.valor_total,
+                            'objeto': proposta.resumo_executivo,
+                        }
+                except Proposta.DoesNotExist:
+                    pass
             
-            # Calcular valor total dos serviços
-            valor_total = 0
-            servicos_data = {}
-            
-            # Agrupar dados dos serviços
-            for key, value in request.POST.items():
-                if key.startswith('servicos_contrato[') and '][' in key:
-                    parts = key.replace('servicos_contrato[', '').replace(']', '').split('[')
-                    if len(parts) == 2:
-                        index, field = parts
-                        if index not in servicos_data:
-                            servicos_data[index] = {}
-                        servicos_data[index][field] = value
-            
-            # Calcular valor total
-            for index, servico_data in servicos_data.items():
-                if 'nome' in servico_data and servico_data['nome'].strip():
-                    valor = float(servico_data.get('valor', 0))
-                    valor_total += valor
-            
-            # Converter datas
-            from datetime import datetime
-            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date() if data_inicio else timezone.now().date()
-            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date() if data_fim else None
-            
-            # Criar contrato
-            contrato = Contrato.objects.create(
-                lead=lead,
-                loja=lead.loja,
-                responsavel=request.user,
-                titulo=titulo,
-                objeto=descricao,
-                clausulas=condicoes,
-                valor_total=valor_total,
-                data_inicio=data_inicio_obj,
-                data_fim=data_fim_obj,
-                prazo_meses=prazo_meses,
-                forma_pagamento=observacoes,
-                status='rascunho'
-            )
-            
-            # Atualizar status do lead
-            if lead.status != 'fechado_ganho':
-                lead.status = 'fechado_ganho'
-                lead.save()
-            
-            # Registrar no histórico
-            HistoricoContato.objects.create(
-                lead=lead,
-                usuario=request.user,
-                tipo='outros',
-                assunto='Contrato Criado',
-                descricao=f'Contrato {contrato.numero} criado com {len(servicos_data)} serviços',
-                resultado=f'Valor total: R$ {contrato.valor_total:,.2f}',
-                data_contato=timezone.now()
-            )
-            
-            messages.success(request, f'Contrato {contrato.numero} criado com sucesso!')
-            return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
-            
-        except Exception as e:
-            logger.error(f"Erro ao criar contrato: {str(e)}")
-            messages.error(request, f'Erro ao criar contrato: {str(e)}')
-    
-    # Buscar leads disponíveis
-    if loja:
-        leads = Lead.objects.filter(loja=loja).exclude(status__in=['fechado_perdido'])
-    else:
-        leads = Lead.objects.exclude(status__in=['fechado_perdido'])
-    
-    context = {
-        'loja': loja,
-        'leads': leads,
-        'lojas': Loja.objects.all() if request.user.is_superuser else None,
-    }
-    return render(request, 'crm_vendas/contratos/criar.html', context)
+            form = ContratoForm(initial=initial_data, user=request.user)
+        
+        context = {
+            'form': form,
+            'title': 'Novo Contrato',
+        }
+        
+        return render(request, 'crm_vendas/contratos/criar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar contrato: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_contratos')
 
 @login_required
 def detalhar_contrato(request, contrato_id): 
     """Detalhes de um contrato"""
-    contrato = get_object_or_404(Contrato, id=contrato_id)
-    context = {'contrato': contrato}
-    return render(request, 'crm_vendas/contratos/detalhar.html', context)
+    try:
+        contrato = get_object_or_404(Contrato, id=contrato_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and contrato.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para visualizar este contrato.')
+            return redirect('crm_vendas:listar_contratos')
+        
+        # Buscar histórico de contatos relacionados
+        historico = HistoricoContato.objects.filter(lead=contrato.lead).order_by('-data_contato')[:10]
+        
+        # Verificar se pode editar (apenas rascunho)
+        pode_editar = contrato.status == 'rascunho'
+        
+        # Verificar se pode enviar
+        pode_enviar = contrato.status == 'rascunho'
+        
+        # Verificar status das assinaturas
+        assinado_cliente = contrato.assinado_cliente_em is not None
+        assinado_empresa = contrato.assinado_empresa_em is not None
+        
+        context = {
+            'contrato': contrato,
+            'historico': historico,
+            'pode_editar': pode_editar,
+            'pode_enviar': pode_enviar,
+            'assinado_cliente': assinado_cliente,
+            'assinado_empresa': assinado_empresa,
+        }
+        
+        return render(request, 'crm_vendas/contratos/detalhar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao detalhar contrato: {str(e)}")
+        messages.error(request, 'Erro ao carregar contrato.')
+        return redirect('crm_vendas:listar_contratos')
 
 @login_required
 def enviar_contrato(request, contrato_id): 
@@ -2729,3 +2967,193 @@ def _atualizar_status_documento_final(documento, tipo_documento):
         
     except Exception as e:
         logger.error(f"Erro ao atualizar status do documento final: {str(e)}")
+@lo
+gin_required
+def listar_contratos(request):
+    """Lista contratos com filtros e paginação"""
+    try:
+        # Obter loja do usuário
+        if request.user.is_superuser:
+            contratos = Contrato.objects.all()
+        else:
+            loja = request.user.loja_admin
+            contratos = Contrato.objects.filter(loja=loja)
+        
+        # Filtros
+        status_filter = request.GET.get('status')
+        lead_filter = request.GET.get('lead')
+        search = request.GET.get('search')
+        
+        if status_filter:
+            contratos = contratos.filter(status=status_filter)
+        
+        if lead_filter:
+            contratos = contratos.filter(lead__nome__icontains=lead_filter)
+        
+        if search:
+            contratos = contratos.filter(
+                Q(numero__icontains=search) |
+                Q(titulo__icontains=search) |
+                Q(lead__nome__icontains=search)
+            )
+        
+        # Ordenação
+        contratos = contratos.select_related('lead', 'loja').order_by('-data_criacao')
+        
+        # Paginação
+        paginator = Paginator(contratos, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Estatísticas
+        stats = {
+            'total': contratos.count(),
+            'rascunho': contratos.filter(status='rascunho').count(),
+            'enviado': contratos.filter(status='enviado').count(),
+            'ativo': contratos.filter(status='ativo').count(),
+            'finalizado': contratos.filter(status='finalizado').count(),
+        }
+        
+        context = {
+            'page_obj': page_obj,
+            'stats': stats,
+            'status_choices': Contrato.STATUS_CHOICES,
+            'current_filters': {
+                'status': status_filter,
+                'lead': lead_filter,
+                'search': search,
+            }
+        }
+        
+        return render(request, 'crm_vendas/contratos/listar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar contratos: {str(e)}")
+        messages.error(request, 'Erro ao carregar contratos.')
+        return redirect('crm_vendas:dashboard')
+
+@login_required
+def editar_contrato(request, contrato_id):
+    """Edita um contrato"""
+    try:
+        contrato = get_object_or_404(Contrato, id=contrato_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and contrato.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para editar este contrato.')
+            return redirect('crm_vendas:listar_contratos')
+        
+        # Verificar se pode editar
+        if contrato.status != 'rascunho':
+            messages.error(request, 'Este contrato não pode ser editado.')
+            return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+        
+        if request.method == 'POST':
+            form = ContratoForm(request.POST, instance=contrato, user=request.user)
+            
+            if form.is_valid():
+                contrato = form.save()
+                
+                # Registrar no histórico
+                HistoricoContato.objects.create(
+                    lead=contrato.lead,
+                    usuario=request.user,
+                    tipo='outros',
+                    assunto=f'Contrato {contrato.numero} editado',
+                    descricao=f'Contrato atualizado: {contrato.titulo}',
+                    resultado=f'Valor: R$ {contrato.valor_total:,.2f}',
+                    data_contato=timezone.now()
+                )
+                
+                messages.success(request, 'Contrato atualizado com sucesso!')
+                return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+            else:
+                messages.error(request, 'Erro ao atualizar contrato. Verifique os dados informados.')
+        else:
+            form = ContratoForm(instance=contrato, user=request.user)
+        
+        context = {
+            'form': form,
+            'contrato': contrato,
+            'title': f'Editar Contrato {contrato.numero}',
+        }
+        
+        return render(request, 'crm_vendas/contratos/editar.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao editar contrato: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_contratos')
+
+@login_required
+def enviar_contrato(request, contrato_id):
+    """Envia um contrato por email"""
+    try:
+        contrato = get_object_or_404(Contrato, id=contrato_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and contrato.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para enviar este contrato.')
+            return redirect('crm_vendas:listar_contratos')
+        
+        # Verificar se pode enviar
+        if contrato.status != 'rascunho':
+            messages.error(request, 'Este contrato não pode ser enviado.')
+            return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+        
+        # Enviar por email
+        success = EmailService.enviar_contrato(contrato)
+        
+        if success:
+            # Atualizar status
+            contrato.status = 'enviado'
+            contrato.save()
+            
+            # Registrar no histórico
+            HistoricoContato.objects.create(
+                lead=contrato.lead,
+                usuario=request.user,
+                tipo='email',
+                assunto=f'Contrato {contrato.numero} enviado',
+                descricao=f'Contrato enviado por email para {contrato.lead.email}',
+                resultado='Email enviado com sucesso',
+                data_contato=timezone.now()
+            )
+            
+            messages.success(request, 'Contrato enviado com sucesso!')
+        else:
+            messages.error(request, 'Erro ao enviar contrato por email.')
+        
+        return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar contrato: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_contratos')
+
+@login_required
+def gerar_pdf_contrato(request, contrato_id):
+    """Gera PDF do contrato"""
+    try:
+        contrato = get_object_or_404(Contrato, id=contrato_id)
+        
+        # Verificar permissão
+        if not request.user.is_superuser and contrato.loja != request.user.loja_admin:
+            messages.error(request, 'Você não tem permissão para acessar este contrato.')
+            return redirect('crm_vendas:listar_contratos')
+        
+        # Gerar PDF
+        pdf_content = PDFService.gerar_contrato_pdf(contrato)
+        
+        if pdf_content:
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Contrato_{contrato.numero}.pdf"'
+            return response
+        else:
+            messages.error(request, 'Erro ao gerar PDF do contrato.')
+            return redirect('crm_vendas:detalhar_contrato', contrato_id=contrato.id)
+            
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF do contrato: {str(e)}")
+        messages.error(request, 'Erro interno do servidor.')
+        return redirect('crm_vendas:listar_contratos')

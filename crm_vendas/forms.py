@@ -224,3 +224,124 @@ class AssinaturaDigitalForm(forms.ModelForm):
             'cpf_signatario': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '000.000.000-00'}),
             'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observações sobre a assinatura'}),
         }
+
+
+class PropostaForm(forms.ModelForm):
+    """Formulário para criação e edição de propostas comerciais"""
+    
+    orcamento_base = forms.ModelChoiceField(
+        queryset=Orcamento.objects.none(),
+        required=False,
+        empty_label="Selecione um orçamento (opcional)",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    class Meta:
+        model = Proposta
+        fields = [
+            'lead', 'orcamento_base', 'titulo', 'resumo_executivo', 'objetivos', 
+            'metodologia', 'cronograma', 'investimento', 'valor_total', 
+            'condicoes_comerciais', 'prazo_validade', 'template_usado'
+        ]
+        widgets = {
+            'lead': forms.Select(attrs={'class': 'form-select'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Título da proposta'}),
+            'resumo_executivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Resumo executivo da proposta'}),
+            'objetivos': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Objetivos do projeto'}),
+            'metodologia': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Metodologia a ser aplicada'}),
+            'cronograma': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Cronograma de execução'}),
+            'investimento': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Detalhamento do investimento'}),
+            'valor_total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
+            'condicoes_comerciais': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Condições comerciais'}),
+            'prazo_validade': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '30'}),
+            'template_usado': forms.Select(attrs={'class': 'form-select'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user and hasattr(user, 'loja_admin'):
+            # Filtrar leads da loja do usuário
+            self.fields['lead'].queryset = Lead.objects.filter(loja=user.loja_admin)
+            # Filtrar orçamentos aprovados da loja
+            self.fields['orcamento_base'].queryset = Orcamento.objects.filter(
+                loja=user.loja_admin,
+                status='aprovado'
+            ).order_by('-data_criacao')
+    
+    def clean_valor_total(self):
+        valor = self.cleaned_data.get('valor_total')
+        if valor and valor <= 0:
+            raise forms.ValidationError("O valor total deve ser maior que zero.")
+        return valor
+    
+    def clean_prazo_validade(self):
+        prazo = self.cleaned_data.get('prazo_validade')
+        if prazo and prazo <= 0:
+            raise forms.ValidationError("O prazo de validade deve ser maior que zero.")
+        return prazo
+
+
+class ContratoForm(forms.ModelForm):
+    """Formulário para criação e edição de contratos"""
+    
+    proposta_base = forms.ModelChoiceField(
+        queryset=Proposta.objects.none(),
+        required=False,
+        empty_label="Selecione uma proposta (opcional)",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    class Meta:
+        model = Contrato
+        fields = [
+            'lead', 'proposta_base', 'titulo', 'objeto', 'clausulas', 'valor_total',
+            'data_inicio', 'data_fim', 'prazo_meses', 'forma_pagamento', 'condicoes_especiais'
+        ]
+        widgets = {
+            'lead': forms.Select(attrs={'class': 'form-select'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Título do contrato'}),
+            'objeto': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Objeto do contrato'}),
+            'clausulas': forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'placeholder': 'Cláusulas contratuais'}),
+            'valor_total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
+            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'prazo_meses': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '12'}),
+            'forma_pagamento': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Forma de pagamento'}),
+            'condicoes_especiais': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Condições especiais (opcional)'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user and hasattr(user, 'loja_admin'):
+            # Filtrar leads da loja do usuário
+            self.fields['lead'].queryset = Lead.objects.filter(loja=user.loja_admin)
+            # Filtrar propostas aprovadas da loja
+            self.fields['proposta_base'].queryset = Proposta.objects.filter(
+                loja=user.loja_admin,
+                status='aprovada'
+            ).order_by('-data_criacao')
+    
+    def clean_valor_total(self):
+        valor = self.cleaned_data.get('valor_total')
+        if valor and valor <= 0:
+            raise forms.ValidationError("O valor total deve ser maior que zero.")
+        return valor
+    
+    def clean_data_fim(self):
+        data_inicio = self.cleaned_data.get('data_inicio')
+        data_fim = self.cleaned_data.get('data_fim')
+        
+        if data_inicio and data_fim and data_fim <= data_inicio:
+            raise forms.ValidationError("A data de fim deve ser posterior à data de início.")
+        
+        return data_fim
+    
+    def clean_prazo_meses(self):
+        prazo = self.cleaned_data.get('prazo_meses')
+        if prazo and prazo <= 0:
+            raise forms.ValidationError("O prazo em meses deve ser maior que zero.")
+        return prazo
