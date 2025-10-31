@@ -37,7 +37,7 @@ def dashboard_estetica(request):
     
     # Clientes novos este mês
     inicio_mes = hoje.replace(day=1)
-    clientes_novos = Cliente.objects.filter(data_criacao__gte=inicio_mes).count()
+    clientes_novos = Cliente.objects.filter(data_cadastro__gte=inicio_mes).count()
     
     # Serviços mais populares
     servicos_populares = ServicoEstetica.objects.filter(
