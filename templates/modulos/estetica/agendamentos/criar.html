@@ -1,0 +1,229 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Novo Agendamento{% endblock %}
+{% block page_subtitle %}Criar novo agendamento para cliente{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'modulos:estetica_agendamentos' %}" class="btn btn-outline-light">
+    <i class="fas fa-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="card estetica-card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-plus me-2"></i>Dados do Agendamento
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="agendamentoForm">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <!-- Cliente -->
+                <div class="col-md-6">
+                    <label for="cliente" class="form-label">Cliente <span class="text-danger">*</span></label>
+                    <select name="cliente" id="cliente" class="form-select" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nome }} - {{ cliente.telefone }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Serviço -->
+                <div class="col-md-6">
+                    <label for="servico" class="form-label">Serviço <span class="text-danger">*</span></label>
+                    <select name="servico" id="servico" class="form-select" required>
+                        <option value="">Selecione um serviço</option>
+                        {% regroup servicos by categoria as servicos_por_categoria %}
+                        {% for categoria in servicos_por_categoria %}
+                            <optgroup label="{{ categoria.grouper }}">
+                                {% for servico in categoria.list %}
+                                    <option value="{{ servico.id }}" 
+                                            data-duracao="{{ servico.duracao_minutos }}"
+                                            data-preco="{{ servico.preco }}">
+                                        {{ servico.nome }} - R$ {{ servico.preco }}
+                                    </option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Protocolo (Opcional) -->
+                <div class="col-md-6">
+                    <label for="protocolo" class="form-label">Protocolo (Opcional)</label>
+                    <select name="protocolo" id="protocolo" class="form-select">
+                        <option value="">Nenhum protocolo</option>
+                        {% for protocolo in protocolos %}
+                            <option value="{{ protocolo.id }}">
+                                {{ protocolo.nome }} - {{ protocolo.get_tipo_protocolo_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Profissional -->
+                <div class="col-md-6">
+                    <label for="profissional" class="form-label">Profissional <span class="text-danger">*</span></label>
+                    <select name="profissional" id="profissional" class="form-select" required>
+                        <option value="">Selecione um profissional</option>
+                        {% for profissional in profissionais %}
+                            <option value="{{ profissional.id }}">
+                                {{ profissional.get_full_name|default:profissional.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Data -->
+                <div class="col-md-4">
+                    <label for="data_agendamento" class="form-label">Data <span class="text-danger">*</span></label>
+                    <input type="date" name="data_agendamento" id="data_agendamento" 
+                           class="form-control" required min="{{ today|date:'Y-m-d' }}">
+                </div>
+                
+                <!-- Hora Início -->
+                <div class="col-md-4">
+                    <label for="hora_inicio" class="form-label">Hora Início <span class="text-danger">*</span></label>
+                    <input type="time" name="hora_inicio" id="hora_inicio" 
+                           class="form-control" required>
+                </div>
+                
+                <!-- Duração Estimada (Calculada automaticamente) -->
+                <div class="col-md-4">
+                    <label for="duracao_estimada" class="form-label">Duração Estimada</label>
+                    <input type="text" id="duracao_estimada" class="form-control" 
+                           readonly placeholder="Selecione um serviço">
+                </div>
+                
+                <!-- Observações -->
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea name="observacoes" id="observacoes" class="form-control" 
+                              rows="3" placeholder="Observações adicionais sobre o agendamento..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Resumo do Agendamento -->
+            <div class="row mt-4" id="resumoAgendamento" style="display: none;">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Resumo do Agendamento</h6>
+                        <div id="resumoConteudo"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-estetica me-2">
+                        <i class="fas fa-save me-2"></i>Criar Agendamento
+                    </button>
+                    <a href="{% url 'modulos:estetica_agendamentos' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const servicoSelect = document.getElementById('servico');
+    const duracaoInput = document.getElementById('duracao_estimada');
+    const horaInicioInput = document.getElementById('hora_inicio');
+    const resumoDiv = document.getElementById('resumoAgendamento');
+    const resumoConteudo = document.getElementById('resumoConteudo');
+    
+    // Atualizar duração quando serviço for selecionado
+    servicoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const duracao = selectedOption.dataset.duracao;
+            duracaoInput.value = duracao + ' minutos';
+            atualizarResumo();
+        } else {
+            duracaoInput.value = '';
+            resumoDiv.style.display = 'none';
+        }
+    });
+    
+    // Atualizar resumo quando campos importantes mudarem
+    ['cliente', 'servico', 'data_agendamento', 'hora_inicio', 'profissional'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('change', atualizarResumo);
+    });
+    
+    function atualizarResumo() {
+        const cliente = document.getElementById('cliente');
+        const servico = document.getElementById('servico');
+        const data = document.getElementById('data_agendamento');
+        const hora = document.getElementById('hora_inicio');
+        const profissional = document.getElementById('profissional');
+        
+        if (cliente.value && servico.value && data.value && hora.value && profissional.value) {
+            const clienteNome = cliente.options[cliente.selectedIndex].text;
+            const servicoNome = servico.options[servico.selectedIndex].text;
+            const profissionalNome = profissional.options[profissional.selectedIndex].text;
+            const duracao = servico.options[servico.selectedIndex].dataset.duracao;
+            
+            // Calcular hora fim
+            const horaInicio = new Date('2000-01-01 ' + hora.value);
+            const horaFim = new Date(horaInicio.getTime() + (duracao * 60000));
+            const horaFimStr = horaFim.toTimeString().substr(0, 5);
+            
+            // Formatar data
+            const dataFormatada = new Date(data.value).toLocaleDateString('pt-BR');
+            
+            resumoConteudo.innerHTML = `
+                <strong>Cliente:</strong> ${clienteNome}<br>
+                <strong>Serviço:</strong> ${servicoNome}<br>
+                <strong>Data:</strong> ${dataFormatada}<br>
+                <strong>Horário:</strong> ${hora.value} às ${horaFimStr}<br>
+                <strong>Profissional:</strong> ${profissionalNome}
+            `;
+            
+            resumoDiv.style.display = 'block';
+        } else {
+            resumoDiv.style.display = 'none';
+        }
+    }
+    
+    // Validação do formulário
+    document.getElementById('agendamentoForm').addEventListener('submit', function(e) {
+        const requiredFields = ['cliente', 'servico', 'data_agendamento', 'hora_inicio', 'profissional'];
+        let isValid = true;
+        
+        requiredFields.forEach(function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field.value) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+        }
+    });
+    
+    // Remover classe de erro quando campo for preenchido
+    document.querySelectorAll('.form-select, .form-control').forEach(function(field) {
+        field.addEventListener('change', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

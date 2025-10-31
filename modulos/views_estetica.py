@@ -507,14 +507,14 @@ def relatorios_estetica(request):
     servicos_populares = ServicoEstetica.objects.filter(
         agendamentos__in=agendamentos
     ).annotate(
-        total_agendamentos=models.Count('agendamentos')
+        total_agendamentos=Count('agendamentos')
     ).order_by('-total_agendamentos')[:5]
     
     # Profissionais mais ativos
     profissionais_ativos = User.objects.filter(
         agendamentos_profissional__in=agendamentos
     ).annotate(
-        total_agendamentos=models.Count('agendamentos_profissional')
+        total_agendamentos=Count('agendamentos_profissional')
     ).order_by('-total_agendamentos')[:5]
     
     context = {

@@ -1,0 +1,383 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Detalhes do Agendamento{% endblock %}
+{% block page_subtitle %}{{ agendamento.cliente.nome }} - {{ agendamento.data_agendamento|date:"d/m/Y" }}{% endblock %}
+
+{% block header_actions %}
+<div class="btn-group" role="group">
+    {% if agendamento.status == 'agendado' %}
+        <button type="button" class="btn btn-success" 
+                onclick="atualizarStatus('{{ agendamento.id }}', 'confirmado')">
+            <i class="fas fa-check me-2"></i>Confirmar
+        </button>
+    {% endif %}
+    
+    {% if agendamento.status == 'confirmado' %}
+        <button type="button" class="btn btn-info" 
+                onclick="atualizarStatus('{{ agendamento.id }}', 'em_andamento')">
+            <i class="fas fa-play me-2"></i>Iniciar
+        </button>
+    {% endif %}
+    
+    {% if agendamento.status == 'em_andamento' %}
+        <button type="button" class="btn btn-success" 
+                onclick="atualizarStatus('{{ agendamento.id }}', 'concluido')">
+            <i class="fas fa-flag-checkered me-2"></i>Concluir
+        </button>
+    {% endif %}
+    
+    {% if agendamento.status in 'agendado,confirmado' %}
+        <button type="button" class="btn btn-danger" 
+                onclick="atualizarStatus('{{ agendamento.id }}', 'cancelado')">
+            <i class="fas fa-times me-2"></i>Cancelar
+        </button>
+    {% endif %}
+    
+    <a href="{% url 'modulos:estetica_agendamentos' %}" class="btn btn-outline-light">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="row">
+    <!-- Informações do Agendamento -->
+    <div class="col-md-8">
+        <div class="card estetica-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Informações do Agendamento
+                </h5>
+                <span class="status-badge status-{{ agendamento.status }}">
+                    {{ agendamento.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Cliente</h6>
+                        <p class="mb-3">
+                            <strong>{{ agendamento.cliente.nome }}</strong><br>
+                            <i class="fas fa-phone me-1"></i>{{ agendamento.cliente.telefone }}<br>
+                            {% if agendamento.cliente.email %}
+                                <i class="fas fa-envelope me-1"></i>{{ agendamento.cliente.email }}<br>
+                            {% endif %}
+                            {% if agendamento.cliente.data_nascimento %}
+                                <i class="fas fa-birthday-cake me-1"></i>{{ agendamento.cliente.data_nascimento|date:"d/m/Y" }}
+                            {% endif %}
+                        </p>
+                        
+                        <h6 class="text-primary">Serviço</h6>
+                        <p class="mb-3">
+                            <strong>{{ agendamento.servico.nome }}</strong><br>
+                            <span class="badge bg-secondary">{{ agendamento.servico.get_categoria_display }}</span><br>
+                            <i class="fas fa-clock me-1"></i>{{ agendamento.servico.duracao_minutos }} minutos<br>
+                            <i class="fas fa-dollar-sign me-1"></i>R$ {{ agendamento.servico.preco }}
+                        </p>
+                        
+                        {% if agendamento.protocolo %}
+                            <h6 class="text-primary">Protocolo</h6>
+                            <p class="mb-3">
+                                <strong>{{ agendamento.protocolo.nome }}</strong><br>
+                                <span class="badge bg-info">{{ agendamento.protocolo.get_tipo_protocolo_display }}</span><br>
+                                {{ agendamento.protocolo.descricao|truncatechars:100 }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Data e Horário</h6>
+                        <p class="mb-3">
+                            <i class="fas fa-calendar me-1"></i>{{ agendamento.data_agendamento|date:"l, d \d\e F \d\e Y" }}<br>
+                            <i class="fas fa-clock me-1"></i>{{ agendamento.hora_inicio|time:"H:i" }} às {{ agendamento.hora_fim|time:"H:i" }}
+                        </p>
+                        
+                        <h6 class="text-primary">Profissional</h6>
+                        <p class="mb-3">
+                            <strong>{{ agendamento.profissional.get_full_name|default:agendamento.profissional.username }}</strong><br>
+                            {% if agendamento.profissional.email %}
+                                <i class="fas fa-envelope me-1"></i>{{ agendamento.profissional.email }}
+                            {% endif %}
+                        </p>
+                        
+                        <h6 class="text-primary">Criado em</h6>
+                        <p class="mb-3">
+                            <i class="fas fa-calendar-plus me-1"></i>{{ agendamento.data_criacao|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if agendamento.observacoes %}
+                    <h6 class="text-primary">Observações</h6>
+                    <div class="alert alert-light">
+                        {{ agendamento.observacoes|linebreaks }}
+                    </div>
+                {% endif %}
+                
+                {% if agendamento.observacoes_pos_procedimento %}
+                    <h6 class="text-primary">Observações Pós-Procedimento</h6>
+                    <div class="alert alert-info">
+                        {{ agendamento.observacoes_pos_procedimento|linebreaks }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Evoluções do Cliente -->
+        {% if evolucoes %}
+            <div class="card estetica-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Evoluções Recentes do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for evolucao in evolucoes %}
+                        <div class="border-start border-primary border-3 ps-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ evolucao.data_evolucao|date:"d/m/Y" }}</h6>
+                                    {% if evolucao.peso_atual %}
+                                        <p class="mb-1">
+                                            <strong>Peso:</strong> {{ evolucao.peso_atual }} kg
+                                            {% if evolucao.peso_inicial %}
+                                                {% widthratio evolucao.peso_atual evolucao.peso_inicial 100 as percentual_peso %}
+                                                {% if percentual_peso < 100 %}
+                                                    <span class="text-success">(-{{ evolucao.peso_inicial|floatformat:1|add:evolucao.peso_atual|floatformat:1 }} kg)</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </p>
+                                    {% endif %}
+                                    {% if evolucao.observacoes_profissional %}
+                                        <p class="text-muted mb-0">{{ evolucao.observacoes_profissional|truncatechars:150 }}</p>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ evolucao.data_evolucao|timesince }} atrás</small>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'modulos:estetica_evolucao_tratamento' agendamento.cliente.id %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-2"></i>Ver Todas as Evoluções
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar com Ações e Informações -->
+    <div class="col-md-4">
+        <!-- Ações Rápidas -->
+        <div class="card estetica-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'modulos:estetica_ficha_anamnese' agendamento.cliente.id %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-medical me-2"></i>Ficha de Anamnese
+                    </a>
+                    
+                    <a href="{% url 'modulos:estetica_evolucao_tratamento' agendamento.cliente.id %}" 
+                       class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-chart-line me-2"></i>Evolução do Tratamento
+                    </a>
+                    
+                    {% if agendamento.status == 'concluido' %}
+                        <button type="button" class="btn btn-outline-info btn-sm" 
+                                data-bs-toggle="modal" data-bs-target="#modalRetorno">
+                            <i class="fas fa-redo me-2"></i>Agendar Retorno
+                        </button>
+                    {% endif %}
+                    
+                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                            data-bs-toggle="modal" data-bs-target="#modalObservacoes">
+                        <i class="fas fa-sticky-note me-2"></i>Adicionar Observação
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Retornos Relacionados -->
+        {% if retornos %}
+            <div class="card estetica-card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-redo me-2"></i>Retornos Relacionados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for retorno in retornos %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ retorno.data_retorno|date:"d/m/Y" }}</strong><br>
+                                <small class="text-muted">{{ retorno.motivo_retorno|truncatechars:30 }}</small>
+                            </div>
+                            <span class="status-badge status-{{ retorno.status }}">
+                                {{ retorno.get_status_display }}
+                            </span>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Observações -->
+<div class="modal fade" id="modalObservacoes" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adicionar Observação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formObservacoes">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="observacoes_pos" class="form-label">Observações Pós-Procedimento</label>
+                        <textarea name="observacoes" id="observacoes_pos" class="form-control" 
+                                  rows="4" placeholder="Digite suas observações...">{{ agendamento.observacoes_pos_procedimento }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-estetica">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Retorno -->
+<div class="modal fade" id="modalRetorno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agendar Retorno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRetorno">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="data_retorno" class="form-label">Data do Retorno</label>
+                            <input type="date" name="data_retorno" id="data_retorno" 
+                                   class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="hora_retorno" class="form-label">Hora do Retorno</label>
+                            <input type="time" name="hora_retorno" id="hora_retorno" 
+                                   class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="motivo_retorno" class="form-label">Motivo do Retorno</label>
+                            <textarea name="motivo_retorno" id="motivo_retorno" class="form-control" 
+                                      rows="3" placeholder="Descreva o motivo do retorno..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-estetica">Agendar Retorno</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function atualizarStatus(agendamentoId, novoStatus) {
+    const statusLabels = {
+        'confirmado': 'confirmar',
+        'em_andamento': 'iniciar',
+        'concluido': 'concluir',
+        'cancelado': 'cancelar'
+    };
+    
+    if (confirm(`Tem certeza que deseja ${statusLabels[novoStatus]} este agendamento?`)) {
+        fetch(`/modulos/estetica/agendamentos/${agendamentoId}/status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || getCookie('csrftoken')
+            },
+            body: `status=${novoStatus}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao atualizar status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao atualizar status');
+        });
+    }
+}
+
+// Função para obter CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Form de observações
+document.getElementById('formObservacoes').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const observacoes = document.getElementById('observacoes_pos').value;
+    
+    fetch(`/modulos/estetica/agendamentos/{{ agendamento.id }}/status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `status={{ agendamento.status }}&observacoes=${encodeURIComponent(observacoes)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao salvar observações: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar observações');
+    });
+});
+
+// Form de retorno
+document.getElementById('formRetorno').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Funcionalidade de retorno será implementada em breve.');
+    // TODO: Implementar criação de retorno
+});
+</script>
+{% endblock %}
