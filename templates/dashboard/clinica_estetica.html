@@ -105,10 +105,10 @@
                                 <i class="fas fa-users fa-3x text-primary mb-3"></i>
                                 <h6 class="text-primary font-weight-bold">Clientes</h6>
                                 <div class="mt-2">
-                                    <a href="{% url 'lojas:adicionar_cliente' %}" class="btn btn-primary btn-sm mb-1 w-100">
-                                        <i class="fas fa-plus"></i> Cadastrar
+                                    <a href="/modulos/estetica/clientes/" class="btn btn-primary btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Gerenciar
                                     </a>
-                                    <a href="{% url 'lojas:gerenciar_clientes' %}" class="btn btn-outline-primary btn-sm w-100">
+                                    <a href="/modulos/estetica/clientes/" class="btn btn-outline-primary btn-sm w-100">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -123,10 +123,10 @@
                                 <i class="fas fa-spa fa-3x text-success mb-3"></i>
                                 <h6 class="text-success font-weight-bold">Serviços</h6>
                                 <div class="mt-2">
-                                    <a href="{% url 'lojas:adicionar_produto' %}" class="btn btn-success btn-sm mb-1 w-100">
+                                    <a href="/modulos/estetica/servicos/criar/" class="btn btn-success btn-sm mb-1 w-100">
                                         <i class="fas fa-plus"></i> Cadastrar
                                     </a>
-                                    <a href="{% url 'lojas:gerenciar_produtos' %}" class="btn btn-outline-success btn-sm w-100">
+                                    <a href="/modulos/estetica/servicos/" class="btn btn-outline-success btn-sm w-100">
                                         <i class="fas fa-list"></i> Listar
                                     </a>
                                 </div>
@@ -141,10 +141,10 @@
                                 <i class="fas fa-calendar-alt fa-3x text-info mb-3"></i>
                                 <h6 class="text-info font-weight-bold">Agendamentos</h6>
                                 <div class="mt-2">
-                                    <a href="{% url 'lojas:nova_venda' %}" class="btn btn-info btn-sm mb-1 w-100">
-                                        <i class="fas fa-plus"></i> Agendar
+                                    <a href="/modulos/estetica/agendamentos/" class="btn btn-info btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Novo Agendamento
                                     </a>
-                                    <a href="{% url 'lojas:gerenciar_vendas' %}" class="btn btn-outline-info btn-sm w-100">
+                                    <a href="/modulos/estetica/agendamentos/" class="btn btn-outline-info btn-sm w-100">
                                         <i class="fas fa-calendar"></i> Ver Agenda
                                     </a>
                                 </div>
@@ -152,19 +152,94 @@
                         </div>
                     </div>
 
-                    <!-- Funcionários -->
+                    <!-- Protocolos -->
                     <div class="col-lg-3 col-md-6 mb-3">
                         <div class="card border-left-warning shadow h-100">
                             <div class="card-body text-center">
-                                <i class="fas fa-user-md fa-3x text-warning mb-3"></i>
-                                <h6 class="text-warning font-weight-bold">Funcionários</h6>
+                                <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
+                                <h6 class="text-warning font-weight-bold">Protocolos</h6>
                                 <div class="mt-2">
-                                    <a href="#" class="btn btn-warning btn-sm mb-1 w-100" onclick="alert('Funcionalidade em desenvolvimento')">
-                                        <i class="fas fa-plus"></i> Cadastrar
+                                    <a href="/modulos/estetica/protocolos/criar/" class="btn btn-warning btn-sm mb-1 w-100">
+                                        <i class="fas fa-plus"></i> Criar
                                     </a>
-                                    <a href="#" class="btn btn-outline-warning btn-sm w-100" onclick="alert('Funcionalidade em desenvolvimento')">
-                                        <i class="fas fa-users"></i> Gerenciar
+                                    <a href="/modulos/estetica/protocolos/" class="btn btn-outline-warning btn-sm w-100">
+                                        <i class="fas fa-list"></i> Listar
                                     </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segunda linha de funcionalidades específicas -->
+                    <div class="row mt-3">
+                        <!-- Pacotes -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-left-secondary shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-box-open fa-3x text-secondary mb-3"></i>
+                                    <h6 class="text-secondary font-weight-bold">Pacotes</h6>
+                                    <div class="mt-2">
+                                        <a href="/modulos/estetica/pacotes/criar/" class="btn btn-secondary btn-sm mb-1 w-100">
+                                            <i class="fas fa-plus"></i> Criar
+                                        </a>
+                                        <a href="/modulos/estetica/pacotes/" class="btn btn-outline-secondary btn-sm w-100">
+                                            <i class="fas fa-list"></i> Listar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Retornos -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-left-info shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-redo fa-3x text-info mb-3"></i>
+                                    <h6 class="text-info font-weight-bold">Retornos</h6>
+                                    <div class="mt-2">
+                                        <a href="/modulos/estetica/retornos/criar/" class="btn btn-info btn-sm mb-1 w-100">
+                                            <i class="fas fa-plus"></i> Agendar
+                                        </a>
+                                        <a href="/modulos/estetica/retornos/" class="btn btn-outline-info btn-sm w-100">
+                                            <i class="fas fa-list"></i> Listar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calendário -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-left-primary shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar fa-3x text-primary mb-3"></i>
+                                    <h6 class="text-primary font-weight-bold">Calendário</h6>
+                                    <div class="mt-2">
+                                        <a href="/modulos/estetica/agendamentos/calendario/" class="btn btn-primary btn-sm mb-1 w-100">
+                                            <i class="fas fa-calendar-alt"></i> Ver Calendário
+                                        </a>
+                                        <a href="/modulos/estetica/agendamentos/" class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="fas fa-list"></i> Lista
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Relatórios -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-left-success shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                                    <h6 class="text-success font-weight-bold">Relatórios</h6>
+                                    <div class="mt-2">
+                                        <a href="/modulos/estetica/relatorios/" class="btn btn-success btn-sm mb-1 w-100">
+                                            <i class="fas fa-chart-bar"></i> Relatórios
+                                        </a>
+                                        <a href="/modulos/estetica/" class="btn btn-outline-success btn-sm w-100">
+                                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +304,7 @@
                 <h6 class="m-0 font-weight-bold text-success">
                     <i class="fas fa-spa me-2"></i>Serviços Mais Procurados
                 </h6>
-                <a href="{% url 'lojas:gerenciar_produtos' %}" class="btn btn-outline-success btn-sm">
+                <a href="{% url 'lojas:gerenciar_produtos' %}" class="btn btn-outline-success btn-sm"></a>
                     Ver todos
                 </a>
             </div>
