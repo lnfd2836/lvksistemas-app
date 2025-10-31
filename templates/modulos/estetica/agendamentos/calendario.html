@@ -1,0 +1,77 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block title %}Calendário de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-calendar me-2"></i>
+                        Calendário de Agendamentos
+                    </h3>
+                    <div>
+                        <a href="/modulos/estetica/agendamentos/" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-1"></i>Lista
+                        </a>
+                        <a href="/modulos/estetica/" class="btn btn-secondary ms-2">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Funcionalidade em desenvolvimento.
+                        <br>
+                        <small class="text-muted">Em breve você terá acesso a um calendário visual completo para gerenciar agendamentos.</small>
+                    </div>
+                    
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-5x text-muted mb-4"></i>
+                        <h4 class="text-muted">Calendário Visual</h4>
+                        <p class="text-muted mb-4">
+                            O calendário permitirá visualizar todos os agendamentos de forma organizada,<br>
+                            com diferentes cores para cada tipo de serviço e status.
+                        </p>
+                        
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Funcionalidades Planejadas:</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled text-start">
+                                                    <li><i class="fas fa-check text-success me-2"></i>Visualização mensal</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Visualização semanal</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Visualização diária</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled text-start">
+                                                    <li><i class="fas fa-check text-success me-2"></i>Cores por tipo de serviço</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Arrastar e soltar</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Notificações automáticas</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="/modulos/estetica/agendamentos/" class="btn btn-primary btn-lg">
+                                <i class="fas fa-list me-2"></i>Ver Lista de Agendamentos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block title %}Criar Protocolo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Criar Novo Protocolo
+                    </h3>
+                    <a href="/modulos/estetica/protocolos/" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Funcionalidade em desenvolvimento.
+                        <br>
+                        <small class="text-muted">Em breve você poderá criar protocolos de tratamento personalizados.</small>
+                    </div>
+                    
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Protocolos de Tratamento</h5>
+                        <p class="text-muted">Esta funcionalidade permitirá criar protocolos detalhados para cada tipo de tratamento.</p>
+                        
+                        <div class="mt-4">
+                            <a href="/modulos/estetica/protocolos/" class="btn btn-primary">
+                                <i class="fas fa-list me-1"></i>Ver Protocolos Existentes
+                            </a>
+                            <a href="/modulos/estetica/" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
