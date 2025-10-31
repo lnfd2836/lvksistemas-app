@@ -1,0 +1,108 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Editar Pacote{% endblock %}
+{% block page_subtitle %}{{ pacote.nome }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'modulos:estetica_pacote_detalhes' pacote.id %}" class="btn btn-outline-light">
+    <i class="fas fa-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="card estetica-card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-edit me-2"></i>Editar Dados do Pacote
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="pacoteForm">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <!-- Nome -->
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome do Pacote <span class="text-danger">*</span></label>
+                    <input type="text" name="nome" id="nome" class="form-control" 
+                           value="{{ pacote.nome }}" required 
+                           placeholder="Digite o nome do pacote">
+                </div>
+                
+                <!-- Preço -->
+                <div class="col-md-6">
+                    <label for="preco" class="form-label">Preço <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" name="preco" id="preco" class="form-control" 
+                               value="{{ pacote.preco }}" required step="0.01" min="0"
+                               placeholder="0,00">
+                    </div>
+                </div>
+                
+                <!-- Status -->
+                <div class="col-md-6">
+                    <label for="ativo" class="form-label">Status</label>
+                    <select name="ativo" id="ativo" class="form-select">
+                        <option value="true" {% if pacote.ativo %}selected{% endif %}>Ativo</option>
+                        <option value="false" {% if not pacote.ativo %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+                
+                <!-- Descrição -->
+                <div class="col-12">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <textarea name="descricao" id="descricao" class="form-control" 
+                              rows="4" placeholder="Descreva o pacote de tratamento...">{{ pacote.descricao }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-estetica me-2">
+                        <i class="fas fa-save me-2"></i>Salvar Alterações
+                    </button>
+                    <a href="{% url 'modulos:estetica_pacote_detalhes' pacote.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação do formulário
+    document.getElementById('pacoteForm').addEventListener('submit', function(e) {
+        const requiredFields = ['nome', 'preco'];
+        let isValid = true;
+        
+        requiredFields.forEach(function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+        }
+    });
+    
+    // Remover classe de erro quando campo for preenchido
+    document.querySelectorAll('.form-control, .form-select').forEach(function(field) {
+        field.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

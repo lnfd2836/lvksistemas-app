@@ -1,0 +1,87 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Detalhes do Pacote{% endblock %}
+{% block page_subtitle %}{{ pacote.nome }}{% endblock %}
+
+{% block header_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'modulos:estetica_editar_pacote' pacote.id %}" class="btn btn-warning">
+        <i class="fas fa-edit me-2"></i>Editar
+    </a>
+    <a href="{% url 'modulos:estetica_pacotes' %}" class="btn btn-outline-light">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card estetica-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-box me-2"></i>Informações do Pacote
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Nome do Pacote</h6>
+                        <p class="mb-3"><strong>{{ pacote.nome }}</strong></p>
+                        
+                        <h6 class="text-primary">Descrição</h6>
+                        <p class="mb-3">{{ pacote.descricao|default:"Sem descrição" }}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Preço</h6>
+                        <p class="mb-3">
+                            <span class="h4 text-success">R$ {{ pacote.preco|floatformat:2 }}</span>
+                        </p>
+                        
+                        <h6 class="text-primary">Status</h6>
+                        <p class="mb-3">
+                            {% if pacote.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <h6 class="text-primary">Data de Criação</h6>
+                <p class="mb-0">{{ pacote.data_criacao|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card estetica-card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'modulos:estetica_editar_pacote' pacote.id %}" 
+                       class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-edit me-2"></i>Editar Pacote
+                    </a>
+                    
+                    {% if pacote.ativo %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-pause me-2"></i>Desativar
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-play me-2"></i>Ativar
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

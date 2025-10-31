@@ -4,7 +4,7 @@
 {% block page_subtitle %}Visão geral da clínica{% endblock %}
 
 {% block header_actions %}
-<a href="{% url 'estetica:criar_agendamento' %}" class="btn btn-light">
+<a href="{% url 'modulos:estetica_criar_agendamento' %}" class="btn btn-light">
     <i class="fas fa-plus me-2"></i>Novo Agendamento
 </a>
 {% endblock %}
@@ -94,7 +94,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{% url 'estetica:agendamento_detalhes' agendamento.id %}" 
+                                        <a href="{% url 'modulos:estetica_agendamento_detalhes' agendamento.id %}" 
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -190,16 +190,16 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{% url 'estetica:criar_agendamento' %}" class="btn btn-estetica">
+                    <a href="{% url 'modulos:estetica_criar_agendamento' %}" class="btn btn-estetica">
                         <i class="fas fa-plus me-2"></i>Novo Agendamento
                     </a>
-                    <a href="{% url 'estetica:criar_servico' %}" class="btn btn-outline-primary">
+                    <a href="{% url 'modulos:estetica_criar_servico' %}" class="btn btn-outline-primary">
                         <i class="fas fa-concierge-bell me-2"></i>Novo Serviço
                     </a>
-                    <a href="{% url 'estetica:calendario_agendamentos' %}" class="btn btn-outline-info">
+                    <a href="{% url 'modulos:estetica_calendario_agendamentos' %}" class="btn btn-outline-info">
                         <i class="fas fa-calendar-alt me-2"></i>Ver Calendário
                     </a>
-                    <a href="{% url 'estetica:relatorios' %}" class="btn btn-outline-success">
+                    <a href="{% url 'modulos:estetica_relatorios' %}" class="btn btn-outline-success">
                         <i class="fas fa-chart-bar me-2"></i>Relatórios
                     </a>
                 </div>
