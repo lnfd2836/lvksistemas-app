@@ -1,0 +1,237 @@
+{% extends 'modulos/estetica/base_estetica.html' %}
+
+{% block page_title %}Novo Cliente{% endblock %}
+{% block page_subtitle %}Cadastrar novo cliente na clínica{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'modulos:estetica_clientes' %}" class="btn btn-outline-light">
+    <i class="fas fa-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block estetica_content %}
+<div class="card estetica-card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-user-plus me-2"></i>Dados do Cliente
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="clienteForm">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <!-- Nome Completo -->
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                    <input type="text" name="nome" id="nome" class="form-control" required 
+                           placeholder="Digite o nome completo do cliente">
+                </div>
+                
+                <!-- Email -->
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                    <input type="email" name="email" id="email" class="form-control" required 
+                           placeholder="cliente@email.com">
+                </div>
+                
+                <!-- Telefone -->
+                <div class="col-md-4">
+                    <label for="telefone" class="form-label">Telefone <span class="text-danger">*</span></label>
+                    <input type="tel" name="telefone" id="telefone" class="form-control" required 
+                           placeholder="(11) 99999-9999">
+                </div>
+                
+                <!-- CPF -->
+                <div class="col-md-4">
+                    <label for="cpf" class="form-label">CPF <span class="text-danger">*</span></label>
+                    <input type="text" name="cpf" id="cpf" class="form-control" required 
+                           placeholder="000.000.000-00">
+                </div>
+                
+                <!-- Data de Nascimento -->
+                <div class="col-md-4">
+                    <label for="data_nascimento" class="form-label">Data de Nascimento <span class="text-danger">*</span></label>
+                    <input type="date" name="data_nascimento" id="data_nascimento" class="form-control" required>
+                </div>
+                
+                <!-- Sexo -->
+                <div class="col-md-4">
+                    <label for="sexo" class="form-label">Sexo <span class="text-danger">*</span></label>
+                    <select name="sexo" id="sexo" class="form-select" required>
+                        <option value="">Selecione</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                        <option value="O">Outro</option>
+                    </select>
+                </div>
+                
+                <!-- CEP -->
+                <div class="col-md-4">
+                    <label for="cep" class="form-label">CEP</label>
+                    <input type="text" name="cep" id="cep" class="form-control" 
+                           placeholder="00000-000">
+                </div>
+                
+                <!-- Estado -->
+                <div class="col-md-4">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select name="estado" id="estado" class="form-select">
+                        <option value="">Selecione</option>
+                        <option value="AC">Acre</option>
+                        <option value="AL">Alagoas</option>
+                        <option value="AP">Amapá</option>
+                        <option value="AM">Amazonas</option>
+                        <option value="BA">Bahia</option>
+                        <option value="CE">Ceará</option>
+                        <option value="DF">Distrito Federal</option>
+                        <option value="ES">Espírito Santo</option>
+                        <option value="GO">Goiás</option>
+                        <option value="MA">Maranhão</option>
+                        <option value="MT">Mato Grosso</option>
+                        <option value="MS">Mato Grosso do Sul</option>
+                        <option value="MG">Minas Gerais</option>
+                        <option value="PA">Pará</option>
+                        <option value="PB">Paraíba</option>
+                        <option value="PR">Paraná</option>
+                        <option value="PE">Pernambuco</option>
+                        <option value="PI">Piauí</option>
+                        <option value="RJ">Rio de Janeiro</option>
+                        <option value="RN">Rio Grande do Norte</option>
+                        <option value="RS">Rio Grande do Sul</option>
+                        <option value="RO">Rondônia</option>
+                        <option value="RR">Roraima</option>
+                        <option value="SC">Santa Catarina</option>
+                        <option value="SP">São Paulo</option>
+                        <option value="SE">Sergipe</option>
+                        <option value="TO">Tocantins</option>
+                    </select>
+                </div>
+                
+                <!-- Cidade -->
+                <div class="col-md-6">
+                    <label for="cidade" class="form-label">Cidade</label>
+                    <input type="text" name="cidade" id="cidade" class="form-control" 
+                           placeholder="Digite a cidade">
+                </div>
+                
+                <!-- Endereço -->
+                <div class="col-12">
+                    <label for="endereco" class="form-label">Endereço Completo</label>
+                    <textarea name="endereco" id="endereco" class="form-control" rows="3" 
+                              placeholder="Rua, número, complemento, bairro..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-estetica me-2">
+                        <i class="fas fa-save me-2"></i>Cadastrar Cliente
+                    </button>
+                    <a href="{% url 'modulos:estetica_clientes' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para telefone
+    const telefoneInput = document.getElementById('telefone');
+    telefoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            if (value.length < 14) {
+                value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            }
+        }
+        e.target.value = value;
+    });
+    
+    // Máscara para CPF
+    const cpfInput = document.getElementById('cpf');
+    cpfInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        e.target.value = value;
+    });
+    
+    // Máscara para CEP
+    const cepInput = document.getElementById('cep');
+    cepInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Buscar endereço por CEP
+    cepInput.addEventListener('blur', function(e) {
+        const cep = e.target.value.replace(/\D/g, '');
+        if (cep.length === 8) {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        document.getElementById('endereco').value = `${data.logradouro}, ${data.bairro}`;
+                        document.getElementById('cidade').value = data.localidade;
+                        document.getElementById('estado').value = data.uf;
+                    }
+                })
+                .catch(error => {
+                    console.log('Erro ao buscar CEP:', error);
+                });
+        }
+    });
+    
+    // Validação do formulário
+    document.getElementById('clienteForm').addEventListener('submit', function(e) {
+        const requiredFields = ['nome', 'email', 'telefone', 'cpf', 'data_nascimento', 'sexo'];
+        let isValid = true;
+        
+        requiredFields.forEach(function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validar CPF
+        const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+        if (cpf.length !== 11) {
+            document.getElementById('cpf').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validar email
+        const email = document.getElementById('email').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            document.getElementById('email').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+        }
+    });
+    
+    // Remover classe de erro quando campo for preenchido
+    document.querySelectorAll('.form-control, .form-select').forEach(function(field) {
+        field.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

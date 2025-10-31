@@ -555,6 +555,50 @@ def cliente_detalhes(request, cliente_id):
     return render(request, 'modulos/estetica/clientes/detalhes.html', context)
 
 @login_required
+def criar_cliente(request):
+    """Criar novo cliente"""
+    if request.method == 'POST':
+        try:
+            # Obter a loja do usuário (pode ser através de diferentes formas)
+            loja = None
+            if hasattr(request.user, 'loja_admin'):
+                loja = request.user.loja_admin
+            else:
+                # Se não encontrar loja associada, usar a primeira loja disponível
+                from lojas.models import Loja
+                loja = Loja.objects.first()
+            
+            if not loja:
+                messages.error(request, 'Erro: Nenhuma loja encontrada para associar o cliente')
+                return redirect('modulos:estetica_clientes')
+            
+            # Criar cliente
+            cliente = Cliente.objects.create(
+                loja=loja,
+                nome=request.POST.get('nome'),
+                email=request.POST.get('email'),
+                telefone=request.POST.get('telefone'),
+                cpf=request.POST.get('cpf'),
+                data_nascimento=request.POST.get('data_nascimento'),
+                sexo=request.POST.get('sexo'),
+                endereco=request.POST.get('endereco'),
+                cidade=request.POST.get('cidade'),
+                estado=request.POST.get('estado'),
+                cep=request.POST.get('cep'),
+            )
+            
+            messages.success(request, f'Cliente "{cliente.nome}" criado com sucesso')
+            return redirect('modulos:estetica_cliente_detalhes', cliente.id)
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar cliente: {str(e)}')
+    
+    context = {
+        'page_title': 'Novo Cliente - Clínica de Estética',
+    }
+    return render(request, 'modulos/estetica/clientes/criar.html', context)
+
+@login_required
 def listar_pacotes(request):
     """Lista de pacotes de tratamento"""
     pacotes = PacoteTratamento.objects.all()

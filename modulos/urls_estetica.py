@@ -26,6 +26,7 @@ urlpatterns = [
     
     # Clientes
     path('clientes/', views_estetica.listar_clientes, name='estetica_clientes'),
+    path('clientes/criar/', views_estetica.criar_cliente, name='estetica_criar_cliente'),
     path('clientes/<uuid:cliente_id>/', views_estetica.cliente_detalhes, name='estetica_cliente_detalhes'),
     path('clientes/<uuid:cliente_id>/anamnese/', views_estetica.ficha_anamnese, name='estetica_ficha_anamnese'),
     path('clientes/<uuid:cliente_id>/evolucao/', views_estetica.evolucao_tratamento, name='estetica_evolucao_tratamento'),
