@@ -69,9 +69,30 @@
                         </p>
                     </div>
 
-                    <button type="button" class="btn btn-primary mt-3" onclick="window.close()">
-                        Fechar Janela
+                    <button type="button" class="btn btn-primary mt-3" onclick="fecharJanela()">
+                        <i class="fas fa-times me-2"></i>Fechar Janela
                     </button>
+                    
+                    <script>
+                    function fecharJanela() {
+                        // Tentar fechar a janela/aba
+                        if (window.opener) {
+                            // Se foi aberto por outra janela, fechar
+                            window.close();
+                        } else {
+                            // Se não conseguir fechar, redirecionar ou mostrar mensagem
+                            if (confirm('Deseja fechar esta aba?')) {
+                                // Tentar fechar mesmo assim
+                                window.close();
+                                
+                                // Se não conseguir fechar, mostrar mensagem
+                                setTimeout(function() {
+                                    alert('Por favor, feche esta aba manualmente.');
+                                }, 100);
+                            }
+                        }
+                    }
+                    </script>
                 </div>
             </div>
         </div>

@@ -2551,6 +2551,10 @@ def _enviar_documento_final_assinado(documento, tipo_documento):
         
         # Renderizar email
         from django.template.loader import render_to_string
+        
+        # Debug: Log das variáveis do contexto
+        logger.info(f"Contexto do email: assinatura_cliente={context.get('assinatura_cliente')}, assinatura_empresa={context.get('assinatura_empresa')}, data_conclusao={context.get('data_conclusao')}")
+        
         html_content = render_to_string(template, context)
         text_content = f"Documento {documento.numero} foi assinado por ambas as partes em {assinaturas_info.get('data_conclusao')}."
         

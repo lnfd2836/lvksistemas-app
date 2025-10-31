@@ -167,6 +167,9 @@ class PDFService:
                 story.append(Paragraph("OBSERVAÇÕES", styles['Heading2']))
                 story.append(Paragraph(orcamento.descricao, styles['Normal']))
             
+            # Adicionar assinaturas se existirem
+            cls._adicionar_assinaturas_pdf(story, orcamento, 'orcamento', styles)
+            
             # Rodapé
             story.append(Spacer(1, 30))
             rodape = f"Orçamento gerado em {timezone.now().strftime('%d/%m/%Y às %H:%M')}"
@@ -250,6 +253,9 @@ class PDFService:
             # Condições Comerciais
             story.append(Paragraph("CONDIÇÕES COMERCIAIS", styles['Heading2']))
             story.append(Paragraph(proposta.condicoes_comerciais, styles['Normal']))
+            
+            # Adicionar assinaturas se existirem
+            cls._adicionar_assinaturas_pdf(story, proposta, 'proposta', styles)
             
             # Gerar PDF
             doc.build(story)
@@ -344,13 +350,17 @@ class PDFService:
                 story.append(Paragraph(contrato.condicoes_especiais, styles['Normal']))
                 story.append(Spacer(1, 20))
             
-            # Assinaturas
-            story.append(Spacer(1, 50))
-            story.append(Paragraph("_" * 50, styles['Normal']))
-            story.append(Paragraph("CONTRATANTE", styles['Normal']))
-            story.append(Spacer(1, 30))
-            story.append(Paragraph("_" * 50, styles['Normal']))
-            story.append(Paragraph("CONTRATADA", styles['Normal']))
+            # Adicionar assinaturas digitais se existirem
+            cls._adicionar_assinaturas_pdf(story, contrato, 'contrato', styles)
+            
+            # Se não há assinaturas digitais, manter campos tradicionais
+            if not cls._tem_assinaturas_digitais(contrato, 'contrato'):
+                story.append(Spacer(1, 50))
+                story.append(Paragraph("_" * 50, styles['Normal']))
+                story.append(Paragraph("CONTRATANTE", styles['Normal']))
+                story.append(Spacer(1, 30))
+                story.append(Paragraph("_" * 50, styles['Normal']))
+                story.append(Paragraph("CONTRATADA", styles['Normal']))
             
             # Data
             story.append(Spacer(1, 30))
@@ -368,3 +378,126 @@ class PDFService:
         except Exception as e:
             logger.error(f"Erro ao gerar PDF do contrato {contrato.numero}: {e}")
             return None
+    
+    @classmethod
+    def _adicionar_assinaturas_pdf(cls, story, documento, tipo_documento, styles):
+        """
+        Adiciona seção de assinaturas digitais ao PDF
+        """
+        try:
+            from ..models import AssinaturaDigital
+            
+            # Buscar assinaturas do documento
+            filter_kwargs = {
+                'status': 'assinado',
+                'tipo_documento': tipo_documento,
+                tipo_documento: documento
+            }
+            
+            assinatura_cliente = AssinaturaDigital.objects.filter(
+                tipo_signatario='cliente',
+                **filter_kwargs
+            ).first()
+            
+            assinatura_empresa = AssinaturaDigital.objects.filter(
+                tipo_signatario='empresa',
+                **filter_kwargs
+            ).first()
+            
+            # Se não há assinaturas, não adicionar seção
+            if not assinatura_cliente and not assinatura_empresa:
+                return
+            
+            # Adicionar seção de assinaturas
+            story.append(Spacer(1, 40))
+            story.append(Paragraph("ASSINATURAS DIGITAIS", styles['Heading2']))
+            story.append(Spacer(1, 20))
+            
+            # Criar tabela de assinaturas
+            assinaturas_data = []
+            
+            if assinatura_cliente:
+                assinaturas_data.extend([
+                    ['ASSINATURA DO CLIENTE', ''],
+                    ['Nome:', assinatura_cliente.nome_signatario],
+                    ['Data/Hora:', assinatura_cliente.data_assinatura.strftime('%d/%m/%Y às %H:%M')],
+                    ['IP:', assinatura_cliente.ip_assinatura or 'N/A'],
+                    ['', '']  # Linha em branco
+                ])
+            
+            if assinatura_empresa:
+                assinaturas_data.extend([
+                    ['ASSINATURA DA EMPRESA', ''],
+                    ['Nome:', assinatura_empresa.nome_signatario],
+                    ['Data/Hora:', assinatura_empresa.data_assinatura.strftime('%d/%m/%Y às %H:%M')],
+                    ['IP:', assinatura_empresa.ip_assinatura or 'N/A'],
+                ])
+            
+            if assinaturas_data:
+                assinaturas_table = Table(assinaturas_data, colWidths=[2*inch, 4*inch])
+                assinaturas_table.setStyle(TableStyle([
+                    # Cabeçalhos das assinaturas
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#27ae60')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    
+                    # Se há assinatura da empresa, destacar também
+                    ('BACKGROUND', (0, 5), (-1, 5), colors.HexColor('#27ae60')) if assinatura_empresa else ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#27ae60')),
+                    ('TEXTCOLOR', (0, 5), (-1, 5), colors.whitesmoke) if assinatura_empresa else ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 5), (-1, 5), 'Helvetica-Bold') if assinatura_empresa else ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    
+                    # Dados das assinaturas
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+                    ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),  # Labels em negrito
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                
+                story.append(assinaturas_table)
+                story.append(Spacer(1, 20))
+                
+                # Adicionar nota sobre validade das assinaturas
+                nota_assinatura = """
+                <b>CERTIFICAÇÃO DIGITAL:</b><br/>
+                Este documento foi assinado digitalmente pelas partes mencionadas acima. 
+                As assinaturas digitais possuem validade jurídica equivalente às assinaturas manuscritas, 
+                conforme estabelecido pela Medida Provisória nº 2.200-2/2001 e Lei nº 14.063/2020.
+                """
+                
+                nota_style = ParagraphStyle(
+                    'NotaAssinatura',
+                    parent=styles['Normal'],
+                    fontSize=8,
+                    textColor=colors.HexColor('#666666'),
+                    leftIndent=20,
+                    rightIndent=20,
+                    spaceAfter=10
+                )
+                
+                story.append(Paragraph(nota_assinatura, nota_style))
+            
+        except Exception as e:
+            logger.error(f"Erro ao adicionar assinaturas ao PDF: {str(e)}")
+            # Não interromper a geração do PDF por erro nas assinaturas
+    
+    @classmethod
+    def _tem_assinaturas_digitais(cls, documento, tipo_documento):
+        """
+        Verifica se o documento possui assinaturas digitais
+        """
+        try:
+            from ..models import AssinaturaDigital
+            
+            filter_kwargs = {
+                'status': 'assinado',
+                'tipo_documento': tipo_documento,
+                tipo_documento: documento
+            }
+            
+            return AssinaturaDigital.objects.filter(**filter_kwargs).exists()
+            
+        except Exception as e:
+            logger.error(f"Erro ao verificar assinaturas digitais: {str(e)}")
+            return False
