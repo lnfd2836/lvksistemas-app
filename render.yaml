@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: lvksistemas-app
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn lojad.wsgi --log-file -
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lvk-database
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: lvk-redis
+          property: connectionString
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: ASAAS_ENVIRONMENT
+        value: sandbox
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: noreply@lvksistemas.com.br
+      - key: SITE_URL
+        sync: false
+
+databases:
+  - name: lvk-database
+    plan: starter
+    databaseName: lvksistemas
+    user: lvk_user
+
+  - type: redis
+    name: lvk-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+

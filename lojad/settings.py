@@ -39,6 +39,8 @@ ALLOWED_HOSTS = [
     'www.crmvendas.net.br', 
     'loja-conveniencia-pdv-7fed430df60a.herokuapp.com',
     '.herokuapp.com',  # Permite todos os subdomínios do Heroku
+    '.render.com',  # Permite todos os subdomínios do Render
+    '.onrender.com',  # Permite todos os subdomínios do Render (formato alternativo)
     '.asaas.com'  # Permite webhooks do Asaas
 ]
 
@@ -67,13 +69,14 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # === MIDDLEWARES EXCLUSIVOS POR GRUPO ===
-    # Grupo 1: Super Admin Exclusivo
-    # 'dashboard.middleware.super_admin_exclusivo.SuperAdminExclusivoMiddleware',  # Temporariamente desabilitado
-    # Bloqueio: Super Admin NÃO pode acessar sistema das lojas
-    # # 'dashboard.middleware.bloqueio_super_admin_lojas.BloqueioSuperAdminLojasMiddleware',  # Removido - bloqueava super admin  # Temporariamente desabilitado
-    # Grupo 2: Asaas Exclusivo
-    # 'controle_financeiro.middleware.asaas_exclusivo.AsaasExclusivoMiddleware',  # Temporariamente desabilitado
+    # === MIDDLEWARES DE SEGURANÇA CORRIGIDOS ===
+    # Grupo 1: Super Admin com Segurança Aprimorada
+    'dashboard.middleware.super_admin_security_middleware.SecureSuperAdminMiddleware',  # CORRIGIDO - Separação total
+    'dashboard.middleware.super_admin_security_middleware.StoreAccessProtectionMiddleware',  # Proteção adicional
+    
+    # Grupo 2: Asaas com Segurança Aprimorada  
+    'controle_financeiro.middleware.secure_asaas_middleware.SecureAsaasMiddleware',  # CORRIGIDO - Validações aprimoradas
+    
     # === MIDDLEWARES ORIGINAIS ===
     'controle_financeiro.asaas_ip_validation_middleware.AsaasWebhookIPValidationMiddleware',  # Validação de IP para webhooks
     'controle_financeiro.webhook_middleware.WebhookBypassMiddleware',  # Detecta webhooks primeiro
@@ -86,6 +89,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Necessário para admin
     'django.contrib.messages.middleware.MessageMiddleware',  # Necessário para mensagens
+    
+    # Middlewares originais de super admin (mantidos como backup)
     'dashboard.middleware.super_admin_middleware.SuperAdminMiddleware',  # PRIORIDADE MÁXIMA para super admins - CORRIGIDO
     'dashboard.middleware.super_admin_middleware.SuperAdminProtectionMiddleware',  # Proteção adicional para super admins
     # 'lojas.middleware_loja_especifica.LojaEspecificaMiddleware',  # Middleware exclusivo para lojas específicas - DESABILITADO (CAUSA PROBLEMAS)
@@ -97,7 +102,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'usuarios.improved_middleware.ImprovedAuthenticationMiddleware',
     'lojas.middleware.LojaMiddleware',
-    'controle_financeiro.middleware.ControleFinanceiroMiddleware',
+    # 'controle_financeiro.middleware.ControleFinanceiroMiddleware',  # Temporariamente desabilitado
     # === MIDDLEWARES DINÂMICOS POR LOJA ===
     # Middlewares de loja são adicionados dinamicamente
 ]
@@ -460,8 +465,8 @@ if 'DYNO' in os.environ:
         LOGGING['loggers'][logger_name]['handlers'] = ['console']
 
 # Celery Configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Configure conforme seu Redis
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
